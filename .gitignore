@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+# Node
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+# Build output (frontend bundled into the backend package)
+backend/src/the_frame_v2/static/
+# Local data
+.dev-data/
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store

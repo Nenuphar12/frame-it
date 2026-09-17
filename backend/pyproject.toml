@@ -1,0 +1,65 @@
+[project]
+name = "the-frame-v2"
+version = "0.1.0"
+description = "Prepare and curate pictures for a 4K art-mode TV (Samsung The Frame)."
+authors = [
+    { name = "Nenuphar12", email = "nenuphar12@protonmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "alembic>=1.20.0",
+    "cryptography>=50.0.1",
+    "fastapi>=0.141.1",
+    "pillow>=12.3.0",
+    "platformdirs>=4.11.9",
+    "pydantic>=2.13.5",
+    "pydantic-settings>=2.15.0",
+    "pyvips[binary]>=3.2.0",
+    "sqlalchemy>=2",
+    "sse-starlette>=3.4.11",
+    "typer>=0.27.2",
+    "uvicorn[standard]>=0.53.0",
+]
+
+[project.scripts]
+the_frame_v2 = "the_frame_v2.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.11.21,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "mypy>=2.3.1",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.8",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "SIM", "RUF", "S", "PT", "RET", "TID"]
+ignore = ["S101", "B008", "RUF012", "RUF005"]  # RUF005: pyvips image + list arithmetic
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "N802", "PT018", "E501", "RUF005", "PLR2004"]
+"src/the_frame_v2/db/migrations/**" = ["N", "E501"]
+
+[tool.mypy]
+strict = true
+python_version = "3.14"
+plugins = ["pydantic.mypy"]
+exclude = ["src/the_frame_v2/db/migrations/"]
+
+[[tool.mypy.overrides]]
+module = ["pyvips", "pyvips.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["error::DeprecationWarning:the_frame_v2.*"]

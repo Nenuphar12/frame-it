@@ -1,0 +1,265 @@
+{
+  "common": {
+    "close": "Close",
+    "remove": "Remove",
+    "retry": "Retry",
+    "done": "Done",
+    "expand": "Expand",
+    "collapse": "Collapse"
+  },
+  "nav": {
+    "label": "Main navigation",
+    "inbox": "Inbox",
+    "artworks": "Artworks",
+    "photos": "Photos",
+    "favorites": "Favorites",
+    "collections": "Collections",
+    "templates": "Templates",
+    "trash": "Trash",
+    "devices": "Devices",
+    "settings": "Settings",
+    "manage": "Manage",
+    "mobile": "Phone upload view"
+  },
+  "palette": {
+    "title": "Command palette",
+    "placeholder": "Type a command…",
+    "empty": "No matching command",
+    "search": "Search commands"
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts"
+  },
+  "commands": {
+    "groups": {
+      "general": "General",
+      "navigation": "Navigation",
+      "library": "Library",
+      "inbox": "Inbox"
+    },
+    "toggleTheme": "Toggle light/dark theme",
+    "uploadFiles": "Add photos",
+    "uploadFolder": "Add a folder",
+    "goInbox": "Go to Inbox",
+    "goPhotos": "Go to Photos",
+    "goArtworks": "Go to Artworks",
+    "goDevices": "Go to Devices",
+    "goSettings": "Go to Settings",
+    "goMobile": "Open phone upload view"
+  },
+  "upload": {
+    "addPhotos": "Add photos",
+    "dropTitle": "Drop photos or folders to import",
+    "dropHint": "JPEG, PNG and AVIF — originals are stored untouched",
+    "trayActive_one": "Importing {{count}} photo…",
+    "trayActive_other": "Importing {{count}} photos…",
+    "trayDone": "{{done}} imported, {{duplicate}} already in library",
+    "problems_one": "{{count}} problem",
+    "problems_other": "{{count}} problems",
+    "clear": "Clear",
+    "retry": "Retry upload",
+    "status": {
+      "queued": "Waiting…",
+      "hashing": "Checking file…",
+      "uploading": "Uploading…",
+      "processing": "Processing…",
+      "done": "Imported",
+      "duplicate": "Already in your library",
+      "merged": "Already in your library: missing place or file name added",
+      "failed": "Failed",
+      "rejected": "Rejected"
+    }
+  },
+  "inbox": {
+    "subtitle_one": "{{count}} photo waiting to become an artwork",
+    "subtitle_other": "{{count}} photos waiting to become artworks",
+    "selected_one": "{{count}} selected",
+    "selected_other": "{{count}} selected",
+    "createArtworks": "Create artworks",
+    "createArtworksSoon": "Artwork creation arrives with the editor (Phases 4–5)",
+    "dismiss": "Dismiss",
+    "toggleDetails": "Show details",
+    "selectAll": "Select all",
+    "clearSelection": "Clear selection",
+    "emptyTitle": "Inbox zero",
+    "emptyDescription": "New photos sent from your phone or dropped here will wait in the inbox until you turn them into artworks."
+  },
+  "photos": {
+    "count_one": "{{count}} photo",
+    "count_other": "{{count}} photos",
+    "searchPlaceholder": "Search file, place, camera…",
+    "noResults": "No photo matches your search",
+    "emptyTitle": "No photos yet",
+    "emptyDescription": "Drop photos anywhere in this window, or pair your phone to send originals over Wi-Fi.",
+    "details": "Photo details",
+    "tags": "Tags",
+    "coversTv": "Covers the TV (≥ 3840×2160)",
+    "coversTvHint": "Large enough to fill the TV without upscaling",
+    "belowTv": "Smaller than the TV",
+    "belowTvHint": "Filling the whole TV would require upscaling",
+    "wideGamut": "Wide gamut",
+    "hdrGainMap": "HDR gain map (SDR used)",
+    "bitDepth": "{{bits}}-bit",
+    "downloadOriginal": "Download original",
+    "fields": {
+      "file": "File",
+      "dimensions": "Dimensions",
+      "size": "Size",
+      "taken": "Taken",
+      "place": "Place",
+      "camera": "Camera",
+      "lens": "Lens",
+      "colorProfile": "Color profile",
+      "imported": "Imported",
+      "inbox": "Status"
+    },
+    "inboxState": {
+      "inbox": "In inbox",
+      "processed": "Processed",
+      "dismissed": "Dismissed"
+    },
+    "warnings": {
+      "metadata_missing": "No camera metadata: the file may have been converted or exported rather than sent as an original.",
+      "location_removed": "The phone removed the GPS location before sending (Android does this for browsers), so no place can be shown.",
+      "possibly_downscaled": "Low resolution: the phone may have sent a reduced copy.",
+      "below_tv_resolution": "Smaller than 3840×2160: it cannot fill the TV pixel-perfectly.",
+      "high_bit_depth_reduced": "16-bit image: it is converted to 8-bit for display."
+    }
+  },
+  "tags": {
+    "placeholder": "Add tags…",
+    "create": "Create “{{name}}”",
+    "remove": "Remove tag {{name}}"
+  },
+  "devices": {
+    "subtitle": "Browsers allowed to use this library",
+    "pair": "Pair a device",
+    "pairTitle": "Pair a device",
+    "pairDescription": "Scan the QR code with the phone (same Wi-Fi network).",
+    "roleQuestion": "What can this device do?",
+    "roles": {
+      "uploader": "Uploader",
+      "admin": "Admin"
+    },
+    "roleHints": {
+      "uploader": "Send photos and browse. Ideal for phones.",
+      "admin": "Full access, including editing and device management."
+    },
+    "generate": "Show QR code",
+    "regenerate": "New code",
+    "qrAlt": "Pairing QR code",
+    "scanHint": "Or open the link below and enter the code:",
+    "expiresIn": "Expires in {{time}}",
+    "expired": "This code has expired.",
+    "pairSuccess": "Device paired!",
+    "localhostNote": "You are using the app from the machine running the server, so you are trusted automatically.",
+    "emptyTitle": "No paired device",
+    "emptyDescription": "Pair your phone to send photos in full quality over Wi-Fi.",
+    "name": "Device name",
+    "role": "Role",
+    "lastSeen": "Last seen {{time}}",
+    "thisDevice": "This device",
+    "revoke": "Revoke",
+    "revokeConfirm": "Revoke “{{name}}”? It will immediately lose access."
+  },
+  "auth": {
+    "code": "Code",
+    "deviceName": "Name for this device",
+    "defaultPhoneName": "Android phone",
+    "defaultBrowserName": "Browser",
+    "setupTitle": "Set up admin access",
+    "setupDescription": "Enter the setup code printed by the server at startup (or run `the_frame_v2 setup-code`).",
+    "setupSubmit": "Register as admin",
+    "pairTitle": "Pair this device",
+    "pairDescription": "Enter the code shown on the desktop, or scan its QR code.",
+    "pairSubmit": "Pair",
+    "notPairedTitle": "This device is not paired",
+    "notPairedDescription": "On your computer, open Devices › Pair a device and scan the QR code with this device.",
+    "enterPairingCode": "Enter a pairing code",
+    "enterSetupCode": "I have a setup code"
+  },
+  "mobile": {
+    "title": "Send photos",
+    "thisDevice": "This device",
+    "desktopView": "Desktop view",
+    "pickPhotos": "Photos",
+    "pickFiles": "Files",
+    "pickHint": "“Files” keeps the original file name. For the place too, send with the LocalSend app instead.",
+    "metaTitle": "Apply to the next photos",
+    "metaHint": "Tags, collections and favorite are applied to the artworks you create from these photos.",
+    "noCollections": "Collections will appear here once created on the desktop.",
+    "favorite": "Favorite",
+    "keepScreenOn": "Keep this screen on until the upload finishes."
+  },
+  "settings": {
+    "appearance": "Appearance",
+    "theme": "Theme",
+    "themes": {
+      "dark": "Dark",
+      "light": "Light",
+      "system": "System"
+    },
+    "language": "Language",
+    "languages": {
+      "en": "English"
+    },
+    "about": "About",
+    "version": "Version",
+    "publicUrl": "Address for phones",
+    "attribution": "Place names: GeoNames (CC BY 4.0)."
+  },
+  "comingSoon": {
+    "title": "Coming soon",
+    "description": "This section is planned for Phase {{phase}} of the implementation plan."
+  },
+  "errors": {
+    "unknown": "Something went wrong.",
+    "network_error": "Network error. Check that you are on the same Wi-Fi network.",
+    "serverUnreachable": "Cannot reach the server.",
+    "invalid_code": "Invalid or expired code.",
+    "rate_limited": "Too many attempts. Wait a minute and try again.",
+    "unauthorized": "This device is not paired.",
+    "forbidden": "This device is not allowed to do that.",
+    "unsupported_format_heic": "HEIC photos are not supported. Set your camera to save JPEG.",
+    "unsupported_format": "Unsupported file format.",
+    "corrupt_image": "The image file is damaged or incomplete.",
+    "image_too_large": "The image is too large.",
+    "file_too_large": "The file exceeds the upload limit.",
+    "checksum_mismatch": "The file was corrupted during transfer. Retry.",
+    "chunk_too_large": "Upload chunk rejected.",
+    "upload_missing": "The uploaded data was lost. Retry.",
+    "ingest_failed": "The photo could not be processed.",
+    "upload_failed": "Upload failed.",
+    "csrf_rejected": "Request blocked for security reasons.",
+    "host_not_allowed": "This address is not allowed by the server configuration."
+  },
+  "localsend": {
+    "title": "LocalSend",
+    "subtitle": "Send photos from the LocalSend app: files arrive byte-for-byte, with their place and original name.",
+    "running": "Receiving",
+    "notRunning": "Not running",
+    "disabled": "Disabled",
+    "port": "port {{port}}",
+    "noDiscovery": "not visible automatically: add it by IP address in LocalSend",
+    "fingerprint": "Fingerprint",
+    "howTo": "In LocalSend on the phone, pick photos, then choose this receiver in “Nearby devices”. The first transfer from a new device must be allowed here.",
+    "empty": "No device has used LocalSend with this library yet.",
+    "status": {
+      "approved": "Allowed",
+      "pending": "Asks each time",
+      "blocked": "Blocked"
+    },
+    "allow": "Allow device",
+    "decline": "Decline",
+    "block": "Block",
+    "forget": "Forget",
+    "forgetConfirm": "Forget “{{name}}”? Its next transfer will ask for approval again.",
+    "requestTitle": "“{{device}}” wants to send photos",
+    "requestDescription": "A LocalSend device that is not allowed yet is waiting for your answer.",
+    "requestFiles_one": "{{count}} photo, {{size}}",
+    "requestFiles_other": "{{count}} photos, {{size}}",
+    "requestHint": "Allowing remembers this device: its next transfers are accepted automatically (you can block it in Devices). Only allow devices you recognise.",
+    "moreRequests_one": "{{count}} more request waiting",
+    "moreRequests_other": "{{count}} more requests waiting"
+  }
+}
