@@ -1,5 +1,6 @@
 import { createRootRoute, createRoute, createRouter, Navigate } from "@tanstack/react-router";
 
+import { ArtworksPage } from "@/features/artworks/ArtworksPage";
 import { PairPage, SetupPage } from "@/features/auth/AuthPages";
 import { DevicesPage } from "@/features/devices/DevicesPage";
 import { InboxPage } from "@/features/inbox/InboxPage";
@@ -26,7 +27,7 @@ const routeTree = rootRoute.addChildren([
     }),
     page("/inbox", InboxPage),
     page("/photos", PhotosPage),
-    page("/artworks", () => <ComingSoon titleKey="nav.artworks" phase={4} />),
+    page("/artworks", ArtworksPage),
     page("/favorites", () => <ComingSoon titleKey="nav.favorites" phase={8} />),
     page("/collections", () => <ComingSoon titleKey="nav.collections" phase={8} />),
     page("/templates", () => <ComingSoon titleKey="nav.templates" phase={7} />),

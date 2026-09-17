@@ -1,0 +1,508 @@
+{
+  "$defs": {
+    "Band": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Color",
+          "type": "string"
+        },
+        "width": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "width",
+        "color"
+      ],
+      "title": "Band",
+      "type": "object"
+    },
+    "CanvasSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "const": 2160,
+          "default": 2160,
+          "title": "Height",
+          "type": "integer"
+        },
+        "width": {
+          "const": 3840,
+          "default": 3840,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "title": "CanvasSpec",
+      "type": "object"
+    },
+    "Caption": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "default": "start",
+          "enum": [
+            "start",
+            "middle",
+            "end"
+          ],
+          "title": "Anchor",
+          "type": "string"
+        },
+        "color": {
+          "default": "#3A3A3A",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Color",
+          "type": "string"
+        },
+        "font": {
+          "pattern": "^[a-z0-9-]{1,64}$",
+          "title": "Font",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^[A-Za-z0-9_-]{1,64}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "letter_spacing": {
+          "default": 0,
+          "maximum": 2,
+          "minimum": -0.5,
+          "title": "Letter Spacing",
+          "type": "number"
+        },
+        "rotation": {
+          "default": 0,
+          "maximum": 180,
+          "minimum": -180,
+          "title": "Rotation",
+          "type": "number"
+        },
+        "size": {
+          "maximum": 1000,
+          "minimum": 4,
+          "title": "Size",
+          "type": "integer"
+        },
+        "text": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "weight": {
+          "default": 400,
+          "maximum": 900,
+          "minimum": 100,
+          "title": "Weight",
+          "type": "integer"
+        },
+        "x": {
+          "maximum": 20000,
+          "minimum": -20000,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "maximum": 20000,
+          "minimum": -20000,
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "font",
+        "size",
+        "x",
+        "y"
+      ],
+      "title": "Caption",
+      "type": "object"
+    },
+    "CropSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "h": {
+          "maximum": 100000,
+          "minimum": 1,
+          "title": "H",
+          "type": "integer"
+        },
+        "w": {
+          "maximum": 100000,
+          "minimum": 1,
+          "title": "W",
+          "type": "integer"
+        },
+        "x": {
+          "maximum": 100000,
+          "minimum": 0,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "maximum": 100000,
+          "minimum": 0,
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "title": "CropSpec",
+      "type": "object"
+    },
+    "MarginsSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "bottom": {
+          "default": 0,
+          "maximum": 2159,
+          "minimum": 0,
+          "title": "Bottom",
+          "type": "integer"
+        },
+        "left": {
+          "default": 0,
+          "maximum": 3839,
+          "minimum": 0,
+          "title": "Left",
+          "type": "integer"
+        },
+        "linked": {
+          "default": false,
+          "title": "Linked",
+          "type": "boolean"
+        },
+        "right": {
+          "default": 0,
+          "maximum": 3839,
+          "minimum": 0,
+          "title": "Right",
+          "type": "integer"
+        },
+        "top": {
+          "default": 0,
+          "maximum": 2159,
+          "minimum": 0,
+          "title": "Top",
+          "type": "integer"
+        }
+      },
+      "title": "MarginsSpec",
+      "type": "object"
+    },
+    "Mat": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "default": "#F2EFE8",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Color",
+          "type": "string"
+        },
+        "texture": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextureRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "Mat",
+      "type": "object"
+    },
+    "OrientSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "flip_h": {
+          "default": false,
+          "title": "Flip H",
+          "type": "boolean"
+        },
+        "rotate": {
+          "default": 0,
+          "enum": [
+            0,
+            90,
+            180,
+            270
+          ],
+          "title": "Rotate",
+          "type": "integer"
+        }
+      },
+      "title": "OrientSpec",
+      "type": "object"
+    },
+    "RectSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "h": {
+          "maximum": 20000,
+          "minimum": 1,
+          "title": "H",
+          "type": "integer"
+        },
+        "w": {
+          "maximum": 20000,
+          "minimum": 1,
+          "title": "W",
+          "type": "integer"
+        },
+        "x": {
+          "maximum": 20000,
+          "minimum": -20000,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "maximum": 20000,
+          "minimum": -20000,
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "title": "RectSpec",
+      "type": "object"
+    },
+    "Shadow": {
+      "additionalProperties": false,
+      "properties": {
+        "blur": {
+          "default": 0,
+          "maximum": 200,
+          "minimum": 0,
+          "title": "Blur",
+          "type": "number"
+        },
+        "color": {
+          "default": "#000000",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Color",
+          "type": "string"
+        },
+        "offset_x": {
+          "default": 0,
+          "maximum": 500,
+          "minimum": -500,
+          "title": "Offset X",
+          "type": "integer"
+        },
+        "offset_y": {
+          "default": 0,
+          "maximum": 500,
+          "minimum": -500,
+          "title": "Offset Y",
+          "type": "integer"
+        },
+        "opacity": {
+          "default": 0.35,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Opacity",
+          "type": "number"
+        },
+        "type": {
+          "enum": [
+            "inner",
+            "drop"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "Shadow",
+      "type": "object"
+    },
+    "Slot": {
+      "additionalProperties": false,
+      "properties": {
+        "bands": {
+          "items": {
+            "$ref": "#/$defs/Band"
+          },
+          "maxItems": 3,
+          "title": "Bands",
+          "type": "array"
+        },
+        "id": {
+          "pattern": "^[A-Za-z0-9_-]{1,64}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "photo_id": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Photo Id"
+        },
+        "quality_lock": {
+          "default": "no_upscale",
+          "enum": [
+            "native",
+            "no_upscale",
+            "free"
+          ],
+          "title": "Quality Lock",
+          "type": "string"
+        },
+        "rect": {
+          "$ref": "#/$defs/RectSpec"
+        },
+        "rotation": {
+          "default": 0,
+          "maximum": 180,
+          "minimum": -180,
+          "title": "Rotation",
+          "type": "number"
+        },
+        "shadow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Shadow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "source": {
+          "$ref": "#/$defs/SourceSpec"
+        }
+      },
+      "required": [
+        "id",
+        "rect",
+        "source"
+      ],
+      "title": "Slot",
+      "type": "object"
+    },
+    "SourceSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "crop": {
+          "$ref": "#/$defs/CropSpec"
+        },
+        "crop_ratio": {
+          "default": "original",
+          "pattern": "^(original|free|[1-9][0-9]{0,4}:[1-9][0-9]{0,4})$",
+          "title": "Crop Ratio",
+          "type": "string"
+        },
+        "orient": {
+          "$ref": "#/$defs/OrientSpec"
+        }
+      },
+      "required": [
+        "crop"
+      ],
+      "title": "SourceSpec",
+      "type": "object"
+    },
+    "TextureRef": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9-]{1,64}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "strength": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Strength",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "strength"
+      ],
+      "title": "TextureRef",
+      "type": "object"
+    }
+  },
+  "$id": "https://the-frame-v2/schemas/artwork-document.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "canvas": {
+      "$ref": "#/$defs/CanvasSpec"
+    },
+    "captions": {
+      "items": {
+        "$ref": "#/$defs/Caption"
+      },
+      "maxItems": 32,
+      "title": "Captions",
+      "type": "array"
+    },
+    "margins": {
+      "$ref": "#/$defs/MarginsSpec"
+    },
+    "mat": {
+      "$ref": "#/$defs/Mat"
+    },
+    "placement": {
+      "default": "fit_in_mat",
+      "enum": [
+        "fit_in_mat",
+        "fill",
+        "manual"
+      ],
+      "title": "Placement",
+      "type": "string"
+    },
+    "schema": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema",
+      "type": "integer"
+    },
+    "slots": {
+      "items": {
+        "$ref": "#/$defs/Slot"
+      },
+      "maxItems": 32,
+      "title": "Slots",
+      "type": "array"
+    }
+  },
+  "title": "Artwork document v1",
+  "type": "object"
+}

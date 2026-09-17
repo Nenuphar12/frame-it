@@ -13,7 +13,18 @@ from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from the_frame_v2 import __version__
-from the_frame_v2.api import auth, devices, events, library, localsend, photos, system, uploads
+from the_frame_v2.api import (
+    artworks,
+    auth,
+    devices,
+    events,
+    library,
+    localsend,
+    photos,
+    rendering,
+    system,
+    uploads,
+)
 from the_frame_v2.auth.middleware import GuardMiddleware
 from the_frame_v2.auth.ratelimit import RateLimiter
 from the_frame_v2.config import Settings
@@ -23,10 +34,11 @@ from the_frame_v2.db.session import Database
 from the_frame_v2.errors import install_error_handlers, problem_response
 from the_frame_v2.events import EventBroker
 from the_frame_v2.imaging import capabilities
+from the_frame_v2.jobs.gate import RenderGate
 from the_frame_v2.jobs.queue import JobQueue
 from the_frame_v2.localsend.runner import LocalSendRunner
 from the_frame_v2.services import devices as devices_service
-from the_frame_v2.services import ingest, photo_copies
+from the_frame_v2.services import ingest, photo_copies, render, templates
 from the_frame_v2.services import uploads as uploads_service
 from the_frame_v2.services.geocode import Geocoder
 from the_frame_v2.services.localsend import LocalSendHub
@@ -55,9 +67,13 @@ def build_context(settings: Settings) -> AppContext:
         geocoder=Geocoder(),
         auth_limiter=RateLimiter([(5, 60.0), (20, 3600.0)]),
         localsend=LocalSendHub(),
+        render_gate=RenderGate(settings.render_workers),
     )
     jobs.register("ingest", ingest.ingest_job(ctx), lane="ingest")
     jobs.register(photo_copies.BACKFILL_JOB, photo_copies.backfill_job(ctx), lane="ingest")
+    jobs.register(render.RENDER_JOB, render.render_job(ctx), lane="render", max_attempts=2)
+    with db.session() as s:
+        templates.seed_builtins(s)
     return ctx
 
 
@@ -124,7 +140,18 @@ def create_app(settings: Settings, *, start_workers: bool = True) -> FastAPI:
     install_error_handlers(app)
 
     api = APIRouter(prefix=API_PREFIX)
-    for module in (system, auth, devices, localsend, uploads, photos, library, events):
+    for module in (
+        system,
+        auth,
+        devices,
+        localsend,
+        uploads,
+        photos,
+        library,
+        artworks,
+        rendering,
+        events,
+    ):
         api.include_router(module.router)
     app.include_router(api)
 

@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "textures": [
+    {
+      "id": "paper-01",
+      "name": "Paper",
+      "size": 1024,
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "linen-01",
+      "name": "Linen",
+      "size": 1024,
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "canvas-01",
+      "name": "Canvas",
+      "size": 1024,
+      "license": "CC0-1.0"
+    }
+  ]
+}

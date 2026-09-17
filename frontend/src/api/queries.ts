@@ -6,7 +6,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-import { api, unwrap, type Photo } from "./client";
+import { api, unwrap, type Artwork, type Photo } from "./client";
 
 export const queryKeys = {
   me: ["me"] as const,
@@ -20,7 +20,16 @@ export const queryKeys = {
   localsendStatus: ["localsend", "status"] as const,
   localsendRequests: ["localsend", "requests"] as const,
   localsendDevices: ["localsend", "devices"] as const,
+  artworks: (filter: ArtworkFilter) => ["artworks", "list", filter] as const,
+  artwork: (id: string) => ["artworks", "detail", id] as const,
+  frameStyles: ["templates", "styles"] as const,
+  layouts: ["templates", "layouts"] as const,
 };
+
+export interface ArtworkFilter {
+  status?: "draft" | "ready";
+  favorite?: boolean;
+}
 
 export interface PhotoFilter {
   inbox_state?: "inbox" | "processed" | "dismissed";
@@ -199,4 +208,108 @@ export function useLocalSendDeviceActions() {
     onSuccess,
   });
   return { setStatus, forget };
+}
+
+export function useArtworks(filter: ArtworkFilter) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.artworks(filter),
+    queryFn: ({ pageParam }) =>
+      unwrap(
+        api.GET("/api/v1/artworks", {
+          params: { query: { ...filter, limit: PAGE_SIZE, cursor: pageParam ?? undefined } },
+        }),
+      ),
+    initialPageParam: null as string | null,
+    getNextPageParam: (last) => last.next_cursor,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useArtwork(id: string | null) {
+  return useQuery({
+    queryKey: queryKeys.artwork(id ?? ""),
+    queryFn: () =>
+      unwrap(api.GET("/api/v1/artworks/{artwork_id}", { params: { path: { artwork_id: id! } } })),
+    enabled: id !== null,
+  });
+}
+
+export function useFrameStyles() {
+  return useQuery({
+    queryKey: queryKeys.frameStyles,
+    queryFn: () => unwrap(api.GET("/api/v1/frame-styles")),
+    staleTime: 60_000,
+  });
+}
+
+export function useLayouts() {
+  return useQuery({
+    queryKey: queryKeys.layouts,
+    queryFn: () => unwrap(api.GET("/api/v1/layouts")),
+    staleTime: 60_000,
+  });
+}
+
+export interface CreateArtworksInput {
+  /** One artwork per group, photos in slot order. */
+  groups: string[][];
+  style_id: string;
+  layout_id: string;
+  placement: "fit_in_mat" | "fill" | null;
+}
+
+/** Creates artworks one request at a time (keeps render jobs and SQLite writes sequential). */
+export function useCreateArtworks() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ groups, ...options }: CreateArtworksInput) => {
+      const created: Artwork[] = [];
+      for (const photo_ids of groups) {
+        created.push(
+          await unwrap(api.POST("/api/v1/artworks", { body: { photo_ids, ...options } })),
+        );
+      }
+      return created;
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ["artworks"] });
+      void qc.invalidateQueries({ queryKey: ["photos"] });
+    },
+  });
+}
+
+export function useArtworkActions() {
+  const qc = useQueryClient();
+  const onSuccess = (artwork?: Artwork) => {
+    if (artwork) qc.setQueryData(queryKeys.artwork(artwork.id), artwork);
+    void qc.invalidateQueries({ queryKey: ["artworks", "list"] });
+  };
+  const path = (id: string) => ({ params: { path: { artwork_id: id } } });
+  const update = useMutation({
+    mutationFn: ({
+      id,
+      ...body
+    }: {
+      id: string;
+      favorite?: boolean;
+      title?: string;
+      status?: "draft";
+    }) => unwrap(api.PATCH("/api/v1/artworks/{artwork_id}", { ...path(id), body })),
+    onSuccess,
+  });
+  const validate = useMutation({
+    mutationFn: (id: string) =>
+      unwrap(api.POST("/api/v1/artworks/{artwork_id}/validate", path(id))),
+    onSuccess,
+  });
+  const duplicate = useMutation({
+    mutationFn: (id: string) =>
+      unwrap(api.POST("/api/v1/artworks/{artwork_id}/duplicate", path(id))),
+    onSuccess,
+  });
+  const trash = useMutation({
+    mutationFn: (id: string) => unwrap(api.DELETE("/api/v1/artworks/{artwork_id}", path(id))),
+    onSuccess: () => onSuccess(),
+  });
+  return { update, validate, duplicate, trash };
 }

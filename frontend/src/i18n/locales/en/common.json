@@ -5,7 +5,8 @@
     "retry": "Retry",
     "done": "Done",
     "expand": "Expand",
-    "collapse": "Collapse"
+    "collapse": "Collapse",
+    "cancel": "Cancel"
   },
   "nav": {
     "label": "Main navigation",
@@ -35,7 +36,8 @@
       "general": "General",
       "navigation": "Navigation",
       "library": "Library",
-      "inbox": "Inbox"
+      "inbox": "Inbox",
+      "artworks": "Artworks"
     },
     "toggleTheme": "Toggle light/dark theme",
     "uploadFiles": "Add photos",
@@ -76,13 +78,13 @@
     "selected_one": "{{count}} selected",
     "selected_other": "{{count}} selected",
     "createArtworks": "Create artworks",
-    "createArtworksSoon": "Artwork creation arrives with the editor (Phases 4–5)",
     "dismiss": "Dismiss",
     "toggleDetails": "Show details",
     "selectAll": "Select all",
     "clearSelection": "Clear selection",
     "emptyTitle": "Inbox zero",
-    "emptyDescription": "New photos sent from your phone or dropped here will wait in the inbox until you turn them into artworks."
+    "emptyDescription": "New photos sent from your phone or dropped here will wait in the inbox until you turn them into artworks.",
+    "createArtworksHint": "Turn the selected photos into artworks with a frame style and a layout"
   },
   "photos": {
     "count_one": "{{count}} photo",
@@ -91,6 +93,14 @@
     "noResults": "No photo matches your search",
     "emptyTitle": "No photos yet",
     "emptyDescription": "Drop photos anywhere in this window, or pair your phone to send originals over Wi-Fi.",
+    "selected_one": "{{count}} selected",
+    "selected_other": "{{count}} selected",
+    "selectAll": "Select all photos",
+    "clearSelection": "Clear photo selection",
+    "createArtworks": "Create artworks",
+    "createArtworksHint": "Turn the selected photos into artworks with a frame style and a layout",
+    "createArtwork": "Create artwork",
+    "toggleDetails": "Show photo details",
     "details": "Photo details",
     "tags": "Tags",
     "coversTv": "Covers the TV (≥ 3840×2160)",
@@ -231,7 +241,19 @@
     "ingest_failed": "The photo could not be processed.",
     "upload_failed": "Upload failed.",
     "csrf_rejected": "Request blocked for security reasons.",
-    "host_not_allowed": "This address is not allowed by the server configuration."
+    "host_not_allowed": "This address is not allowed by the server configuration.",
+    "unknown_photo": "A photo no longer exists.",
+    "unknown_style": "Unknown frame style.",
+    "unknown_layout": "Unknown layout.",
+    "too_many_photos": "Too many photos for this layout.",
+    "no_layout": "No layout has that many slots.",
+    "invalid_document": "The artwork is invalid.",
+    "version_conflict": "The artwork was changed elsewhere. Reload it.",
+    "artwork_incomplete": "Fill every slot before marking the artwork ready.",
+    "photo_missing": "A photo used by this artwork is missing.",
+    "render_failed": "The artwork could not be rendered.",
+    "precondition_required": "Missing version information.",
+    "not_found": "Not found."
   },
   "localsend": {
     "title": "LocalSend",
@@ -261,5 +283,63 @@
     "requestHint": "Allowing remembers this device: its next transfers are accepted automatically (you can block it in Devices). Only allow devices you recognise.",
     "moreRequests_one": "{{count}} more request waiting",
     "moreRequests_other": "{{count}} more requests waiting"
+  },
+  "artworks": {
+    "count_one": "{{count}} artwork",
+    "count_other": "{{count}} artworks",
+    "untitled": "Untitled",
+    "emptyTitle": "No artworks yet",
+    "emptyDescription": "Select photos in the Inbox and choose “Create artworks”.",
+    "filters": {
+      "all": "All",
+      "draft": "Drafts",
+      "ready": "Ready"
+    },
+    "statuses": {
+      "draft": "Draft",
+      "ready": "Ready"
+    },
+    "tiers": {
+      "native": "Native",
+      "downscaled": "Downscaled",
+      "upscaled": "Upscaled"
+    },
+    "tierHints": {
+      "native": "Every photo pixel is exactly one TV pixel",
+      "downscaled": "Photos are reduced to fit: full sharpness on the TV",
+      "upscaled": "At least one photo is enlarged: it may look soft on the TV"
+    },
+    "incompleteHint": "Some slots have no photo",
+    "favorite": "Favorite",
+    "toggleFavorite": "Toggle favorite",
+    "markReady": "Mark ready",
+    "backToDraft": "Back to draft",
+    "toggleReady": "Mark ready / back to draft",
+    "duplicate": "Duplicate",
+    "trash": "Delete",
+    "confirmTrash": "Click again to delete",
+    "next": "Next artwork",
+    "previous": "Previous artwork",
+    "viewerHint": "Server render at TV resolution. Arrow keys switch artworks.",
+    "scale": "scale {{min}}–{{max}}%",
+    "create": {
+      "title": "Create artworks",
+      "description_one": "{{count}} photo selected",
+      "description_other": "{{count}} photos selected",
+      "style": "Frame style",
+      "layout": "Layout",
+      "layoutOption_one": "{{name}} ({{count}} photo)",
+      "layoutOption_other": "{{name}} ({{count}} photos)",
+      "placement": "Placement",
+      "placements": {
+        "fit_in_mat": "Fit inside the mat",
+        "fill": "Fill the screen"
+      },
+      "summary_one": "Creates {{count}} artwork (draft).",
+      "summary_other": "Creates {{count}} artworks (drafts), photos in selection order.",
+      "emptySlots": "The last one will have empty slots.",
+      "submit_one": "Create {{count}} artwork",
+      "submit_other": "Create {{count}} artworks"
+    }
   }
 }

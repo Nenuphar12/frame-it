@@ -40,17 +40,42 @@ exposed through OpenAPI → TS types. **Array order = z-order (first is back-mos
 }
 ```
 
+Implementation: `backend/src/the_frame_v2/domain/document.py`; JSON Schemas in `docs/schemas/` (`make gen-api`).
+
 **Validation rules** (server rejects with 422, client never produces):
-- All rect/crop/margin/band values are integers; `rect.w, rect.h ≥ 1`.
-- `crop` lies within oriented source bounds (needs photo dims → validated in service layer).
-- Aspect consistency: `|rect.w/crop.w − rect.h/crop.h| ≤ 1/min(crop.w, crop.h)` (integer rounding tolerance).
+- All rect/crop/margin/band values are integers; `rect.w, rect.h ≥ 1`. Canvas coordinates within ±20 000,
+  crop values ≤ 100 000; margins leave at least 1 px (`left + right < 3840`, `top + bottom < 2160`).
+- `crop` lies within oriented source bounds (needs photo dims → validated in service layer, like photo existence,
+  fonts/weights and textures).
+- Aspect consistency: `|rect.w·crop.h − rect.h·crop.w| ≤ (rect.w + rect.h + crop.w + crop.h) / 2` — each side of
+  either rectangle may be off by 0.5 from rounding. (The Phase 1 formula `≤ 1/min(crop)` rejected valid upscaled
+  slots whose crop is rounded from the slot ratio.)
 - `quality_lock = native` ⇒ `rect.w = crop.w`, `rect.h = crop.h`, `rotation = 0`.
 - `quality_lock = no_upscale` ⇒ `rect.w ≤ crop.w` and `rect.h ≤ crop.h`.
-- Slot/caption ids unique; `font` and `texture.id` must exist in bundled assets.
-- Slots may extend beyond the canvas (clipped at render).
+- Slot/caption ids unique (`[A-Za-z0-9_-]{1,64}`); `font` and `texture.id` must exist in bundled assets, `weight`
+  must be one of the font's bundled weights (`GET /fonts`).
+- `placement` other than `manual` ⇒ exactly one slot. Colours are `#RRGGBB`. Captions are single-line.
+- `rotation` is stored rounded to 0.1°. Slots may extend beyond the canvas (clipped at render).
+- Errors: 422 `invalid_document` with `extra.errors = [{loc, msg, type}]` (e.g. `loc = ["slots", 0, "source",
+  "crop"]`, `type = "crop_out_of_bounds"`); a malformed request body gives 422 `validation_error` with the same
+  shape (`loc` prefixed by `body`).
 
 **Evolution**: `schema` bumps require a pure migration function `migrate_vN_to_vN+1` in both `domain/document.py`
 and archive import; documents are migrated on read and persisted on next save.
 
 **Frame style document**: `{ mat, margins, slot_defaults: { bands, shadow, quality_lock }, caption_defaults: { font, weight, size, color, letter_spacing } }`.
-**Layout document**: `{ slots: [{ id, rect, rotation, quality_lock, fill_mode: "fill"|"fit" }], captions: [{ …position/placeholder… }] }`.
+**Layout document**: `{ slots: [{ id, rect, rotation, quality_lock, fill_mode: "fill"|"fit" }], captions: [{ id, placeholder, x, y, anchor, rotation }] }`.
+Layout rects are designed for the full canvas.
+
+**Building an artwork** (`domain/templates.py::build_document`, templates copied on apply):
+- One-slot layouts use `placement` (default `fit_in_mat`): the whole photo inside the style's margins, or `fill`.
+  The style's `slot_defaults.quality_lock` applies.
+- Multi-slot layouts are `manual`: layout rects are mapped (edges scaled) into the style's available area
+  `canvas − margins`; `fill` slots crop the photo to the slot ratio (centred, `crop_ratio = "w:h"`), `fit` slots
+  shrink to the photo ratio inside the rect. The layout slot's lock applies.
+- A lock the photo cannot honour becomes `free` (e.g. `no_upscale` for a small photo filling a slot): the
+  artwork is created and shows its upscaled tier; the editor offers alternatives (§7.6).
+- Fewer photos than slots ⇒ empty slots (artwork incomplete). Bands and shadow come from the style.
+- Built-in presets: `assets/presets/{frame_styles,layouts}.json` (stable ids `builtin-style-*`,
+  `builtin-layout-*`), seeded at startup. Default for new artworks: Gallery recessed + Single
+  (setting `artwork_defaults`, UI in Phase 5).

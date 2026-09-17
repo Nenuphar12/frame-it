@@ -27,5 +27,12 @@ class Storage:
     def thumb_path(self, sha256: str, size: int) -> Path:
         return self.cache / "thumbs" / sha256 / f"{size}.webp"
 
+    def render_dir(self, artwork_id: str) -> Path:
+        return self.cache / "renders" / artwork_id
+
+    def render_path(self, artwork_id: str, render_hash: str, suffix: str) -> Path:
+        """`suffix`: `png` (master), `jpg`, `thumb-256.webp`, `thumb-768.webp`."""
+        return self.render_dir(artwork_id) / f"{render_hash}.{suffix}"
+
     def upload_temp_path(self, session_id: str) -> Path:
         return self.uploads / f"{session_id}.part"

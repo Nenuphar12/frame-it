@@ -1,4 +1,4 @@
-import { Download, X } from "lucide-react";
+import { Download, Wand2, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -25,7 +25,14 @@ function place(photo: Photo): string | null {
   return parts.length ? [...new Set(parts)].join(", ") : null;
 }
 
-export function PhotoDrawer({ photoId, onClose }: { photoId: string; onClose: () => void }) {
+interface PhotoDrawerProps {
+  photoId: string;
+  onClose: () => void;
+  /** Shows a "Create artwork" action for this photo. */
+  onCreateArtwork?: (photoId: string) => void;
+}
+
+export function PhotoDrawer({ photoId, onClose, onCreateArtwork }: PhotoDrawerProps) {
   const { t } = useTranslation();
   const { data: photo, isLoading } = usePhoto(photoId);
   const update = useUpdatePhoto();
@@ -105,11 +112,18 @@ export function PhotoDrawer({ photoId, onClose }: { photoId: string; onClose: ()
               {t(`photos.inboxState.${photo.inbox_state}`)}
             </Row>
           </dl>
-          <Button asChild variant="secondary" size="sm">
-            <a href={photoOriginalUrl(photo.id)} download={photo.original_filename}>
-              <Download size={14} /> {t("photos.downloadOriginal")}
-            </a>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {onCreateArtwork && (
+              <Button variant="primary" size="sm" onClick={() => onCreateArtwork(photo.id)}>
+                <Wand2 size={14} /> {t("photos.createArtwork")}
+              </Button>
+            )}
+            <Button asChild variant="secondary" size="sm">
+              <a href={photoOriginalUrl(photo.id)} download={photo.original_filename}>
+                <Download size={14} /> {t("photos.downloadOriginal")}
+              </a>
+            </Button>
+          </div>
         </div>
       )}
     </aside>

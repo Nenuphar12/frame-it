@@ -12,6 +12,11 @@ export type Collection = Schemas["CollectionOut"];
 export type UploadOut = Schemas["UploadOut"];
 export type LocalSendDevice = Schemas["LocalSendDeviceOut"];
 export type LocalSendRequest = Schemas["LocalSendRequestOut"];
+export type Artwork = Schemas["ArtworkOut"];
+export type ArtworkSummary = Schemas["ArtworkSummaryOut"];
+export type ArtworkDocument = Schemas["ArtworkDocument"];
+export type FrameStyle = Schemas["FrameStyleOut"];
+export type Layout = Schemas["LayoutOut"];
 
 export const API_BASE = "/api/v1";
 /** Required on every mutating request (CSRF guard, see docs/security.md). */
@@ -74,3 +79,15 @@ export const photoThumbUrl = (id: string, size: 256 | 768 = 768) =>
   `${API_BASE}/photos/${id}/thumb/${size}`;
 export const photoProxyUrl = (id: string) => `${API_BASE}/photos/${id}/proxy`;
 export const photoOriginalUrl = (id: string) => `${API_BASE}/photos/${id}/original`;
+
+/** Render URLs carry the render hash: cached forever once rendered, revalidated while pending. */
+const renderVersion = (a: Pick<ArtworkSummary, "render_hash" | "document_version">) =>
+  a.render_hash ?? `pending-${a.document_version}`;
+export const artworkThumbUrl = (
+  a: Pick<ArtworkSummary, "id" | "render_hash" | "document_version">,
+  size: 256 | 768 = 768,
+) => `${API_BASE}/artworks/${a.id}/thumb/${size}?v=${renderVersion(a)}`;
+export const artworkRenderUrl = (
+  a: Pick<ArtworkSummary, "id" | "render_hash" | "document_version">,
+  format: "png" | "jpg",
+) => `${API_BASE}/artworks/${a.id}/render.${format}?v=${renderVersion(a)}`;

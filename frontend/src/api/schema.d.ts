@@ -4,1876 +4,3366 @@
  */
 
 export interface paths {
-  "/api/v1/auth/logout": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/artworks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Artworks */
+        get: operations["list_artworks_api_v1_artworks_get"];
+        put?: never;
+        /** Create Artwork */
+        post: operations["create_artwork_api_v1_artworks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Logout
-     * @description Forget the device cookie in this browser (the device stays registered until revoked).
-     */
-    post: operations["logout_api_v1_auth_logout_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/auth/pair": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/artworks/{artwork_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Artwork */
+        get: operations["get_artwork_api_v1_artworks__artwork_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Trash Artwork
+         * @description Move to trash (restore/purge: Phase 8).
+         */
+        delete: operations["trash_artwork_api_v1_artworks__artwork_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Artwork */
+        patch: operations["update_artwork_api_v1_artworks__artwork_id__patch"];
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Redeem Pairing Code
-     * @description Register this browser with the role attached to a pairing code (QR flow).
-     */
-    post: operations["redeem_pairing_code_api_v1_auth_pair_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/auth/setup": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/artworks/{artwork_id}/document": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Put Document
+         * @description Replace the document. `If-Match: <document_version>` is required (409 when outdated).
+         */
+        put: operations["put_document_api_v1_artworks__artwork_id__document_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Redeem Setup Code
-     * @description Register this browser as an admin device using the setup code printed at startup.
-     */
-    post: operations["redeem_setup_code_api_v1_auth_setup_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/collections": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/artworks/{artwork_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Duplicate Artwork */
+        post: operations["duplicate_artwork_api_v1_artworks__artwork_id__duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** List Collections */
-    get: operations["list_collections_api_v1_collections_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/devices": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/artworks/{artwork_id}/render.jpg": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Render Jpg */
+        get: operations["render_jpg_api_v1_artworks__artwork_id__render_jpg_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** List Devices */
-    get: operations["list_devices_api_v1_devices_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/devices/pairing-codes": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/artworks/{artwork_id}/render.png": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Render Png
+         * @description Lossless 3840×2160 master (rendered on demand when missing).
+         */
+        get: operations["render_png_api_v1_artworks__artwork_id__render_png_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /** Create Pairing Code */
-    post: operations["create_pairing_code_api_v1_devices_pairing_codes_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/devices/{device_id}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/artworks/{artwork_id}/snapshots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Snapshots */
+        get: operations["list_snapshots_api_v1_artworks__artwork_id__snapshots_get"];
+        put?: never;
+        /** Create Snapshot */
+        post: operations["create_snapshot_api_v1_artworks__artwork_id__snapshots_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post?: never;
-    /** Revoke Device */
-    delete: operations["revoke_device_api_v1_devices__device_id__delete"];
-    options?: never;
-    head?: never;
-    /** Update Device */
-    patch: operations["update_device_api_v1_devices__device_id__patch"];
-    trace?: never;
-  };
-  "/api/v1/events": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/artworks/{artwork_id}/snapshots/{snapshot_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Snapshot */
+        post: operations["restore_snapshot_api_v1_artworks__artwork_id__snapshots__snapshot_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Events
-     * @description Server-sent events: `photo.ingested`, `photo.ingest_failed`, `job.progress`, `job.failed`.
-     */
-    get: operations["events_api_v1_events_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/inbox/dismiss": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/artworks/{artwork_id}/thumb/{size}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Render Thumb */
+        get: operations["render_thumb_api_v1_artworks__artwork_id__thumb__size__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /** Dismiss From Inbox */
-    post: operations["dismiss_from_inbox_api_v1_inbox_dismiss_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/inbox/restore": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/artworks/{artwork_id}/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Validate Artwork
+         * @description Mark as ready (displayable). 422 `artwork_incomplete` / `invalid_document` otherwise.
+         */
+        post: operations["validate_artwork_api_v1_artworks__artwork_id__validate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /** Restore To Inbox */
-    post: operations["restore_to_inbox_api_v1_inbox_restore_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/localsend/devices": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Logout
+         * @description Forget the device cookie in this browser (the device stays registered until revoked).
+         */
+        post: operations["logout_api_v1_auth_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** List Devices */
-    get: operations["list_devices_api_v1_localsend_devices_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/localsend/devices/{device_id}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/auth/pair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Redeem Pairing Code
+         * @description Register this browser with the role attached to a pairing code (QR flow).
+         */
+        post: operations["redeem_pairing_code_api_v1_auth_pair_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    post?: never;
-    /** Forget Device */
-    delete: operations["forget_device_api_v1_localsend_devices__device_id__delete"];
-    options?: never;
-    head?: never;
-    /** Update Device */
-    patch: operations["update_device_api_v1_localsend_devices__device_id__patch"];
-    trace?: never;
-  };
-  "/api/v1/localsend/requests": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/auth/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Redeem Setup Code
+         * @description Register this browser as an admin device using the setup code printed at startup.
+         */
+        post: operations["redeem_setup_code_api_v1_auth_setup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Pending Requests */
-    get: operations["pending_requests_api_v1_localsend_requests_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/localsend/requests/{request_id}/decision": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Collections */
+        get: operations["list_collections_api_v1_collections_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /** Decide */
-    post: operations["decide_api_v1_localsend_requests__request_id__decision_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/localsend/status": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Devices */
+        get: operations["list_devices_api_v1_devices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Status */
-    get: operations["status_api_v1_localsend_status_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/photos": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/devices/pairing-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Pairing Code */
+        post: operations["create_pairing_code_api_v1_devices_pairing_codes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** List Photos */
-    get: operations["list_photos_api_v1_photos_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/photos/stats": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/devices/{device_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke Device */
+        delete: operations["revoke_device_api_v1_devices__device_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Device */
+        patch: operations["update_device_api_v1_devices__device_id__patch"];
+        trace?: never;
     };
-    /** Library Stats */
-    get: operations["library_stats_api_v1_photos_stats_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/photos/{photo_id}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Events
+         * @description Server-sent events: `photo.ingested`, `photo.ingest_failed`, `job.progress`, `job.failed`.
+         */
+        get: operations["events_api_v1_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Get Photo */
-    get: operations["get_photo_api_v1_photos__photo_id__get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    /** Update Photo */
-    patch: operations["update_photo_api_v1_photos__photo_id__patch"];
-    trace?: never;
-  };
-  "/api/v1/photos/{photo_id}/original": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/fonts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Fonts */
+        get: operations["list_fonts_api_v1_fonts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Photo Original */
-    get: operations["photo_original_api_v1_photos__photo_id__original_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/photos/{photo_id}/proxy": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/fonts/{font_id}/{weight}.ttf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Font File
+         * @description Font file for the editor preview (`@font-face`), identical to the renderer's.
+         */
+        get: operations["font_file_api_v1_fonts__font_id___weight__ttf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Photo Proxy */
-    get: operations["photo_proxy_api_v1_photos__photo_id__proxy_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/photos/{photo_id}/thumb/{size}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/frame-styles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Frame Styles */
+        get: operations["list_frame_styles_api_v1_frame_styles_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Photo Thumb */
-    get: operations["photo_thumb_api_v1_photos__photo_id__thumb__size__get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/system/info": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/inbox/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dismiss From Inbox */
+        post: operations["dismiss_from_inbox_api_v1_inbox_dismiss_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** System Info */
-    get: operations["system_info_api_v1_system_info_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/system/me": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/inbox/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore To Inbox */
+        post: operations["restore_to_inbox_api_v1_inbox_restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Me */
-    get: operations["me_api_v1_system_me_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/tags": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/layouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Layouts */
+        get: operations["list_layouts_api_v1_layouts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** List Tags */
-    get: operations["list_tags_api_v1_tags_get"];
-    put?: never;
-    /**
-     * Create Tag
-     * @description Create a tag, or return the existing one with the same name (case-insensitive).
-     */
-    post: operations["create_tag_api_v1_tags_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/uploads": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/localsend/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Devices */
+        get: operations["list_devices_api_v1_localsend_devices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Create Upload
-     * @description Open a resumable upload session, or resume the existing one for the same file.
-     */
-    post: operations["create_upload_api_v1_uploads_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/uploads/check": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/localsend/devices/{device_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Forget Device */
+        delete: operations["forget_device_api_v1_localsend_devices__device_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Device */
+        patch: operations["update_device_api_v1_localsend_devices__device_id__patch"];
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Check Hashes
-     * @description Tell which files (by SHA-256) are already known, so clients can skip them.
-     */
-    post: operations["check_hashes_api_v1_uploads_check_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/v1/uploads/{upload_id}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/localsend/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pending Requests */
+        get: operations["pending_requests_api_v1_localsend_requests_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Get Upload */
-    get: operations["get_upload_api_v1_uploads__upload_id__get"];
-    put?: never;
-    post?: never;
-    /** Cancel Upload */
-    delete: operations["cancel_upload_api_v1_uploads__upload_id__delete"];
-    options?: never;
-    /** Head Upload */
-    head: operations["head_upload_api_v1_uploads__upload_id__head"];
-    /**
-     * Append Chunk
-     * @description Append a chunk at `Upload-Offset`. Completing the file verifies it and starts ingestion.
-     */
-    patch: operations["append_chunk_api_v1_uploads__upload_id__patch"];
-    trace?: never;
-  };
+    "/api/v1/localsend/requests/{request_id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decide */
+        post: operations["decide_api_v1_localsend_requests__request_id__decision_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/localsend/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_v1_localsend_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Photos */
+        get: operations["list_photos_api_v1_photos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/photos/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Library Stats */
+        get: operations["library_stats_api_v1_photos_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/photos/{photo_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Photo */
+        get: operations["get_photo_api_v1_photos__photo_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Photo */
+        patch: operations["update_photo_api_v1_photos__photo_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/photos/{photo_id}/original": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Photo Original */
+        get: operations["photo_original_api_v1_photos__photo_id__original_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/photos/{photo_id}/proxy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Photo Proxy */
+        get: operations["photo_proxy_api_v1_photos__photo_id__proxy_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/photos/{photo_id}/thumb/{size}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Photo Thumb */
+        get: operations["photo_thumb_api_v1_photos__photo_id__thumb__size__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/render/region": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Render Region
+         * @description Render a region (≤ 1024², TV px) of a possibly unsaved document (loupe, §11.4).
+         */
+        post: operations["render_region_api_v1_render_region_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** System Info */
+        get: operations["system_info_api_v1_system_info_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Me */
+        get: operations["me_api_v1_system_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Tags */
+        get: operations["list_tags_api_v1_tags_get"];
+        put?: never;
+        /**
+         * Create Tag
+         * @description Create a tag, or return the existing one with the same name (case-insensitive).
+         */
+        post: operations["create_tag_api_v1_tags_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/textures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Textures */
+        get: operations["list_textures_api_v1_textures_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/textures/{texture_id}.png": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Texture File
+         * @description Grayscale tile for the editor preview (same formula as the renderer, §8.2).
+         */
+        get: operations["texture_file_api_v1_textures__texture_id__png_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Upload
+         * @description Open a resumable upload session, or resume the existing one for the same file.
+         */
+        post: operations["create_upload_api_v1_uploads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/uploads/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Hashes
+         * @description Tell which files (by SHA-256) are already known, so clients can skip them.
+         */
+        post: operations["check_hashes_api_v1_uploads_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/uploads/{upload_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Upload */
+        get: operations["get_upload_api_v1_uploads__upload_id__get"];
+        put?: never;
+        post?: never;
+        /** Cancel Upload */
+        delete: operations["cancel_upload_api_v1_uploads__upload_id__delete"];
+        options?: never;
+        /** Head Upload */
+        head: operations["head_upload_api_v1_uploads__upload_id__head"];
+        /**
+         * Append Chunk
+         * @description Append a chunk at `Upload-Offset`. Completing the file verifies it and starts ingestion.
+         */
+        patch: operations["append_chunk_api_v1_uploads__upload_id__patch"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    /** Capabilities */
-    Capabilities: {
-      /** Avif */
-      avif: boolean;
-      /** Color Management */
-      color_management: boolean;
-      /** Libvips Version */
-      libvips_version: string;
-      /** Ultra Hdr */
-      ultra_hdr: boolean;
+    schemas: {
+        /** ArtworkCreateIn */
+        ArtworkCreateIn: {
+            /** Layout Id */
+            layout_id?: string | null;
+            /** Photo Ids */
+            photo_ids: string[];
+            /** Placement */
+            placement?: ("fit_in_mat" | "fill" | "manual") | null;
+            /** Style Id */
+            style_id?: string | null;
+            /** Title */
+            title?: string | null;
+        };
+        /** ArtworkDocument */
+        ArtworkDocument: {
+            canvas?: components["schemas"]["CanvasSpec"];
+            /** Captions */
+            captions?: components["schemas"]["Caption"][];
+            margins?: components["schemas"]["MarginsSpec"];
+            mat?: components["schemas"]["Mat"];
+            /**
+             * Placement
+             * @default fit_in_mat
+             * @enum {string}
+             */
+            placement: "fit_in_mat" | "fill" | "manual";
+            /**
+             * Schema
+             * @default 1
+             * @constant
+             */
+            schema: 1;
+            /** Slots */
+            slots?: components["schemas"]["Slot"][];
+        };
+        /** ArtworkOut */
+        ArtworkOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            document: components["schemas"]["ArtworkDocument"];
+            /** Document Version */
+            document_version: number;
+            /** Favorite */
+            favorite: boolean;
+            /** Id */
+            id: string;
+            /** Is Incomplete */
+            is_incomplete: boolean;
+            /** Max Scale */
+            max_scale: number | null;
+            /** Min Scale */
+            min_scale: number | null;
+            /** Origin Layout Id */
+            origin_layout_id: string | null;
+            /** Origin Style Id */
+            origin_style_id: string | null;
+            /** Photo Count */
+            photo_count: number;
+            /** Render Hash */
+            render_hash: string | null;
+            /** Rendered At */
+            rendered_at: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "ready";
+            /** Tags */
+            tags?: components["schemas"]["TagOut"][];
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Worst Tier */
+            worst_tier: ("native" | "downscaled" | "upscaled") | null;
+        };
+        /** ArtworkPageOut */
+        ArtworkPageOut: {
+            /** Items */
+            items: components["schemas"]["ArtworkSummaryOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
+        /** ArtworkSummaryOut */
+        ArtworkSummaryOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Document Version */
+            document_version: number;
+            /** Favorite */
+            favorite: boolean;
+            /** Id */
+            id: string;
+            /** Is Incomplete */
+            is_incomplete: boolean;
+            /** Max Scale */
+            max_scale: number | null;
+            /** Min Scale */
+            min_scale: number | null;
+            /** Origin Layout Id */
+            origin_layout_id: string | null;
+            /** Origin Style Id */
+            origin_style_id: string | null;
+            /** Photo Count */
+            photo_count: number;
+            /** Render Hash */
+            render_hash: string | null;
+            /** Rendered At */
+            rendered_at: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "ready";
+            /** Tags */
+            tags?: components["schemas"]["TagOut"][];
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Worst Tier */
+            worst_tier: ("native" | "downscaled" | "upscaled") | null;
+        };
+        /** ArtworkUpdateIn */
+        ArtworkUpdateIn: {
+            /** Favorite */
+            favorite?: boolean | null;
+            /** Status */
+            status?: ("draft" | "ready") | null;
+            /** Tag Ids */
+            tag_ids?: string[] | null;
+            /** Title */
+            title?: string | null;
+        };
+        /** Band */
+        Band: {
+            /** Color */
+            color: string;
+            /** Width */
+            width: number;
+        };
+        /** CanvasSpec */
+        CanvasSpec: {
+            /**
+             * Height
+             * @default 2160
+             * @constant
+             */
+            height: 2160;
+            /**
+             * Width
+             * @default 3840
+             * @constant
+             */
+            width: 3840;
+        };
+        /** Capabilities */
+        Capabilities: {
+            /** Avif */
+            avif: boolean;
+            /** Color Management */
+            color_management: boolean;
+            /** Libvips Version */
+            libvips_version: string;
+            /** Ultra Hdr */
+            ultra_hdr: boolean;
+        };
+        /** Caption */
+        Caption: {
+            /**
+             * Anchor
+             * @default start
+             * @enum {string}
+             */
+            anchor: "start" | "middle" | "end";
+            /**
+             * Color
+             * @default #3A3A3A
+             */
+            color: string;
+            /** Font */
+            font: string;
+            /** Id */
+            id: string;
+            /**
+             * Letter Spacing
+             * @default 0
+             */
+            letter_spacing: number;
+            /**
+             * Rotation
+             * @default 0
+             */
+            rotation: number;
+            /** Size */
+            size: number;
+            /** Text */
+            text: string;
+            /**
+             * Weight
+             * @default 400
+             */
+            weight: number;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
+        /** CaptionDefaults */
+        CaptionDefaults: {
+            /**
+             * Color
+             * @default #3A3A3A
+             */
+            color: string;
+            /**
+             * Font
+             * @default cormorant-garamond
+             */
+            font: string;
+            /**
+             * Letter Spacing
+             * @default 0.02
+             */
+            letter_spacing: number;
+            /**
+             * Size
+             * @default 48
+             */
+            size: number;
+            /**
+             * Weight
+             * @default 500
+             */
+            weight: number;
+        };
+        /** CodeRedeemIn */
+        CodeRedeemIn: {
+            /** Code */
+            code: string;
+            /**
+             * Device Name
+             * @default
+             */
+            device_name: string;
+        };
+        /** CollectionOut */
+        CollectionOut: {
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "manual" | "smart";
+            /** Name */
+            name: string;
+            /** Parent Id */
+            parent_id: string | null;
+            /** Position */
+            position: number;
+        };
+        /** CountOut */
+        CountOut: {
+            /** Count */
+            count: number;
+        };
+        /** CropSpec */
+        CropSpec: {
+            /** H */
+            h: number;
+            /** W */
+            w: number;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
+        /** DeviceOut */
+        DeviceOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: string;
+            /** Last Seen At */
+            last_seen_at: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "admin" | "uploader";
+            /** User Agent */
+            user_agent: string;
+        };
+        /** DeviceUpdateIn */
+        DeviceUpdateIn: {
+            /** Name */
+            name?: string | null;
+            /** Role */
+            role?: ("admin" | "uploader") | null;
+        };
+        /** FontOut */
+        FontOut: {
+            /** Category */
+            category: string;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Weights */
+            weights: number[];
+        };
+        /** FrameStyleDocument */
+        FrameStyleDocument: {
+            caption_defaults?: components["schemas"]["CaptionDefaults"];
+            margins?: components["schemas"]["MarginsSpec"];
+            mat?: components["schemas"]["Mat"];
+            slot_defaults?: components["schemas"]["SlotDefaults"];
+        };
+        /** FrameStyleOut */
+        FrameStyleOut: {
+            /** Builtin */
+            builtin: boolean;
+            document: components["schemas"]["FrameStyleDocument"];
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Revision */
+            revision: number;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HashCheckIn */
+        HashCheckIn: {
+            /** Sha256 */
+            sha256: string[];
+        };
+        /** HashCheckOut */
+        HashCheckOut: {
+            /** Results */
+            results: components["schemas"]["HashStatusOut"][];
+        };
+        /** HashStatusOut */
+        HashStatusOut: {
+            /** Offset */
+            offset?: number | null;
+            /** Photo Id */
+            photo_id?: string | null;
+            /** Sha256 */
+            sha256: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "new" | "exists" | "in_progress";
+            /** Upload Id */
+            upload_id?: string | null;
+        };
+        /** LayoutCaption */
+        LayoutCaption: {
+            /**
+             * Anchor
+             * @default middle
+             * @enum {string}
+             */
+            anchor: "start" | "middle" | "end";
+            /** Id */
+            id: string;
+            /**
+             * Placeholder
+             * @default
+             */
+            placeholder: string;
+            /**
+             * Rotation
+             * @default 0
+             */
+            rotation: number;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
+        /** LayoutDocument */
+        LayoutDocument: {
+            /** Captions */
+            captions?: components["schemas"]["LayoutCaption"][];
+            /** Slots */
+            slots: components["schemas"]["LayoutSlot"][];
+        };
+        /** LayoutOut */
+        LayoutOut: {
+            /** Builtin */
+            builtin: boolean;
+            document: components["schemas"]["LayoutDocument"];
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Revision */
+            revision: number;
+            /** Slot Count */
+            slot_count: number;
+        };
+        /** LayoutSlot */
+        LayoutSlot: {
+            /**
+             * Fill Mode
+             * @default fill
+             * @enum {string}
+             */
+            fill_mode: "fill" | "fit";
+            /** Id */
+            id: string;
+            /**
+             * Quality Lock
+             * @default no_upscale
+             * @enum {string}
+             */
+            quality_lock: "native" | "no_upscale" | "free";
+            rect: components["schemas"]["RectSpec"];
+            /**
+             * Rotation
+             * @default 0
+             */
+            rotation: number;
+        };
+        /** LibraryStats */
+        LibraryStats: {
+            /** Inbox */
+            inbox: number;
+            /** Photos */
+            photos: number;
+        };
+        /** LocalSendDecisionIn */
+        LocalSendDecisionIn: {
+            /** Approve */
+            approve: boolean;
+        };
+        /** LocalSendDeviceOut */
+        LocalSendDeviceOut: {
+            /** Alias */
+            alias: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Device Model */
+            device_model: string | null;
+            /** Device Type */
+            device_type: string | null;
+            /** Id */
+            id: string;
+            /** Last Ip */
+            last_ip: string | null;
+            /** Last Seen At */
+            last_seen_at: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "blocked";
+        };
+        /** LocalSendDeviceUpdateIn */
+        LocalSendDeviceUpdateIn: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "blocked";
+        };
+        /** LocalSendRequestOut */
+        LocalSendRequestOut: {
+            /** Alias */
+            alias: string;
+            /** Created At */
+            created_at: string;
+            /** Device Id */
+            device_id: string;
+            /** Device Model */
+            device_model: string | null;
+            /** File Count */
+            file_count: number;
+            /** Id */
+            id: string;
+            /** Ip */
+            ip: string;
+            /** Total Bytes */
+            total_bytes: number;
+        };
+        /** LocalSendStatusOut */
+        LocalSendStatusOut: {
+            /** Alias */
+            alias: string;
+            /** Discovery */
+            discovery: boolean;
+            /** Enabled */
+            enabled: boolean;
+            /** Error */
+            error: string | null;
+            /** Fingerprint */
+            fingerprint: string | null;
+            /** Port */
+            port: number;
+            /** Running */
+            running: boolean;
+        };
+        /** MarginsSpec */
+        MarginsSpec: {
+            /**
+             * Bottom
+             * @default 0
+             */
+            bottom: number;
+            /**
+             * Left
+             * @default 0
+             */
+            left: number;
+            /**
+             * Linked
+             * @default false
+             */
+            linked: boolean;
+            /**
+             * Right
+             * @default 0
+             */
+            right: number;
+            /**
+             * Top
+             * @default 0
+             */
+            top: number;
+        };
+        /** Mat */
+        Mat: {
+            /**
+             * Color
+             * @default #F2EFE8
+             */
+            color: string;
+            texture?: components["schemas"]["TextureRef"] | null;
+        };
+        /** Me */
+        Me: {
+            /** Authenticated */
+            authenticated: boolean;
+            /** Device Id */
+            device_id: string | null;
+            /** Device Name */
+            device_name: string | null;
+            /** Role */
+            role: ("admin" | "uploader") | null;
+            /** Setup Required */
+            setup_required: boolean;
+            /**
+             * Via
+             * @enum {string}
+             */
+            via: "device" | "localhost" | "anonymous";
+        };
+        /** OrientSpec */
+        OrientSpec: {
+            /**
+             * Flip H
+             * @default false
+             */
+            flip_h: boolean;
+            /**
+             * Rotate
+             * @default 0
+             * @enum {integer}
+             */
+            rotate: 0 | 90 | 180 | 270;
+        };
+        /** PairingCodeIn */
+        PairingCodeIn: {
+            /**
+             * Role
+             * @default uploader
+             * @enum {string}
+             */
+            role: "admin" | "uploader";
+        };
+        /** PairingCodeOut */
+        PairingCodeOut: {
+            /** Code */
+            code: string;
+            /** Expires In Seconds */
+            expires_in_seconds: number;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "admin" | "uploader";
+            /** Url */
+            url: string;
+        };
+        /** PhotoIdsIn */
+        PhotoIdsIn: {
+            /** Photo Ids */
+            photo_ids: string[];
+        };
+        /** PhotoOut */
+        PhotoOut: {
+            /** Bit Depth */
+            bit_depth: number;
+            /** Camera Make */
+            camera_make: string | null;
+            /** Camera Model */
+            camera_model: string | null;
+            /** File Size */
+            file_size: number;
+            /** Gps Lat */
+            gps_lat: number | null;
+            /** Gps Lon */
+            gps_lon: number | null;
+            /** Has Gain Map */
+            has_gain_map: boolean;
+            /** Height */
+            height: number;
+            /** Icc Description */
+            icc_description: string | null;
+            /** Id */
+            id: string;
+            /**
+             * Imported At
+             * Format: date-time
+             */
+            imported_at: string;
+            /**
+             * Inbox State
+             * @enum {string}
+             */
+            inbox_state: "inbox" | "processed" | "dismissed";
+            /** Is Wide Gamut */
+            is_wide_gamut: boolean;
+            /** Lens */
+            lens: string | null;
+            /** Mime */
+            mime: string;
+            /** Original Filename */
+            original_filename: string;
+            /** Place Admin1 */
+            place_admin1: string | null;
+            /** Place Country */
+            place_country: string | null;
+            /** Place Name */
+            place_name: string | null;
+            /** Quality Warnings */
+            quality_warnings: string[];
+            /** Sha256 */
+            sha256: string;
+            /** Tags */
+            tags?: components["schemas"]["TagOut"][];
+            /** Taken At */
+            taken_at: string | null;
+            /** Width */
+            width: number;
+        };
+        /** PhotoPageOut */
+        PhotoPageOut: {
+            /** Items */
+            items: components["schemas"]["PhotoOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
+        /** PhotoUpdateIn */
+        PhotoUpdateIn: {
+            /** Inbox State */
+            inbox_state?: ("inbox" | "processed" | "dismissed") | null;
+            /** Tag Ids */
+            tag_ids?: string[] | null;
+        };
+        /** RectSpec */
+        RectSpec: {
+            /** H */
+            h: number;
+            /** W */
+            w: number;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
+        /** RegionIn */
+        RegionIn: {
+            /** H */
+            h: number;
+            /** W */
+            w: number;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
+        /** RegionRenderIn */
+        RegionRenderIn: {
+            /** Document */
+            document: {
+                [key: string]: unknown;
+            };
+            rect: components["schemas"]["RegionIn"];
+        };
+        /** Shadow */
+        Shadow: {
+            /**
+             * Blur
+             * @default 0
+             */
+            blur: number;
+            /**
+             * Color
+             * @default #000000
+             */
+            color: string;
+            /**
+             * Offset X
+             * @default 0
+             */
+            offset_x: number;
+            /**
+             * Offset Y
+             * @default 0
+             */
+            offset_y: number;
+            /**
+             * Opacity
+             * @default 0.35
+             */
+            opacity: number;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "inner" | "drop";
+        };
+        /** Slot */
+        Slot: {
+            /** Bands */
+            bands?: components["schemas"]["Band"][];
+            /** Id */
+            id: string;
+            /** Photo Id */
+            photo_id?: string | null;
+            /**
+             * Quality Lock
+             * @default no_upscale
+             * @enum {string}
+             */
+            quality_lock: "native" | "no_upscale" | "free";
+            rect: components["schemas"]["RectSpec"];
+            /**
+             * Rotation
+             * @default 0
+             */
+            rotation: number;
+            shadow?: components["schemas"]["Shadow"] | null;
+            source: components["schemas"]["SourceSpec"];
+        };
+        /** SlotDefaults */
+        SlotDefaults: {
+            /** Bands */
+            bands?: components["schemas"]["Band"][];
+            /**
+             * Quality Lock
+             * @default no_upscale
+             * @enum {string}
+             */
+            quality_lock: "native" | "no_upscale" | "free";
+            shadow?: components["schemas"]["Shadow"] | null;
+        };
+        /** SnapshotIn */
+        SnapshotIn: {
+            /**
+             * Reason
+             * @default manual
+             * @enum {string}
+             */
+            reason: "opened" | "manual";
+        };
+        /** SnapshotOut */
+        SnapshotOut: {
+            /** Artwork Id */
+            artwork_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Document Version */
+            document_version: number;
+            /** Id */
+            id: string;
+            /** Reason */
+            reason: string;
+        };
+        /** SourceSpec */
+        SourceSpec: {
+            crop: components["schemas"]["CropSpec"];
+            /**
+             * Crop Ratio
+             * @default original
+             */
+            crop_ratio: string;
+            orient?: components["schemas"]["OrientSpec"];
+        };
+        /** SystemInfo */
+        SystemInfo: {
+            capabilities: components["schemas"]["Capabilities"];
+            /** Max Upload Bytes */
+            max_upload_bytes: number;
+            /** Name */
+            name: string;
+            /** Public Url */
+            public_url: string;
+            /** Upload Chunk Bytes */
+            upload_chunk_bytes: number;
+            /** Version */
+            version: string;
+        };
+        /** TagCreateIn */
+        TagCreateIn: {
+            /** Name */
+            name: string;
+        };
+        /** TagOut */
+        TagOut: {
+            /** Color */
+            color: string | null;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** TagWithCount */
+        TagWithCount: {
+            /** Color */
+            color: string | null;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Photo Count */
+            photo_count: number;
+        };
+        /** TextureOut */
+        TextureOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Size */
+            size: number;
+        };
+        /** TextureRef */
+        TextureRef: {
+            /** Id */
+            id: string;
+            /** Strength */
+            strength: number;
+        };
+        /** UploadCreateIn */
+        UploadCreateIn: {
+            /** Filename */
+            filename: string;
+            meta?: components["schemas"]["UploadMetaIn"] | null;
+            /**
+             * Mime
+             * @default
+             */
+            mime: string;
+            /** Sha256 */
+            sha256: string;
+            /** Size */
+            size: number;
+        };
+        /** UploadMetaIn */
+        UploadMetaIn: {
+            /** Collection Ids */
+            collection_ids?: string[];
+            /**
+             * Favorite
+             * @default false
+             */
+            favorite: boolean;
+            /** Tag Ids */
+            tag_ids?: string[];
+        };
+        /** UploadOut */
+        UploadOut: {
+            /** Chunk Bytes */
+            chunk_bytes: number;
+            /** Error */
+            error?: string | null;
+            /**
+             * Offset
+             * @default 0
+             */
+            offset: number;
+            /** Photo Id */
+            photo_id?: string | null;
+            /** Size */
+            size: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "processing" | "failed" | "exists";
+            /** Upload Id */
+            upload_id?: string | null;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+        };
     };
-    /** CodeRedeemIn */
-    CodeRedeemIn: {
-      /** Code */
-      code: string;
-      /**
-       * Device Name
-       * @default
-       */
-      device_name: string;
-    };
-    /** CollectionOut */
-    CollectionOut: {
-      /** Id */
-      id: string;
-      /**
-       * Kind
-       * @enum {string}
-       */
-      kind: "manual" | "smart";
-      /** Name */
-      name: string;
-      /** Parent Id */
-      parent_id: string | null;
-      /** Position */
-      position: number;
-    };
-    /** CountOut */
-    CountOut: {
-      /** Count */
-      count: number;
-    };
-    /** DeviceOut */
-    DeviceOut: {
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string;
-      /** Id */
-      id: string;
-      /** Last Seen At */
-      last_seen_at: string | null;
-      /** Name */
-      name: string;
-      /**
-       * Role
-       * @enum {string}
-       */
-      role: "admin" | "uploader";
-      /** User Agent */
-      user_agent: string;
-    };
-    /** DeviceUpdateIn */
-    DeviceUpdateIn: {
-      /** Name */
-      name?: string | null;
-      /** Role */
-      role?: ("admin" | "uploader") | null;
-    };
-    /** HTTPValidationError */
-    HTTPValidationError: {
-      /** Detail */
-      detail?: components["schemas"]["ValidationError"][];
-    };
-    /** HashCheckIn */
-    HashCheckIn: {
-      /** Sha256 */
-      sha256: string[];
-    };
-    /** HashCheckOut */
-    HashCheckOut: {
-      /** Results */
-      results: components["schemas"]["HashStatusOut"][];
-    };
-    /** HashStatusOut */
-    HashStatusOut: {
-      /** Offset */
-      offset?: number | null;
-      /** Photo Id */
-      photo_id?: string | null;
-      /** Sha256 */
-      sha256: string;
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: "new" | "exists" | "in_progress";
-      /** Upload Id */
-      upload_id?: string | null;
-    };
-    /** LibraryStats */
-    LibraryStats: {
-      /** Inbox */
-      inbox: number;
-      /** Photos */
-      photos: number;
-    };
-    /** LocalSendDecisionIn */
-    LocalSendDecisionIn: {
-      /** Approve */
-      approve: boolean;
-    };
-    /** LocalSendDeviceOut */
-    LocalSendDeviceOut: {
-      /** Alias */
-      alias: string;
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string;
-      /** Device Model */
-      device_model: string | null;
-      /** Device Type */
-      device_type: string | null;
-      /** Id */
-      id: string;
-      /** Last Ip */
-      last_ip: string | null;
-      /** Last Seen At */
-      last_seen_at: string | null;
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: "pending" | "approved" | "blocked";
-    };
-    /** LocalSendDeviceUpdateIn */
-    LocalSendDeviceUpdateIn: {
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: "pending" | "approved" | "blocked";
-    };
-    /** LocalSendRequestOut */
-    LocalSendRequestOut: {
-      /** Alias */
-      alias: string;
-      /** Created At */
-      created_at: string;
-      /** Device Id */
-      device_id: string;
-      /** Device Model */
-      device_model: string | null;
-      /** File Count */
-      file_count: number;
-      /** Id */
-      id: string;
-      /** Ip */
-      ip: string;
-      /** Total Bytes */
-      total_bytes: number;
-    };
-    /** LocalSendStatusOut */
-    LocalSendStatusOut: {
-      /** Alias */
-      alias: string;
-      /** Discovery */
-      discovery: boolean;
-      /** Enabled */
-      enabled: boolean;
-      /** Error */
-      error: string | null;
-      /** Fingerprint */
-      fingerprint: string | null;
-      /** Port */
-      port: number;
-      /** Running */
-      running: boolean;
-    };
-    /** Me */
-    Me: {
-      /** Authenticated */
-      authenticated: boolean;
-      /** Device Id */
-      device_id: string | null;
-      /** Device Name */
-      device_name: string | null;
-      /** Role */
-      role: ("admin" | "uploader") | null;
-      /** Setup Required */
-      setup_required: boolean;
-      /**
-       * Via
-       * @enum {string}
-       */
-      via: "device" | "localhost" | "anonymous";
-    };
-    /** PairingCodeIn */
-    PairingCodeIn: {
-      /**
-       * Role
-       * @default uploader
-       * @enum {string}
-       */
-      role: "admin" | "uploader";
-    };
-    /** PairingCodeOut */
-    PairingCodeOut: {
-      /** Code */
-      code: string;
-      /** Expires In Seconds */
-      expires_in_seconds: number;
-      /**
-       * Role
-       * @enum {string}
-       */
-      role: "admin" | "uploader";
-      /** Url */
-      url: string;
-    };
-    /** PhotoIdsIn */
-    PhotoIdsIn: {
-      /** Photo Ids */
-      photo_ids: string[];
-    };
-    /** PhotoOut */
-    PhotoOut: {
-      /** Bit Depth */
-      bit_depth: number;
-      /** Camera Make */
-      camera_make: string | null;
-      /** Camera Model */
-      camera_model: string | null;
-      /** File Size */
-      file_size: number;
-      /** Gps Lat */
-      gps_lat: number | null;
-      /** Gps Lon */
-      gps_lon: number | null;
-      /** Has Gain Map */
-      has_gain_map: boolean;
-      /** Height */
-      height: number;
-      /** Icc Description */
-      icc_description: string | null;
-      /** Id */
-      id: string;
-      /**
-       * Imported At
-       * Format: date-time
-       */
-      imported_at: string;
-      /**
-       * Inbox State
-       * @enum {string}
-       */
-      inbox_state: "inbox" | "processed" | "dismissed";
-      /** Is Wide Gamut */
-      is_wide_gamut: boolean;
-      /** Lens */
-      lens: string | null;
-      /** Mime */
-      mime: string;
-      /** Original Filename */
-      original_filename: string;
-      /** Place Admin1 */
-      place_admin1: string | null;
-      /** Place Country */
-      place_country: string | null;
-      /** Place Name */
-      place_name: string | null;
-      /** Quality Warnings */
-      quality_warnings: string[];
-      /** Sha256 */
-      sha256: string;
-      /** Tags */
-      tags?: components["schemas"]["TagOut"][];
-      /** Taken At */
-      taken_at: string | null;
-      /** Width */
-      width: number;
-    };
-    /** PhotoPageOut */
-    PhotoPageOut: {
-      /** Items */
-      items: components["schemas"]["PhotoOut"][];
-      /** Next Cursor */
-      next_cursor: string | null;
-    };
-    /** PhotoUpdateIn */
-    PhotoUpdateIn: {
-      /** Inbox State */
-      inbox_state?: ("inbox" | "processed" | "dismissed") | null;
-      /** Tag Ids */
-      tag_ids?: string[] | null;
-    };
-    /** SystemInfo */
-    SystemInfo: {
-      capabilities: components["schemas"]["Capabilities"];
-      /** Max Upload Bytes */
-      max_upload_bytes: number;
-      /** Name */
-      name: string;
-      /** Public Url */
-      public_url: string;
-      /** Upload Chunk Bytes */
-      upload_chunk_bytes: number;
-      /** Version */
-      version: string;
-    };
-    /** TagCreateIn */
-    TagCreateIn: {
-      /** Name */
-      name: string;
-    };
-    /** TagOut */
-    TagOut: {
-      /** Color */
-      color: string | null;
-      /** Id */
-      id: string;
-      /** Name */
-      name: string;
-    };
-    /** TagWithCount */
-    TagWithCount: {
-      /** Color */
-      color: string | null;
-      /** Id */
-      id: string;
-      /** Name */
-      name: string;
-      /** Photo Count */
-      photo_count: number;
-    };
-    /** UploadCreateIn */
-    UploadCreateIn: {
-      /** Filename */
-      filename: string;
-      meta?: components["schemas"]["UploadMetaIn"] | null;
-      /**
-       * Mime
-       * @default
-       */
-      mime: string;
-      /** Sha256 */
-      sha256: string;
-      /** Size */
-      size: number;
-    };
-    /** UploadMetaIn */
-    UploadMetaIn: {
-      /** Collection Ids */
-      collection_ids?: string[];
-      /**
-       * Favorite
-       * @default false
-       */
-      favorite: boolean;
-      /** Tag Ids */
-      tag_ids?: string[];
-    };
-    /** UploadOut */
-    UploadOut: {
-      /** Chunk Bytes */
-      chunk_bytes: number;
-      /** Error */
-      error?: string | null;
-      /**
-       * Offset
-       * @default 0
-       */
-      offset: number;
-      /** Photo Id */
-      photo_id?: string | null;
-      /** Size */
-      size: number;
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: "open" | "processing" | "failed" | "exists";
-      /** Upload Id */
-      upload_id?: string | null;
-    };
-    /** ValidationError */
-    ValidationError: {
-      /** Context */
-      ctx?: Record<string, never>;
-      /** Input */
-      input?: unknown;
-      /** Location */
-      loc: (string | number)[];
-      /** Message */
-      msg: string;
-      /** Error Type */
-      type: string;
-    };
-  };
-  responses: never;
-  parameters: never;
-  requestBodies: never;
-  headers: never;
-  pathItems: never;
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  logout_api_v1_auth_logout_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  redeem_pairing_code_api_v1_auth_pair_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CodeRedeemIn"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["DeviceOut"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  redeem_setup_code_api_v1_auth_setup_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CodeRedeemIn"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["DeviceOut"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  list_collections_api_v1_collections_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["CollectionOut"][];
-        };
-      };
-    };
-  };
-  list_devices_api_v1_devices_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["DeviceOut"][];
-        };
-      };
-    };
-  };
-  create_pairing_code_api_v1_devices_pairing_codes_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["PairingCodeIn"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["PairingCodeOut"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  revoke_device_api_v1_devices__device_id__delete: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        device_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  update_device_api_v1_devices__device_id__patch: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        device_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["DeviceUpdateIn"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["DeviceOut"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  events_api_v1_events_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-    };
-  };
-  dismiss_from_inbox_api_v1_inbox_dismiss_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["PhotoIdsIn"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["CountOut"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  restore_to_inbox_api_v1_inbox_restore_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["PhotoIdsIn"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["CountOut"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  list_devices_api_v1_localsend_devices_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["LocalSendDeviceOut"][];
-        };
-      };
-    };
-  };
-  forget_device_api_v1_localsend_devices__device_id__delete: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        device_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  update_device_api_v1_localsend_devices__device_id__patch: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        device_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["LocalSendDeviceUpdateIn"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["LocalSendDeviceOut"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  pending_requests_api_v1_localsend_requests_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["LocalSendRequestOut"][];
-        };
-      };
-    };
-  };
-  decide_api_v1_localsend_requests__request_id__decision_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        request_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["LocalSendDecisionIn"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  status_api_v1_localsend_status_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["LocalSendStatusOut"];
-        };
-      };
-    };
-  };
-  list_photos_api_v1_photos_get: {
-    parameters: {
-      query?: {
-        inbox_state?: ("inbox" | "processed" | "dismissed") | null;
-        q?: string | null;
-        tag_id?: string | null;
-        cursor?: string | null;
-        limit?: number;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["PhotoPageOut"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  library_stats_api_v1_photos_stats_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["LibraryStats"];
-        };
-      };
-    };
-  };
-  get_photo_api_v1_photos__photo_id__get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        photo_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["PhotoOut"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  update_photo_api_v1_photos__photo_id__patch: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        photo_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["PhotoUpdateIn"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["PhotoOut"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  photo_original_api_v1_photos__photo_id__original_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        photo_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  photo_proxy_api_v1_photos__photo_id__proxy_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        photo_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  photo_thumb_api_v1_photos__photo_id__thumb__size__get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        photo_id: string;
-        size: "256" | "768";
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  system_info_api_v1_system_info_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["SystemInfo"];
-        };
-      };
-    };
-  };
-  me_api_v1_system_me_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["Me"];
-        };
-      };
-    };
-  };
-  list_tags_api_v1_tags_get: {
-    parameters: {
-      query?: {
-        q?: string | null;
-        limit?: number;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["TagWithCount"][];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  create_tag_api_v1_tags_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["TagCreateIn"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["TagOut"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  create_upload_api_v1_uploads_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UploadCreateIn"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["UploadOut"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  check_hashes_api_v1_uploads_check_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["HashCheckIn"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HashCheckOut"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  get_upload_api_v1_uploads__upload_id__get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        upload_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["UploadOut"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  cancel_upload_api_v1_uploads__upload_id__delete: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        upload_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  head_upload_api_v1_uploads__upload_id__head: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        upload_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  append_chunk_api_v1_uploads__upload_id__patch: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        upload_id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/offset+octet-stream": string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["UploadOut"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
+    list_artworks_api_v1_artworks_get: {
+        parameters: {
+            query?: {
+                status?: ("draft" | "ready") | null;
+                favorite?: boolean | null;
+                photo_id?: string | null;
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtworkPageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_artwork_api_v1_artworks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtworkCreateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtworkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_artwork_api_v1_artworks__artwork_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                artwork_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtworkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trash_artwork_api_v1_artworks__artwork_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                artwork_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_artwork_api_v1_artworks__artwork_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                artwork_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtworkUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtworkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_document_api_v1_artworks__artwork_id__document_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                "if-match"?: string | null;
+            };
+            path: {
+                artwork_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtworkDocument"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtworkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicate_artwork_api_v1_artworks__artwork_id__duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                artwork_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtworkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    render_jpg_api_v1_artworks__artwork_id__render_jpg_get: {
+        parameters: {
+            query?: {
+                /** @description Render hash: the response is cached forever when it matches */
+                v?: string | null;
+            };
+            header?: never;
+            path: {
+                artwork_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    render_png_api_v1_artworks__artwork_id__render_png_get: {
+        parameters: {
+            query?: {
+                /** @description Render hash: the response is cached forever when it matches */
+                v?: string | null;
+            };
+            header?: never;
+            path: {
+                artwork_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_snapshots_api_v1_artworks__artwork_id__snapshots_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                artwork_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SnapshotOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_snapshot_api_v1_artworks__artwork_id__snapshots_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                artwork_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SnapshotIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SnapshotOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_snapshot_api_v1_artworks__artwork_id__snapshots__snapshot_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                artwork_id: string;
+                snapshot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtworkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    render_thumb_api_v1_artworks__artwork_id__thumb__size__get: {
+        parameters: {
+            query?: {
+                /** @description Render hash: the response is cached forever when it matches */
+                v?: string | null;
+            };
+            header?: never;
+            path: {
+                artwork_id: string;
+                size: "256" | "768";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    validate_artwork_api_v1_artworks__artwork_id__validate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                artwork_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtworkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logout_api_v1_auth_logout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    redeem_pairing_code_api_v1_auth_pair_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeRedeemIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    redeem_setup_code_api_v1_auth_setup_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeRedeemIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_collections_api_v1_collections_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionOut"][];
+                };
+            };
+        };
+    };
+    list_devices_api_v1_devices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceOut"][];
+                };
+            };
+        };
+    };
+    create_pairing_code_api_v1_devices_pairing_codes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PairingCodeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairingCodeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_device_api_v1_devices__device_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_device_api_v1_devices__device_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    events_api_v1_events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_fonts_api_v1_fonts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FontOut"][];
+                };
+            };
+        };
+    };
+    font_file_api_v1_fonts__font_id___weight__ttf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                font_id: string;
+                weight: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_frame_styles_api_v1_frame_styles_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FrameStyleOut"][];
+                };
+            };
+        };
+    };
+    dismiss_from_inbox_api_v1_inbox_dismiss_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhotoIdsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_to_inbox_api_v1_inbox_restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhotoIdsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_layouts_api_v1_layouts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LayoutOut"][];
+                };
+            };
+        };
+    };
+    list_devices_api_v1_localsend_devices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalSendDeviceOut"][];
+                };
+            };
+        };
+    };
+    forget_device_api_v1_localsend_devices__device_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_device_api_v1_localsend_devices__device_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocalSendDeviceUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalSendDeviceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pending_requests_api_v1_localsend_requests_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalSendRequestOut"][];
+                };
+            };
+        };
+    };
+    decide_api_v1_localsend_requests__request_id__decision_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocalSendDecisionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_api_v1_localsend_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalSendStatusOut"];
+                };
+            };
+        };
+    };
+    list_photos_api_v1_photos_get: {
+        parameters: {
+            query?: {
+                inbox_state?: ("inbox" | "processed" | "dismissed") | null;
+                q?: string | null;
+                tag_id?: string | null;
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhotoPageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    library_stats_api_v1_photos_stats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryStats"];
+                };
+            };
+        };
+    };
+    get_photo_api_v1_photos__photo_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                photo_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhotoOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_photo_api_v1_photos__photo_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                photo_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhotoUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhotoOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    photo_original_api_v1_photos__photo_id__original_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                photo_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    photo_proxy_api_v1_photos__photo_id__proxy_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                photo_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    photo_thumb_api_v1_photos__photo_id__thumb__size__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                photo_id: string;
+                size: "256" | "768";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    render_region_api_v1_render_region_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegionRenderIn"];
+            };
+        };
+        responses: {
+            /** @description PNG of the region */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_info_api_v1_system_info_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemInfo"];
+                };
+            };
+        };
+    };
+    me_api_v1_system_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+        };
+    };
+    list_tags_api_v1_tags_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagWithCount"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_tag_api_v1_tags_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagCreateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_textures_api_v1_textures_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TextureOut"][];
+                };
+            };
+        };
+    };
+    texture_file_api_v1_textures__texture_id__png_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                texture_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_upload_api_v1_uploads_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadCreateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_hashes_api_v1_uploads_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HashCheckIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HashCheckOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_upload_api_v1_uploads__upload_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_upload_api_v1_uploads__upload_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    head_upload_api_v1_uploads__upload_id__head: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    append_chunk_api_v1_uploads__upload_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/offset+octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
 }

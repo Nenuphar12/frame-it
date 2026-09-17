@@ -1,6 +1,566 @@
 {
   "components": {
     "schemas": {
+      "ArtworkCreateIn": {
+        "properties": {
+          "layout_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Layout Id"
+          },
+          "photo_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 32,
+            "minItems": 1,
+            "title": "Photo Ids",
+            "type": "array"
+          },
+          "placement": {
+            "anyOf": [
+              {
+                "enum": [
+                  "fit_in_mat",
+                  "fill",
+                  "manual"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placement"
+          },
+          "style_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Style Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "photo_ids"
+        ],
+        "title": "ArtworkCreateIn",
+        "type": "object"
+      },
+      "ArtworkDocument": {
+        "additionalProperties": false,
+        "properties": {
+          "canvas": {
+            "$ref": "#/components/schemas/CanvasSpec"
+          },
+          "captions": {
+            "items": {
+              "$ref": "#/components/schemas/Caption"
+            },
+            "maxItems": 32,
+            "title": "Captions",
+            "type": "array"
+          },
+          "margins": {
+            "$ref": "#/components/schemas/MarginsSpec"
+          },
+          "mat": {
+            "$ref": "#/components/schemas/Mat"
+          },
+          "placement": {
+            "default": "fit_in_mat",
+            "enum": [
+              "fit_in_mat",
+              "fill",
+              "manual"
+            ],
+            "title": "Placement",
+            "type": "string"
+          },
+          "schema": {
+            "const": 1,
+            "default": 1,
+            "title": "Schema",
+            "type": "integer"
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/Slot"
+            },
+            "maxItems": 32,
+            "title": "Slots",
+            "type": "array"
+          }
+        },
+        "title": "ArtworkDocument",
+        "type": "object"
+      },
+      "ArtworkOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "document": {
+            "$ref": "#/components/schemas/ArtworkDocument"
+          },
+          "document_version": {
+            "title": "Document Version",
+            "type": "integer"
+          },
+          "favorite": {
+            "title": "Favorite",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "is_incomplete": {
+            "title": "Is Incomplete",
+            "type": "boolean"
+          },
+          "max_scale": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Scale"
+          },
+          "min_scale": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Scale"
+          },
+          "origin_layout_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Layout Id"
+          },
+          "origin_style_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Style Id"
+          },
+          "photo_count": {
+            "title": "Photo Count",
+            "type": "integer"
+          },
+          "render_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Render Hash"
+          },
+          "rendered_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rendered At"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "ready"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "$ref": "#/components/schemas/TagOut"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "worst_tier": {
+            "anyOf": [
+              {
+                "enum": [
+                  "native",
+                  "downscaled",
+                  "upscaled"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Worst Tier"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "favorite",
+          "document_version",
+          "worst_tier",
+          "min_scale",
+          "max_scale",
+          "photo_count",
+          "is_incomplete",
+          "origin_style_id",
+          "origin_layout_id",
+          "render_hash",
+          "rendered_at",
+          "created_at",
+          "updated_at",
+          "document"
+        ],
+        "title": "ArtworkOut",
+        "type": "object"
+      },
+      "ArtworkPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ArtworkSummaryOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "ArtworkPageOut",
+        "type": "object"
+      },
+      "ArtworkSummaryOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "document_version": {
+            "title": "Document Version",
+            "type": "integer"
+          },
+          "favorite": {
+            "title": "Favorite",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "is_incomplete": {
+            "title": "Is Incomplete",
+            "type": "boolean"
+          },
+          "max_scale": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Scale"
+          },
+          "min_scale": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Scale"
+          },
+          "origin_layout_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Layout Id"
+          },
+          "origin_style_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Style Id"
+          },
+          "photo_count": {
+            "title": "Photo Count",
+            "type": "integer"
+          },
+          "render_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Render Hash"
+          },
+          "rendered_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rendered At"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "ready"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "$ref": "#/components/schemas/TagOut"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "worst_tier": {
+            "anyOf": [
+              {
+                "enum": [
+                  "native",
+                  "downscaled",
+                  "upscaled"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Worst Tier"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "favorite",
+          "document_version",
+          "worst_tier",
+          "min_scale",
+          "max_scale",
+          "photo_count",
+          "is_incomplete",
+          "origin_style_id",
+          "origin_layout_id",
+          "render_hash",
+          "rendered_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ArtworkSummaryOut",
+        "type": "object"
+      },
+      "ArtworkUpdateIn": {
+        "properties": {
+          "favorite": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Favorite"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "draft",
+                  "ready"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "tag_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 200,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tag Ids"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "ArtworkUpdateIn",
+        "type": "object"
+      },
+      "Band": {
+        "additionalProperties": false,
+        "properties": {
+          "color": {
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "title": "Color",
+            "type": "string"
+          },
+          "width": {
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "width",
+          "color"
+        ],
+        "title": "Band",
+        "type": "object"
+      },
+      "CanvasSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "height": {
+            "const": 2160,
+            "default": 2160,
+            "title": "Height",
+            "type": "integer"
+          },
+          "width": {
+            "const": 3840,
+            "default": 3840,
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "title": "CanvasSpec",
+        "type": "object"
+      },
       "Capabilities": {
         "properties": {
           "avif": {
@@ -20,8 +580,139 @@
             "type": "boolean"
           }
         },
-        "required": ["libvips_version", "avif", "ultra_hdr", "color_management"],
+        "required": [
+          "libvips_version",
+          "avif",
+          "ultra_hdr",
+          "color_management"
+        ],
         "title": "Capabilities",
+        "type": "object"
+      },
+      "Caption": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor": {
+            "default": "start",
+            "enum": [
+              "start",
+              "middle",
+              "end"
+            ],
+            "title": "Anchor",
+            "type": "string"
+          },
+          "color": {
+            "default": "#3A3A3A",
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "title": "Color",
+            "type": "string"
+          },
+          "font": {
+            "pattern": "^[a-z0-9-]{1,64}$",
+            "title": "Font",
+            "type": "string"
+          },
+          "id": {
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "letter_spacing": {
+            "default": 0,
+            "maximum": 2.0,
+            "minimum": -0.5,
+            "title": "Letter Spacing",
+            "type": "number"
+          },
+          "rotation": {
+            "default": 0,
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Rotation",
+            "type": "number"
+          },
+          "size": {
+            "maximum": 1000.0,
+            "minimum": 4.0,
+            "title": "Size",
+            "type": "integer"
+          },
+          "text": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          },
+          "weight": {
+            "default": 400,
+            "maximum": 900.0,
+            "minimum": 100.0,
+            "title": "Weight",
+            "type": "integer"
+          },
+          "x": {
+            "maximum": 20000.0,
+            "minimum": -20000.0,
+            "title": "X",
+            "type": "integer"
+          },
+          "y": {
+            "maximum": 20000.0,
+            "minimum": -20000.0,
+            "title": "Y",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "font",
+          "size",
+          "x",
+          "y"
+        ],
+        "title": "Caption",
+        "type": "object"
+      },
+      "CaptionDefaults": {
+        "additionalProperties": false,
+        "properties": {
+          "color": {
+            "default": "#3A3A3A",
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "title": "Color",
+            "type": "string"
+          },
+          "font": {
+            "default": "cormorant-garamond",
+            "pattern": "^[a-z0-9-]{1,64}$",
+            "title": "Font",
+            "type": "string"
+          },
+          "letter_spacing": {
+            "default": 0.02,
+            "maximum": 2.0,
+            "minimum": -0.5,
+            "title": "Letter Spacing",
+            "type": "number"
+          },
+          "size": {
+            "default": 48,
+            "maximum": 1000.0,
+            "minimum": 4.0,
+            "title": "Size",
+            "type": "integer"
+          },
+          "weight": {
+            "default": 500,
+            "maximum": 900.0,
+            "minimum": 100.0,
+            "title": "Weight",
+            "type": "integer"
+          }
+        },
+        "title": "CaptionDefaults",
         "type": "object"
       },
       "CodeRedeemIn": {
@@ -39,7 +730,9 @@
             "type": "string"
           }
         },
-        "required": ["code"],
+        "required": [
+          "code"
+        ],
         "title": "CodeRedeemIn",
         "type": "object"
       },
@@ -50,7 +743,10 @@
             "type": "string"
           },
           "kind": {
-            "enum": ["manual", "smart"],
+            "enum": [
+              "manual",
+              "smart"
+            ],
             "title": "Kind",
             "type": "string"
           },
@@ -74,7 +770,13 @@
             "type": "number"
           }
         },
-        "required": ["id", "parent_id", "name", "kind", "position"],
+        "required": [
+          "id",
+          "parent_id",
+          "name",
+          "kind",
+          "position"
+        ],
         "title": "CollectionOut",
         "type": "object"
       },
@@ -85,8 +787,47 @@
             "type": "integer"
           }
         },
-        "required": ["count"],
+        "required": [
+          "count"
+        ],
         "title": "CountOut",
+        "type": "object"
+      },
+      "CropSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "h": {
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "H",
+            "type": "integer"
+          },
+          "w": {
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "W",
+            "type": "integer"
+          },
+          "x": {
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "X",
+            "type": "integer"
+          },
+          "y": {
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Y",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "w",
+          "h"
+        ],
+        "title": "CropSpec",
         "type": "object"
       },
       "DeviceOut": {
@@ -117,7 +858,10 @@
             "type": "string"
           },
           "role": {
-            "enum": ["admin", "uploader"],
+            "enum": [
+              "admin",
+              "uploader"
+            ],
             "title": "Role",
             "type": "string"
           },
@@ -126,7 +870,14 @@
             "type": "string"
           }
         },
-        "required": ["id", "name", "role", "user_agent", "created_at", "last_seen_at"],
+        "required": [
+          "id",
+          "name",
+          "role",
+          "user_agent",
+          "created_at",
+          "last_seen_at"
+        ],
         "title": "DeviceOut",
         "type": "object"
       },
@@ -147,7 +898,10 @@
           "role": {
             "anyOf": [
               {
-                "enum": ["admin", "uploader"],
+                "enum": [
+                  "admin",
+                  "uploader"
+                ],
                 "type": "string"
               },
               {
@@ -158,6 +912,88 @@
           }
         },
         "title": "DeviceUpdateIn",
+        "type": "object"
+      },
+      "FontOut": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "weights": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Weights",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category",
+          "weights"
+        ],
+        "title": "FontOut",
+        "type": "object"
+      },
+      "FrameStyleDocument": {
+        "additionalProperties": false,
+        "properties": {
+          "caption_defaults": {
+            "$ref": "#/components/schemas/CaptionDefaults"
+          },
+          "margins": {
+            "$ref": "#/components/schemas/MarginsSpec"
+          },
+          "mat": {
+            "$ref": "#/components/schemas/Mat"
+          },
+          "slot_defaults": {
+            "$ref": "#/components/schemas/SlotDefaults"
+          }
+        },
+        "title": "FrameStyleDocument",
+        "type": "object"
+      },
+      "FrameStyleOut": {
+        "properties": {
+          "builtin": {
+            "title": "Builtin",
+            "type": "boolean"
+          },
+          "document": {
+            "$ref": "#/components/schemas/FrameStyleDocument"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "revision",
+          "builtin",
+          "document"
+        ],
+        "title": "FrameStyleOut",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -184,7 +1020,9 @@
             "type": "array"
           }
         },
-        "required": ["sha256"],
+        "required": [
+          "sha256"
+        ],
         "title": "HashCheckIn",
         "type": "object"
       },
@@ -198,7 +1036,9 @@
             "type": "array"
           }
         },
-        "required": ["results"],
+        "required": [
+          "results"
+        ],
         "title": "HashCheckOut",
         "type": "object"
       },
@@ -231,7 +1071,11 @@
             "type": "string"
           },
           "status": {
-            "enum": ["new", "exists", "in_progress"],
+            "enum": [
+              "new",
+              "exists",
+              "in_progress"
+            ],
             "title": "Status",
             "type": "string"
           },
@@ -247,8 +1091,168 @@
             "title": "Upload Id"
           }
         },
-        "required": ["sha256", "status"],
+        "required": [
+          "sha256",
+          "status"
+        ],
         "title": "HashStatusOut",
+        "type": "object"
+      },
+      "LayoutCaption": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor": {
+            "default": "middle",
+            "enum": [
+              "start",
+              "middle",
+              "end"
+            ],
+            "title": "Anchor",
+            "type": "string"
+          },
+          "id": {
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "placeholder": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Placeholder",
+            "type": "string"
+          },
+          "rotation": {
+            "default": 0,
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Rotation",
+            "type": "number"
+          },
+          "x": {
+            "title": "X",
+            "type": "integer"
+          },
+          "y": {
+            "title": "Y",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "x",
+          "y"
+        ],
+        "title": "LayoutCaption",
+        "type": "object"
+      },
+      "LayoutDocument": {
+        "additionalProperties": false,
+        "properties": {
+          "captions": {
+            "items": {
+              "$ref": "#/components/schemas/LayoutCaption"
+            },
+            "maxItems": 32,
+            "title": "Captions",
+            "type": "array"
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/LayoutSlot"
+            },
+            "maxItems": 32,
+            "minItems": 1,
+            "title": "Slots",
+            "type": "array"
+          }
+        },
+        "required": [
+          "slots"
+        ],
+        "title": "LayoutDocument",
+        "type": "object"
+      },
+      "LayoutOut": {
+        "properties": {
+          "builtin": {
+            "title": "Builtin",
+            "type": "boolean"
+          },
+          "document": {
+            "$ref": "#/components/schemas/LayoutDocument"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "slot_count": {
+            "title": "Slot Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "revision",
+          "builtin",
+          "slot_count",
+          "document"
+        ],
+        "title": "LayoutOut",
+        "type": "object"
+      },
+      "LayoutSlot": {
+        "additionalProperties": false,
+        "properties": {
+          "fill_mode": {
+            "default": "fill",
+            "enum": [
+              "fill",
+              "fit"
+            ],
+            "title": "Fill Mode",
+            "type": "string"
+          },
+          "id": {
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "quality_lock": {
+            "default": "no_upscale",
+            "enum": [
+              "native",
+              "no_upscale",
+              "free"
+            ],
+            "title": "Quality Lock",
+            "type": "string"
+          },
+          "rect": {
+            "$ref": "#/components/schemas/RectSpec"
+          },
+          "rotation": {
+            "default": 0,
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Rotation",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "rect"
+        ],
+        "title": "LayoutSlot",
         "type": "object"
       },
       "LibraryStats": {
@@ -262,7 +1266,10 @@
             "type": "integer"
           }
         },
-        "required": ["inbox", "photos"],
+        "required": [
+          "inbox",
+          "photos"
+        ],
         "title": "LibraryStats",
         "type": "object"
       },
@@ -273,7 +1280,9 @@
             "type": "boolean"
           }
         },
-        "required": ["approve"],
+        "required": [
+          "approve"
+        ],
         "title": "LocalSendDecisionIn",
         "type": "object"
       },
@@ -338,7 +1347,11 @@
             "title": "Last Seen At"
           },
           "status": {
-            "enum": ["pending", "approved", "blocked"],
+            "enum": [
+              "pending",
+              "approved",
+              "blocked"
+            ],
             "title": "Status",
             "type": "string"
           }
@@ -359,12 +1372,18 @@
       "LocalSendDeviceUpdateIn": {
         "properties": {
           "status": {
-            "enum": ["pending", "approved", "blocked"],
+            "enum": [
+              "pending",
+              "approved",
+              "blocked"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "LocalSendDeviceUpdateIn",
         "type": "object"
       },
@@ -468,8 +1487,79 @@
             "type": "boolean"
           }
         },
-        "required": ["enabled", "running", "discovery", "alias", "port", "fingerprint", "error"],
+        "required": [
+          "enabled",
+          "running",
+          "discovery",
+          "alias",
+          "port",
+          "fingerprint",
+          "error"
+        ],
         "title": "LocalSendStatusOut",
+        "type": "object"
+      },
+      "MarginsSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "bottom": {
+            "default": 0,
+            "maximum": 2159.0,
+            "minimum": 0.0,
+            "title": "Bottom",
+            "type": "integer"
+          },
+          "left": {
+            "default": 0,
+            "maximum": 3839.0,
+            "minimum": 0.0,
+            "title": "Left",
+            "type": "integer"
+          },
+          "linked": {
+            "default": false,
+            "title": "Linked",
+            "type": "boolean"
+          },
+          "right": {
+            "default": 0,
+            "maximum": 3839.0,
+            "minimum": 0.0,
+            "title": "Right",
+            "type": "integer"
+          },
+          "top": {
+            "default": 0,
+            "maximum": 2159.0,
+            "minimum": 0.0,
+            "title": "Top",
+            "type": "integer"
+          }
+        },
+        "title": "MarginsSpec",
+        "type": "object"
+      },
+      "Mat": {
+        "additionalProperties": false,
+        "properties": {
+          "color": {
+            "default": "#F2EFE8",
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "title": "Color",
+            "type": "string"
+          },
+          "texture": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TextureRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "Mat",
         "type": "object"
       },
       "Me": {
@@ -503,7 +1593,10 @@
           "role": {
             "anyOf": [
               {
-                "enum": ["admin", "uploader"],
+                "enum": [
+                  "admin",
+                  "uploader"
+                ],
                 "type": "string"
               },
               {
@@ -517,20 +1610,57 @@
             "type": "boolean"
           },
           "via": {
-            "enum": ["device", "localhost", "anonymous"],
+            "enum": [
+              "device",
+              "localhost",
+              "anonymous"
+            ],
             "title": "Via",
             "type": "string"
           }
         },
-        "required": ["authenticated", "role", "via", "device_id", "device_name", "setup_required"],
+        "required": [
+          "authenticated",
+          "role",
+          "via",
+          "device_id",
+          "device_name",
+          "setup_required"
+        ],
         "title": "Me",
+        "type": "object"
+      },
+      "OrientSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "flip_h": {
+            "default": false,
+            "title": "Flip H",
+            "type": "boolean"
+          },
+          "rotate": {
+            "default": 0,
+            "enum": [
+              0,
+              90,
+              180,
+              270
+            ],
+            "title": "Rotate",
+            "type": "integer"
+          }
+        },
+        "title": "OrientSpec",
         "type": "object"
       },
       "PairingCodeIn": {
         "properties": {
           "role": {
             "default": "uploader",
-            "enum": ["admin", "uploader"],
+            "enum": [
+              "admin",
+              "uploader"
+            ],
             "title": "Role",
             "type": "string"
           }
@@ -549,7 +1679,10 @@
             "type": "integer"
           },
           "role": {
-            "enum": ["admin", "uploader"],
+            "enum": [
+              "admin",
+              "uploader"
+            ],
             "title": "Role",
             "type": "string"
           },
@@ -558,7 +1691,12 @@
             "type": "string"
           }
         },
-        "required": ["code", "role", "url", "expires_in_seconds"],
+        "required": [
+          "code",
+          "role",
+          "url",
+          "expires_in_seconds"
+        ],
         "title": "PairingCodeOut",
         "type": "object"
       },
@@ -574,7 +1712,9 @@
             "type": "array"
           }
         },
-        "required": ["photo_ids"],
+        "required": [
+          "photo_ids"
+        ],
         "title": "PhotoIdsIn",
         "type": "object"
       },
@@ -661,7 +1801,11 @@
             "type": "string"
           },
           "inbox_state": {
-            "enum": ["inbox", "processed", "dismissed"],
+            "enum": [
+              "inbox",
+              "processed",
+              "dismissed"
+            ],
             "title": "Inbox State",
             "type": "string"
           },
@@ -805,7 +1949,10 @@
             "title": "Next Cursor"
           }
         },
-        "required": ["items", "next_cursor"],
+        "required": [
+          "items",
+          "next_cursor"
+        ],
         "title": "PhotoPageOut",
         "type": "object"
       },
@@ -814,7 +1961,11 @@
           "inbox_state": {
             "anyOf": [
               {
-                "enum": ["inbox", "processed", "dismissed"],
+                "enum": [
+                  "inbox",
+                  "processed",
+                  "dismissed"
+                ],
                 "type": "string"
               },
               {
@@ -840,6 +1991,325 @@
           }
         },
         "title": "PhotoUpdateIn",
+        "type": "object"
+      },
+      "RectSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "h": {
+            "maximum": 20000.0,
+            "minimum": 1.0,
+            "title": "H",
+            "type": "integer"
+          },
+          "w": {
+            "maximum": 20000.0,
+            "minimum": 1.0,
+            "title": "W",
+            "type": "integer"
+          },
+          "x": {
+            "maximum": 20000.0,
+            "minimum": -20000.0,
+            "title": "X",
+            "type": "integer"
+          },
+          "y": {
+            "maximum": 20000.0,
+            "minimum": -20000.0,
+            "title": "Y",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "w",
+          "h"
+        ],
+        "title": "RectSpec",
+        "type": "object"
+      },
+      "RegionIn": {
+        "properties": {
+          "h": {
+            "maximum": 1024.0,
+            "minimum": 1.0,
+            "title": "H",
+            "type": "integer"
+          },
+          "w": {
+            "maximum": 1024.0,
+            "minimum": 1.0,
+            "title": "W",
+            "type": "integer"
+          },
+          "x": {
+            "maximum": 3839.0,
+            "minimum": 0.0,
+            "title": "X",
+            "type": "integer"
+          },
+          "y": {
+            "maximum": 2159.0,
+            "minimum": 0.0,
+            "title": "Y",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "w",
+          "h"
+        ],
+        "title": "RegionIn",
+        "type": "object"
+      },
+      "RegionRenderIn": {
+        "properties": {
+          "document": {
+            "additionalProperties": true,
+            "title": "Document",
+            "type": "object"
+          },
+          "rect": {
+            "$ref": "#/components/schemas/RegionIn"
+          }
+        },
+        "required": [
+          "document",
+          "rect"
+        ],
+        "title": "RegionRenderIn",
+        "type": "object"
+      },
+      "Shadow": {
+        "additionalProperties": false,
+        "properties": {
+          "blur": {
+            "default": 0,
+            "maximum": 200.0,
+            "minimum": 0.0,
+            "title": "Blur",
+            "type": "number"
+          },
+          "color": {
+            "default": "#000000",
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "title": "Color",
+            "type": "string"
+          },
+          "offset_x": {
+            "default": 0,
+            "maximum": 500.0,
+            "minimum": -500.0,
+            "title": "Offset X",
+            "type": "integer"
+          },
+          "offset_y": {
+            "default": 0,
+            "maximum": 500.0,
+            "minimum": -500.0,
+            "title": "Offset Y",
+            "type": "integer"
+          },
+          "opacity": {
+            "default": 0.35,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Opacity",
+            "type": "number"
+          },
+          "type": {
+            "enum": [
+              "inner",
+              "drop"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "title": "Shadow",
+        "type": "object"
+      },
+      "Slot": {
+        "additionalProperties": false,
+        "properties": {
+          "bands": {
+            "items": {
+              "$ref": "#/components/schemas/Band"
+            },
+            "maxItems": 3,
+            "title": "Bands",
+            "type": "array"
+          },
+          "id": {
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "photo_id": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Id"
+          },
+          "quality_lock": {
+            "default": "no_upscale",
+            "enum": [
+              "native",
+              "no_upscale",
+              "free"
+            ],
+            "title": "Quality Lock",
+            "type": "string"
+          },
+          "rect": {
+            "$ref": "#/components/schemas/RectSpec"
+          },
+          "rotation": {
+            "default": 0,
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Rotation",
+            "type": "number"
+          },
+          "shadow": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Shadow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceSpec"
+          }
+        },
+        "required": [
+          "id",
+          "rect",
+          "source"
+        ],
+        "title": "Slot",
+        "type": "object"
+      },
+      "SlotDefaults": {
+        "additionalProperties": false,
+        "properties": {
+          "bands": {
+            "items": {
+              "$ref": "#/components/schemas/Band"
+            },
+            "maxItems": 3,
+            "title": "Bands",
+            "type": "array"
+          },
+          "quality_lock": {
+            "default": "no_upscale",
+            "enum": [
+              "native",
+              "no_upscale",
+              "free"
+            ],
+            "title": "Quality Lock",
+            "type": "string"
+          },
+          "shadow": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Shadow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "SlotDefaults",
+        "type": "object"
+      },
+      "SnapshotIn": {
+        "properties": {
+          "reason": {
+            "default": "manual",
+            "enum": [
+              "opened",
+              "manual"
+            ],
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "title": "SnapshotIn",
+        "type": "object"
+      },
+      "SnapshotOut": {
+        "properties": {
+          "artwork_id": {
+            "title": "Artwork Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "document_version": {
+            "title": "Document Version",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "artwork_id",
+          "document_version",
+          "reason",
+          "created_at"
+        ],
+        "title": "SnapshotOut",
+        "type": "object"
+      },
+      "SourceSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "crop": {
+            "$ref": "#/components/schemas/CropSpec"
+          },
+          "crop_ratio": {
+            "default": "original",
+            "pattern": "^(original|free|[1-9][0-9]{0,4}:[1-9][0-9]{0,4})$",
+            "title": "Crop Ratio",
+            "type": "string"
+          },
+          "orient": {
+            "$ref": "#/components/schemas/OrientSpec"
+          }
+        },
+        "required": [
+          "crop"
+        ],
+        "title": "SourceSpec",
         "type": "object"
       },
       "SystemInfo": {
@@ -888,7 +2358,9 @@
             "type": "string"
           }
         },
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "title": "TagCreateIn",
         "type": "object"
       },
@@ -914,7 +2386,11 @@
             "type": "string"
           }
         },
-        "required": ["id", "name", "color"],
+        "required": [
+          "id",
+          "name",
+          "color"
+        ],
         "title": "TagOut",
         "type": "object"
       },
@@ -944,8 +2420,58 @@
             "type": "integer"
           }
         },
-        "required": ["id", "name", "color", "photo_count"],
+        "required": [
+          "id",
+          "name",
+          "color",
+          "photo_count"
+        ],
         "title": "TagWithCount",
+        "type": "object"
+      },
+      "TextureOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "size"
+        ],
+        "title": "TextureOut",
+        "type": "object"
+      },
+      "TextureRef": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "pattern": "^[a-z0-9-]{1,64}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "strength": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Strength",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "strength"
+        ],
+        "title": "TextureRef",
         "type": "object"
       },
       "UploadCreateIn": {
@@ -984,7 +2510,11 @@
             "type": "integer"
           }
         },
-        "required": ["filename", "size", "sha256"],
+        "required": [
+          "filename",
+          "size",
+          "sha256"
+        ],
         "title": "UploadCreateIn",
         "type": "object"
       },
@@ -1053,7 +2583,12 @@
             "type": "integer"
           },
           "status": {
-            "enum": ["open", "processing", "failed", "exists"],
+            "enum": [
+              "open",
+              "processing",
+              "failed",
+              "exists"
+            ],
             "title": "Status",
             "type": "string"
           },
@@ -1069,7 +2604,11 @@
             "title": "Upload Id"
           }
         },
-        "required": ["status", "size", "chunk_bytes"],
+        "required": [
+          "status",
+          "size",
+          "chunk_bytes"
+        ],
         "title": "UploadOut",
         "type": "object"
       },
@@ -1105,7 +2644,11 @@
             "type": "string"
           }
         },
-        "required": ["loc", "msg", "type"],
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
         "title": "ValidationError",
         "type": "object"
       }
@@ -1117,6 +2660,758 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/artworks": {
+      "get": {
+        "operationId": "list_artworks_api_v1_artworks_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "draft",
+                    "ready"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "favorite",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Favorite"
+            }
+          },
+          {
+            "in": "query",
+            "name": "photo_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Photo Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtworkPageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Artworks",
+        "tags": [
+          "artworks"
+        ]
+      },
+      "post": {
+        "operationId": "create_artwork_api_v1_artworks_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArtworkCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtworkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Artwork",
+        "tags": [
+          "artworks"
+        ]
+      }
+    },
+    "/api/v1/artworks/{artwork_id}": {
+      "delete": {
+        "description": "Move to trash (restore/purge: Phase 8).",
+        "operationId": "trash_artwork_api_v1_artworks__artwork_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artwork_id",
+            "required": true,
+            "schema": {
+              "title": "Artwork Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Trash Artwork",
+        "tags": [
+          "artworks"
+        ]
+      },
+      "get": {
+        "operationId": "get_artwork_api_v1_artworks__artwork_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artwork_id",
+            "required": true,
+            "schema": {
+              "title": "Artwork Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtworkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Artwork",
+        "tags": [
+          "artworks"
+        ]
+      },
+      "patch": {
+        "operationId": "update_artwork_api_v1_artworks__artwork_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artwork_id",
+            "required": true,
+            "schema": {
+              "title": "Artwork Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArtworkUpdateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtworkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Artwork",
+        "tags": [
+          "artworks"
+        ]
+      }
+    },
+    "/api/v1/artworks/{artwork_id}/document": {
+      "put": {
+        "description": "Replace the document. `If-Match: <document_version>` is required (409 when outdated).",
+        "operationId": "put_document_api_v1_artworks__artwork_id__document_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artwork_id",
+            "required": true,
+            "schema": {
+              "title": "Artwork Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "if-match",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArtworkDocument"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtworkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Document",
+        "tags": [
+          "artworks"
+        ]
+      }
+    },
+    "/api/v1/artworks/{artwork_id}/duplicate": {
+      "post": {
+        "operationId": "duplicate_artwork_api_v1_artworks__artwork_id__duplicate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artwork_id",
+            "required": true,
+            "schema": {
+              "title": "Artwork Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtworkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Duplicate Artwork",
+        "tags": [
+          "artworks"
+        ]
+      }
+    },
+    "/api/v1/artworks/{artwork_id}/render.jpg": {
+      "get": {
+        "operationId": "render_jpg_api_v1_artworks__artwork_id__render_jpg_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artwork_id",
+            "required": true,
+            "schema": {
+              "title": "Artwork Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Render hash: the response is cached forever when it matches",
+            "in": "query",
+            "name": "v",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Render hash: the response is cached forever when it matches",
+              "title": "V"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Render Jpg",
+        "tags": [
+          "artworks"
+        ]
+      }
+    },
+    "/api/v1/artworks/{artwork_id}/render.png": {
+      "get": {
+        "description": "Lossless 3840\u00d72160 master (rendered on demand when missing).",
+        "operationId": "render_png_api_v1_artworks__artwork_id__render_png_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artwork_id",
+            "required": true,
+            "schema": {
+              "title": "Artwork Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Render hash: the response is cached forever when it matches",
+            "in": "query",
+            "name": "v",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Render hash: the response is cached forever when it matches",
+              "title": "V"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Render Png",
+        "tags": [
+          "artworks"
+        ]
+      }
+    },
+    "/api/v1/artworks/{artwork_id}/snapshots": {
+      "get": {
+        "operationId": "list_snapshots_api_v1_artworks__artwork_id__snapshots_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artwork_id",
+            "required": true,
+            "schema": {
+              "title": "Artwork Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SnapshotOut"
+                  },
+                  "title": "Response List Snapshots Api V1 Artworks  Artwork Id  Snapshots Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Snapshots",
+        "tags": [
+          "artworks"
+        ]
+      },
+      "post": {
+        "operationId": "create_snapshot_api_v1_artworks__artwork_id__snapshots_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artwork_id",
+            "required": true,
+            "schema": {
+              "title": "Artwork Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SnapshotIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnapshotOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Snapshot",
+        "tags": [
+          "artworks"
+        ]
+      }
+    },
+    "/api/v1/artworks/{artwork_id}/snapshots/{snapshot_id}/restore": {
+      "post": {
+        "operationId": "restore_snapshot_api_v1_artworks__artwork_id__snapshots__snapshot_id__restore_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artwork_id",
+            "required": true,
+            "schema": {
+              "title": "Artwork Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "snapshot_id",
+            "required": true,
+            "schema": {
+              "title": "Snapshot Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtworkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Restore Snapshot",
+        "tags": [
+          "artworks"
+        ]
+      }
+    },
+    "/api/v1/artworks/{artwork_id}/thumb/{size}": {
+      "get": {
+        "operationId": "render_thumb_api_v1_artworks__artwork_id__thumb__size__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artwork_id",
+            "required": true,
+            "schema": {
+              "title": "Artwork Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "size",
+            "required": true,
+            "schema": {
+              "enum": [
+                "256",
+                "768"
+              ],
+              "title": "Size",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Render hash: the response is cached forever when it matches",
+            "in": "query",
+            "name": "v",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Render hash: the response is cached forever when it matches",
+              "title": "V"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Render Thumb",
+        "tags": [
+          "artworks"
+        ]
+      }
+    },
+    "/api/v1/artworks/{artwork_id}/validate": {
+      "post": {
+        "description": "Mark as ready (displayable). 422 `artwork_incomplete` / `invalid_document` otherwise.",
+        "operationId": "validate_artwork_api_v1_artworks__artwork_id__validate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artwork_id",
+            "required": true,
+            "schema": {
+              "title": "Artwork Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtworkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Validate Artwork",
+        "tags": [
+          "artworks"
+        ]
+      }
+    },
     "/api/v1/auth/logout": {
       "post": {
         "description": "Forget the device cookie in this browser (the device stays registered until revoked).",
@@ -1127,7 +3422,9 @@
           }
         },
         "summary": "Logout",
-        "tags": ["auth"]
+        "tags": [
+          "auth"
+        ]
       }
     },
     "/api/v1/auth/pair": {
@@ -1167,7 +3464,9 @@
           }
         },
         "summary": "Redeem Pairing Code",
-        "tags": ["auth"]
+        "tags": [
+          "auth"
+        ]
       }
     },
     "/api/v1/auth/setup": {
@@ -1207,7 +3506,9 @@
           }
         },
         "summary": "Redeem Setup Code",
-        "tags": ["auth"]
+        "tags": [
+          "auth"
+        ]
       }
     },
     "/api/v1/collections": {
@@ -1230,7 +3531,9 @@
           }
         },
         "summary": "List Collections",
-        "tags": ["library"]
+        "tags": [
+          "library"
+        ]
       }
     },
     "/api/v1/devices": {
@@ -1253,7 +3556,9 @@
           }
         },
         "summary": "List Devices",
-        "tags": ["devices"]
+        "tags": [
+          "devices"
+        ]
       }
     },
     "/api/v1/devices/pairing-codes": {
@@ -1292,7 +3597,9 @@
           }
         },
         "summary": "Create Pairing Code",
-        "tags": ["devices"]
+        "tags": [
+          "devices"
+        ]
       }
     },
     "/api/v1/devices/{device_id}": {
@@ -1325,7 +3632,9 @@
           }
         },
         "summary": "Revoke Device",
-        "tags": ["devices"]
+        "tags": [
+          "devices"
+        ]
       },
       "patch": {
         "operationId": "update_device_api_v1_devices__device_id__patch",
@@ -1373,7 +3682,9 @@
           }
         },
         "summary": "Update Device",
-        "tags": ["devices"]
+        "tags": [
+          "devices"
+        ]
       }
     },
     "/api/v1/events": {
@@ -1386,7 +3697,105 @@
           }
         },
         "summary": "Events",
-        "tags": ["events"]
+        "tags": [
+          "events"
+        ]
+      }
+    },
+    "/api/v1/fonts": {
+      "get": {
+        "operationId": "list_fonts_api_v1_fonts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FontOut"
+                  },
+                  "title": "Response List Fonts Api V1 Fonts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Fonts",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/fonts/{font_id}/{weight}.ttf": {
+      "get": {
+        "description": "Font file for the editor preview (`@font-face`), identical to the renderer's.",
+        "operationId": "font_file_api_v1_fonts__font_id___weight__ttf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "font_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-z0-9-]{1,64}$",
+              "title": "Font Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "weight",
+            "required": true,
+            "schema": {
+              "title": "Weight",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Font File",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/frame-styles": {
+      "get": {
+        "operationId": "list_frame_styles_api_v1_frame_styles_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FrameStyleOut"
+                  },
+                  "title": "Response List Frame Styles Api V1 Frame Styles Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Frame Styles",
+        "tags": [
+          "templates"
+        ]
       }
     },
     "/api/v1/inbox/dismiss": {
@@ -1425,7 +3834,9 @@
           }
         },
         "summary": "Dismiss From Inbox",
-        "tags": ["photos"]
+        "tags": [
+          "photos"
+        ]
       }
     },
     "/api/v1/inbox/restore": {
@@ -1464,7 +3875,34 @@
           }
         },
         "summary": "Restore To Inbox",
-        "tags": ["photos"]
+        "tags": [
+          "photos"
+        ]
+      }
+    },
+    "/api/v1/layouts": {
+      "get": {
+        "operationId": "list_layouts_api_v1_layouts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LayoutOut"
+                  },
+                  "title": "Response List Layouts Api V1 Layouts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Layouts",
+        "tags": [
+          "templates"
+        ]
       }
     },
     "/api/v1/localsend/devices": {
@@ -1487,7 +3925,9 @@
           }
         },
         "summary": "List Devices",
-        "tags": ["localsend"]
+        "tags": [
+          "localsend"
+        ]
       }
     },
     "/api/v1/localsend/devices/{device_id}": {
@@ -1520,7 +3960,9 @@
           }
         },
         "summary": "Forget Device",
-        "tags": ["localsend"]
+        "tags": [
+          "localsend"
+        ]
       },
       "patch": {
         "operationId": "update_device_api_v1_localsend_devices__device_id__patch",
@@ -1568,7 +4010,9 @@
           }
         },
         "summary": "Update Device",
-        "tags": ["localsend"]
+        "tags": [
+          "localsend"
+        ]
       }
     },
     "/api/v1/localsend/requests": {
@@ -1591,7 +4035,9 @@
           }
         },
         "summary": "Pending Requests",
-        "tags": ["localsend"]
+        "tags": [
+          "localsend"
+        ]
       }
     },
     "/api/v1/localsend/requests/{request_id}/decision": {
@@ -1634,7 +4080,9 @@
           }
         },
         "summary": "Decide",
-        "tags": ["localsend"]
+        "tags": [
+          "localsend"
+        ]
       }
     },
     "/api/v1/localsend/status": {
@@ -1653,7 +4101,9 @@
           }
         },
         "summary": "Status",
-        "tags": ["localsend"]
+        "tags": [
+          "localsend"
+        ]
       }
     },
     "/api/v1/photos": {
@@ -1667,7 +4117,11 @@
             "schema": {
               "anyOf": [
                 {
-                  "enum": ["inbox", "processed", "dismissed"],
+                  "enum": [
+                    "inbox",
+                    "processed",
+                    "dismissed"
+                  ],
                   "type": "string"
                 },
                 {
@@ -1762,7 +4216,9 @@
           }
         },
         "summary": "List Photos",
-        "tags": ["photos"]
+        "tags": [
+          "photos"
+        ]
       }
     },
     "/api/v1/photos/stats": {
@@ -1781,7 +4237,9 @@
           }
         },
         "summary": "Library Stats",
-        "tags": ["photos"]
+        "tags": [
+          "photos"
+        ]
       }
     },
     "/api/v1/photos/{photo_id}": {
@@ -1821,7 +4279,9 @@
           }
         },
         "summary": "Get Photo",
-        "tags": ["photos"]
+        "tags": [
+          "photos"
+        ]
       },
       "patch": {
         "operationId": "update_photo_api_v1_photos__photo_id__patch",
@@ -1869,7 +4329,9 @@
           }
         },
         "summary": "Update Photo",
-        "tags": ["photos"]
+        "tags": [
+          "photos"
+        ]
       }
     },
     "/api/v1/photos/{photo_id}/original": {
@@ -1902,7 +4364,9 @@
           }
         },
         "summary": "Photo Original",
-        "tags": ["photos"]
+        "tags": [
+          "photos"
+        ]
       }
     },
     "/api/v1/photos/{photo_id}/proxy": {
@@ -1935,7 +4399,9 @@
           }
         },
         "summary": "Photo Proxy",
-        "tags": ["photos"]
+        "tags": [
+          "photos"
+        ]
       }
     },
     "/api/v1/photos/{photo_id}/thumb/{size}": {
@@ -1956,7 +4422,10 @@
             "name": "size",
             "required": true,
             "schema": {
-              "enum": ["256", "768"],
+              "enum": [
+                "256",
+                "768"
+              ],
               "title": "Size",
               "type": "string"
             }
@@ -1978,7 +4447,47 @@
           }
         },
         "summary": "Photo Thumb",
-        "tags": ["photos"]
+        "tags": [
+          "photos"
+        ]
+      }
+    },
+    "/api/v1/render/region": {
+      "post": {
+        "description": "Render a region (\u2264 1024\u00b2, TV px) of a possibly unsaved document (loupe, \u00a711.4).",
+        "operationId": "render_region_api_v1_render_region_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegionRenderIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "image/png": {}
+            },
+            "description": "PNG of the region"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Render Region",
+        "tags": [
+          "templates"
+        ]
       }
     },
     "/api/v1/system/info": {
@@ -1997,7 +4506,9 @@
           }
         },
         "summary": "System Info",
-        "tags": ["system"]
+        "tags": [
+          "system"
+        ]
       }
     },
     "/api/v1/system/me": {
@@ -2016,7 +4527,9 @@
           }
         },
         "summary": "Me",
-        "tags": ["system"]
+        "tags": [
+          "system"
+        ]
       }
     },
     "/api/v1/tags": {
@@ -2080,7 +4593,9 @@
           }
         },
         "summary": "List Tags",
-        "tags": ["library"]
+        "tags": [
+          "library"
+        ]
       },
       "post": {
         "description": "Create a tag, or return the existing one with the same name (case-insensitive).",
@@ -2118,7 +4633,71 @@
           }
         },
         "summary": "Create Tag",
-        "tags": ["library"]
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/api/v1/textures": {
+      "get": {
+        "operationId": "list_textures_api_v1_textures_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TextureOut"
+                  },
+                  "title": "Response List Textures Api V1 Textures Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Textures",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/textures/{texture_id}.png": {
+      "get": {
+        "description": "Grayscale tile for the editor preview (same formula as the renderer, \u00a78.2).",
+        "operationId": "texture_file_api_v1_textures__texture_id__png_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "texture_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-z0-9-]{1,64}$",
+              "title": "Texture Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Texture File",
+        "tags": [
+          "templates"
+        ]
       }
     },
     "/api/v1/uploads": {
@@ -2158,7 +4737,9 @@
           }
         },
         "summary": "Create Upload",
-        "tags": ["uploads"]
+        "tags": [
+          "uploads"
+        ]
       }
     },
     "/api/v1/uploads/check": {
@@ -2198,7 +4779,9 @@
           }
         },
         "summary": "Check Hashes",
-        "tags": ["uploads"]
+        "tags": [
+          "uploads"
+        ]
       }
     },
     "/api/v1/uploads/{upload_id}": {
@@ -2231,7 +4814,9 @@
           }
         },
         "summary": "Cancel Upload",
-        "tags": ["uploads"]
+        "tags": [
+          "uploads"
+        ]
       },
       "get": {
         "operationId": "get_upload_api_v1_uploads__upload_id__get",
@@ -2269,7 +4854,9 @@
           }
         },
         "summary": "Get Upload",
-        "tags": ["uploads"]
+        "tags": [
+          "uploads"
+        ]
       },
       "head": {
         "operationId": "head_upload_api_v1_uploads__upload_id__head",
@@ -2305,7 +4892,9 @@
           }
         },
         "summary": "Head Upload",
-        "tags": ["uploads"]
+        "tags": [
+          "uploads"
+        ]
       },
       "patch": {
         "description": "Append a chunk at `Upload-Offset`. Completing the file verifies it and starts ingestion.",
@@ -2355,7 +4944,9 @@
           }
         },
         "summary": "Append Chunk",
-        "tags": ["uploads"]
+        "tags": [
+          "uploads"
+        ]
       }
     }
   }

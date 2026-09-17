@@ -9,6 +9,7 @@ from the_frame_v2.auth.ratelimit import RateLimiter
 from the_frame_v2.config import Settings
 from the_frame_v2.db.session import Database
 from the_frame_v2.events import EventBroker
+from the_frame_v2.jobs.gate import RenderGate
 from the_frame_v2.jobs.queue import JobQueue
 from the_frame_v2.services.geocode import Geocoder
 from the_frame_v2.storage import Storage
@@ -28,5 +29,6 @@ class AppContext:
     geocoder: Geocoder
     auth_limiter: RateLimiter
     localsend: LocalSendHub
+    render_gate: RenderGate
     localsend_runner: LocalSendRunner | None = None
     """Set while the LocalSend receiver runs (app lifespan)."""

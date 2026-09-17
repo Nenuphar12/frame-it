@@ -13,6 +13,11 @@ const DYNAMIC_PREFIXES = [
   "devices.roleHints",
   "settings.themes",
   "settings.languages",
+  "artworks.filters",
+  "artworks.statuses",
+  "artworks.tiers",
+  "artworks.tierHints",
+  "artworks.create.placements",
 ];
 
 const has = (key) => {

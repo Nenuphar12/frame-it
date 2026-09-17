@@ -1,0 +1,259 @@
+{
+  "$defs": {
+    "Band": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Color",
+          "type": "string"
+        },
+        "width": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "width",
+        "color"
+      ],
+      "title": "Band",
+      "type": "object"
+    },
+    "CaptionDefaults": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "default": "#3A3A3A",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Color",
+          "type": "string"
+        },
+        "font": {
+          "default": "cormorant-garamond",
+          "pattern": "^[a-z0-9-]{1,64}$",
+          "title": "Font",
+          "type": "string"
+        },
+        "letter_spacing": {
+          "default": 0.02,
+          "maximum": 2,
+          "minimum": -0.5,
+          "title": "Letter Spacing",
+          "type": "number"
+        },
+        "size": {
+          "default": 48,
+          "maximum": 1000,
+          "minimum": 4,
+          "title": "Size",
+          "type": "integer"
+        },
+        "weight": {
+          "default": 500,
+          "maximum": 900,
+          "minimum": 100,
+          "title": "Weight",
+          "type": "integer"
+        }
+      },
+      "title": "CaptionDefaults",
+      "type": "object"
+    },
+    "MarginsSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "bottom": {
+          "default": 0,
+          "maximum": 2159,
+          "minimum": 0,
+          "title": "Bottom",
+          "type": "integer"
+        },
+        "left": {
+          "default": 0,
+          "maximum": 3839,
+          "minimum": 0,
+          "title": "Left",
+          "type": "integer"
+        },
+        "linked": {
+          "default": false,
+          "title": "Linked",
+          "type": "boolean"
+        },
+        "right": {
+          "default": 0,
+          "maximum": 3839,
+          "minimum": 0,
+          "title": "Right",
+          "type": "integer"
+        },
+        "top": {
+          "default": 0,
+          "maximum": 2159,
+          "minimum": 0,
+          "title": "Top",
+          "type": "integer"
+        }
+      },
+      "title": "MarginsSpec",
+      "type": "object"
+    },
+    "Mat": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "default": "#F2EFE8",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Color",
+          "type": "string"
+        },
+        "texture": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextureRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "Mat",
+      "type": "object"
+    },
+    "Shadow": {
+      "additionalProperties": false,
+      "properties": {
+        "blur": {
+          "default": 0,
+          "maximum": 200,
+          "minimum": 0,
+          "title": "Blur",
+          "type": "number"
+        },
+        "color": {
+          "default": "#000000",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Color",
+          "type": "string"
+        },
+        "offset_x": {
+          "default": 0,
+          "maximum": 500,
+          "minimum": -500,
+          "title": "Offset X",
+          "type": "integer"
+        },
+        "offset_y": {
+          "default": 0,
+          "maximum": 500,
+          "minimum": -500,
+          "title": "Offset Y",
+          "type": "integer"
+        },
+        "opacity": {
+          "default": 0.35,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Opacity",
+          "type": "number"
+        },
+        "type": {
+          "enum": [
+            "inner",
+            "drop"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "Shadow",
+      "type": "object"
+    },
+    "SlotDefaults": {
+      "additionalProperties": false,
+      "properties": {
+        "bands": {
+          "items": {
+            "$ref": "#/$defs/Band"
+          },
+          "maxItems": 3,
+          "title": "Bands",
+          "type": "array"
+        },
+        "quality_lock": {
+          "default": "no_upscale",
+          "enum": [
+            "native",
+            "no_upscale",
+            "free"
+          ],
+          "title": "Quality Lock",
+          "type": "string"
+        },
+        "shadow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Shadow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "SlotDefaults",
+      "type": "object"
+    },
+    "TextureRef": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9-]{1,64}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "strength": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Strength",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "strength"
+      ],
+      "title": "TextureRef",
+      "type": "object"
+    }
+  },
+  "$id": "https://the-frame-v2/schemas/frame-style.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "caption_defaults": {
+      "$ref": "#/$defs/CaptionDefaults"
+    },
+    "margins": {
+      "$ref": "#/$defs/MarginsSpec"
+    },
+    "mat": {
+      "$ref": "#/$defs/Mat"
+    },
+    "slot_defaults": {
+      "$ref": "#/$defs/SlotDefaults"
+    }
+  },
+  "title": "Frame style document v1",
+  "type": "object"
+}

@@ -8,12 +8,12 @@
 Self-hosted web app to prepare pictures for a 4K art-mode TV (Samsung The Frame, 3840×2160): phone uploads in
 full quality over the LAN, pixel-perfect framing/compositions, collections, export/import.
 
-- **Current state (2026-09-16): Phases 0–3 done** — foundations, device auth & pairing, resumable uploads,
-  ingest pipeline (decode, colour, EXIF, offline place names, thumbnails/proxies), Photos + Inbox UI, phone
-  upload page. Since 2026-09-17: LocalSend receiver, merge of photo copies by content fingerprint.
+- **Current state (2026-09-17): Phases 0–4 done** — foundations, device auth & pairing, resumable uploads,
+  LocalSend receiver, ingest, Photos + Inbox UI, phone upload page; artwork document + geometry (Python/TS
+  mirrored), pyvips renderer, built-in styles/layouts, artworks API, Artworks page + viewer (review aid).
   See `docs/progress.md`.
-- **Next: Phase 4** (artwork document, geometry, pyvips renderer) — start with spike S3
-  (`docs/research/render-parity.md`). Plan: `docs/PLAN.md` §14.
+- **Next: Phase 5** (Konva editor, crop/placement/locks, undo/autosave, review flow) — follow the canvas rules in
+  `docs/research/render-parity.md`. Plan: `docs/PLAN.md` §14.
 - Verified by the user on real hardware (2026-09-17): Android uploads (both pickers keep full quality but
   Android zeroes GPS → no place; see `docs/research/phone-uploads.md`), Docker image build/run/persistence.
 
@@ -23,9 +23,12 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
 |---|---|
 | Install | `make install` (uv + pnpm) |
 | Dev (API :8765 + Vite :5173) | `make dev` — open http://localhost:5173 |
-| Everything that must pass | `make check` (ruff, ESLint, mypy strict, tsc, i18n keys, pytest) |
+| Everything that must pass | `make check` (ruff, ESLint, mypy strict, tsc, i18n keys, geometry conformance, pytest) |
+| Geometry fixtures | `make conformance` (TS); regenerate from Python: `cd backend && CONFORMANCE_UPDATE=1 uv run pytest tests/unit/test_conformance.py` |
+| Golden images | `make golden-update` after an intended pixel change (review PNGs, bump `RENDERER_VERSION`) |
+| Render budgets | `cd backend && uv run python ../scripts/bench_render.py` |
 | Backend tests only | `cd backend && uv run pytest` (add `-k name`) |
-| Regenerate API types (after any API schema change) | `make gen-api` |
+| Regenerate API types + `docs/schemas/` (after any API/document schema change) | `make gen-api` |
 | Production build + serve | `make serve` (frontend built into `backend/src/the_frame_v2/static`) |
 | CLI | `uv run the_frame_v2 --help` (`serve`, `doctor`, `setup-code`, `openapi`, `db upgrade`, `cache clear`) |
 | New migration | edit `db/models.py`, then `cd backend && uv run python -m the_frame_v2.db.migrate "message"`, rename to `NNNN_message.py`, replace custom types by `sa.String` |
@@ -42,25 +45,34 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `…/context.py` | `AppContext` service container (`app.state.ctx`) |
 | `…/api/` | Thin routers + `schemas.py` (Pydantic API models = OpenAPI source) + `deps.py` (auth deps) |
 | `…/auth/` | `principal.py` (cookie/localhost → role), `middleware.py` (Host/CSRF/headers), `ratelimit.py` |
-| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos`, `tags`, `geocode` |
-| `…/imaging/` | `sniff` (magic bytes), `decode` (the only pixel access), `metadata` (EXIF/ICC), `fingerprint` (hash ignoring EXIF), `capabilities` |
+| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos`, `tags`, `geocode`, `artworks` (create/save/snapshots), `render` (cache, jobs, region), `templates` (presets) |
+| `…/domain/` | PURE: `document` (artwork document v1 + reference checks), `geometry`, `quality` (tiers), `placement`, `templates` (style/layout docs, `build_document`) |
+| `…/imaging/` | `sniff` (magic bytes), `decode` (the only pixel access), `metadata` (EXIF/ICC), `fingerprint` (hash ignoring EXIF), `capabilities`, `render` (the renderer), `assets` (fonts/textures catalog) |
+| `…/assets/` | `geonames/`, `fonts/` (OFL, `scripts/build_fonts.py`), `textures/` (CC0, `scripts/generate_textures.py`), `presets/` (built-in styles/layouts JSON) |
 | `…/localsend/` | LocalSend v2 receiver: `app.py` (protocol routes, own TLS port), `discovery.py` (multicast), `identity.py` (cert/fingerprint), `runner.py` (lifespan); logic in `services/localsend.py`, admin API `api/localsend.py` |
-| `…/jobs/queue.py` | Persistent in-process job queue with lanes, retries, coalescing |
+| `…/jobs/` | `queue.py` persistent in-process job queue (lanes, retries, coalescing); `gate.py` render concurrency |
 | `…/events.py` | Thread-safe SSE broker (`/api/v1/events`) |
 | `…/db/` | `models.py`, `session.py` (WAL), `migrate.py`, `migrations/versions/` |
 | `…/storage.py` | Data-dir layout (originals, cache, uploads) |
 | `…/assets/geonames/` | Offline place dataset (built by `scripts/build_geonames.py`, CC BY 4.0) |
-| `backend/tests/` | `unit/`, `api/`; fixtures & helpers in `conftest.py` (`make_jpeg`, `pair`, `upload_bytes`) |
+| `backend/tests/` | `unit/`, `api/`, `golden/` (reference PNGs in `refs/`); fixtures & helpers in `conftest.py` (`make_jpeg`, `pair`, `upload_bytes`) |
+| `conformance/geometry/` | Shared JSON fixtures: Python domain ↔ `frontend/src/editor/core` |
+| `scripts/` | `build_geonames.py`, `build_fonts.py`, `generate_textures.py`, `bench_render.py`, `render_parity/` (S3 page) |
 | `frontend/src/api/` | `client.ts` (openapi-fetch + `ApiError`), `queries.ts` (TanStack Query hooks), `events.ts` (SSE), generated `schema.d.ts` |
 | `frontend/src/app/` | `router.tsx`, `AuthGate.tsx` (role routing), `Shell.tsx` (sidebar), `commands.ts` (shortcuts/palette registry), `theme.ts` |
-| `frontend/src/features/` | `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/`, `inbox/`, `devices/`, `auth/`, `mobile/`, `settings/`, `tags/` |
+| `frontend/src/editor/core/` | PURE TS mirror of `domain/` (`geometry.ts`, `quality.ts`, `placement.ts`); relative imports with `.ts` extension (run by Node in `scripts/conformance.ts`) |
+| `frontend/src/features/` | `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, viewer, create dialog), `devices/`, `auth/`, `mobile/`, `settings/`, `tags/`, `localsend/` |
 | `frontend/src/shared/` | UI primitives (`ui/`), `format.ts`, `cn.ts` |
 | `frontend/src/i18n/` | i18next setup; strings in `locales/en/common.json` |
 | `docs/` | Plan, specs, ADRs (`adr/`), research findings (`research/`), progress |
 
 ## Architecture essentials
 
-- Layers: `api` (HTTP only) → `services` (transactions, rules) → `imaging` / `db`. Jobs call services.
+- Layers: `api` (HTTP only) → `services` (transactions, rules) → `domain` (pure) / `imaging` / `db`. Jobs call services.
+- Artwork flow: `POST /artworks` (photos + style + layout → `build_document`) or `PUT /artworks/{id}/document`
+  (`If-Match: <document_version>`) → validate (structure + references) → derived columns + `artwork_photos` →
+  commit → coalesced `render` job → `cache/renders/<id>/<render_hash>.png` → SSE `artwork.rendered`. Render
+  endpoints render on demand; URLs carry `?v=<render_hash>` for immutable caching.
 - `db.session()` is a transactional context manager (commit/rollback). Routers get a request-scoped session via
   `DbSession`; long work runs in jobs or `run_in_threadpool`.
 - LocalSend flow (`docs/localsend.md`): multicast discovery → `prepare-upload` (unknown device → admin approval
@@ -99,7 +111,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 
 `docs/PLAN.md` (scope, phases, DoD) · `docs/data-model.md` · `docs/localsend.md` · `docs/artwork-document.md` ·
 `docs/geometry-and-quality.md` · `docs/rendering-spec.md` · `docs/security.md` · `docs/archive-format.md` ·
-`docs/adr/` · `docs/research/`
+`docs/schemas/` (generated) · `docs/adr/` · `docs/research/` · `NOTICE.md` (asset licenses)
 
 ## Gotchas
 
@@ -115,4 +127,13 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 - The LocalSend certificate (`<data_dir>/localsend/`) is pinned by phones: never regenerate it casually.
   Tests never bind 53317 (`start_workers=False`; runner tests use a free port and `localsend_discovery=False`).
 - Alembic autogenerate proposes dropping the FTS5 `search_index*` tables: delete those lines by hand.
+- Geometry change ⇒ change Python **and** TS, add a case to `CASES` in `tests/unit/test_conformance.py`,
+  regenerate fixtures, check the new expected values by hand.
+- Any renderer pixel change ⇒ bump `RENDERER_VERSION` (render hash) and `make golden-update`; asset file changes ⇒
+  bump the manifest `version`. Golden sources are PNG (JPEG encoders differ between libvips builds).
+- libvips gotchas: trigonometric ops use **degrees**; `gaussblur` default `min_ampl=0.2` clips (use 0.005);
+  `Image.text` is cropped to ink (offsets in `xoffset`/`yoffset`); `affine` pixel centres need the ±0.5
+  `idx/odx` offsets (see `_rotate`); `find_load` is not exposed by pyvips (sniff instead).
+- A render holds all decoded originals of the document in memory (parallel decode); `render_workers` bounds it.
+- `ArtworkDocument.schema_version` is serialized as `"schema"` (alias): dump with `canonical()`.
 - `pkill -f "the_frame_v2 serve"` also matches your own shell command line: use `pkill -f "[t]he_frame_v2 serve"`.

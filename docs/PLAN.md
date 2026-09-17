@@ -1,6 +1,6 @@
 # the_frame_v2 — Implementation Plan
 
-> Status: **Phases 0–3 implemented (2026-09-16), Phase 4 next** — details in `docs/progress.md` · Created 2026-09-16 · Placeholder name `the_frame_v2` (rename before open-sourcing)
+> Status: **Phases 0–4 implemented (Phase 4: 2026-09-17), Phase 5 next** — details in `docs/progress.md` · Created 2026-09-16 · Placeholder name `the_frame_v2` (rename before open-sourcing)
 >
 > This plan is the single source of truth for scope and sequencing. Specs (§5–§9, §12) live in dedicated
 > files under `docs/` (linked in place). Agents: read `AGENTS.md` first (see §3).
@@ -631,8 +631,10 @@ artwork → collection → export) completes without reading code.
 ### Open questions (to decide at the indicated phase)
 
 - Final project name and license (Phase 10).
-- Exact bundled fonts and texture set (Phase 4).
-- Color-picker presets list and built-in styles look (Phase 4, with the user reviewing renders).
+- ~~Exact bundled fonts and texture set (Phase 4)~~ — decided in ADR-0008.
+- Color-picker presets list (Phase 5).
+- ~~Built-in styles look~~ — reviewed on real renders (2026-09-17): styles, layouts, fonts and textures kept;
+  Float mount lost its inner white band; default style stays Gallery recessed (may change later).
 
 ### Out of scope for v1
 

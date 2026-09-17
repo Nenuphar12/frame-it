@@ -5,9 +5,10 @@ Wi-Fi, frame them pixel-perfectly, group them in collections. *(Placeholder name
 
 ## Status
 
-Phases 0–3 of [the plan](docs/PLAN.md) are implemented: device pairing (QR), resumable full-quality uploads from
-phone and desktop, ingest (JPEG/PNG/AVIF, colour management, EXIF, offline place names), photo library and inbox.
-The artwork editor is next.
+Phases 0–4 of [the plan](docs/PLAN.md) are implemented: device pairing (QR), resumable full-quality uploads from
+phone and desktop (and LocalSend), ingest (JPEG/PNG/AVIF, colour management, EXIF, offline place names), photo
+library and inbox, artworks from photos with built-in frame styles and layouts, and the 4K renderer (PNG/JPEG
+downloads). The interactive editor is next.
 
 ## Quick start
 

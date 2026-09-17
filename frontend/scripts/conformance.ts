@@ -1,0 +1,94 @@
+// Checks the TypeScript geometry (src/editor/core) against the shared fixtures in
+// conformance/geometry/*.json (the Python side runs in pytest). Plain script, run by Node's
+// type stripping: `pnpm conformance`. Spec: docs/PLAN.md §13.3.
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
+import * as geometry from "../src/editor/core/geometry.ts";
+import * as placement from "../src/editor/core/placement.ts";
+import * as quality from "../src/editor/core/quality.ts";
+
+type Args = Record<string, unknown>;
+type Fn = (args: Args) => unknown;
+
+const a = <T>(args: Args, key: string) => args[key] as T;
+
+const FUNCTIONS: Record<string, Fn> = {
+  round_half_even: (x) => geometry.roundHalfEven(a(x, "value")),
+  oriented_size: (x) => geometry.orientedSize(a(x, "source"), a(x, "orient")),
+  rect_to_oriented: (x) => geometry.rectToOriented(a(x, "rect"), a(x, "source"), a(x, "orient")),
+  rect_from_oriented: (x) =>
+    geometry.rectFromOriented(a(x, "rect"), a(x, "source"), a(x, "orient")),
+  reorient_crop: (x) =>
+    geometry.reorientCrop(a(x, "crop"), a(x, "source"), a(x, "old"), a(x, "new")),
+  crop_within: (x) => geometry.cropWithin(a(x, "crop"), a(x, "bounds")),
+  aspect_consistent: (x) =>
+    geometry.aspectConsistent(a(x, "rect_w"), a(x, "rect_h"), a(x, "crop_w"), a(x, "crop_h")),
+  parse_ratio: (x) => geometry.parseRatio(a(x, "crop_ratio"), a(x, "source")),
+  rotated_bounds: (x) =>
+    geometry.rotatedBounds(a(x, "rect_x"), a(x, "rect_y"), a(x, "w"), a(x, "h"), a(x, "degrees")),
+  slot_quality: (x) => quality.slotQuality(a(x, "slot")),
+  artwork_quality: (x) => quality.artworkQuality(a(x, "slots")),
+  available_area: (x) => placement.availableArea(a(x, "margins")),
+  fit_rect: (x) => placement.fitRect(a(x, "area"), a(x, "content"), a(x, "lock")),
+  largest_crop: (x) => placement.largestCrop(a(x, "bounds"), a(x, "ratio"), a(x, "center")),
+  native_crop_for_area: (x) =>
+    placement.nativeCropForArea(a(x, "area"), a(x, "source"), a(x, "crop_ratio"), a(x, "previous")),
+  margins_for_slot: (x) =>
+    placement.marginsForSlot(a(x, "slot"), a(x, "previous"), a(x, "linked")),
+  fit_in_mat: (x) =>
+    placement.fitInMat(a(x, "source"), a(x, "crop"), a(x, "crop_ratio"), a(x, "margins"), a(x, "lock")),
+  fill: (x) => placement.fill(a(x, "source"), a(x, "lock")),
+  fill_slot: (x) => placement.fillSlot(a(x, "rect"), a(x, "source"), a(x, "lock")),
+  fit_slot: (x) => placement.fitSlot(a(x, "rect"), a(x, "source"), a(x, "lock")),
+};
+
+function close(actual: unknown, expected: unknown): boolean {
+  if (typeof expected === "number") {
+    return typeof actual === "number" && Math.abs(actual - expected) <= 1e-12 * Math.max(1, Math.abs(expected));
+  }
+  if (Array.isArray(expected)) {
+    return (
+      Array.isArray(actual) &&
+      actual.length === expected.length &&
+      expected.every((value, i) => close(actual[i], value))
+    );
+  }
+  if (expected !== null && typeof expected === "object") {
+    if (actual === null || typeof actual !== "object") return false;
+    const keys = Object.keys(expected);
+    return (
+      keys.length === Object.keys(actual).length &&
+      keys.every((k) => close((actual as Args)[k], (expected as Args)[k]))
+    );
+  }
+  return actual === expected;
+}
+
+const dir = join(import.meta.dirname, "../../conformance/geometry");
+let count = 0;
+const failures: string[] = [];
+for (const file of readdirSync(dir).filter((f) => f.endsWith(".json")).sort()) {
+  const { cases } = JSON.parse(readFileSync(join(dir, file), "utf8")) as {
+    cases: { name: string; fn: string; input: Args; expected: unknown }[];
+  };
+  for (const c of cases) {
+    count++;
+    const fn = FUNCTIONS[c.fn];
+    if (!fn) {
+      failures.push(`${file}: ${c.name}: no TypeScript mapping for ${c.fn}`);
+      continue;
+    }
+    const actual = fn(c.input);
+    if (!close(actual, c.expected)) {
+      failures.push(
+        `${file}: ${c.name}: got ${JSON.stringify(actual)}, expected ${JSON.stringify(c.expected)}`,
+      );
+    }
+  }
+}
+if (failures.length > 0) {
+  console.error(`Geometry conformance failed (${failures.length}/${count}):\n  ${failures.join("\n  ")}`);
+  process.exit(1);
+}
+console.log(`Geometry conformance OK (${count} cases)`);

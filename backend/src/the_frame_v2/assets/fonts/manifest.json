@@ -1,0 +1,151 @@
+{
+  "version": 1,
+  "fonts": [
+    {
+      "id": "cormorant-garamond",
+      "name": "Cormorant Garamond",
+      "category": "serif",
+      "weights": [
+        400,
+        500,
+        600,
+        700
+      ],
+      "metrics": {
+        "400": {
+          "units_per_em": 1000,
+          "ascender": 924,
+          "descender": -287
+        },
+        "500": {
+          "units_per_em": 1000,
+          "ascender": 924,
+          "descender": -287
+        },
+        "600": {
+          "units_per_em": 1000,
+          "ascender": 924,
+          "descender": -287
+        },
+        "700": {
+          "units_per_em": 1000,
+          "ascender": 924,
+          "descender": -287
+        }
+      },
+      "license": "OFL-1.1",
+      "source": "https://github.com/google/fonts/blob/965e9104ac4cab0d9dbf49baeeb0c3d3de68cbe0/ofl/cormorantgaramond/CormorantGaramond[wght].ttf"
+    },
+    {
+      "id": "eb-garamond",
+      "name": "EB Garamond",
+      "category": "serif",
+      "weights": [
+        400,
+        500,
+        600,
+        700
+      ],
+      "metrics": {
+        "400": {
+          "units_per_em": 1000,
+          "ascender": 1007,
+          "descender": -298
+        },
+        "500": {
+          "units_per_em": 1000,
+          "ascender": 1007,
+          "descender": -298
+        },
+        "600": {
+          "units_per_em": 1000,
+          "ascender": 1007,
+          "descender": -298
+        },
+        "700": {
+          "units_per_em": 1000,
+          "ascender": 1007,
+          "descender": -298
+        }
+      },
+      "license": "OFL-1.1",
+      "source": "https://github.com/google/fonts/blob/965e9104ac4cab0d9dbf49baeeb0c3d3de68cbe0/ofl/ebgaramond/EBGaramond[wght].ttf"
+    },
+    {
+      "id": "inter",
+      "name": "Inter",
+      "category": "sans-serif",
+      "weights": [
+        300,
+        400,
+        500,
+        600,
+        700
+      ],
+      "metrics": {
+        "300": {
+          "units_per_em": 2048,
+          "ascender": 1984,
+          "descender": -494
+        },
+        "400": {
+          "units_per_em": 2048,
+          "ascender": 1984,
+          "descender": -494
+        },
+        "500": {
+          "units_per_em": 2048,
+          "ascender": 1984,
+          "descender": -494
+        },
+        "600": {
+          "units_per_em": 2048,
+          "ascender": 1984,
+          "descender": -494
+        },
+        "700": {
+          "units_per_em": 2048,
+          "ascender": 1984,
+          "descender": -494
+        }
+      },
+      "license": "OFL-1.1",
+      "source": "https://github.com/google/fonts/blob/965e9104ac4cab0d9dbf49baeeb0c3d3de68cbe0/ofl/inter/Inter[opsz,wght].ttf"
+    },
+    {
+      "id": "josefin-sans",
+      "name": "Josefin Sans",
+      "category": "sans-serif",
+      "weights": [
+        300,
+        400,
+        600,
+        700
+      ],
+      "metrics": {
+        "300": {
+          "units_per_em": 1000,
+          "ascender": 750,
+          "descender": -250
+        },
+        "400": {
+          "units_per_em": 1000,
+          "ascender": 750,
+          "descender": -250
+        },
+        "600": {
+          "units_per_em": 1000,
+          "ascender": 750,
+          "descender": -250
+        },
+        "700": {
+          "units_per_em": 1000,
+          "ascender": 750,
+          "descender": -250
+        }
+      },
+      "license": "OFL-1.1",
+      "source": "https://github.com/google/fonts/blob/965e9104ac4cab0d9dbf49baeeb0c3d3de68cbe0/ofl/josefinsans/JosefinSans[wght].ttf"
+    }
+  ]
+}

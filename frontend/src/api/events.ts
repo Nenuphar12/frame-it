@@ -27,6 +27,9 @@ export interface ServerEvents {
   "photo.ingested": IngestedEvent;
   "photo.ingest_failed": IngestFailedEvent;
   "job.failed": { job_id: string; error: string | null };
+  "photo.updated": { photo_ids: string[] };
+  "artwork.rendered": { artwork_id: string; render_hash: string };
+  "entity.changed": { entity: string; id: string };
 }
 
 type EventName = keyof ServerEvents;
@@ -59,12 +62,18 @@ export function useServerEvents(enabled: boolean) {
       "job.failed",
       "localsend.request",
       "localsend.request_closed",
+      "photo.updated",
+      "artwork.rendered",
+      "entity.changed",
     ];
     const handlers = names.map((name) => {
       const handler = (message: MessageEvent<string>) => {
         const data = JSON.parse(message.data) as ServerEvents[typeof name];
         emit(name, data);
-        if (name === "photo.ingested") {
+        if (name === "artwork.rendered" || name === "entity.changed") {
+          void qc.invalidateQueries({ queryKey: ["artworks"] });
+        }
+        if (name === "photo.ingested" || name === "photo.updated") {
           void qc.invalidateQueries({ queryKey: ["photos"] });
         }
         if (name.startsWith("localsend.")) {

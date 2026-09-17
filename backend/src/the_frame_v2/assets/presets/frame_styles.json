@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "styles": [
+    {
+      "id": "builtin-style-none",
+      "name": "None",
+      "document": {
+        "mat": { "color": "#000000", "texture": null },
+        "margins": { "top": 0, "right": 0, "bottom": 0, "left": 0, "linked": true },
+        "slot_defaults": { "bands": [], "shadow": null, "quality_lock": "no_upscale" }
+      }
+    },
+    {
+      "id": "builtin-style-gallery-recessed",
+      "name": "Gallery recessed",
+      "document": {
+        "mat": { "color": "#F2EFE8", "texture": { "id": "paper-01", "strength": 0.35 } },
+        "margins": { "top": 280, "right": 300, "bottom": 320, "left": 300, "linked": false },
+        "slot_defaults": {
+          "bands": [],
+          "shadow": { "type": "inner", "offset_x": 0, "offset_y": 6, "blur": 28, "color": "#000000", "opacity": 0.45 },
+          "quality_lock": "no_upscale"
+        }
+      }
+    },
+    {
+      "id": "builtin-style-float-mount",
+      "name": "Float mount",
+      "document": {
+        "mat": { "color": "#E9E6DF", "texture": { "id": "paper-01", "strength": 0.25 } },
+        "margins": { "top": 300, "right": 320, "bottom": 340, "left": 320, "linked": false },
+        "slot_defaults": {
+          "bands": [],
+          "shadow": { "type": "drop", "offset_x": 0, "offset_y": 14, "blur": 44, "color": "#000000", "opacity": 0.32 },
+          "quality_lock": "no_upscale"
+        }
+      }
+    },
+    {
+      "id": "builtin-style-thin-black",
+      "name": "Thin black",
+      "document": {
+        "mat": { "color": "#F4F2ED", "texture": null },
+        "margins": { "top": 220, "right": 240, "bottom": 240, "left": 240, "linked": false },
+        "slot_defaults": {
+          "bands": [{ "width": 10, "color": "#111111" }],
+          "shadow": null,
+          "quality_lock": "no_upscale"
+        }
+      }
+    },
+    {
+      "id": "builtin-style-linen",
+      "name": "Linen",
+      "document": {
+        "mat": { "color": "#E4DCCD", "texture": { "id": "linen-01", "strength": 0.55 } },
+        "margins": { "top": 260, "right": 280, "bottom": 300, "left": 280, "linked": false },
+        "slot_defaults": {
+          "bands": [{ "width": 12, "color": "#F6F2EA" }],
+          "shadow": { "type": "inner", "offset_x": 0, "offset_y": 4, "blur": 18, "color": "#3B3024", "opacity": 0.35 },
+          "quality_lock": "no_upscale"
+        }
+      }
+    },
+    {
+      "id": "builtin-style-museum-white",
+      "name": "Museum white",
+      "document": {
+        "mat": { "color": "#F7F7F4", "texture": null },
+        "margins": { "top": 360, "right": 400, "bottom": 440, "left": 400, "linked": false },
+        "slot_defaults": {
+          "bands": [],
+          "shadow": { "type": "inner", "offset_x": 0, "offset_y": 3, "blur": 12, "color": "#000000", "opacity": 0.25 },
+          "quality_lock": "no_upscale"
+        }
+      }
+    }
+  ]
+}

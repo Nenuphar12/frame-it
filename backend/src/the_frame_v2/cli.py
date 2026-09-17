@@ -7,7 +7,7 @@ import logging
 import shutil
 import webbrowser
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 
@@ -145,6 +145,38 @@ def openapi(
         schema = create_app(Settings(data_dir=Path(tmp)), start_workers=False).openapi()
     output.write_text(json.dumps(schema, indent=2, sort_keys=True) + "\n")
     typer.echo(f"Wrote {output}")
+
+
+@app.command()
+def schemas(
+    output: Annotated[Path, typer.Option("--output", "-o", help="Destination directory")],
+) -> None:
+    """Export the JSON Schemas of published documents (artwork document, templates)."""
+    from the_frame_v2.domain import document, templates
+
+    output.mkdir(parents=True, exist_ok=True)
+    for name, schema in schema_documents(document, templates).items():
+        (output / name).write_text(json.dumps(schema, indent=2, sort_keys=True) + "\n")
+        typer.echo(f"Wrote {output / name}")
+
+
+def schema_documents(document: Any, templates: Any) -> dict[str, dict[str, Any]]:
+    base = "https://the-frame-v2/schemas/"
+    result = {"artwork-document.v1.json": document.json_schema()}
+    for filename, model, title in (
+        ("frame-style.v1.json", templates.FrameStyleDocument, "Frame style document v1"),
+        ("layout.v1.json", templates.LayoutDocument, "Layout document v1"),
+    ):
+        schema = model.model_json_schema(mode="validation")
+        schema.update(
+            {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "$id": base + filename,
+                "title": title,
+            }
+        )
+        result[filename] = schema
+    return result
 
 
 @app.command()

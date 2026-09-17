@@ -1,0 +1,161 @@
+{
+  "$defs": {
+    "LayoutCaption": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "default": "middle",
+          "enum": [
+            "start",
+            "middle",
+            "end"
+          ],
+          "title": "Anchor",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^[A-Za-z0-9_-]{1,64}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "placeholder": {
+          "default": "",
+          "maxLength": 500,
+          "title": "Placeholder",
+          "type": "string"
+        },
+        "rotation": {
+          "default": 0,
+          "maximum": 180,
+          "minimum": -180,
+          "title": "Rotation",
+          "type": "number"
+        },
+        "x": {
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "x",
+        "y"
+      ],
+      "title": "LayoutCaption",
+      "type": "object"
+    },
+    "LayoutSlot": {
+      "additionalProperties": false,
+      "properties": {
+        "fill_mode": {
+          "default": "fill",
+          "enum": [
+            "fill",
+            "fit"
+          ],
+          "title": "Fill Mode",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^[A-Za-z0-9_-]{1,64}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "quality_lock": {
+          "default": "no_upscale",
+          "enum": [
+            "native",
+            "no_upscale",
+            "free"
+          ],
+          "title": "Quality Lock",
+          "type": "string"
+        },
+        "rect": {
+          "$ref": "#/$defs/RectSpec"
+        },
+        "rotation": {
+          "default": 0,
+          "maximum": 180,
+          "minimum": -180,
+          "title": "Rotation",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "rect"
+      ],
+      "title": "LayoutSlot",
+      "type": "object"
+    },
+    "RectSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "h": {
+          "maximum": 20000,
+          "minimum": 1,
+          "title": "H",
+          "type": "integer"
+        },
+        "w": {
+          "maximum": 20000,
+          "minimum": 1,
+          "title": "W",
+          "type": "integer"
+        },
+        "x": {
+          "maximum": 20000,
+          "minimum": -20000,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "maximum": 20000,
+          "minimum": -20000,
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "title": "RectSpec",
+      "type": "object"
+    }
+  },
+  "$id": "https://the-frame-v2/schemas/layout.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "captions": {
+      "items": {
+        "$ref": "#/$defs/LayoutCaption"
+      },
+      "maxItems": 32,
+      "title": "Captions",
+      "type": "array"
+    },
+    "slots": {
+      "items": {
+        "$ref": "#/$defs/LayoutSlot"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Slots",
+      "type": "array"
+    }
+  },
+  "required": [
+    "slots"
+  ],
+  "title": "Layout document v1",
+  "type": "object"
+}

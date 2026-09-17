@@ -20,4 +20,5 @@ Threats: other devices on the LAN; **malicious websites in the admin's browser**
 | Archives | Reject absolute paths/`..`, symlinks; cap total uncompressed size and entry count; verify checksums; never import devices/tokens. |
 | Headers | CSP (self only), `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`. |
 | Device management | List, rename, change role, revoke (immediate). |
+| Rendering | Region renders ≤ 1024² px of a validated document (admin only); documents bounded (≤ 32 slots/captions, coordinates ±20 000, photos must exist); full renders bounded by `render_workers`; fonts/textures only from the bundled catalog (ids validated, no paths). |
 | LocalSend receiver | Separate TLS port, no cookies/API access. Unknown sender devices wait for admin approval; approved ones are remembered, blockable. Identity = announced fingerprint (not verified, see `localsend.md`). JPEG/PNG/AVIF only, size cap, SHA-256 checked when announced, uploads bound to session token + sender IP, ≤ 10 pending approvals. |

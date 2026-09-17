@@ -2,8 +2,11 @@ import { Archive, Inbox, Info, Wand2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { useNavigate } from "@tanstack/react-router";
+
 import { usePhotos, useInboxAction } from "@/api/queries";
 import { useRegisterCommands, type Command } from "@/app/commands";
+import { CreateArtworksDialog } from "@/features/artworks/CreateArtworksDialog";
 import { PhotoDrawer } from "@/features/photos/PhotoDrawer";
 import { PhotoGrid } from "@/features/photos/PhotoGrid";
 import { useSelection } from "@/features/photos/useSelection";
@@ -22,6 +25,9 @@ export function InboxPage() {
   const action = useInboxAction();
   const { openFiles } = useFilePickers();
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = photos;
+  const [creating, setCreating] = useState(false);
+  const navigate = useNavigate();
+  const selectedInOrder = useMemo(() => ids.filter((id) => selected.has(id)), [ids, selected]);
 
   useEffect(() => prune(new Set(ids)), [ids, prune]);
 
@@ -55,6 +61,13 @@ export function InboxPage() {
         run: dismiss,
       },
       {
+        id: "inbox.createArtworks",
+        label: "inbox.createArtworks",
+        group: "commands.groups.inbox",
+        shortcut: "n",
+        run: () => selected.size > 0 && setCreating(true),
+      },
+      {
         id: "inbox.details",
         label: "inbox.toggleDetails",
         group: "commands.groups.inbox",
@@ -78,7 +91,12 @@ export function InboxPage() {
           }
           actions={
             <>
-              <Button variant="secondary" disabled title={t("inbox.createArtworksSoon")}>
+              <Button
+                variant="primary"
+                disabled={selected.size === 0}
+                title={t("inbox.createArtworksHint")}
+                onClick={() => setCreating(true)}
+              >
                 <Wand2 size={16} /> {t("inbox.createArtworks")}
               </Button>
               <Button variant="secondary" disabled={selected.size === 0} onClick={dismiss}>
@@ -128,6 +146,15 @@ export function InboxPage() {
         </div>
       </div>
       {detailsId && <PhotoDrawer photoId={detailsId} onClose={() => setDetailsId(null)} />}
+      <CreateArtworksDialog
+        photoIds={selectedInOrder}
+        open={creating}
+        onOpenChange={setCreating}
+        onCreated={() => {
+          clear();
+          void navigate({ to: "/artworks" });
+        }}
+      />
     </div>
   );
 }

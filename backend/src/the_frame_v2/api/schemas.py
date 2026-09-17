@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from the_frame_v2.domain.document import ArtworkDocument, Placement
+from the_frame_v2.domain.templates import FrameStyleDocument, LayoutDocument
 
 RoleName = Literal["admin", "uploader"]
 InboxState = Literal["inbox", "processed", "dismissed"]
@@ -242,3 +245,112 @@ class LocalSendRequestOut(ApiModel):
 
 class LocalSendDecisionIn(BaseModel):
     approve: bool
+
+
+# ---- artworks & templates -----------------------------------------------------------------------
+
+ArtworkStatus = Literal["draft", "ready"]
+Tier = Literal["native", "downscaled", "upscaled"]
+
+
+class ArtworkSummaryOut(ApiModel):
+    id: str
+    title: str
+    status: ArtworkStatus
+    favorite: bool
+    document_version: int
+    worst_tier: Tier | None
+    min_scale: float | None
+    max_scale: float | None
+    photo_count: int
+    is_incomplete: bool
+    origin_style_id: str | None
+    origin_layout_id: str | None
+    render_hash: str | None
+    """Hash of the latest completed render (use it to bust image caches)."""
+    rendered_at: datetime | None
+    created_at: datetime
+    updated_at: datetime
+    tags: list[TagOut] = Field(default_factory=list)
+
+
+class ArtworkOut(ArtworkSummaryOut):
+    document: ArtworkDocument
+
+
+class ArtworkPageOut(ApiModel):
+    items: list[ArtworkSummaryOut]
+    next_cursor: str | None
+
+
+class ArtworkCreateIn(BaseModel):
+    photo_ids: list[str] = Field(min_length=1, max_length=32)
+    """Photos in slot order."""
+    style_id: str | None = None
+    layout_id: str | None = None
+    """Default: the default layout if it has enough slots, else a built-in with exactly as many."""
+    placement: Placement | None = None
+    """Single-slot layouts only (default `fit_in_mat`)."""
+    title: str | None = Field(default=None, max_length=256)
+
+
+class ArtworkUpdateIn(BaseModel):
+    title: str | None = Field(default=None, max_length=256)
+    favorite: bool | None = None
+    status: ArtworkStatus | None = None
+    tag_ids: list[str] | None = Field(default=None, max_length=200)
+
+
+class SnapshotIn(BaseModel):
+    reason: Literal["opened", "manual"] = "manual"
+
+
+class SnapshotOut(ApiModel):
+    id: str
+    artwork_id: str
+    document_version: int
+    reason: str
+    created_at: datetime
+
+
+class RegionIn(BaseModel):
+    x: int = Field(ge=0, le=3839)
+    y: int = Field(ge=0, le=2159)
+    w: int = Field(ge=1, le=1024)
+    h: int = Field(ge=1, le=1024)
+
+
+class RegionRenderIn(BaseModel):
+    document: dict[str, Any]
+    """Artwork document (possibly unsaved); validated like a save."""
+    rect: RegionIn
+
+
+class FrameStyleOut(ApiModel):
+    id: str
+    name: str
+    revision: int
+    builtin: bool
+    document: FrameStyleDocument
+
+
+class LayoutOut(ApiModel):
+    id: str
+    name: str
+    revision: int
+    builtin: bool
+    slot_count: int
+    document: LayoutDocument
+
+
+class FontOut(ApiModel):
+    id: str
+    name: str
+    category: str
+    weights: list[int]
+
+
+class TextureOut(ApiModel):
+    id: str
+    name: str
+    size: int

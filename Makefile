@@ -6,7 +6,7 @@ FRONTEND := frontend
 RUFF ?= uv run ruff
 DATA_DIR ?= $(CURDIR)/.dev-data
 
-.PHONY: help install dev dev-backend dev-frontend check test lint format typecheck i18n gen-api build serve docker
+.PHONY: help install dev dev-backend dev-frontend check test lint format typecheck i18n conformance golden-update gen-api build serve docker
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -24,7 +24,7 @@ dev-backend:
 dev-frontend:
 	cd $(FRONTEND) && pnpm dev
 
-check: lint typecheck i18n test ## Everything that must pass before committing
+check: lint typecheck i18n conformance test ## Everything that must pass before committing
 
 test: ## Backend unit + API tests
 	cd $(BACKEND) && uv run pytest
@@ -44,8 +44,15 @@ typecheck: ## mypy (strict) + tsc
 i18n: ## Verify i18n keys
 	cd $(FRONTEND) && pnpm i18n:check
 
-gen-api: ## Regenerate frontend API types from the FastAPI schema
+conformance: ## TypeScript geometry vs shared fixtures (Python side runs in pytest)
+	cd $(FRONTEND) && pnpm conformance
+
+golden-update: ## Regenerate golden reference renders (review the diff before committing!)
+	cd $(BACKEND) && GOLDEN_UPDATE=1 uv run pytest tests/golden
+
+gen-api: ## Regenerate frontend API types and docs/schemas/ (JSON Schemas) from the backend
 	cd $(BACKEND) && uv run the_frame_v2 openapi -o ../$(FRONTEND)/src/api/openapi.json
+	cd $(BACKEND) && uv run the_frame_v2 schemas -o ../docs/schemas
 	cd $(FRONTEND) && pnpm gen-api
 
 build: ## Build the frontend into the backend package (static/)

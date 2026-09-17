@@ -18,10 +18,10 @@ Soft delete via `deleted_at` (+ `trash_batch_id` to restore related items togeth
 | `localsend_devices` | id, fingerprint (unique), alias, device_model, device_type, status (`pending`/`approved`/`blocked`), last_ip, created_at, last_seen_at, decided_at | LocalSend senders (`docs/localsend.md`); their uploads use `upload_sessions.device_key = localsend:<id>` |
 | `artwork_photos` | artwork_id, slot_id, photo_id | Derived index for usage queries |
 | `artwork_tags` | artwork_id, tag_id | |
-| `artwork_snapshots` | id, artwork_id, document, document_version, reason (`opened`/`pre_template_update`/`pre_import`), created_at | Keep last 20 per artwork |
+| `artwork_snapshots` | id, artwork_id, document, document_version, reason (`opened`/`manual`/`pre_restore`/`pre_template_update`/`pre_import`), created_at | Keep last 20 per artwork |
 | `collections` | id, parent_id, name, description, date_start, date_end, cover_artwork_id, kind (`manual`/`smart`), filter (JSON AST, smart only), position (REAL, among siblings), created_at, updated_at | Cycle prevention on move; deletion is not trashed (artworks unaffected) |
 | `collection_items` | collection_id, artwork_id, position (REAL) | Manual collections only; renormalize when gaps < 1e-9 |
-| `frame_styles` | id, name, revision, document (JSON), builtin, created_at, updated_at | |
+| `frame_styles` | id, name, revision, document (JSON), builtin, created_at, updated_at | Built-ins seeded at startup from `assets/presets/` (id `builtin-style-*`, revision + 1 when the preset changes) |
 | `layouts` | id, name, revision, document (JSON), slot_count, builtin, created_at, updated_at | |
 | `swatches` | id, color, name, position | |
 | `devices` | id, name, role (`uploader`/`admin`), token_hash, user_agent, created_at, last_seen_at, revoked_at | |
@@ -29,7 +29,7 @@ Soft delete via `deleted_at` (+ `trash_batch_id` to restore related items togeth
 | `setup_codes` | code_hash, expires_at, used_at | generated at startup when no admin device exists |
 | `upload_sessions` | id, device_key (device id or `localhost`), sha256, size, filename, mime, received_bytes, pending_meta (JSON), state (`open`/`processing`/`failed`), error, job_id, created_at, expires_at | Resumable; looked up by (device_key, sha256, size) while open. Temp file: `uploads/tmp/<id>.part`. Deleted after successful ingest |
 | `jobs` | id, kind, lane (`ingest`/`render`), coalesce_key, payload (JSON), state (`queued`/`running`/`done`/`failed`/`cancelled`), attempts, progress, error, created_at, started_at, finished_at | Lanes bound concurrency per kind of work; queued jobs with the same coalesce_key are cancelled when a new one is enqueued |
-| `settings` | key, value (JSON) | UI prefs, default style/layout ids |
+| `settings` | key, value (JSON) | UI prefs; `artwork_defaults` = `{style_id, layout_id}` |
 | FTS5 `search_index` | entity_type, entity_id, text | titles, tag names, place names, filenames, collection names |
 
 ### Photo copies (merge by content fingerprint)
@@ -81,6 +81,6 @@ membership via recursive CTE. Smart collections may not reference themselves (cy
 │   ├── thumbs/<sha>/{256,768}.webp
 │   ├── proxies/<sha>/2560.jpg
 │   ├── palettes/<sha>.json
-│   └── renders/<artwork_id>/<render_hash>.{png,jpg}
+│   └── renders/<artwork_id>/<render_hash>.{png,jpg,thumb-256.webp,thumb-768.webp}
 └── exports/ imports/                    # temporary staging, auto-cleaned
 ```

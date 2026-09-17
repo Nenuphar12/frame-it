@@ -1,0 +1,145 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>S3 parity</title>
+<body style="margin:0;font:12px monospace">
+<pre id="out">running…</pre>
+<script>
+const W = 3840, H = 2160;
+const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+const rgba = (hex, a) => `rgba(${rgb(hex).join(",")},${a})`;
+const load = async (src) => { const i = new Image(); i.src = src; await i.decode(); return i; };
+function canvas() { const c = document.createElement("canvas"); c.width = W; c.height = H; return c; }
+async function serverPixels(name) {
+  const img = await load(`${name}.png`); const c = canvas(); const ctx = c.getContext("2d");
+  ctx.drawImage(img, 0, 0); return ctx.getImageData(0, 0, W, H).data;
+}
+function stats(a, b, x0, y0, w, h) {
+  let sum = 0, max = 0, n = 0, over8 = 0;
+  for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) {
+    const i = (y * W + x) * 4;
+    for (let k = 0; k < 3; k++) { const d = Math.abs(a[i + k] - b[i + k]); sum += d; n++; if (d > max) max = d; if (d > 8) over8++; }
+  }
+  return { mae: +(sum / n).toFixed(3), max, over8_pct: +(100 * over8 / n).toFixed(3) };
+}
+function profile(a, b, x, y0, y1) {
+  const rows = [];
+  for (let y = y0; y <= y1; y += Math.max(1, Math.round((y1 - y0) / 16))) {
+    const i = (y * W + x) * 4; rows.push([y, a[i], b[i]]);
+  }
+  return rows;
+}
+function inkBox(px, x0, y0, w, h) {
+  let minX = 1e9, minY = 1e9, maxX = -1, maxY = -1;
+  for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) {
+    if (px[(y * W + x) * 4] < 128) { if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; }
+  }
+  return { left: minX, top: minY, right: maxX, bottom: maxY };
+}
+
+function drawSlot(ctx, img, s) {
+  const bands = s.bands || [];
+  const total = bands.reduce((t, b) => t + b.width, 0);
+  const cx = s.rect.x + s.rect.w / 2, cy = s.rect.y + s.rect.h / 2;
+  const lw = s.rect.w + 2 * total, lh = s.rect.h + 2 * total;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate((s.rotation * Math.PI) / 180);
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+  const sh = s.shadow;
+  if (sh && sh.type === "drop") {
+    ctx.save();
+    ctx.shadowColor = rgba(sh.color, sh.opacity); ctx.shadowBlur = sh.blur;
+    ctx.shadowOffsetX = sh.offset_x; ctx.shadowOffsetY = sh.offset_y;
+    ctx.fillStyle = "#000"; ctx.fillRect(-lw / 2, -lh / 2, lw, lh);
+    ctx.restore();
+  }
+  let inset = total;
+  for (let i = bands.length - 1; i >= 0; i--) {
+    const b = bands[i]; const bw = s.rect.w + 2 * inset, bh = s.rect.h + 2 * inset;
+    ctx.fillStyle = b.color; ctx.fillRect(-bw / 2, -bh / 2, bw, bh); inset -= b.width;
+  }
+  const c = s.source.crop;
+  ctx.drawImage(img, c.x, c.y, c.w, c.h, -s.rect.w / 2, -s.rect.h / 2, s.rect.w, s.rect.h);
+  if (sh && sh.type === "inner") {
+    ctx.save();
+    ctx.beginPath(); ctx.rect(-lw / 2, -lh / 2, lw, lh); ctx.clip();
+    const far = 20000, pad = sh.blur * 3 + 200;
+    ctx.shadowColor = rgba(sh.color, sh.opacity); ctx.shadowBlur = sh.blur;
+    ctx.shadowOffsetX = sh.offset_x + far; ctx.shadowOffsetY = sh.offset_y;
+    ctx.beginPath();
+    ctx.rect(-lw / 2 - pad - far, -lh / 2 - pad, lw + 2 * pad, lh + 2 * pad);
+    ctx.rect(-lw / 2 - far, -lh / 2, lw, lh);
+    ctx.fillStyle = "#000"; ctx.fill("evenodd");
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+async function drawScene(name, doc, images) {
+  const c = canvas(); const ctx = c.getContext("2d", { willReadFrequently: true });
+  ctx.fillStyle = doc.mat.color; ctx.fillRect(0, 0, W, H);
+  if (doc.mat.texture) {
+    const tile = await load(`textures/${doc.mat.texture.id}.png`);
+    const t = document.createElement("canvas"); t.width = tile.width; t.height = tile.height;
+    const tctx = t.getContext("2d"); tctx.drawImage(tile, 0, 0);
+    const data = tctx.getImageData(0, 0, t.width, t.height); const m = rgb(doc.mat.color); const s = doc.mat.texture.strength;
+    for (let i = 0; i < data.data.length; i += 4) {
+      const d = s * (data.data[i] - 128);
+      for (let k = 0; k < 3; k++) data.data[i + k] = Math.min(255, Math.max(0, Math.floor(m[k] + d + 0.5)));
+      data.data[i + 3] = 255;
+    }
+    tctx.putImageData(data, 0, 0);
+    ctx.fillStyle = ctx.createPattern(t, "repeat"); ctx.fillRect(0, 0, W, H);
+  }
+  for (const s of doc.slots) drawSlot(ctx, images[s.photo_id], s);
+  for (const cap of doc.captions) {
+    ctx.save();
+    const family = `TF ${cap.font} ${cap.weight}`;
+    ctx.font = `${cap.size}px "${family}"`;
+    ctx.letterSpacing = `${cap.letter_spacing * cap.size}px`;
+    ctx.textBaseline = "alphabetic";
+    ctx.textAlign = { start: "left", middle: "center", end: "right" }[cap.anchor];
+    // canvas adds the spacing after the last character too; Pango only between characters
+    const trail = cap.letter_spacing * cap.size;
+    const shift = { start: 0, middle: trail / 2, end: trail }[cap.anchor];
+    ctx.translate(cap.x, cap.y); ctx.rotate((cap.rotation * Math.PI) / 180);
+    ctx.fillStyle = cap.color; ctx.fillText(cap.text, shift, 0);
+    ctx.restore();
+  }
+  return ctx.getImageData(0, 0, W, H).data;
+}
+
+(async () => {
+  const scenes = await (await fetch("scenes.json")).json();
+  const fonts = await (await fetch("fonts.json")).json();
+  for (const f of fonts.fonts) for (const w of f.weights) {
+    const face = new FontFace(`TF ${f.id} ${w}`, `url(fonts/${f.id}/${w}.ttf)`); await face.load(); document.fonts.add(face);
+  }
+  const images = { white: await load("white.png"), checker: await load("checker.png") };
+  const result = {};
+  for (const [name, meta] of Object.entries(scenes)) {
+    const server = await serverPixels(name);
+    const client = await drawScene(name, meta.document, images);
+    const r = { whole: stats(server, client, 0, 0, W, H) };
+    if (name === "shadows") {
+      r.drop_large = stats(server, client, 250, 350, 1500, 1150);
+      r.inner = stats(server, client, 2200, 500, 1200, 800);
+      r.drop_small_colored = stats(server, client, 300, 1400, 1400, 700);
+      r.inner_wide = stats(server, client, 2200, 1500, 1200, 500);
+      r.drop_profile_below = profile(server, client, 1000, 1300, 1420);
+      r.inner_profile_top = profile(server, client, 2800, 500, 580);
+    }
+    if (name === "rotated") r.slot = stats(server, client, 1200, 500, 1500, 1200);
+    if (name === "captions") {
+      r.boxes = meta.text_boxes.map((b) => {
+        const pad = 30, x0 = Math.max(0, b.x - pad), y0 = Math.max(0, b.y - pad), w = b.w + 2 * pad, h = b.h + 2 * pad;
+        const s = inkBox(server, x0, y0, w, h), c = inkBox(client, x0, y0, w, h);
+        return { server: s, client: c, delta: { left: c.left - s.left, top: c.top - s.top, right: c.right - s.right, bottom: c.bottom - s.bottom }, stats: stats(server, client, x0, y0, w, h) };
+      });
+    }
+    result[name] = r;
+  }
+  window.S3 = result;
+  document.getElementById("out").textContent = JSON.stringify(result, null, 1);
+})().catch((e) => { document.getElementById("out").textContent = "ERROR " + e.stack; });
+</script>

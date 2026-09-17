@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "format": "prettier --write src",
     "gen-api": "openapi-typescript src/api/openapi.json -o src/api/schema.d.ts",
-    "i18n:check": "node scripts/check-i18n.mjs"
+    "i18n:check": "node scripts/check-i18n.mjs",
+    "conformance": "node scripts/conformance.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

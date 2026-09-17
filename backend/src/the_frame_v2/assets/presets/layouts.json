@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "layouts": [
+    {
+      "id": "builtin-layout-single",
+      "name": "Single",
+      "document": { "slots": [{ "id": "s1", "rect": { "x": 0, "y": 0, "w": 3840, "h": 2160 }, "fill_mode": "fit" }] }
+    },
+    {
+      "id": "builtin-layout-two-side-by-side",
+      "name": "2 side by side",
+      "document": {
+        "slots": [
+          { "id": "s1", "rect": { "x": 80, "y": 80, "w": 1800, "h": 2000 } },
+          { "id": "s2", "rect": { "x": 1960, "y": 80, "w": 1800, "h": 2000 } }
+        ]
+      }
+    },
+    {
+      "id": "builtin-layout-one-plus-two",
+      "name": "1 + 2",
+      "document": {
+        "slots": [
+          { "id": "s1", "rect": { "x": 80, "y": 80, "w": 2280, "h": 2000 } },
+          { "id": "s2", "rect": { "x": 2440, "y": 80, "w": 1320, "h": 960 } },
+          { "id": "s3", "rect": { "x": 2440, "y": 1120, "w": 1320, "h": 960 } }
+        ]
+      }
+    },
+    {
+      "id": "builtin-layout-three-in-a-row",
+      "name": "3 in a row",
+      "document": {
+        "slots": [
+          { "id": "s1", "rect": { "x": 80, "y": 80, "w": 1173, "h": 2000 } },
+          { "id": "s2", "rect": { "x": 1333, "y": 80, "w": 1174, "h": 2000 } },
+          { "id": "s3", "rect": { "x": 2587, "y": 80, "w": 1173, "h": 2000 } }
+        ]
+      }
+    },
+    {
+      "id": "builtin-layout-grid-2x2",
+      "name": "2 × 2",
+      "document": {
+        "slots": [
+          { "id": "s1", "rect": { "x": 80, "y": 80, "w": 1800, "h": 960 } },
+          { "id": "s2", "rect": { "x": 1960, "y": 80, "w": 1800, "h": 960 } },
+          { "id": "s3", "rect": { "x": 80, "y": 1120, "w": 1800, "h": 960 } },
+          { "id": "s4", "rect": { "x": 1960, "y": 1120, "w": 1800, "h": 960 } }
+        ]
+      }
+    },
+    {
+      "id": "builtin-layout-grid-3x3",
+      "name": "3 × 3",
+      "document": {
+        "slots": [
+          { "id": "s1", "rect": { "x": 80, "y": 80, "w": 1173, "h": 613 } },
+          { "id": "s2", "rect": { "x": 1333, "y": 80, "w": 1174, "h": 613 } },
+          { "id": "s3", "rect": { "x": 2587, "y": 80, "w": 1173, "h": 613 } },
+          { "id": "s4", "rect": { "x": 80, "y": 773, "w": 1173, "h": 614 } },
+          { "id": "s5", "rect": { "x": 1333, "y": 773, "w": 1174, "h": 614 } },
+          { "id": "s6", "rect": { "x": 2587, "y": 773, "w": 1173, "h": 614 } },
+          { "id": "s7", "rect": { "x": 80, "y": 1467, "w": 1173, "h": 613 } },
+          { "id": "s8", "rect": { "x": 1333, "y": 1467, "w": 1174, "h": 613 } },
+          { "id": "s9", "rect": { "x": 2587, "y": 1467, "w": 1173, "h": 613 } }
+        ]
+      }
+    },
+    {
+      "id": "builtin-layout-polaroid-pile",
+      "name": "Polaroid pile",
+      "document": {
+        "slots": [
+          { "id": "s1", "rect": { "x": 240, "y": 300, "w": 1900, "h": 1640 }, "rotation": -7, "fill_mode": "fit" },
+          { "id": "s2", "rect": { "x": 1700, "y": 180, "w": 1900, "h": 1640 }, "rotation": 5, "fill_mode": "fit" },
+          { "id": "s3", "rect": { "x": 970, "y": 420, "w": 1900, "h": 1640 }, "rotation": -2, "fill_mode": "fit" }
+        ]
+      }
+    }
+  ]
+}
