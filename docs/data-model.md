@@ -45,6 +45,11 @@ the JPEG without its EXIF APP1 segments; other formats: file SHA-256). At ingest
 - same fingerprint otherwise → the copy's SHA-256 becomes an alias;
 - in both cases a real file name replaces a generated one.
 
+Receiving a photo the library already has (duplicate or merged copy, from any source) puts it **back in the
+inbox** and restores it from the trash (`photo_copies.receive_again`): re-sending a photo is how you bring it
+back. Its file, import date (so its place in the library), tags and artworks are unchanged. When nothing is
+ingested (a known SHA-256), a `photo.updated` event carries the photo ids so open pages refresh.
+
 The upload is reported as a duplicate with `merged: ["location", "filename"]` in the `photo.ingested` event.
 Photos imported before migration 0002 get fingerprints from the `fingerprint_backfill` startup job; copies
 that were already imported twice keep a NULL fingerprint (no automatic merge of existing photos).

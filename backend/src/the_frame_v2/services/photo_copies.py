@@ -4,6 +4,9 @@ Phone browsers upload GPS-redacted files; the Android photo picker renames them 
 When another copy of the same image arrives (USB, LocalSend, "Files" picker), it completes the
 existing photo instead of creating a duplicate:
 
+Whatever the source (browser, LocalSend, drag and drop), receiving a photo again puts it back in the
+inbox (`receive_again`): sending it from the phone is the natural way to bring it back.
+
 - the copy has a location the photo lacks → the copy **replaces the original file** (identical image
   data, richer metadata); the previous SHA-256 is kept as an alias;
 - otherwise the copy's SHA-256 becomes an alias (re-uploads of it dedupe immediately);
@@ -41,6 +44,18 @@ BACKFILL_JOB = "fingerprint_backfill"
 def is_generated_name(filename: str) -> bool:
     """Names like `1000125423.jpg` (Android photo picker: MediaStore id, not the camera name)."""
     return bool(_GENERATED_NAME.match(filename))
+
+
+def receive_again(photo: Photo) -> bool:
+    """A copy of a photo in the library arrived: bring it back (out of the trash, into the inbox).
+
+    Returns True if it was in the trash. The original file, tags and artworks are untouched; the
+    import date is kept, so the photo keeps its place in the library."""
+    restored = photo.deleted_at is not None
+    photo.deleted_at = None
+    photo.trash_batch_id = None
+    photo.inbox_state = "inbox"
+    return restored
 
 
 def photo_id_for_hash(session: Session, sha256: str) -> str | None:
@@ -87,8 +102,7 @@ def merge_copy(ctx: AppContext, photo_id: str, copy: IncomingCopy) -> list[str]:
         photo = s.get(Photo, photo_id)
         if photo is None:
             raise LookupError(photo_id)
-        photo.deleted_at = None  # same rule as re-uploading an identical file
-        photo.trash_batch_id = None
+        receive_again(photo)
         if meta.gps_lat is not None and photo.gps_lat is None:
             target = ctx.storage.original_path(copy.sha256, copy.probe.sniffed.ext)
             _copy_atomic(copy.path, target)

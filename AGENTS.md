@@ -49,7 +49,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `…/domain/` | PURE: `document` (artwork document v1 + reference checks), `geometry`, `quality` (tiers), `placement`, `templates` (style/layout docs, `build_document`) |
 | `…/imaging/` | `sniff` (magic bytes), `decode` (the only pixel access), `metadata` (EXIF/ICC), `fingerprint` (hash ignoring EXIF), `capabilities`, `render` (the renderer), `assets` (fonts/textures catalog) |
 | `…/assets/` | `geonames/`, `fonts/` (OFL, `scripts/build_fonts.py`), `textures/` (CC0, `scripts/generate_textures.py`), `presets/` (built-in styles/layouts JSON) |
-| `…/localsend/` | LocalSend v2 receiver: `app.py` (protocol routes, own TLS port), `discovery.py` (multicast), `identity.py` (cert/fingerprint), `runner.py` (lifespan); logic in `services/localsend.py`, admin API `api/localsend.py` |
+| `…/localsend/` | LocalSend v2 receiver: `app.py` (protocol routes, own TLS port), `discovery.py` (multicast), `identity.py` (cert/fingerprint), `client.py` (outgoing TLS), `runner.py` (lifespan); logic in `services/localsend.py`, admin API `api/localsend.py` |
 | `…/jobs/` | `queue.py` persistent in-process job queue (lanes, retries, coalescing); `gate.py` render concurrency |
 | `…/events.py` | Thread-safe SSE broker (`/api/v1/events`) |
 | `…/db/` | `models.py`, `session.py` (WAL), `migrate.py`, `migrations/versions/` |
@@ -77,6 +77,8 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
   `DbSession`; long work runs in jobs or `run_in_threadpool`.
 - LocalSend flow (`docs/localsend.md`): multicast discovery → `prepare-upload` (unknown device → admin approval
   via SSE `localsend.request`) → `upload` streamed → `UploadSession(state=processing)` → same `ingest` job.
+  Already-sent files are not transferred again (no token; when nothing is new, the smallest one is transferred
+  and dropped so the app still shows a transfer), and the web tray (`localsend.*` events) tells what happened.
 - Ingest flow: `POST /uploads` → `PATCH` chunks (`Upload-Offset`) → SHA-256 verified → `ingest` job → photo in
   inbox → SSE `photo.ingested` (or `photo.ingest_failed` with a problem code).
 - Frontend: server state only in TanStack Query; SSE invalidates `["photos"]`; upload queue is a Zustand store
@@ -86,6 +88,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 
 1. Originals are never modified; path = `originals/<sha[:2]>/<sha256>.<ext>`. Only exception: a copy with the
    same content fingerprint and a GPS location replaces a redacted original (`services/photo_copies.py`).
+   Receiving a photo again (any source, duplicate included) puts it back in the inbox (`receive_again`).
 2. `cache/` is always deletable (derivatives regenerate on demand).
 3. All pixel decoding goes through `imaging/decode.py`; formats detected by magic bytes, never by extension.
 4. Every mutating `/api/` request needs header `X-TF-Client: 1` (the frontend client adds it).
@@ -124,6 +127,9 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 - Android (any browser picker) zeroes GPS bytes in place: never expect `gps_lat` from phone web uploads; the
   photo picker also renames files to MediaStore ids (`1000125423.jpg`). A later copy with GPS/name (USB,
   LocalSend, desktop drop) is merged into the existing photo by content fingerprint (`docs/data-model.md`).
+- LocalSend app: files without a token are hidden from its transfer list, and a `prepare-upload` accepting no
+  file at all (204) shows nothing — no transfer screen, straight back to its home screen; 403/409/429 show fixed texts and other statuses an "Error ⓘ" (we avoid all of them for
+  already-sent photos: the transfer must look normal — `docs/localsend.md` "Already-sent photos").
 - The LocalSend certificate (`<data_dir>/localsend/`) is pinned by phones: never regenerate it casually.
   Tests never bind 53317 (`start_workers=False`; runner tests use a free port and `localsend_discovery=False`).
 - Alembic autogenerate proposes dropping the FTS5 `search_index*` tables: delete those lines by hand.

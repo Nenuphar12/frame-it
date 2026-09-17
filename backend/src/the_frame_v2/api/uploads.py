@@ -20,6 +20,7 @@ from the_frame_v2.api.system import UPLOAD_CHUNK_BYTES
 from the_frame_v2.auth.principal import Principal
 from the_frame_v2.db.models import UploadSession
 from the_frame_v2.errors import ProblemError, not_found
+from the_frame_v2.events import Event
 from the_frame_v2.services import uploads
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
@@ -73,6 +74,8 @@ def create_upload(
         meta=body.meta.model_dump() if body.meta else None,
     )
     if result.status == "exists" or result.session is None:
+        session.commit()  # the photo is back in the inbox (services/photo_copies.py)
+        ctx.broker.publish(Event("photo.updated", {"photo_ids": [result.photo_id]}))
         return UploadOut(
             status="exists",
             size=body.size,

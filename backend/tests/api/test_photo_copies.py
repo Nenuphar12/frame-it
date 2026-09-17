@@ -30,7 +30,8 @@ def test_located_copy_completes_a_redacted_upload(local: TestClient) -> None:
     upload_bytes(local, LOCATED, "PXL_20260917_082757358.jpg")
 
     [after] = _photos(local)
-    assert after["id"] == before["id"] and after["inbox_state"] == "processed"
+    # Receiving a photo again always brings it back to the inbox (services/photo_copies.py).
+    assert after["id"] == before["id"] and after["inbox_state"] == "inbox"
     assert after["sha256"] == sha256(LOCATED)
     assert after["place_name"] == "Lyon"
     assert after["original_filename"] == "PXL_20260917_082757358.jpg"

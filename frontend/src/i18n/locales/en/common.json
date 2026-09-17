@@ -66,11 +66,13 @@
       "uploading": "Uploading…",
       "processing": "Processing…",
       "done": "Imported",
-      "duplicate": "Already in your library",
-      "merged": "Already in your library: missing place or file name added",
+      "duplicate": "Already in your library — back in the inbox",
+      "merged": "Already in your library — back in the inbox, place or file name added",
+      "restored": "Restored from the trash — back in the inbox",
       "failed": "Failed",
       "rejected": "Rejected"
-    }
+    },
+    "from": "from {{device}}"
   },
   "inbox": {
     "subtitle_one": "{{count}} photo waiting to become an artwork",
@@ -253,7 +255,10 @@
     "photo_missing": "A photo used by this artwork is missing.",
     "render_failed": "The artwork could not be rendered.",
     "precondition_required": "Missing version information.",
-    "not_found": "Not found."
+    "not_found": "Not found.",
+    "empty_file": "The file is empty.",
+    "transfer_interrupted": "The transfer was interrupted. Send it again from the phone.",
+    "localsend_cancelled": "Cancelled on the sending device."
   },
   "localsend": {
     "title": "LocalSend",
@@ -280,6 +285,8 @@
     "requestDescription": "A LocalSend device that is not allowed yet is waiting for your answer.",
     "requestFiles_one": "{{count}} photo, {{size}}",
     "requestFiles_other": "{{count}} photos, {{size}}",
+    "requestKnown_one": "{{count}} already in your library",
+    "requestKnown_other": "{{count}} already in your library",
     "requestHint": "Allowing remembers this device: its next transfers are accepted automatically (you can block it in Devices). Only allow devices you recognise.",
     "moreRequests_one": "{{count}} more request waiting",
     "moreRequests_other": "{{count}} more requests waiting"

@@ -37,7 +37,9 @@ export function LocalSendRequestDialog() {
               {t("localsend.requestFiles", {
                 count: request.file_count,
                 size: formatBytes(request.total_bytes),
-              })}{" "}
+              })}
+              {request.known_count > 0 &&
+                ` (${t("localsend.requestKnown", { count: request.known_count })})`}{" "}
               · {request.ip}
             </div>
           </div>

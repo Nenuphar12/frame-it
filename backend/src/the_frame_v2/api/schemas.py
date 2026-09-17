@@ -239,6 +239,8 @@ class LocalSendRequestOut(ApiModel):
     device_model: str | None
     ip: str
     file_count: int
+    known_count: int
+    """Offered files already in the library (included in `file_count`)."""
     total_bytes: int
     created_at: str
 

@@ -89,6 +89,9 @@ def ingest_upload(ctx: AppContext, upload_id: str, *, _retry: bool = True) -> st
 
     with ctx.db.session() as s:
         existing_id = photo_copies.photo_id_for_hash(s, upload.sha256)
+        existing = s.get(Photo, existing_id) if existing_id is not None else None
+        if existing is not None:
+            photo_copies.receive_again(existing)
     if existing_id is not None:
         _finish_as_existing(ctx, upload, existing_id, merged=[])
         return existing_id

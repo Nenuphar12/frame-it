@@ -17,7 +17,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tests.conftest import ctx_of, make_jpeg, sha256
-from the_frame_v2.localsend.app import create_localsend_app
+from the_frame_v2.db.models import Photo
+from the_frame_v2.events import Event
+from the_frame_v2.ids import utcnow
+from the_frame_v2.localsend.app import create_localsend_app, own_info
 from the_frame_v2.localsend.discovery import Discovery, register_over_http
 from the_frame_v2.localsend.dto import Announcement
 from the_frame_v2.localsend.identity import ensure_identity, fingerprint_of
@@ -88,6 +91,22 @@ def _prepare_and_decide(
     return result["res"]
 
 
+def _photo_ids(local: TestClient) -> list[str]:
+    return [p["id"] for p in local.get("/api/v1/photos").json()["items"]]
+
+
+def _record_events(local: TestClient, monkeypatch: pytest.MonkeyPatch) -> list[Event]:
+    events: list[Event] = []
+    monkeypatch.setattr(ctx_of(local).broker, "publish", events.append)
+    return events
+
+
+def _upload(phone: TestClient, body: dict[str, Any], file_id: str, data: bytes) -> httpx.Response:
+    params = {"sessionId": body["sessionId"], "fileId": file_id, "token": body["files"][file_id]}
+    res: httpx.Response = phone.post(f"{PREFIX}/upload", params=params, content=data)
+    return res
+
+
 def _approve_phone(local: TestClient, phone: TestClient) -> None:
     res = _prepare_and_decide(local, phone, [_offer("warmup", "w.jpg", PHOTO)], approve=True)
     assert res.status_code == 200
@@ -131,9 +150,7 @@ def test_new_device_is_approved_then_sends_photos_to_the_inbox(
     [device] = local.get("/api/v1/localsend/devices").json()
     assert device["status"] == "approved" and device["last_ip"] == PHONE_IP
 
-    # Approved devices are accepted without asking again; known files are skipped (204).
-    again = _prepare(phone, [_offer("a", "x.jpg", PHOTO, with_hash=True)])
-    assert again.status_code == 204
+    # Approved devices are accepted without asking again.
     other = _prepare(phone, [_offer("b", "b.jpg", make_jpeg(color=(1, 2, 3)))])
     assert other.status_code == 200 and not ctx_of(local).localsend.pending()
 
@@ -276,8 +293,6 @@ def test_discovery_answers_announcements_but_not_itself(local: TestClient) -> No
         assert body["fingerprint"] == identity.fingerprint
         return True
 
-    from the_frame_v2.localsend.app import own_info
-
     discovery = Discovery(own_info(ctx, identity, 53317), register, port=53317, interface_ip=None)
 
     async def scenario() -> None:
@@ -294,3 +309,150 @@ def test_discovery_answers_announcements_but_not_itself(local: TestClient) -> No
     assert calls == [(PHONE_IP, 53318, "https")]
     parsed = Announcement.model_validate_json(discovery.message(announce=True))
     assert parsed.announce and parsed.fingerprint == identity.fingerprint
+
+
+def _send_photo_once(local: TestClient, phone: TestClient) -> None:
+    """Allow the phone, then send PHOTO (`w.jpg`) into the library."""
+    res = _prepare_and_decide(local, phone, [_offer("w", "w.jpg", PHOTO)], approve=True)
+    assert _upload(phone, res.json(), "w", PHOTO).status_code == 200
+    ctx_of(local).jobs.run_pending_sync()
+
+
+def _send_again(local: TestClient, phone: TestClient, data: bytes, name: str) -> None:
+    """Send another new photo from the (already allowed) phone."""
+    body = _prepare(phone, [_offer(name, name, data)]).json()
+    assert _upload(phone, body, name, data).status_code == 200
+    ctx_of(local).jobs.run_pending_sync()
+
+
+def _photo_state(local: TestClient) -> list[str]:
+    return [p["inbox_state"] for p in local.get("/api/v1/photos").json()["items"]]
+
+
+def _dismiss(local: TestClient) -> None:
+    res = local.post("/api/v1/inbox/dismiss", json={"photo_ids": _photo_ids(local)})
+    assert res.status_code == 200 and res.json()["count"] > 0
+    assert set(_photo_state(local)) == {"dismissed"}
+
+
+def test_offer_of_already_sent_photos_transfers_one_of_them_for_the_app_to_show_it(
+    local: TestClient, phone: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _send_photo_once(local, phone)
+    small = make_jpeg(width=80, height=60, color=(5, 5, 5))
+    _send_again(local, phone, small, "small.jpg")
+    _dismiss(local)
+    ctx = ctx_of(local)
+    events = _record_events(local, monkeypatch)
+    offers = [
+        _offer("big", "PXL_1.jpg", PHOTO, with_hash=True),
+        _offer("small", "small.jpg", small, with_hash=True),
+        _offer("v", "clip.mp4", b"x", "video/mp4"),
+    ]
+
+    body = _prepare(phone, offers).json()
+
+    # The app shows a transfer screen only for files it may send: the smallest one is transferred
+    # (and dropped) so that a send of already-sent photos looks like any other.
+    assert set(body["files"]) == {"small"}
+    assert _upload(phone, body, "small", small).status_code == 200
+    ctx.jobs.run_pending_sync()
+
+    assert sorted(_photo_state(local)) == ["inbox", "inbox"]  # both are back in the inbox
+    assert len(local.get("/api/v1/photos").json()["items"]) == 2  # nothing imported twice
+    assert not list(ctx.storage.uploads.iterdir())
+    [transfer] = [e for e in events if e.name == "localsend.transfer"]
+    files = {f["file_id"]: f for f in transfer.data["files"]}
+    assert files["big"]["status"] == "known" and files["small"]["status"] == "known"
+    assert files["v"]["status"] == "rejected" and files["v"]["code"] == "unsupported_format"
+    assert [e.data["status"] for e in events if e.name == "localsend.file"] == [
+        "receiving",
+        "known",
+    ]
+    # Nothing is ingested, so only this event tells open pages to refresh the inbox.
+    [updated] = [e for e in events if e.name == "photo.updated"]
+    assert sorted(updated.data["photo_ids"]) == sorted(_photo_ids(local))
+
+
+def test_already_sent_files_of_a_mixed_offer_are_skipped(
+    local: TestClient, phone: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _send_photo_once(local, phone)
+    _dismiss(local)
+    ctx = ctx_of(local)
+    events = _record_events(local, monkeypatch)
+    new_photo = make_jpeg(color=(200, 10, 10))
+
+    body = _prepare(
+        phone,
+        [_offer("old", "w.jpg", PHOTO, with_hash=True), _offer("new", "n.jpg", new_photo)],
+    ).json()
+    assert set(body["files"]) == {"new"}  # the app hides files without a token
+
+    assert _upload(phone, body, "new", new_photo).status_code == 200
+    ctx.jobs.run_pending_sync()
+
+    assert sorted(_photo_state(local)) == ["inbox", "inbox"]
+    assert ctx.localsend._sessions == {}
+    [transfer] = [e for e in events if e.name == "localsend.transfer"]
+    assert {f["file_id"]: f["status"] for f in transfer.data["files"]} == {
+        "new": "incoming",
+        "old": "known",
+    }
+    statuses = [(e.data["file_id"], e.data["status"]) for e in events if e.name == "localsend.file"]
+    assert statuses == [("new", "receiving"), ("new", "processing")]
+
+
+def test_already_sent_file_without_checksum_is_received_then_dropped(
+    local: TestClient, phone: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _send_photo_once(local, phone)
+    _dismiss(local)
+    ctx = ctx_of(local)
+    events = _record_events(local, monkeypatch)
+
+    body = _prepare(phone, [_offer("a", "again.jpg", PHOTO)]).json()
+
+    assert _upload(phone, body, "a", PHOTO).status_code == 200  # a plain success for the app
+    assert _photo_state(local) == ["inbox"]
+    assert not list(ctx.storage.uploads.iterdir())  # the received copy is dropped
+    [known] = [e for e in events if e.name == "localsend.file" and e.data["status"] == "known"]
+    assert known.data["photo_id"] and known.data["restored"] is False
+
+
+def test_sending_a_trashed_photo_again_restores_it(local: TestClient, phone: TestClient) -> None:
+    _send_photo_once(local, phone)
+    ctx = ctx_of(local)
+    with ctx.db.session() as s:
+        photo = s.query(Photo).one()
+        photo.deleted_at = utcnow()
+        photo.inbox_state = "dismissed"
+    assert local.get("/api/v1/photos").json()["items"] == []
+
+    res = _prepare(phone, [_offer("a", "w.jpg", PHOTO, with_hash=True)])
+
+    assert res.status_code == 200  # transferred again (and dropped) to show a normal transfer
+    assert _photo_state(local) == ["inbox"]
+
+
+def test_unknown_device_must_be_allowed_before_learning_a_photo_was_sent(
+    local: TestClient, phone: TestClient
+) -> None:
+    _send_photo_once(local, phone)
+    ctx = ctx_of(local)
+    stranger = TestClient(phone.app, client=("192.168.1.77", 40000))
+    result: dict[str, httpx.Response] = {}
+    offers = [_offer("a", "w.jpg", PHOTO, with_hash=True)]
+    thread = threading.Thread(
+        target=lambda: result.update(res=_prepare(stranger, offers, fingerprint="OTHER-FP"))
+    )
+    thread.start()
+    for _ in range(200):
+        if ctx.localsend.pending():
+            break
+        time.sleep(0.02)
+    [request] = local.get("/api/v1/localsend/requests").json()
+    assert request["file_count"] == 1 and request["known_count"] == 1
+    local.post(f"/api/v1/localsend/requests/{request['id']}/decision", json={"approve": False})
+    thread.join(timeout=10)
+    assert result["res"].status_code == 403

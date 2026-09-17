@@ -3,10 +3,12 @@ from __future__ import annotations
 import io
 
 import httpx
+import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
 from tests.conftest import ctx_of, make_jpeg, pair, sha256, upload_bytes
+from the_frame_v2.events import Event
 
 
 def _open(client: TestClient, data: bytes, **extra: object) -> dict[str, object]:
@@ -59,6 +61,28 @@ def test_check_and_duplicate_upload(local: TestClient) -> None:
     assert statuses == ["exists", "new"]
     again = _open(local, data)
     assert again["status"] == "exists" and again["photo_id"]
+
+
+def test_uploading_a_photo_again_brings_it_back_to_the_inbox(
+    local: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    data = make_jpeg()
+    upload_bytes(local, data)
+    [photo] = local.get("/api/v1/photos").json()["items"]
+    assert (
+        local.post("/api/v1/inbox/dismiss", json={"photo_ids": [photo["id"]]}).json()["count"] == 1
+    )
+    assert local.get("/api/v1/photos").json()["items"][0]["inbox_state"] == "dismissed"
+
+    events: list[Event] = []
+    monkeypatch.setattr(ctx_of(local).broker, "publish", events.append)
+
+    assert _open(local, data)["status"] == "exists"
+
+    [after] = local.get("/api/v1/photos").json()["items"]
+    assert after["inbox_state"] == "inbox"
+    # Nothing is ingested: this event is what refreshes open pages.
+    assert [(e.name, e.data) for e in events] == [("photo.updated", {"photo_ids": [photo["id"]]})]
 
 
 def test_resume_after_interruption(local: TestClient) -> None:

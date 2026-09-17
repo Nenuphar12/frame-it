@@ -112,9 +112,7 @@ def open_session(
     photo_id = photo_copies.photo_id_for_hash(session, sha256)
     photo = session.get(Photo, photo_id) if photo_id is not None else None
     if photo is not None:
-        if photo.deleted_at is not None:
-            photo.deleted_at = None
-            photo.trash_batch_id = None
+        photo_copies.receive_again(photo)
         return OpenResult("exists", None, photo.id)
     existing = session.scalars(
         select(UploadSession).where(

@@ -67,3 +67,16 @@ photos (create 6 artworks, polaroid pile via API, viewer shortcuts, live updates
 picker stays empty; trashed artworks cannot be restored before Phase 8; no ESLint rule for literal JSX strings
 yet; Docker image not rebuilt/tested with the fonts (Pango/fontconfig in the slim image); collage renders hold
 all decoded originals in memory.
+
+**LocalSend "already sent" handling (2026-09-17/18, user remark)**: re-sending a photo already in the library was
+silent and confusing. Now nothing is transferred twice, the sender's app sees a plain successful transfer (no
+error, no text message — both were tried and dropped as more confusing than helpful; when every offered photo is
+already known the smallest one is transferred and dropped, because an app that is given no file to send shows no
+transfer screen at all), and every received photo,
+already sent or not, goes **back to the inbox** — the rule for all uploads, so re-sending is how you bring a
+photo back (`photo_copies.receive_again`; a trashed one is restored). The web upload tray now mirrors LocalSend
+transfers ("Already in your library — back in the inbox · from <device>"), including skipped and unsupported
+files. Behaviour of the LocalSend app checked in its source (`docs/localsend.md` "Already-sent photos").
+A photo coming back without being ingested publishes `photo.updated`, otherwise open pages only showed it after a
+manual reload (user report). Verified: `make check`; TLS end-to-end runs against a live server with real photos
+(including the SSE the browser receives). Not tried on a real phone.

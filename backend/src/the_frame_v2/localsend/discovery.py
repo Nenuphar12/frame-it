@@ -15,13 +15,13 @@ import http.client
 import json
 import logging
 import socket
-import ssl
 import struct
 from collections.abc import Callable, Coroutine
 from typing import Any, cast
 
 from pydantic import ValidationError
 
+from the_frame_v2.localsend.client import connect
 from the_frame_v2.localsend.dto import Announcement, DeviceInfo
 from the_frame_v2.localsend.identity import Identity
 
@@ -40,17 +40,7 @@ def register_over_http(identity: Identity) -> Register:
     def register(host: str, port: int, protocol: str, body: dict[str, object]) -> bool:
         payload = json.dumps(body).encode()
         headers = {"Content-Type": "application/json"}
-        conn: http.client.HTTPConnection
-        if protocol == "https":
-            context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-            context.check_hostname = False
-            context.verify_mode = ssl.CERT_NONE  # self-signed peers; the peer pins us, not we them
-            context.load_cert_chain(identity.cert_path, identity.key_path)
-            conn = http.client.HTTPSConnection(
-                host, port, timeout=REGISTER_TIMEOUT, context=context
-            )
-        else:
-            conn = http.client.HTTPConnection(host, port, timeout=REGISTER_TIMEOUT)
+        conn = connect(identity, host, port, protocol, REGISTER_TIMEOUT)
         try:
             conn.request("POST", "/api/localsend/v2/register", payload, headers)
             return 200 <= conn.getresponse().status < 300

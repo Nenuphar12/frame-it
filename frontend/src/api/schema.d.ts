@@ -1321,6 +1321,8 @@ export interface components {
             id: string;
             /** Ip */
             ip: string;
+            /** Known Count */
+            known_count: number;
             /** Total Bytes */
             total_bytes: number;
         };

@@ -44,7 +44,10 @@ export function UploadRow({ item }: { item: UploadItem }) {
         <div className="text-xs text-muted">
           {item.errorCode
             ? t(`errors.${item.errorCode}`, { defaultValue: t("errors.unknown") })
-            : t(`upload.status.${item.status}`)}
+            : item.restored
+              ? t("upload.status.restored")
+              : t(`upload.status.${item.status}`)}
+          {item.source && <> · {t("upload.from", { device: item.source })}</>}
         </div>
         {running && (
           <div className="mt-1 h-1 overflow-hidden rounded bg-panel-2">
@@ -58,7 +61,7 @@ export function UploadRow({ item }: { item: UploadItem }) {
           </div>
         )}
       </div>
-      {item.status === "failed" && (
+      {item.status === "failed" && item.file && (
         <button
           className="rounded p-1 text-muted hover:text-text"
           onClick={() => retry(item.id)}

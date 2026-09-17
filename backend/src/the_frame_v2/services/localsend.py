@@ -3,9 +3,14 @@
 - Senders are identified by the fingerprint they announce. Unknown or pending devices wait for an
   admin decision in the web UI (`localsend.request` event); approved devices are auto-accepted;
   blocked devices are rejected.
-- Only supported image files are accepted; files whose SHA-256 is already known are skipped.
+- Only supported image files are accepted. Files already in the library ("already sent", known by
+  SHA-256) are not transferred again: the sender's app sees a plain successful transfer, and the
+  photos come back to the inbox like any received photo (`photo_copies.receive_again`). What really
+  happened is told in the web UI.
 - A received file becomes an `UploadSession` in state `processing` and goes through the regular
   `ingest` job (same dedupe/merge/inbox behaviour as browser uploads).
+- Transfers are mirrored to the web UI (`localsend.transfer`, `localsend.file`,
+  `localsend.cancelled` events → upload tray).
 
 Spec: docs/localsend.md.
 """
@@ -25,7 +30,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from the_frame_v2.context import AppContext
-from the_frame_v2.db.models import LocalSendDevice, UploadSession
+from the_frame_v2.db.models import LocalSendDevice, Photo, UploadSession
 from the_frame_v2.errors import ProblemError, not_found
 from the_frame_v2.events import Event
 from the_frame_v2.ids import new_id, utcnow
@@ -103,26 +108,129 @@ def is_supported(offer: FileOffer) -> bool:
     return offer.file_type.lower() in ACCEPTED_MIMES
 
 
+def rejection_code(offer: FileOffer, max_bytes: int) -> str | None:
+    """Problem code (`errors.<code>` in the web UI) of a file that cannot be accepted."""
+    if not is_supported(offer):
+        heic = safe_filename(offer.file_name).lower().endswith((".heic", ".heif"))
+        return "unsupported_format_heic" if heic else "unsupported_format"
+    if offer.size <= 0:
+        return "empty_file"
+    if offer.size > max_bytes:
+        return "file_too_large"
+    return None
+
+
 @dataclass(frozen=True, slots=True)
 class Selection:
     accepted: dict[str, FileOffer]
-    duplicates: int
-    unsupported: int
+    """New files, or files sent without a SHA-256 (checked again once received)."""
+    known: dict[str, FileOffer]
+    """Files whose announced SHA-256 is already in the library."""
+    rejected: dict[str, tuple[FileOffer, str]]
+    """Unsupported files, with their problem code."""
 
 
 def select_files(session: Session, offers: dict[str, FileOffer], max_bytes: int) -> Selection:
-    candidates = {
-        fid: o for fid, o in offers.items() if is_supported(o) and 0 < o.size <= max_bytes
-    }
+    rejected: dict[str, tuple[FileOffer, str]] = {}
+    candidates: dict[str, FileOffer] = {}
+    for fid, offer in offers.items():
+        code = rejection_code(offer, max_bytes)
+        if code is None:
+            candidates[fid] = offer
+        else:
+            rejected[fid] = (offer, code)
     hashes = [o.sha256.lower() for o in candidates.values() if o.sha256]
-    known = photo_copies.photo_ids_for_hashes(session, hashes) if hashes else {}
-    accepted = {
-        fid: o for fid, o in candidates.items() if not (o.sha256 and o.sha256.lower() in known)
+    known_hashes = photo_copies.photo_ids_for_hashes(session, hashes) if hashes else {}
+    is_known = {
+        fid: bool(o.sha256 and o.sha256.lower() in known_hashes) for fid, o in candidates.items()
     }
     return Selection(
-        accepted=accepted,
-        duplicates=len(candidates) - len(accepted),
-        unsupported=len(offers) - len(candidates),
+        accepted={fid: o for fid, o in candidates.items() if not is_known[fid]},
+        known={fid: o for fid, o in candidates.items() if is_known[fid]},
+        rejected=rejected,
+    )
+
+
+# ---- already sent -------------------------------------------------------------------------------
+@dataclass(frozen=True, slots=True)
+class KnownPhoto:
+    photo_id: str
+    restored: bool
+    """The photo was in the trash: sending it again restores it (same rule as browser uploads)."""
+
+
+def resolve_known(session: Session, sha256: str) -> KnownPhoto | None:
+    """The photo already holding this file, brought back to the inbox (and out of the trash)."""
+    photo_id = photo_copies.photo_id_for_hash(session, sha256.lower())
+    photo = session.get(Photo, photo_id) if photo_id is not None else None
+    if photo is None:
+        return None
+    return KnownPhoto(photo.id, photo_copies.receive_again(photo))
+
+
+def smallest(known: dict[str, tuple[FileOffer, KnownPhoto]]) -> dict[str, FileOffer]:
+    """The smallest already-sent file, transferred to give the sender its usual transfer screen."""
+    file_id = min(known, key=lambda fid: known[fid][0].size)
+    return {file_id: known[file_id][0]}
+
+
+def resolve_selection(
+    ctx: AppContext, selection: Selection
+) -> tuple[dict[str, FileOffer], dict[str, tuple[FileOffer, KnownPhoto]]]:
+    """Split an approved offer into new files and known photos (restoring trashed ones)."""
+    accepted = dict(selection.accepted)
+    known: dict[str, tuple[FileOffer, KnownPhoto]] = {}
+    with ctx.db.session() as s:
+        for fid, offer in selection.known.items():
+            photo = resolve_known(s, offer.sha256 or "")
+            if photo is None:  # deleted meanwhile: receive it again
+                accepted[fid] = offer
+            else:
+                known[fid] = (offer, photo)
+    if known:  # they are back in the inbox: refresh open pages
+        ctx.broker.publish(
+            Event("photo.updated", {"photo_ids": [p.photo_id for _, p in known.values()]})
+        )
+    return accepted, known
+
+
+# ---- web UI mirror ------------------------------------------------------------------------------
+def publish_transfer(
+    ctx: AppContext,
+    *,
+    transfer_id: str,
+    device: LocalSendDevice,
+    accepted: dict[str, FileOffer],
+    known: dict[str, tuple[FileOffer, KnownPhoto]],
+    rejected: dict[str, tuple[FileOffer, str]],
+) -> None:
+    def item(fid: str, offer: FileOffer, status: str, **extra: object) -> dict[str, object]:
+        name = safe_filename(offer.file_name)
+        return {"file_id": fid, "filename": name, "size": offer.size, "status": status, **extra}
+
+    files = [item(fid, o, "incoming") for fid, o in accepted.items()]
+    files += [
+        item(fid, o, "known", photo_id=p.photo_id, restored=p.restored)
+        for fid, (o, p) in known.items()
+    ]
+    files += [item(fid, o, "rejected", code=code) for fid, (o, code) in rejected.items()]
+    ctx.broker.publish(
+        Event(
+            "localsend.transfer",
+            {
+                "session_id": transfer_id,
+                "device_id": device.id,
+                "alias": device.alias,
+                "files": files,
+            },
+        )
+    )
+
+
+def publish_file(ctx: AppContext, session_id: str, file_id: str, **data: object) -> None:
+    """`status`: receiving | processing (`upload_id`) | known (`photo_id`) | failed (`code`)."""
+    ctx.broker.publish(
+        Event("localsend.file", {"session_id": session_id, "file_id": file_id, **data})
     )
 
 
@@ -135,6 +243,7 @@ class PendingRequest:
     device_model: str | None
     ip: str
     file_count: int
+    known_count: int
     total_bytes: int
     created_at: str
     future: asyncio.Future[bool]
@@ -147,6 +256,7 @@ class PendingRequest:
             "device_model": self.device_model,
             "ip": self.ip,
             "file_count": self.file_count,
+            "known_count": self.known_count,
             "total_bytes": self.total_bytes,
             "created_at": self.created_at,
         }
@@ -203,8 +313,11 @@ class LocalSendHub:
                     alias=device.alias,
                     device_model=device.device_model,
                     ip=device.last_ip or "",
-                    file_count=len(selection.accepted),
-                    total_bytes=sum(o.size for o in selection.accepted.values()),
+                    file_count=len(selection.accepted) + len(selection.known),
+                    known_count=len(selection.known),
+                    total_bytes=sum(
+                        o.size for o in (*selection.accepted.values(), *selection.known.values())
+                    ),
                     created_at=utcnow().isoformat(),
                     future=asyncio.get_running_loop().create_future(),
                 )
@@ -247,7 +360,10 @@ class LocalSendHub:
 
     # sessions
     def open_session(
-        self, device_id: str, ip: str, accepted: dict[str, FileOffer]
+        self,
+        device_id: str,
+        ip: str,
+        accepted: dict[str, FileOffer],
     ) -> ReceiveSession:
         session = ReceiveSession(
             id=new_id(),
@@ -286,13 +402,14 @@ class LocalSendHub:
             if session.finished:
                 self._sessions.pop(session.id, None)
 
-    def cancel(self, session_id: str, ip: str) -> bool:
+    def cancel(self, ctx: AppContext, session_id: str, ip: str) -> bool:
         with self._lock:
             session = self._sessions.get(session_id)
             if session is None or session.ip != ip:
                 return False
             del self._sessions[session_id]
-            return True
+        ctx.broker.publish(Event("localsend.cancelled", {"session_id": session_id}))
+        return True
 
 
 # ---- received file → ingest ---------------------------------------------------------------------
@@ -310,13 +427,15 @@ def hand_off(
     offer: FileOffer,
     sha256: str,
     size: int,
-) -> str | None:
-    """Queue ingestion of a fully received file. Returns the job id (None for a known file)."""
+) -> KnownPhoto | None:
+    """Queue ingestion of a fully received file. Returns the photo if the file is already known
+    (sender did not announce its SHA-256)."""
     temp = ctx.storage.upload_temp_path(upload_id)
     with ctx.db.session() as s:
-        if photo_copies.photo_id_for_hash(s, sha256) is not None:
+        known = resolve_known(s, sha256)
+        if known is not None:
             temp.unlink(missing_ok=True)
-            return None
+            return known
         s.add(
             UploadSession(
                 id=upload_id,
@@ -336,4 +455,4 @@ def hand_off(
         row = s.get(UploadSession, upload_id)
         if row is not None:
             row.job_id = job_id
-    return job_id
+    return None

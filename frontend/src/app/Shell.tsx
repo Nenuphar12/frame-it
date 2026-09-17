@@ -14,7 +14,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useLibraryStats } from "@/api/queries";
@@ -22,6 +22,7 @@ import { GlobalDropZone } from "@/features/upload/DropZone";
 import { useFilePickers } from "@/features/upload/useFilePickers";
 import { LocalSendRequestDialog } from "@/features/localsend/LocalSendRequestDialog";
 import { UploadTray } from "@/features/upload/UploadTray";
+import { mirrorLocalSendTransfers } from "@/features/upload/uploadStore";
 import { Button } from "@/shared/ui/Button";
 import { Kbd } from "@/shared/ui/Misc";
 
@@ -58,6 +59,7 @@ export function Shell() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const stats = useLibraryStats();
+  useEffect(() => mirrorLocalSendTransfers(), []);
   const { openFiles, openFolder } = useFilePickers();
   const toggleTheme = useTheme((s) => s.toggle);
   const setPaletteOpen = useCommands((s) => s.setPaletteOpen);

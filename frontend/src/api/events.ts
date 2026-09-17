@@ -21,9 +21,35 @@ export interface IngestFailedEvent {
   message: string;
 }
 
+export interface LocalSendTransferFile {
+  file_id: string;
+  filename: string;
+  size: number;
+  /** `known`: already in the library (not imported again); `rejected`: unsupported (`code`). */
+  status: "incoming" | "known" | "rejected";
+  photo_id?: string;
+  restored?: boolean;
+  code?: string;
+}
+
+export type LocalSendFileEvent = { session_id: string; file_id: string } & (
+  | { status: "receiving" }
+  | { status: "processing"; upload_id: string }
+  | { status: "known"; photo_id: string; restored: boolean }
+  | { status: "failed"; code: string }
+);
+
 export interface ServerEvents {
   "localsend.request": { id: string; alias: string };
   "localsend.request_closed": { id: string; approved: boolean };
+  "localsend.transfer": {
+    session_id: string;
+    device_id: string;
+    alias: string;
+    files: LocalSendTransferFile[];
+  };
+  "localsend.file": LocalSendFileEvent;
+  "localsend.cancelled": { session_id: string };
   "photo.ingested": IngestedEvent;
   "photo.ingest_failed": IngestFailedEvent;
   "job.failed": { job_id: string; error: string | null };
@@ -62,6 +88,9 @@ export function useServerEvents(enabled: boolean) {
       "job.failed",
       "localsend.request",
       "localsend.request_closed",
+      "localsend.transfer",
+      "localsend.file",
+      "localsend.cancelled",
       "photo.updated",
       "artwork.rendered",
       "entity.changed",

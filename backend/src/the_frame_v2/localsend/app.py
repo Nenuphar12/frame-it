@@ -89,22 +89,35 @@ def create_localsend_app(ctx: AppContext, identity: Identity, port: int) -> Fast
 
         device, selection = await run_in_threadpool(prepare)
         log.info(
-            "LocalSend offer from %s (%s): %d accepted, %d duplicates, %d unsupported",
+            "LocalSend offer from %s (%s): %d new, %d already sent, %d unsupported",
             device.alias,
             device.status,
             len(selection.accepted),
-            selection.duplicates,
-            selection.unsupported,
+            len(selection.known),
+            len(selection.rejected),
         )
         if device.status == "blocked":
             raise LocalSendRejection(403, "Rejected")
-        if not selection.accepted:
-            if selection.duplicates:
-                return Response(status_code=204)  # everything already in the library
+        if not selection.accepted and not selection.known:
             raise LocalSendRejection(403, "Only JPEG, PNG and AVIF photos are accepted")
+        # Known files are only disclosed (and restored from the trash) to allowed devices.
         if device.status != "approved" and not await hub.request_approval(ctx, device, selection):
             raise LocalSendRejection(403, "Rejected")
-        session = hub.open_session(device.id, ip, selection.accepted)
+        accepted, known = await run_in_threadpool(service.resolve_selection, ctx, selection)
+        # Already-sent files are not transferred again: without a token the app hides them, and
+        # they are back in the inbox anyway. But a sender whose files are *all* already sent would
+        # get no transfer screen at all (the app shows one only when a file is accepted), so the
+        # smallest of them is transferred, then dropped: the send looks like any other.
+        transferred = accepted or service.smallest(known)
+        session = hub.open_session(device.id, ip, transferred)
+        service.publish_transfer(
+            ctx,
+            transfer_id=session.id,
+            device=device,
+            accepted=accepted,
+            known=known,
+            rejected=selection.rejected,
+        )
         return PrepareUploadResponse(
             session_id=session.id, files={fid: f.token for fid, f in session.files.items()}
         ).wire()
@@ -116,11 +129,14 @@ def create_localsend_app(ctx: AppContext, identity: Identity, port: int) -> Fast
         if not (session_id and file_id and token):
             raise LocalSendRejection(400, "Missing parameters")
         session, item = hub.claim_file(session_id, file_id, token, _peer(request))
+        service.publish_file(ctx, session.id, file_id, status="receiving")
         offer = item.offer
         upload_id, temp = service.temp_path_for(ctx)
         digest = hashlib.sha256()
         size = 0
         done = False
+        failure = "transfer_interrupted"
+        known: service.KnownPhoto | None = None
         try:
             with temp.open("wb") as fh:
                 async for chunk in request.stream():
@@ -133,8 +149,9 @@ def create_localsend_app(ctx: AppContext, identity: Identity, port: int) -> Fast
                 raise LocalSendRejection(400, "Incomplete file")
             sha256 = digest.hexdigest()
             if offer.sha256 and offer.sha256.lower() != sha256:
+                failure = "checksum_mismatch"
                 raise LocalSendRejection(422, "Checksum mismatch")
-            await run_in_threadpool(
+            known = await run_in_threadpool(
                 service.hand_off,
                 ctx,
                 upload_id=upload_id,
@@ -144,18 +161,32 @@ def create_localsend_app(ctx: AppContext, identity: Identity, port: int) -> Fast
                 size=size,
             )
             done = True
+            if known is None:
+                service.publish_file(
+                    ctx, session.id, file_id, status="processing", upload_id=upload_id
+                )
+            else:  # sender without checksums: known only now (the file was received)
+                service.publish_file(
+                    ctx,
+                    session.id,
+                    file_id,
+                    status="known",
+                    photo_id=known.photo_id,
+                    restored=known.restored,
+                )
         except ClientDisconnect:
             raise LocalSendRejection(400, "Transfer interrupted") from None
         finally:
             if not done:
                 temp.unlink(missing_ok=True)
+                service.publish_file(ctx, session.id, file_id, status="failed", code=failure)
             hub.release_file(session, item, done=done)
         return Response(status_code=200)
 
     @app.post(f"{PREFIX}/cancel")
     async def cancel(request: Request) -> Response:
         session_id = request.query_params.get("sessionId", "")
-        hub.cancel(session_id, _peer(request))
+        hub.cancel(ctx, session_id, _peer(request))
         return Response(status_code=200)
 
     return app

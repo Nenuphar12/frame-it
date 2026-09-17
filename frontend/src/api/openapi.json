@@ -1424,6 +1424,10 @@
             "title": "Ip",
             "type": "string"
           },
+          "known_count": {
+            "title": "Known Count",
+            "type": "integer"
+          },
           "total_bytes": {
             "title": "Total Bytes",
             "type": "integer"
@@ -1436,6 +1440,7 @@
           "device_model",
           "ip",
           "file_count",
+          "known_count",
           "total_bytes",
           "created_at"
         ],

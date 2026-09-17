@@ -4,6 +4,9 @@
  * Pipeline per file: hash (SHA-256, hash-wasm — works over plain HTTP) → open/resume session →
  * PATCH chunks (retry with backoff, resume from server offset) → wait for ingestion (SSE, with
  * polling fallback). Protocol: docs/PLAN.md §10 "uploads".
+ *
+ * Files received by the LocalSend receiver are mirrored as "remote" items (no `file`, driven by
+ * `localsend.*` events only), so already-sent photos are reported in the same tray.
  */
 import { createSHA256 } from "hash-wasm";
 import { create } from "zustand";
@@ -30,7 +33,14 @@ export interface UploadMeta {
 
 export interface UploadItem {
   id: string;
-  file: File;
+  /** Absent for remote (LocalSend) items. */
+  file?: File;
+  /** Remote items: sending device name. */
+  source?: string;
+  /** Remote items: `<session_id>/<file_id>`. */
+  remoteKey?: string;
+  /** Already-sent photo that was in the trash and has been restored. */
+  restored?: boolean;
   name: string;
   size: number;
   status: UploadStatus;
@@ -95,6 +105,7 @@ export const useUploads = create<UploadState>((set, get) => ({
     return accepted.length;
   },
   retry(id) {
+    if (!findItem(id)?.file) return;
     patch(id, { status: "queued", progress: 0, errorCode: undefined });
     pump();
   },
@@ -121,7 +132,7 @@ function pump() {
   let slots = CONCURRENCY - running;
   for (const item of items) {
     if (slots <= 0) break;
-    if (item.status === "queued" && !active.has(item.id)) {
+    if (item.status === "queued" && item.file && !active.has(item.id)) {
       slots -= 1;
       void process(item.id);
     }
@@ -132,8 +143,9 @@ async function process(id: string) {
   active.add(id);
   try {
     const item = findItem(id);
-    if (!item) return;
-    const sha256 = item.sha256 ?? (await hashFile(id, item.file));
+    if (!item?.file) return;
+    const file = item.file;
+    const sha256 = item.sha256 ?? (await hashFile(id, file));
     patch(id, { sha256, status: "uploading", progress: 0 });
     const opened = await withRetry(() =>
       unwrap(
@@ -142,7 +154,7 @@ async function process(id: string) {
             filename: item.name,
             size: item.size,
             sha256,
-            mime: item.file.type,
+            mime: file.type,
             meta: item.meta,
           },
         }),
@@ -154,7 +166,7 @@ async function process(id: string) {
     }
     const uploadId = opened.upload_id!;
     patch(id, { uploadId });
-    const final = await sendChunks(id, item.file, uploadId, opened.offset, opened.chunk_bytes);
+    const final = await sendChunks(id, file, uploadId, opened.offset, opened.chunk_bytes);
     if (final.status === "failed") {
       patch(id, { status: "rejected", errorCode: final.error ?? "upload_failed" });
       return;
@@ -252,14 +264,15 @@ async function withRetry<T>(fn: () => Promise<T>, beforeRetry?: () => Promise<un
   }
 }
 
-function watchProcessing(id: string, uploadId: string) {
+/** Waits for the ingestion result. `poll`: fallback for sessions owned by this client. */
+function watchProcessing(id: string, uploadId: string, { poll = true } = {}) {
   let settled = false;
   const finish = (changes: Partial<UploadItem>) => {
     if (settled) return;
     settled = true;
     offIngested();
     offFailed();
-    clearInterval(timer);
+    if (timer !== undefined) clearInterval(timer);
     patch(id, changes);
   };
   const offIngested = onServerEvent("photo.ingested", (e) => {
@@ -271,21 +284,86 @@ function watchProcessing(id: string, uploadId: string) {
     if (e.upload_id === uploadId) finish({ status: "rejected", errorCode: e.code });
   });
   // Fallback when the event stream was interrupted: a vanished session means ingestion finished.
-  const timer = setInterval(async () => {
-    const response = await fetch(`${API_BASE}/uploads/${uploadId}`).catch(() => null);
-    if (!response) return;
-    if (response.status === 404) {
-      const sha = findItem(id)?.sha256;
-      const check = sha
-        ? await unwrap(api.POST("/api/v1/uploads/check", { body: { sha256: [sha] } })).catch(
-            () => null,
-          )
-        : null;
-      const photoId = check?.results[0]?.photo_id ?? undefined;
-      finish(photoId ? { status: "done", photoId } : { status: "failed", errorCode: "unknown" });
-    } else if (response.ok) {
-      const body = (await response.json()) as { status: string; error?: string | null };
-      if (body.status === "failed") finish({ status: "rejected", errorCode: body.error ?? "" });
+  const timer = !poll
+    ? undefined
+    : setInterval(async () => {
+        const response = await fetch(`${API_BASE}/uploads/${uploadId}`).catch(() => null);
+        if (!response) return;
+        if (response.status === 404) {
+          const sha = findItem(id)?.sha256;
+          const check = sha
+            ? await unwrap(api.POST("/api/v1/uploads/check", { body: { sha256: [sha] } })).catch(
+                () => null,
+              )
+            : null;
+          const photoId = check?.results[0]?.photo_id ?? undefined;
+          finish(
+            photoId ? { status: "done", photoId } : { status: "failed", errorCode: "unknown" },
+          );
+        } else if (response.ok) {
+          const body = (await response.json()) as { status: string; error?: string | null };
+          if (body.status === "failed") finish({ status: "rejected", errorCode: body.error ?? "" });
+        }
+      }, PROCESSING_POLL_MS);
+}
+
+const findRemote = (sessionId: string, fileId: string) =>
+  useUploads.getState().items.find((i) => i.remoteKey === `${sessionId}/${fileId}`);
+
+/** Mirrors LocalSend transfers into the tray (admin clients). Returns an unsubscribe. */
+export function mirrorLocalSendTransfers(): () => void {
+  const offTransfer = onServerEvent("localsend.transfer", (e) => {
+    const items = e.files.map((f): UploadItem => ({
+      id: nextId(),
+      source: e.alias,
+      remoteKey: `${e.session_id}/${f.file_id}`,
+      name: f.filename,
+      size: f.size,
+      status: f.status === "known" ? "duplicate" : f.status === "rejected" ? "rejected" : "queued",
+      progress: f.status === "incoming" ? 0 : 1,
+      photoId: f.photo_id,
+      restored: f.restored,
+      errorCode: f.code,
+      meta: EMPTY_META,
+    }));
+    useUploads.setState((state) => ({ items: [...state.items, ...items] }));
+  });
+  const offFile = onServerEvent("localsend.file", (e) => {
+    const item = findRemote(e.session_id, e.file_id);
+    if (!item) return;
+    switch (e.status) {
+      case "receiving":
+        patch(item.id, { status: "uploading", progress: 0, errorCode: undefined });
+        break;
+      case "processing":
+        patch(item.id, { status: "processing", progress: 1, uploadId: e.upload_id });
+        watchProcessing(item.id, e.upload_id, { poll: false });
+        break;
+      case "known":
+        patch(item.id, {
+          status: "duplicate",
+          progress: 1,
+          photoId: e.photo_id,
+          restored: e.restored,
+        });
+        break;
+      case "failed":
+        patch(item.id, { status: "failed", errorCode: e.code });
+        break;
     }
-  }, PROCESSING_POLL_MS);
+  });
+  const offCancelled = onServerEvent("localsend.cancelled", (e) => {
+    useUploads.setState((state) => ({
+      items: state.items.map((i) =>
+        i.remoteKey?.startsWith(`${e.session_id}/`) && !isFinished(i.status)
+          ? { ...i, status: "rejected", errorCode: "localsend_cancelled" }
+          : i,
+      ),
+    }));
+  });
+  return () => {
+    offTransfer();
+    offFile();
+    offCancelled();
+  };
 }
