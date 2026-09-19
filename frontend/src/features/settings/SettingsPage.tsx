@@ -1,6 +1,12 @@
 import { useTranslation } from "react-i18next";
 
-import { useSystemInfo } from "@/api/queries";
+import {
+  useArtworkDefaults,
+  useFrameStyles,
+  useLayouts,
+  useSetArtworkDefaults,
+  useSystemInfo,
+} from "@/api/queries";
 import { useTheme, type ThemePreference } from "@/app/theme";
 import { SUPPORTED_LANGUAGES, setLanguage } from "@/i18n";
 import { PageHeader } from "@/shared/ui/Misc";
@@ -9,6 +15,11 @@ export function SettingsPage() {
   const { t, i18n } = useTranslation();
   const { preference, setPreference } = useTheme();
   const info = useSystemInfo();
+  const defaults = useArtworkDefaults();
+  const styles = useFrameStyles();
+  const layouts = useLayouts();
+  const setDefaults = useSetArtworkDefaults();
+  const current = defaults.data;
 
   return (
     <div className="flex h-full flex-col">
@@ -40,6 +51,49 @@ export function SettingsPage() {
               {SUPPORTED_LANGUAGES.map((lang) => (
                 <option key={lang} value={lang}>
                   {t(`settings.languages.${lang}`)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </section>
+        <section className="space-y-3 rounded-lg border border-border bg-panel p-4">
+          <h2 className="text-sm font-semibold">{t("settings.artworkDefaults")}</h2>
+          <p className="text-xs text-muted">{t("settings.artworkDefaultsHint")}</p>
+          <label className="flex items-center justify-between gap-4 text-sm">
+            {t("artworks.create.style")}
+            <select
+              value={current?.style_id ?? ""}
+              disabled={!current}
+              onChange={(event) =>
+                current &&
+                setDefaults.mutate({ ...current, style_id: event.target.value })
+              }
+              className="rounded-md border border-border bg-bg px-2 py-1"
+            >
+              {(styles.data ?? []).map((style) => (
+                <option key={style.id} value={style.id}>
+                  {style.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center justify-between gap-4 text-sm">
+            {t("artworks.create.layout")}
+            <select
+              value={current?.layout_id ?? ""}
+              disabled={!current}
+              onChange={(event) =>
+                current &&
+                setDefaults.mutate({ ...current, layout_id: event.target.value })
+              }
+              className="rounded-md border border-border bg-bg px-2 py-1"
+            >
+              {(layouts.data ?? []).map((layout) => (
+                <option key={layout.id} value={layout.id}>
+                  {t("artworks.create.layoutOption", {
+                    name: layout.name,
+                    count: layout.slot_count,
+                  })}
                 </option>
               ))}
             </select>

@@ -80,3 +80,122 @@ files. Behaviour of the LocalSend app checked in its source (`docs/localsend.md`
 A photo coming back without being ingested publishes `photo.updated`, otherwise open pages only showed it after a
 manual reload (user report). Verified: `make check`; TLS end-to-end runs against a live server with real photos
 (including the SSE the browser receives). Not tried on a real phone.
+
+## 2026-09-18 — Phase 5 (editor, single photo) — **partially verified, see "Open items"**
+
+**Pure core (mirrored Python/TypeScript, 107 conformance cases, was 77)**: constraint solver
+(`domain/constraints.py` ↔ `editor/core/constraints.ts`, §7.3) — slot resize with *cover* semantics and an
+anchor, crop resize/pan/zoom, lock switching, crop-ratio switching; alternatives (`domain/alternatives.py` ↔
+`alternatives.ts`, §7.6) returning ready-to-apply patches. Both keep the two document invariants (aspect
+consistency and the quality lock) so the editor can never produce a document the server rejects — asserted for
+every solver result in `tests/unit/test_constraints.py` (19 behaviour tests). Snapping (`snapping.ts`, §7.5) is
+client-only (screen-pixel tolerance) but pure: the margin controls snap to the *quality point* (scale = 1).
+
+**Backend additions**: photo palette (`imaging/palette.py`, k-means in OKLab on a 64×64 sample → dominant,
+muted and complementary entries; deterministic, cached in `cache/palettes/`), swatches CRUD, curated mat
+colours (`GET /presets/colors`), `GET/PUT /artwork-defaults` (default style/layout, Settings UI), font metrics
+in `GET /fonts` so the editor places caption baselines exactly like the renderer. 6 new API tests.
+
+**Editor** (`frontend/src/editor/`): Konva canvas (mat + tinted texture tile, bands, photo from the proxy in
+oriented space, inner/drop shadows, zoom/pan, selection, margins guide, magenta snap guides), crop tool
+(drag/wheel pan & zoom inside the slot), framing panel (placement, margins with linking, quality lock, crop
+ratio, 90° turns/flip, rotation), style panel (mat colour + texture strength, bands ≤ 3, shadow), colour picker
+with saved swatches/presets/photo palette, alternatives panel with per-option previews, loupe (server region
+render), TV preview (fullscreen, 3 bezels, matte overlay), artwork sheet (title, tags suggested from the
+photos, favourite, snapshots + "revert to when opened"), review queue (filmstrip, progress, validate & next,
+skip, J/K), undo/redo on Immer patches (grouped per gesture, 200 steps), autosave (800 ms debounce, `If-Match`,
+409 → keep mine / take theirs). Creating artworks from the Inbox or Photos now goes straight into the review
+queue (`/editor/$artworkId?queue=…`).
+
+**Bugs found and fixed during the browser E2E** (all three froze the tab — worth remembering):
+1. *Render loop*: `openArtwork` rewrote `sizes` with a fresh object on every call while the photo query
+   produced a new array on every render. Guarded, and the sizes map is now keyed on its values.
+2. *One React render per mouse event*: crop dragging (and the loupe's pointer reporting) re-rendered the whole
+   editor and redrew the canvas per event; the event queue outran the renderer. Both are now accumulated and
+   flushed once per animation frame (`EditorStage`) — which is also what the 60 fps budget asks for.
+3. *Inner shadow*: S3's "ring drawn 20 000 px away" makes the browser allocate a surface spanning the shape and
+   its shadow. The ring is now drawn around the layer and clipped (`docs/research/render-parity.md` corrected).
+Also: a 404 artwork left the editor spinning forever (now an error with a way back), and `Escape` in the TV
+preview closed the preview *and* left the editor (the preview now captures the key).
+
+**Verified**: `make check` green (281 backend tests, 107 conformance cases, mypy strict, ESLint, tsc, i18n).
+In a real browser against a copy of the dev library (17 photos, 14 artworks): the editor opens an artwork,
+margins re-place the slot live with the badge following (42 % → 32 %), lock switching applies and autosaves
+(native keeps scale exactly 1 and pushes the change into the margins as §7.4 requires — the values matched a
+hand-run of the pure functions), crop ratio 1:1 re-crops, crop dragging pans the photo, linen texture and the
+recessed shadow render, and every change autosaves and is reloaded correctly.
+
+**Open items when the session ended** — all closed on 2026-09-19, see below.
+
+## 2026-09-19 — Phase 5 verification & sign-off
+
+Driven in a real browser (production build served by the backend on trusted localhost, against a copy of the
+dev library). Everything left open on 2026-09-18 was exercised; three bugs came out of it.
+
+**The loupe is not broken.** The panel opens on `Z` and on the button, and the 512² server region appears
+(the `POST /render/region` round trip is ~75 ms). What failed last session was the *screenshot tool*: the
+Chrome extension's `Page.captureScreenshot` times out for as long as the loupe's blob image is on screen (the
+page itself stays responsive — JS keeps answering), so the panel was there and invisible to the harness.
+Same cause as "`computer.zoom` and fullscreen capture time out on this page": a tooling limit, not the app.
+Related: a Konva canvas sometimes composites **black** in a captured screenshot while its pixels are correct
+(verified by reading the canvas back with `getImageData`) — never conclude "the canvas is empty" from a
+screenshot alone.
+
+**Bugs found and fixed**:
+1. *`Escape` in the colour popover left the editor.* Radix handles `Escape` in the capture phase on the
+   document; the command registry (tinykeys) listens on `window` in the bubble phase, so both ran: the
+   popover closed **and** the editor navigated to `/artworks`. The layers now swallow the key
+   (`onEscapeKeyDown` → `stopPropagation`) in `shared/ui/Dialog`, `editor/panels/ColorField` and
+   `features/artworks/ArtworkViewer`.
+2. *Captions were drawn ≈ 14 TV px too high* (96 px font) and measured without their weight: the editor
+   applied the renderer's baseline rule to a Konva `Text` node, which places its `y` differently
+   (`(ascent − descent) / 2 + lineHeight / 2` below it, `textBaseline = "alphabetic"`).
+   `editor/canvas/fonts.ts` now replicates Konva's own rule and font shorthand — details and numbers in
+   `docs/research/render-parity.md`. The font metrics from `GET /fonts` are no longer needed by the canvas
+   (the endpoint keeps them; the caption editor of Phase 6 will want the catalogue anyway).
+3. *The Settings default style/layout were ignored* by the "Create artworks" dialog, which hardcoded
+   Gallery recessed + Single. It now follows `GET /artwork-defaults` (the user's pick still wins; the
+   defaults are derived during render, not copied into state when the query answers).
+
+**Client vs server parity (Phase 5 AC)**: measured in the page on three artworks — MAE **1.05 / 1.22 / 1.52**
+per channel (max 52 / 59 / 169, on antialiased edges and glyph stems), caption ink box within one canvas
+pixel of the server's. Table and method: `docs/research/render-parity.md`.
+
+**Also verified in the browser**: undo/redo (`Ctrl+Z` / `Ctrl+Shift+Z`) across an alternative being applied;
+the alternatives panel (an upscaled slot offers *keep framing / shrink the photo / fit in the mat* with
+previews, and applying one switches the lock and re-places the slot: 140 % → native 100 %); the colour
+popover (curated presets, photo palette with dominant/muted entries, saving a swatch → `POST /swatches`);
+the TV preview (fullscreen, bezel, `Escape` closes only the preview); "validate & next" through the draft
+queue (progress counts down, the next draft opens); Inbox `$mod+a` → `n` → create → straight into the review
+queue with the artwork built from the default style (Linen after changing it in Settings).
+
+**Not verified**: the 40-photo keyboard-only run of the AC was done on a 11-draft queue, not 40; captions are
+still read-only (Phase 6); free-form slot move/resize/rotate, multi-slot snapping and equal-gap guides are
+Phase 6 as planned.
+
+## Post-Phase-5 feedback round (2026-09-19)
+
+Six items from the user's `remarks.md`, all driven in a real browser against a copy of the library
+(`/tmp/e2e`, backend :8799 + Vite :5199):
+
+1. *Margins could not be reduced under `native`.* `fit_in_mat` only re-derived the crop when it **overflowed**
+   the available area, so growing the margins shrank the photo for good: shrinking them back left a small crop
+   in a wide mat. It now re-derives on every margin edit, both ways (§7.4). Measured: top margin 280 → 700 →
+   280 on a 3072×4080 photo gives crop 1175×1560 → 858×1140 → 1175×1560, i.e. an exact round-trip.
+2. *A typed margin did nothing.* The number field snapped typed values with the §7.5 tolerance of 8 *screen*
+   px — tens of document px on a fitted stage — so `1` next to a `0` margin came back as `0`. Snapping is now
+   for dragged values only, and `NumberField` keeps the typed text while focused instead of fighting the
+   caret with the re-placed document value.
+3. *`?` now closes the cheat sheet* as well as opening it (`toggleCheatSheet`).
+4. *`Enter` confirms the "Create artworks" dialog.* Radix focused the first tabbable element — the close
+   cross — so `Enter` cancelled; the dialog now focuses its submit button (`onOpenAutoFocus`).
+5. *Photo zoom is now a visible control*, not only the wheel: a slider + number field in the Photo section,
+   `1×` = the whole photo at the current crop ratio, up to `8×`. Checked: `2×` on a 3072 px wide photo gives a
+   1536 px crop under `native` (margins follow) and `1.5×` a 2048 px crop under `no_upscale`.
+6. *Mirrored margins*: `margins.mirror_x` / `mirror_y` keep left = right / top = bottom, both when a side is
+   edited and when native linking redistributes the free space. Two toggles next to "link all sides".
+
+Schema change (`mirror_x`, `mirror_y`, defaults `false`) ⇒ `make gen-api`; geometry change ⇒ Python + TS +
+four new conformance cases (`margins mirrored`, `margins mirrored on one axis`, `fit in mat native grows the
+crop back`, and the mirror arguments on every `margins_for_slot` / `alternatives` case).
+

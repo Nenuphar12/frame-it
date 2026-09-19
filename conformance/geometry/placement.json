@@ -304,7 +304,9 @@
           "bottom": 400,
           "left": 100
         },
-        "linked": false
+        "linked": false,
+        "mirror_x": false,
+        "mirror_y": false
       },
       "expected": {
         "top": 220,
@@ -327,7 +329,9 @@
           "bottom": 0,
           "left": 0
         },
-        "linked": false
+        "linked": false,
+        "mirror_x": false,
+        "mirror_y": false
       },
       "expected": {
         "top": 330,
@@ -350,7 +354,9 @@
           "bottom": 0,
           "left": 0
         },
-        "linked": true
+        "linked": true,
+        "mirror_x": false,
+        "mirror_y": false
       },
       "expected": {
         "top": 329,
@@ -373,13 +379,65 @@
           "bottom": 260,
           "left": 200
         },
-        "linked": false
+        "linked": false,
+        "mirror_x": false,
+        "mirror_y": false
       },
       "expected": {
         "top": 70,
         "right": 0,
         "bottom": 90,
         "left": 0
+      }
+    },
+    {
+      "name": "margins mirrored",
+      "fn": "margins_for_slot",
+      "input": {
+        "slot": {
+          "w": 3001,
+          "h": 1501
+        },
+        "previous": {
+          "top": 100,
+          "right": 500,
+          "bottom": 300,
+          "left": 100
+        },
+        "linked": false,
+        "mirror_x": true,
+        "mirror_y": true
+      },
+      "expected": {
+        "top": 329,
+        "right": 419,
+        "bottom": 329,
+        "left": 419
+      }
+    },
+    {
+      "name": "margins mirrored on one axis",
+      "fn": "margins_for_slot",
+      "input": {
+        "slot": {
+          "w": 3000,
+          "h": 1500
+        },
+        "previous": {
+          "top": 100,
+          "right": 500,
+          "bottom": 300,
+          "left": 100
+        },
+        "linked": false,
+        "mirror_x": true,
+        "mirror_y": false
+      },
+      "expected": {
+        "top": 165,
+        "right": 420,
+        "bottom": 495,
+        "left": 420
       }
     },
     {
@@ -454,6 +512,45 @@
         "crop": {
           "x": 1725,
           "y": 1150,
+          "w": 2550,
+          "h": 1700
+        },
+        "quality_lock": "native"
+      }
+    },
+    {
+      "name": "fit in mat native grows the crop back",
+      "fn": "fit_in_mat",
+      "input": {
+        "source": {
+          "w": 6000,
+          "h": 4000
+        },
+        "crop": {
+          "x": 2500,
+          "y": 1600,
+          "w": 1000,
+          "h": 667
+        },
+        "crop_ratio": "original",
+        "margins": {
+          "top": 200,
+          "right": 200,
+          "bottom": 260,
+          "left": 200
+        },
+        "lock": "native"
+      },
+      "expected": {
+        "rect": {
+          "x": 645,
+          "y": 200,
+          "w": 2550,
+          "h": 1700
+        },
+        "crop": {
+          "x": 1725,
+          "y": 1084,
           "w": 2550,
           "h": 1700
         },

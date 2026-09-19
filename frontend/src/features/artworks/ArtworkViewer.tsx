@@ -6,6 +6,7 @@ import {
   Copy,
   Download,
   Heart,
+  Pencil,
   Trash2,
   Undo2,
   X,
@@ -25,11 +26,19 @@ interface ArtworkViewerProps {
   artworkId: string;
   ids: string[];
   onNavigate: (id: string) => void;
+  /** Open the artwork in the editor (Phase 5). */
+  onEdit: (id: string) => void;
   onClose: () => void;
 }
 
 /** Full-screen review of the server render (authoritative pixels) with the Phase 4 actions. */
-export function ArtworkViewer({ artworkId, ids, onNavigate, onClose }: ArtworkViewerProps) {
+export function ArtworkViewer({
+  artworkId,
+  ids,
+  onNavigate,
+  onEdit,
+  onClose,
+}: ArtworkViewerProps) {
   const { t } = useTranslation();
   const artwork = useArtwork(artworkId);
   const styles = useFrameStyles();
@@ -99,6 +108,13 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onClose }: ArtworkVi
         run: actions.toggleReady,
       },
       {
+        id: "artwork.edit",
+        label: "editor.open",
+        group: "commands.groups.artworks",
+        shortcut: "e",
+        run: () => data && onEdit(data.id),
+      },
+      {
         id: "artwork.duplicate",
         label: "artworks.duplicate",
         group: "commands.groups.artworks",
@@ -114,7 +130,7 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onClose }: ArtworkVi
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `go` only depends on ids/index
-    [actions, ids, index],
+    [actions, data, ids, index, onEdit],
   );
   useRegisterCommands(commands);
 
@@ -126,7 +142,11 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onClose }: ArtworkVi
     <RadixDialog.Root open onOpenChange={(open) => !open && onClose()}>
       <RadixDialog.Portal>
         <RadixDialog.Overlay className="fixed inset-0 z-40 bg-black/90" />
-        <RadixDialog.Content className="fixed inset-0 z-50 flex flex-col outline-none">
+        <RadixDialog.Content
+          // `Escape` only closes the viewer (see `shared/ui/Dialog`).
+          onEscapeKeyDown={(event) => event.stopPropagation()}
+          className="fixed inset-0 z-50 flex flex-col outline-none"
+        >
           <RadixDialog.Title className="sr-only">
             {data?.title || t("artworks.untitled")}
           </RadixDialog.Title>
@@ -223,6 +243,9 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onClose }: ArtworkVi
                 {data.status === "ready" ? <Undo2 size={14} /> : <CheckCircle2 size={14} />}
                 {data.status === "ready" ? t("artworks.backToDraft") : t("artworks.markReady")}{" "}
                 <Kbd>↵</Kbd>
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => onEdit(data.id)}>
+                <Pencil size={14} /> {t("editor.open")} <Kbd>E</Kbd>
               </Button>
               <Button size="sm" variant="ghost" onClick={actions.duplicate}>
                 <Copy size={14} /> {t("artworks.duplicate")}

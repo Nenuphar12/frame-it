@@ -91,12 +91,17 @@ function share(extra: number, first: number, second: number): number {
   return total === 0 ? roundHalfEven(extra / 2) : roundHalfEven((extra * first) / total);
 }
 
-/** Native linking, crop edited: redistribute the free space around a slot (see Python). */
+/**
+ * Native linking, crop edited: redistribute the free space around a slot (see Python).
+ * `mirrorX` / `mirrorY` split their axis evenly so the two sides stay equal.
+ */
 export function marginsForSlot(
   slot: Size,
   previous: Margins,
   linked: boolean,
   canvas: Size = CANVAS,
+  mirrorX = false,
+  mirrorY = false,
 ): Margins {
   const extraX = Math.max(0, canvas.w - slot.w);
   const extraY = Math.max(0, canvas.h - slot.h);
@@ -104,12 +109,22 @@ export function marginsForSlot(
     const uniform = Math.floor(Math.min(extraX, extraY) / 2);
     return { top: uniform, right: uniform, bottom: uniform, left: uniform };
   }
-  const left = share(extraX, previous.left, previous.right);
-  const top = share(extraY, previous.top, previous.bottom);
-  return { top, right: extraX - left, bottom: extraY - top, left };
+  const left = mirrorX ? Math.floor(extraX / 2) : share(extraX, previous.left, previous.right);
+  const top = mirrorY ? Math.floor(extraY / 2) : share(extraY, previous.top, previous.bottom);
+  return {
+    top,
+    right: mirrorX ? left : extraX - left,
+    bottom: mirrorY ? top : extraY - top,
+    left,
+  };
 }
 
-/** `fit_in_mat` placement for a single slot (margins are minimums). */
+/**
+ * `fit_in_mat` placement for a single slot (margins are minimums).
+ *
+ * `native`: the slot is the crop size, so the crop always takes the available area's size (native
+ * linking, §7.4) — it shrinks when the margins grow and grows back when they shrink.
+ */
 export function fitInMat(
   source: Size,
   crop: Rect,
@@ -119,10 +134,7 @@ export function fitInMat(
 ): SlotPlacement {
   const area = availableArea(margins);
   if (lock === "native") {
-    let current = crop;
-    if (crop.w > area.w || crop.h > area.h) {
-      current = nativeCropForArea({ w: area.w, h: area.h }, source, cropRatio, crop);
-    }
+    const current = nativeCropForArea({ w: area.w, h: area.h }, source, cropRatio, crop);
     return {
       rect: fitRect(area, { w: current.w, h: current.h }, "native"),
       crop: current,

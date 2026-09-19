@@ -91,3 +91,16 @@ def defaults(session: Session) -> tuple[str, str]:
     row = session.get(Setting, DEFAULTS_SETTING)
     value = row.value if row else {}
     return value.get("style_id", DEFAULT_STYLE_ID), value.get("layout_id", DEFAULT_LAYOUT_ID)
+
+
+def set_defaults(session: Session, style_id: str, layout_id: str) -> tuple[str, str]:
+    """Store the default (style, layout) for new artworks (both must exist)."""
+    get_style(session, style_id)
+    get_layout(session, layout_id)
+    row = session.get(Setting, DEFAULTS_SETTING)
+    value = {"style_id": style_id, "layout_id": layout_id}
+    if row is None:
+        session.add(Setting(key=DEFAULTS_SETTING, value=value))
+    else:
+        row.value = value
+    return style_id, layout_id

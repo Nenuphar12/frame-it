@@ -21,11 +21,43 @@ shadows, textures, rotated slots and captions (`rendering-spec.md` §8.2)?
 ## Rules for the Phase 5 canvas (`editor/canvas/`)
 
 - Shadows: pass `blur` unchanged to `shadowBlur` (times the stage scale), offsets in device px.
-- Inner shadow: the far-away ring trick works, but **canvas shadow offsets ignore the transform**: for a rotated
-  slot the compensation offset must be rotated into device space (server applies the offset in the slot's
-  frame, before rotation).
+- Inner shadow: **canvas shadow offsets ignore the transform** — the offset must be scaled by the stage scale
+  (times the device pixel ratio) and, for a rotated slot, rotated into device space (the server applies the
+  offset in the slot's frame, before rotation).
+  ⚠️ **Corrected in Phase 5**: the far-away ring measured here (drawn 20 000 px aside, the distance compensated
+  by the shadow offset) is correct on paper but unusable — the browser allocates a surface spanning the shape
+  *and* its shadow, so it froze the tab. Since the layer rect clips the ring's own ink anyway, the ring is
+  drawn directly **around** the layer (padding `3σ + |offset|`) with no compensation offset
+  (`editor/canvas/SlotNode.tsx`).
 - Canvas `letterSpacing` also adds space after the last character, Pango only between characters: shift the
   text by `spacing/2` (middle) or `spacing` (end) when drawing.
 - Texture: build the tinted tile once per (texture, colour, strength) with the exact formula.
 - Tolerances for "client preview matches server render" (Phase 5 AC): shadows/texture max diff ≤ 4;
   rotated edges and text are resampling/metric differences (compare ink boxes, ≤ 2 px).
+
+## Measured in the editor (2026-09-19, Phase 5 sign-off)
+
+The S3 numbers above come from a bare Canvas 2D harness. The check below is the **editor itself**
+(`EditorStage`, proxies, Konva) against the server render of the same artwork, measured in the page: the
+content layer is cropped to the mat, the server JPEG is drawn into a canvas of the same size, and the two
+`ImageData` are compared (the overlay layer — guides, selection — is a second Konva layer and is excluded).
+The stage was at its fit zoom, ≈ 0.337 (1 canvas px ≈ 3 TV px), and the client draws the 2560 px proxy while
+the server draws the original, so edge pixels differ by resampling alone.
+
+| Artwork | MAE | max | subpixels > 8 |
+|---|---|---|---|
+| Single photo, fill, paper texture, recessed shadow | **1.05** | 52 | 1.1 % |
+| Polaroid pile (3 rotated slots, inner shadows) | **1.22** | 59 | 1.8 % |
+| Single photo + caption (Cormorant Garamond 96 px, middle anchor) | **1.52** | 169 | — |
+
+Caption ink box, client vs server, in TV px: **(−3, −3, +3, 0)** — one canvas pixel, the resolution of the
+measurement. Text stems are where the `max` comes from (sub-pixel glyph positioning).
+
+**Bug this found.** Konva does not put a `Text` node's `y` on the line top: it draws with
+`textBaseline = "alphabetic"` after translating by `(ascent − descent) / 2 + lineHeight / 2`, measured on an
+`M` (`konva/lib/shapes/Text.js`). The editor was offsetting by the *renderer's* rule
+(`floor(ascender × size / upm + 0.5)`), which put captions **≈ 14 TV px too high** at 96 px, and it measured
+the text width without the weight in the font shorthand (so an anchored caption was a few px off, too).
+`editor/canvas/fonts.ts` now replicates Konva's own rule and font shorthand; the numbers above are after the
+fix (caption band MAE 2.38 → 1.08). There is no automated guard: it depends on browser font metrics, which
+the Node conformance script cannot measure.

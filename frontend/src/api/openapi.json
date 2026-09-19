@@ -69,6 +69,42 @@
         "title": "ArtworkCreateIn",
         "type": "object"
       },
+      "ArtworkDefaultsIn": {
+        "properties": {
+          "layout_id": {
+            "title": "Layout Id",
+            "type": "string"
+          },
+          "style_id": {
+            "title": "Style Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "style_id",
+          "layout_id"
+        ],
+        "title": "ArtworkDefaultsIn",
+        "type": "object"
+      },
+      "ArtworkDefaultsOut": {
+        "properties": {
+          "layout_id": {
+            "title": "Layout Id",
+            "type": "string"
+          },
+          "style_id": {
+            "title": "Style Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "style_id",
+          "layout_id"
+        ],
+        "title": "ArtworkDefaultsOut",
+        "type": "object"
+      },
       "ArtworkDocument": {
         "additionalProperties": false,
         "properties": {
@@ -780,6 +816,24 @@
         "title": "CollectionOut",
         "type": "object"
       },
+      "ColorPresetOut": {
+        "properties": {
+          "color": {
+            "title": "Color",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "color"
+        ],
+        "title": "ColorPresetOut",
+        "type": "object"
+      },
       "CountOut": {
         "properties": {
           "count": {
@@ -914,6 +968,34 @@
         "title": "DeviceUpdateIn",
         "type": "object"
       },
+      "FontMetricsOut": {
+        "properties": {
+          "ascender": {
+            "title": "Ascender",
+            "type": "integer"
+          },
+          "descender": {
+            "title": "Descender",
+            "type": "integer"
+          },
+          "units_per_em": {
+            "title": "Units Per Em",
+            "type": "integer"
+          },
+          "weight": {
+            "title": "Weight",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "weight",
+          "units_per_em",
+          "ascender",
+          "descender"
+        ],
+        "title": "FontMetricsOut",
+        "type": "object"
+      },
       "FontOut": {
         "properties": {
           "category": {
@@ -923,6 +1005,13 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/FontMetricsOut"
+            },
+            "title": "Metrics",
+            "type": "array"
           },
           "name": {
             "title": "Name",
@@ -940,7 +1029,8 @@
           "id",
           "name",
           "category",
-          "weights"
+          "weights",
+          "metrics"
         ],
         "title": "FontOut",
         "type": "object"
@@ -1526,6 +1616,16 @@
             "title": "Linked",
             "type": "boolean"
           },
+          "mirror_x": {
+            "default": false,
+            "title": "Mirror X",
+            "type": "boolean"
+          },
+          "mirror_y": {
+            "default": false,
+            "title": "Mirror Y",
+            "type": "boolean"
+          },
           "right": {
             "default": 0,
             "maximum": 3839.0,
@@ -1703,6 +1803,34 @@
           "expires_in_seconds"
         ],
         "title": "PairingCodeOut",
+        "type": "object"
+      },
+      "PaletteEntryOut": {
+        "properties": {
+          "color": {
+            "title": "Color",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "dominant",
+              "muted",
+              "complementary"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "weight": {
+            "title": "Weight",
+            "type": "number"
+          }
+        },
+        "required": [
+          "color",
+          "kind",
+          "weight"
+        ],
+        "title": "PaletteEntryOut",
         "type": "object"
       },
       "PhotoIdsIn": {
@@ -2317,6 +2445,89 @@
         "title": "SourceSpec",
         "type": "object"
       },
+      "SwatchCreateIn": {
+        "properties": {
+          "color": {
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "title": "Color",
+            "type": "string"
+          },
+          "name": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "color"
+        ],
+        "title": "SwatchCreateIn",
+        "type": "object"
+      },
+      "SwatchOut": {
+        "properties": {
+          "color": {
+            "title": "Color",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "color",
+          "name",
+          "position"
+        ],
+        "title": "SwatchOut",
+        "type": "object"
+      },
+      "SwatchReorderIn": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ids"
+        ],
+        "title": "SwatchReorderIn",
+        "type": "object"
+      },
+      "SwatchUpdateIn": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "SwatchUpdateIn",
+        "type": "object"
+      },
       "SystemInfo": {
         "properties": {
           "capabilities": {
@@ -2665,6 +2876,67 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/artwork-defaults": {
+      "get": {
+        "description": "Style and layout used when creating artworks without an explicit choice.",
+        "operationId": "artwork_defaults_api_v1_artwork_defaults_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtworkDefaultsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Artwork Defaults",
+        "tags": [
+          "templates"
+        ]
+      },
+      "put": {
+        "operationId": "set_artwork_defaults_api_v1_artwork_defaults_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArtworkDefaultsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtworkDefaultsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Artwork Defaults",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
     "/api/v1/artworks": {
       "get": {
         "operationId": "list_artworks_api_v1_artworks_get",
@@ -4374,6 +4646,53 @@
         ]
       }
     },
+    "/api/v1/photos/{photo_id}/palette": {
+      "get": {
+        "description": "Mat colours suggested from the photo (dominant, muted and complementary; cached).",
+        "operationId": "photo_palette_api_v1_photos__photo_id__palette_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "photo_id",
+            "required": true,
+            "schema": {
+              "title": "Photo Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PaletteEntryOut"
+                  },
+                  "title": "Response Photo Palette Api V1 Photos  Photo Id  Palette Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Photo Palette",
+        "tags": [
+          "colors"
+        ]
+      }
+    },
     "/api/v1/photos/{photo_id}/proxy": {
       "get": {
         "operationId": "photo_proxy_api_v1_photos__photo_id__proxy_get",
@@ -4457,6 +4776,31 @@
         ]
       }
     },
+    "/api/v1/presets/colors": {
+      "get": {
+        "operationId": "color_presets_api_v1_presets_colors_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ColorPresetOut"
+                  },
+                  "title": "Response Color Presets Api V1 Presets Colors Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Color Presets",
+        "tags": [
+          "colors"
+        ]
+      }
+    },
     "/api/v1/render/region": {
       "post": {
         "description": "Render a region (\u2264 1024\u00b2, TV px) of a possibly unsaved document (loupe, \u00a711.4).",
@@ -4492,6 +4836,201 @@
         "summary": "Render Region",
         "tags": [
           "templates"
+        ]
+      }
+    },
+    "/api/v1/swatches": {
+      "get": {
+        "operationId": "list_swatches_api_v1_swatches_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SwatchOut"
+                  },
+                  "title": "Response List Swatches Api V1 Swatches Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Swatches",
+        "tags": [
+          "colors"
+        ]
+      },
+      "post": {
+        "description": "Save a colour (an existing swatch with the same colour is returned unchanged).",
+        "operationId": "create_swatch_api_v1_swatches_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwatchCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwatchOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Swatch",
+        "tags": [
+          "colors"
+        ]
+      }
+    },
+    "/api/v1/swatches/reorder": {
+      "post": {
+        "operationId": "reorder_swatches_api_v1_swatches_reorder_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwatchReorderIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SwatchOut"
+                  },
+                  "title": "Response Reorder Swatches Api V1 Swatches Reorder Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reorder Swatches",
+        "tags": [
+          "colors"
+        ]
+      }
+    },
+    "/api/v1/swatches/{swatch_id}": {
+      "delete": {
+        "operationId": "delete_swatch_api_v1_swatches__swatch_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "swatch_id",
+            "required": true,
+            "schema": {
+              "title": "Swatch Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Swatch",
+        "tags": [
+          "colors"
+        ]
+      },
+      "patch": {
+        "operationId": "update_swatch_api_v1_swatches__swatch_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "swatch_id",
+            "required": true,
+            "schema": {
+              "title": "Swatch Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwatchUpdateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwatchOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Swatch",
+        "tags": [
+          "colors"
         ]
       }
     },

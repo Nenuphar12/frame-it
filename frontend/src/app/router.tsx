@@ -1,5 +1,6 @@
 import { createRootRoute, createRoute, createRouter, Navigate } from "@tanstack/react-router";
 
+import { EditorPage } from "@/editor/EditorPage";
 import { ArtworksPage } from "@/features/artworks/ArtworksPage";
 import { PairPage, SetupPage } from "@/features/auth/AuthPages";
 import { DevicesPage } from "@/features/devices/DevicesPage";
@@ -12,6 +13,11 @@ import { AuthGate } from "./AuthGate";
 import { Shell } from "./Shell";
 
 const rootRoute = createRootRoute({ component: AuthGate });
+
+/** Review queue carried in the URL so an editing session survives a reload (§11.1). */
+interface EditorSearch {
+  queue?: string;
+}
 
 const shellRoute = createRoute({ getParentRoute: () => rootRoute, id: "shell", component: Shell });
 
@@ -28,6 +34,13 @@ const routeTree = rootRoute.addChildren([
     page("/inbox", InboxPage),
     page("/photos", PhotosPage),
     page("/artworks", ArtworksPage),
+    createRoute({
+      getParentRoute: () => shellRoute,
+      path: "/editor/$artworkId",
+      component: EditorPage,
+      validateSearch: (search: Record<string, unknown>): EditorSearch =>
+        typeof search.queue === "string" ? { queue: search.queue } : {},
+    }),
     page("/favorites", () => <ComingSoon titleKey="nav.favorites" phase={8} />),
     page("/collections", () => <ComingSoon titleKey="nav.collections" phase={8} />),
     page("/templates", () => <ComingSoon titleKey="nav.templates" phase={7} />),

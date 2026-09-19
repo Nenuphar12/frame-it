@@ -345,11 +345,65 @@ class LayoutOut(ApiModel):
     document: LayoutDocument
 
 
+class ArtworkDefaultsOut(ApiModel):
+    style_id: str
+    layout_id: str
+
+
+class ArtworkDefaultsIn(BaseModel):
+    style_id: str
+    layout_id: str
+
+
+# ---- colours ------------------------------------------------------------------------------------
+
+
+class PaletteEntryOut(ApiModel):
+    color: str
+    kind: Literal["dominant", "muted", "complementary"]
+    weight: float
+    """Share of the photo covered by the cluster this colour comes from (0 to 1)."""
+
+
+class ColorPresetOut(ApiModel):
+    name: str
+    color: str
+
+
+class SwatchOut(ApiModel):
+    id: str
+    color: str
+    name: str
+    position: float
+
+
+class SwatchCreateIn(BaseModel):
+    color: str = Field(pattern=r"^#[0-9A-Fa-f]{6}$")
+    name: str = Field(default="", max_length=64)
+
+
+class SwatchUpdateIn(BaseModel):
+    name: str | None = Field(default=None, max_length=64)
+
+
+class SwatchReorderIn(BaseModel):
+    ids: list[str] = Field(max_length=200)
+
+
+class FontMetricsOut(ApiModel):
+    weight: int
+    units_per_em: int
+    ascender: int
+    descender: int
+
+
 class FontOut(ApiModel):
     id: str
     name: str
     category: str
     weights: list[int]
+    metrics: list[FontMetricsOut]
+    """Per weight, in font units: the editor places baselines like the renderer (§8.1 step 4)."""
 
 
 class TextureOut(ApiModel):

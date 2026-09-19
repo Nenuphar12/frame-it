@@ -26,6 +26,7 @@ interface CommandState {
   cheatSheetOpen: boolean;
   setPaletteOpen: (open: boolean) => void;
   setCheatSheetOpen: (open: boolean) => void;
+  toggleCheatSheet: () => void;
 }
 
 export const useCommands = create<CommandState>((set) => ({
@@ -34,6 +35,7 @@ export const useCommands = create<CommandState>((set) => ({
   cheatSheetOpen: false,
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
   setCheatSheetOpen: (cheatSheetOpen) => set({ cheatSheetOpen }),
+  toggleCheatSheet: () => set((state) => ({ cheatSheetOpen: !state.cheatSheetOpen })),
 }));
 
 function isTyping(event: KeyboardEvent): boolean {

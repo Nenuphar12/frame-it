@@ -37,7 +37,8 @@
       "navigation": "Navigation",
       "library": "Library",
       "inbox": "Inbox",
-      "artworks": "Artworks"
+      "artworks": "Artworks",
+      "editor": "Editor"
     },
     "toggleTheme": "Toggle light/dark theme",
     "uploadFiles": "Add photos",
@@ -218,7 +219,9 @@
     "about": "About",
     "version": "Version",
     "publicUrl": "Address for phones",
-    "attribution": "Place names: GeoNames (CC BY 4.0)."
+    "attribution": "Place names: GeoNames (CC BY 4.0).",
+    "artworkDefaults": "New artworks",
+    "artworkDefaultsHint": "Frame style and layout used when creating artworks without choosing one."
   },
   "comingSoon": {
     "title": "Coming soon",
@@ -348,5 +351,186 @@
       "submit_one": "Create {{count}} artwork",
       "submit_other": "Create {{count}} artworks"
     }
+  },
+  "editor": {
+    "tabs": {
+      "design": "Design",
+      "artwork": "Artwork"
+    },
+    "sections": {
+      "framing": "Framing",
+      "margins": "Margins",
+      "photo": "Photo",
+      "mat": "Mat",
+      "bands": "Bands",
+      "shadow": "Shadow",
+      "artwork": "Artwork",
+      "tags": "Tags",
+      "history": "History"
+    },
+    "placement": {
+      "label": "Placement",
+      "fit_in_mat": "Fit in mat",
+      "fill": "Fill",
+      "manual": "Manual"
+    },
+    "lock": {
+      "label": "Quality lock",
+      "native": "Native",
+      "nativeHint": "One photo pixel per TV pixel: the slot follows the crop",
+      "no_upscale": "No upscale",
+      "no_upscaleHint": "The photo is never enlarged (default)",
+      "free": "Free",
+      "freeHint": "No constraint: the photo may be enlarged"
+    },
+    "sides": {
+      "top": "Top",
+      "right": "Right",
+      "bottom": "Bottom",
+      "left": "Left"
+    },
+    "margins": {
+      "link": "Link all sides",
+      "mirrorX": "Mirror left and right",
+      "mirrorY": "Mirror top and bottom"
+    },
+    "cropRatio": "Crop ratio",
+    "ratios": {
+      "original": "Original",
+      "free": "Free"
+    },
+    "zoom": "Zoom",
+    "rotation": "Rotation",
+    "orient": {
+      "rotateLeft": "Turn the photo left",
+      "rotateRight": "Turn the photo right",
+      "flip": "Flip the photo horizontally"
+    },
+    "mat": {
+      "color": "Colour",
+      "texture": "Texture",
+      "noTexture": "None",
+      "strength": "Strength"
+    },
+    "bands": {
+      "add": "Add",
+      "none": "No band around the photo.",
+      "color": "Band colour"
+    },
+    "shadow": {
+      "label": "Shadow",
+      "none": "None",
+      "inner": "Recessed",
+      "drop": "Raised",
+      "blur": "Blur",
+      "opacity": "Opacity",
+      "offset": "Offset",
+      "color": "Colour"
+    },
+    "colors": {
+      "hex": "Hex colour",
+      "save": "Save",
+      "saved": "Saved colours",
+      "presets": "Presets",
+      "fromPhoto": "From the photo",
+      "noSwatches": "No saved colour yet.",
+      "analyzing": "Reading the photo…",
+      "kinds": {
+        "dominant": "Dominant colour",
+        "muted": "Muted variant",
+        "complementary": "Complementary"
+      }
+    },
+    "quality": {
+      "empty": "Empty slot"
+    },
+    "snap": {
+      "native": "Photo shown at 100%",
+      "centered": "Centred",
+      "canvasEdge": "Canvas edge",
+      "canvasCenter": "Canvas centre",
+      "slotEdge": "Slot edge",
+      "slotCenter": "Slot centre"
+    },
+    "alternatives": {
+      "title": "This photo is being enlarged",
+      "description": "It may look soft on the TV. Pick a way out, or keep it as it is.",
+      "keep_framing": "Keep this framing",
+      "keep_framingHint": "Accept the enlargement",
+      "show_more": "Show more of the photo",
+      "show_moreHint": "Same frame, wider crop",
+      "shrink": "Shrink the photo",
+      "shrinkHint": "Same crop, more mat around it",
+      "fit_in_mat": "Fit in the mat",
+      "fit_in_matHint": "Leave full-screen fill"
+    },
+    "loupe": {
+      "title": "Loupe",
+      "hint": "Move the pointer over the artwork to inspect it at 100%.",
+      "error": "The region could not be rendered."
+    },
+    "tv": {
+      "title": "TV preview",
+      "bezel": "Bezel",
+      "matte": "Matte"
+    },
+    "save": {
+      "saving": "Saving…",
+      "saved": "Saved",
+      "pending": "Unsaved changes",
+      "error": "Could not save"
+    },
+    "conflict": {
+      "title": "This artwork changed elsewhere",
+      "description": "It was modified on another device while you were editing it.",
+      "keepMine": "Keep my version",
+      "takeServer": "Take the other version"
+    },
+    "queue": {
+      "progress": "{{current}} / {{total}}",
+      "skip": "Skip",
+      "validated": "Ready"
+    },
+    "info": {
+      "title": "Artwork title",
+      "fromPhotos": "From the photos:"
+    },
+    "history": {
+      "revertToOpened": "Revert to when opened",
+      "restore": "Restore",
+      "reasons": {
+        "opened": "Opened in the editor",
+        "manual": "Manual snapshot",
+        "pre_restore": "Before a restore",
+        "pre_template_update": "Before a template update",
+        "pre_import": "Before an import"
+      }
+    },
+    "commands": {
+      "undo": "Undo",
+      "redo": "Redo",
+      "select": "Select tool",
+      "crop": "Crop tool",
+      "lockNative": "Lock: native",
+      "lockNoUpscale": "Lock: no upscale",
+      "lockFree": "Lock: free",
+      "rotate": "Turn the photo right",
+      "rotateLeft": "Turn the photo left",
+      "flip": "Flip the photo",
+      "zoomIn": "Zoom into the photo",
+      "zoomOut": "Zoom out of the photo",
+      "loupe": "Toggle the loupe",
+      "tvPreview": "TV preview",
+      "validate": "Mark ready and go to the next",
+      "skip": "Skip to the next draft",
+      "next": "Next draft",
+      "previous": "Previous draft",
+      "close": "Leave the editor",
+      "nudge": "Nudge the photo by 1 px",
+      "nudge10": "Nudge the photo by 10 px",
+      "open": "Open in the editor",
+      "fit": "Fit the artwork to the view"
+    },
+    "open": "Edit"
   }
 }

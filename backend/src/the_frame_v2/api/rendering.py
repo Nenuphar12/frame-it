@@ -9,7 +9,16 @@ from fastapi.responses import FileResponse, Response
 from starlette.concurrency import run_in_threadpool
 
 from the_frame_v2.api.deps import Admin, Ctx, DbSession
-from the_frame_v2.api.schemas import FontOut, FrameStyleOut, LayoutOut, RegionRenderIn, TextureOut
+from the_frame_v2.api.schemas import (
+    ArtworkDefaultsIn,
+    ArtworkDefaultsOut,
+    FontMetricsOut,
+    FontOut,
+    FrameStyleOut,
+    LayoutOut,
+    RegionRenderIn,
+    TextureOut,
+)
 from the_frame_v2.db.session import Database
 from the_frame_v2.domain.geometry import Rect
 from the_frame_v2.errors import not_found
@@ -30,10 +39,39 @@ def list_layouts(_: Admin, session: DbSession) -> list[LayoutOut]:
     return [LayoutOut.model_validate(layout) for layout in templates.list_layouts(session)]
 
 
+@router.get("/artwork-defaults")
+def artwork_defaults(_: Admin, session: DbSession) -> ArtworkDefaultsOut:
+    """Style and layout used when creating artworks without an explicit choice."""
+    style_id, layout_id = templates.defaults(session)
+    return ArtworkDefaultsOut(style_id=style_id, layout_id=layout_id)
+
+
+@router.put("/artwork-defaults")
+def set_artwork_defaults(
+    body: ArtworkDefaultsIn, _: Admin, session: DbSession
+) -> ArtworkDefaultsOut:
+    style_id, layout_id = templates.set_defaults(session, body.style_id, body.layout_id)
+    return ArtworkDefaultsOut(style_id=style_id, layout_id=layout_id)
+
+
 @router.get("/fonts")
 def list_fonts(_: Admin) -> list[FontOut]:
     return [
-        FontOut(id=f.id, name=f.name, category=f.category, weights=list(f.weights))
+        FontOut(
+            id=f.id,
+            name=f.name,
+            category=f.category,
+            weights=list(f.weights),
+            metrics=[
+                FontMetricsOut(
+                    weight=weight,
+                    units_per_em=m.units_per_em,
+                    ascender=m.ascender,
+                    descender=m.descender,
+                )
+                for weight, m in sorted(f.metrics.items())
+            ],
+        )
         for f in catalog().fonts.values()
     ]
 

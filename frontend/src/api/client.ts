@@ -17,6 +17,12 @@ export type ArtworkSummary = Schemas["ArtworkSummaryOut"];
 export type ArtworkDocument = Schemas["ArtworkDocument"];
 export type FrameStyle = Schemas["FrameStyleOut"];
 export type Layout = Schemas["LayoutOut"];
+export type Font = Schemas["FontOut"];
+export type Texture = Schemas["TextureOut"];
+export type Swatch = Schemas["SwatchOut"];
+export type PaletteEntry = Schemas["PaletteEntryOut"];
+export type ColorPreset = Schemas["ColorPresetOut"];
+export type Snapshot = Schemas["SnapshotOut"];
 
 export const API_BASE = "/api/v1";
 /** Required on every mutating request (CSRF guard, see docs/security.md). */
@@ -91,3 +97,25 @@ export const artworkRenderUrl = (
   a: Pick<ArtworkSummary, "id" | "render_hash" | "document_version">,
   format: "png" | "jpg",
 ) => `${API_BASE}/artworks/${a.id}/render.${format}?v=${renderVersion(a)}`;
+
+/**
+ * Region of the *current, possibly unsaved* document rendered by the server (loupe, §11.4).
+ * Returns a PNG blob: `openapi-fetch` is JSON-only, so this one endpoint uses `fetch` directly.
+ */
+export async function renderRegion(
+  document: ArtworkDocument,
+  rect: { x: number; y: number; w: number; h: number },
+  signal?: AbortSignal,
+): Promise<Blob> {
+  const response = await fetch(`${API_BASE}/render/region`, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json", ...CLIENT_HEADERS },
+    body: JSON.stringify({ document, rect }),
+    signal,
+  });
+  if (!response.ok) {
+    throw new ApiError(toProblem(response.status, await response.json().catch(() => null)));
+  }
+  return response.blob();
+}

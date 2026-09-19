@@ -16,6 +16,7 @@ from the_frame_v2 import __version__
 from the_frame_v2.api import (
     artworks,
     auth,
+    colors,
     devices,
     events,
     library,
@@ -150,6 +151,7 @@ def create_app(settings: Settings, *, start_workers: bool = True) -> FastAPI:
         library,
         artworks,
         rendering,
+        colors,
         events,
     ):
         api.include_router(module.router)

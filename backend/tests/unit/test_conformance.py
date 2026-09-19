@@ -18,7 +18,8 @@ from typing import Any
 
 import pytest
 
-from the_frame_v2.domain import geometry, placement, quality
+from the_frame_v2.domain import alternatives, constraints, geometry, placement, quality
+from the_frame_v2.domain.constraints import SlotState
 from the_frame_v2.domain.geometry import Margins, Orient, Rect, Size
 from the_frame_v2.domain.quality import SlotGeometry
 
@@ -47,6 +48,10 @@ def _slot(v: dict[str, Any]) -> SlotGeometry:
 
 def _center(v: list[float] | None) -> tuple[float, float] | None:
     return None if v is None else (v[0], v[1])
+
+
+def _state(v: dict[str, Any]) -> SlotState:
+    return SlotState(_rect(v["rect"]), _rect(v["crop"]))
 
 
 # name → (function, {argument: converter})
@@ -89,7 +94,13 @@ FUNCTIONS: dict[str, tuple[Callable[..., Any], dict[str, Callable[[Any], Any]]]]
     ),
     "margins_for_slot": (
         placement.margins_for_slot,
-        {"slot": _size, "previous": _margins, "linked": bool},
+        {
+            "slot": _size,
+            "previous": _margins,
+            "linked": bool,
+            "mirror_x": bool,
+            "mirror_y": bool,
+        },
     ),
     "fit_in_mat": (
         placement.fit_in_mat,
@@ -98,6 +109,44 @@ FUNCTIONS: dict[str, tuple[Callable[..., Any], dict[str, Callable[[Any], Any]]]]
     "fill": (placement.fill, {"source": _size, "lock": str}),
     "fill_slot": (placement.fill_slot, {"rect": _rect, "source": _size, "lock": str}),
     "fit_slot": (placement.fit_slot, {"rect": _rect, "source": _size, "lock": str}),
+    "resize_slot": (
+        constraints.resize_slot,
+        {
+            "state": _state,
+            "requested": _size,
+            "source": _size,
+            "lock": str,
+            "anchor": lambda v: (v[0], v[1]),
+        },
+    ),
+    "resize_crop": (
+        constraints.resize_crop,
+        {"state": _state, "requested": _rect, "source": _size, "lock": str},
+    ),
+    "pan_crop": (constraints.pan_crop, {"state": _state, "dx": int, "dy": int, "source": _size}),
+    "zoom_crop": (
+        constraints.zoom_crop,
+        {"state": _state, "factor": float, "source": _size, "lock": str},
+    ),
+    "apply_lock": (constraints.apply_lock, {"state": _state, "lock": str, "source": _size}),
+    "apply_crop_ratio": (
+        constraints.apply_crop_ratio,
+        {"state": _state, "ratio": lambda v: v, "source": _size, "lock": str},
+    ),
+    "alternatives": (
+        alternatives.alternatives,
+        {
+            "state": _state,
+            "source": _size,
+            "lock": str,
+            "placement": str,
+            "margins": _margins,
+            "linked": bool,
+            "crop_ratio": str,
+            "mirror_x": bool,
+            "mirror_y": bool,
+        },
+    ),
 }
 
 O0 = {"rotate": 0, "flip_h": False}
@@ -106,8 +155,36 @@ O180F = {"rotate": 180, "flip_h": True}
 O270 = {"rotate": 270, "flip_h": False}
 O90F = {"rotate": 90, "flip_h": True}
 SRC = {"w": 6000, "h": 4000}
+SMALL = {"w": 1000, "h": 800}
 M_DEFAULT = {"top": 200, "right": 200, "bottom": 260, "left": 200}
 M_ZERO = {"top": 0, "right": 0, "bottom": 0, "left": 0}
+
+# Slot states for the constraint solver and alternatives (rect/crop always aspect-consistent).
+FIT_STATE = {"rect": {"x": 645, "y": 200, "w": 2550, "h": 1700}, "crop": {**SRC, "x": 0, "y": 0}}
+"""`fit_in_mat` of the whole 6000×4000 photo inside M_DEFAULT (downscaled 0.425)."""
+ZOOMED_STATE = {
+    "rect": {"x": 645, "y": 200, "w": 2550, "h": 1700},
+    "crop": {"x": 2000, "y": 1000, "w": 3000, "h": 2000},
+}
+"""Same slot showing a 3000×2000 crop: the crop can still grow inside the source."""
+NATIVE_STATE = {
+    "rect": {"x": 920, "y": 580, "w": 2000, "h": 1333},
+    "crop": {"x": 2000, "y": 1300, "w": 2000, "h": 1333},
+}
+SMALL_STATE = {"rect": {"x": 0, "y": 0, "w": 1000, "h": 800}, "crop": {**SMALL, "x": 0, "y": 0}}
+UPSCALED_STATE = {
+    "rect": {"x": 400, "y": 200, "w": 2000, "h": 1600},
+    "crop": {"x": 0, "y": 0, "w": 1000, "h": 800},
+}
+"""Enlarged ×2 (manual placement)."""
+UPSCALED_FIT_STATE = {
+    "rect": {"x": 858, "y": 200, "w": 2125, "h": 1700},
+    "crop": {"x": 0, "y": 0, "w": 1000, "h": 800},
+}
+FILL_STATE = {
+    "rect": {"x": 0, "y": 0, "w": 3840, "h": 2160},
+    "crop": {"x": 0, "y": 119, "w": 1000, "h": 562},
+}
 
 
 def _q(rw: int, rh: int, cw: int, ch: int, rot: float = 0, photo: bool = True) -> dict[str, Any]:
@@ -330,22 +407,64 @@ CASES: dict[str, list[tuple[str, str, dict[str, Any]]]] = {
                 "slot": {"w": 3000, "h": 1500},
                 "previous": {"top": 200, "right": 300, "bottom": 400, "left": 100},
                 "linked": False,
+                "mirror_x": False,
+                "mirror_y": False,
             },
         ),
         (
             "margins zero",
             "margins_for_slot",
-            {"slot": {"w": 3001, "h": 1501}, "previous": M_ZERO, "linked": False},
+            {
+                "slot": {"w": 3001, "h": 1501},
+                "previous": M_ZERO,
+                "linked": False,
+                "mirror_x": False,
+                "mirror_y": False,
+            },
         ),
         (
             "margins linked",
             "margins_for_slot",
-            {"slot": {"w": 3000, "h": 1501}, "previous": M_ZERO, "linked": True},
+            {
+                "slot": {"w": 3000, "h": 1501},
+                "previous": M_ZERO,
+                "linked": True,
+                "mirror_x": False,
+                "mirror_y": False,
+            },
         ),
         (
             "margins oversized",
             "margins_for_slot",
-            {"slot": {"w": 4000, "h": 2000}, "previous": M_DEFAULT, "linked": False},
+            {
+                "slot": {"w": 4000, "h": 2000},
+                "previous": M_DEFAULT,
+                "linked": False,
+                "mirror_x": False,
+                "mirror_y": False,
+            },
+        ),
+        (
+            "margins mirrored",
+            "margins_for_slot",
+            {
+                "slot": {"w": 3001, "h": 1501},
+                "previous": {"top": 100, "right": 500, "bottom": 300, "left": 100},
+                "linked": False,
+                "mirror_x": True,
+                "mirror_y": True,
+            },
+        ),
+        (
+            "margins mirrored on one axis",
+            "margins_for_slot",
+            {
+                "slot": {"w": 3000, "h": 1500},
+                "previous": {"top": 100, "right": 500, "bottom": 300, "left": 100},
+                "linked": False,
+                "mirror_x": True,
+                "mirror_y": False,
+            },
         ),
         (
             "fit in mat",
@@ -364,6 +483,17 @@ CASES: dict[str, list[tuple[str, str, dict[str, Any]]]] = {
             {
                 "source": SRC,
                 "crop": {"x": 0, "y": 0, "w": 6000, "h": 4000},
+                "crop_ratio": "original",
+                "margins": M_DEFAULT,
+                "lock": "native",
+            },
+        ),
+        (
+            "fit in mat native grows the crop back",
+            "fit_in_mat",
+            {
+                "source": SRC,
+                "crop": {"x": 2500, "y": 1600, "w": 1000, "h": 667},
                 "crop_ratio": "original",
                 "margins": M_DEFAULT,
                 "lock": "native",
@@ -417,6 +547,282 @@ CASES: dict[str, list[tuple[str, str, dict[str, Any]]]] = {
                 "rect": {"x": 240, "y": 300, "w": 1900, "h": 1640},
                 "source": {"w": 800, "h": 600},
                 "lock": "native",
+            },
+        ),
+    ],
+    "constraints.json": [
+        (
+            "resize slot free",
+            "resize_slot",
+            {
+                "state": FIT_STATE,
+                "requested": {"w": 3000, "h": 1000},
+                "source": SRC,
+                "lock": "free",
+                "anchor": [0.5, 0.5],
+            },
+        ),
+        (
+            "resize slot free anchored corner",
+            "resize_slot",
+            {
+                "state": FIT_STATE,
+                "requested": {"w": 3000, "h": 1000},
+                "source": SRC,
+                "lock": "free",
+                "anchor": [0.0, 0.0],
+            },
+        ),
+        (
+            "resize slot no upscale grows the crop",
+            "resize_slot",
+            {
+                "state": ZOOMED_STATE,
+                "requested": {"w": 3000, "h": 2000},
+                "source": SRC,
+                "lock": "no_upscale",
+                "anchor": [0.5, 0.5],
+            },
+        ),
+        (
+            "resize slot no upscale clamps on a small source",
+            "resize_slot",
+            {
+                "state": SMALL_STATE,
+                "requested": {"w": 2000, "h": 1600},
+                "source": SMALL,
+                "lock": "no_upscale",
+                "anchor": [0.5, 0.5],
+            },
+        ),
+        (
+            "resize slot no upscale shrinking keeps the crop",
+            "resize_slot",
+            {
+                "state": FIT_STATE,
+                "requested": {"w": 1200, "h": 800},
+                "source": SRC,
+                "lock": "no_upscale",
+                "anchor": [0.5, 0.5],
+            },
+        ),
+        (
+            "resize slot native takes the crop along",
+            "resize_slot",
+            {
+                "state": NATIVE_STATE,
+                "requested": {"w": 2000, "h": 1400},
+                "source": SRC,
+                "lock": "native",
+                "anchor": [0.5, 0.5],
+            },
+        ),
+        (
+            "resize slot native clamped by the source",
+            "resize_slot",
+            {
+                "state": SMALL_STATE,
+                "requested": {"w": 4000, "h": 3200},
+                "source": SMALL,
+                "lock": "native",
+                "anchor": [0.5, 0.5],
+            },
+        ),
+        (
+            "resize crop free keeps the slot",
+            "resize_crop",
+            {
+                "state": FIT_STATE,
+                "requested": {"x": 500, "y": 400, "w": 3000, "h": 2000},
+                "source": SRC,
+                "lock": "free",
+            },
+        ),
+        (
+            "resize crop no upscale clamps to the slot",
+            "resize_crop",
+            {
+                "state": FIT_STATE,
+                "requested": {"x": 500, "y": 400, "w": 1200, "h": 800},
+                "source": SRC,
+                "lock": "no_upscale",
+            },
+        ),
+        (
+            "resize crop no upscale shrinks the slot on a small source",
+            "resize_crop",
+            {
+                "state": SMALL_STATE,
+                "requested": {"x": 100, "y": 100, "w": 400, "h": 320},
+                "source": SMALL,
+                "lock": "no_upscale",
+            },
+        ),
+        (
+            "resize crop native follows",
+            "resize_crop",
+            {
+                "state": NATIVE_STATE,
+                "requested": {"x": 100, "y": 100, "w": 1600, "h": 1200},
+                "source": SRC,
+                "lock": "native",
+            },
+        ),
+        (
+            "resize crop changing the aspect moves the slot",
+            "resize_crop",
+            {
+                "state": FIT_STATE,
+                "requested": {"x": 0, "y": 0, "w": 4000, "h": 4000},
+                "source": SRC,
+                "lock": "free",
+            },
+        ),
+        (
+            "resize crop out of bounds is clamped",
+            "resize_crop",
+            {
+                "state": FIT_STATE,
+                "requested": {"x": 5500, "y": 3800, "w": 3000, "h": 2000},
+                "source": SRC,
+                "lock": "free",
+            },
+        ),
+        (
+            "pan crop",
+            "pan_crop",
+            {"state": ZOOMED_STATE, "dx": -300, "dy": 120, "source": SRC},
+        ),
+        (
+            "pan crop clamped",
+            "pan_crop",
+            {"state": ZOOMED_STATE, "dx": -5000, "dy": 5000, "source": SRC},
+        ),
+        (
+            "zoom crop out",
+            "zoom_crop",
+            {"state": ZOOMED_STATE, "factor": 1.25, "source": SRC, "lock": "free"},
+        ),
+        (
+            "zoom crop in blocked by no upscale",
+            "zoom_crop",
+            {"state": FIT_STATE, "factor": 0.25, "source": SRC, "lock": "no_upscale"},
+        ),
+        (
+            "zoom crop in native",
+            "zoom_crop",
+            {"state": NATIVE_STATE, "factor": 0.5, "source": SRC, "lock": "native"},
+        ),
+        (
+            "apply lock native",
+            "apply_lock",
+            {"state": FIT_STATE, "lock": "native", "source": SRC},
+        ),
+        (
+            "apply lock native clamped",
+            "apply_lock",
+            {"state": UPSCALED_STATE, "lock": "native", "source": SMALL},
+        ),
+        (
+            "apply lock no upscale shrinks",
+            "apply_lock",
+            {"state": UPSCALED_STATE, "lock": "no_upscale", "source": SMALL},
+        ),
+        (
+            "apply lock free keeps everything",
+            "apply_lock",
+            {"state": UPSCALED_STATE, "lock": "free", "source": SMALL},
+        ),
+        (
+            "apply crop ratio square",
+            "apply_crop_ratio",
+            {"state": FIT_STATE, "ratio": 1.0, "source": SRC, "lock": "no_upscale"},
+        ),
+        (
+            "apply crop ratio free keeps the crop",
+            "apply_crop_ratio",
+            {"state": FIT_STATE, "ratio": None, "source": SRC, "lock": "no_upscale"},
+        ),
+        (
+            "apply crop ratio under native",
+            "apply_crop_ratio",
+            {"state": NATIVE_STATE, "ratio": 16 / 9, "source": SRC, "lock": "native"},
+        ),
+    ],
+    "alternatives.json": [
+        (
+            "not upscaled",
+            "alternatives",
+            {
+                "state": FIT_STATE,
+                "source": SRC,
+                "lock": "no_upscale",
+                "placement": "fit_in_mat",
+                "margins": M_DEFAULT,
+                "linked": False,
+                "crop_ratio": "original",
+                "mirror_x": False,
+                "mirror_y": False,
+            },
+        ),
+        (
+            "fit in mat upscaled",
+            "alternatives",
+            {
+                "state": UPSCALED_FIT_STATE,
+                "source": SMALL,
+                "lock": "free",
+                "placement": "fit_in_mat",
+                "margins": M_DEFAULT,
+                "linked": False,
+                "crop_ratio": "original",
+                "mirror_x": False,
+                "mirror_y": False,
+            },
+        ),
+        (
+            "fit in mat upscaled linked margins",
+            "alternatives",
+            {
+                "state": UPSCALED_FIT_STATE,
+                "source": SMALL,
+                "lock": "free",
+                "placement": "fit_in_mat",
+                "margins": M_DEFAULT,
+                "linked": True,
+                "crop_ratio": "original",
+                "mirror_x": False,
+                "mirror_y": False,
+            },
+        ),
+        (
+            "fill upscaled",
+            "alternatives",
+            {
+                "state": FILL_STATE,
+                "source": SMALL,
+                "lock": "free",
+                "placement": "fill",
+                "margins": M_DEFAULT,
+                "linked": False,
+                "crop_ratio": "16:9",
+                "mirror_x": False,
+                "mirror_y": False,
+            },
+        ),
+        (
+            "manual upscaled with a large source",
+            "alternatives",
+            {
+                "state": UPSCALED_STATE,
+                "source": SRC,
+                "lock": "no_upscale",
+                "placement": "manual",
+                "margins": M_ZERO,
+                "linked": False,
+                "crop_ratio": "original",
+                "mirror_x": False,
+                "mirror_y": False,
             },
         ),
     ],

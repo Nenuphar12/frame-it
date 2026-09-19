@@ -8,12 +8,15 @@
 Self-hosted web app to prepare pictures for a 4K art-mode TV (Samsung The Frame, 3840×2160): phone uploads in
 full quality over the LAN, pixel-perfect framing/compositions, collections, export/import.
 
-- **Current state (2026-09-17): Phases 0–4 done** — foundations, device auth & pairing, resumable uploads,
+- **Current state (2026-09-19): Phases 0–5 done** — foundations, device auth & pairing, resumable uploads,
   LocalSend receiver, ingest, Photos + Inbox UI, phone upload page; artwork document + geometry (Python/TS
-  mirrored), pyvips renderer, built-in styles/layouts, artworks API, Artworks page + viewer (review aid).
-  See `docs/progress.md`.
-- **Next: Phase 5** (Konva editor, crop/placement/locks, undo/autosave, review flow) — follow the canvas rules in
-  `docs/research/render-parity.md`. Plan: `docs/PLAN.md` §14.
+  mirrored), pyvips renderer, built-in styles/layouts, artworks API; **editor** (Konva canvas,
+  crop/placement/locks with the constraint solver, colour tools, alternatives, loupe, TV preview,
+  undo/autosave, review queue).
+- **Phase 5 signed off (2026-09-19)**: `make check` green and every open item driven in a real browser;
+  client-vs-server parity measured (MAE ≤ 1.5/255, `docs/research/render-parity.md`). **Next: Phase 6
+  (multi-photo compositions), `docs/PLAN.md` §14** — captions are read-only until then. What was checked and
+  the three bugs it found: end of `docs/progress.md`.
 - Verified by the user on real hardware (2026-09-17): Android uploads (both pickers keep full quality but
   Android zeroes GPS → no place; see `docs/research/phone-uploads.md`), Docker image build/run/persistence.
 
@@ -27,6 +30,7 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
 | Geometry fixtures | `make conformance` (TS); regenerate from Python: `cd backend && CONFORMANCE_UPDATE=1 uv run pytest tests/unit/test_conformance.py` |
 | Golden images | `make golden-update` after an intended pixel change (review PNGs, bump `RENDERER_VERSION`) |
 | Render budgets | `cd backend && uv run python ../scripts/bench_render.py` |
+| Editor E2E against a copy of the library | `cp -r .dev-data /tmp/e2e && cd backend && THE_FRAME_V2_DATA_DIR=/tmp/e2e THE_FRAME_V2_PORT=8799 uv run the_frame_v2 serve`, then `cd frontend && THE_FRAME_V2_BACKEND=http://127.0.0.1:8799 pnpm dev --port 5199` |
 | Backend tests only | `cd backend && uv run pytest` (add `-k name`) |
 | Regenerate API types + `docs/schemas/` (after any API/document schema change) | `make gen-api` |
 | Production build + serve | `make serve` (frontend built into `backend/src/the_frame_v2/static`) |
@@ -45,9 +49,9 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `…/context.py` | `AppContext` service container (`app.state.ctx`) |
 | `…/api/` | Thin routers + `schemas.py` (Pydantic API models = OpenAPI source) + `deps.py` (auth deps) |
 | `…/auth/` | `principal.py` (cookie/localhost → role), `middleware.py` (Host/CSRF/headers), `ratelimit.py` |
-| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos`, `tags`, `geocode`, `artworks` (create/save/snapshots), `render` (cache, jobs, region), `templates` (presets) |
-| `…/domain/` | PURE: `document` (artwork document v1 + reference checks), `geometry`, `quality` (tiers), `placement`, `templates` (style/layout docs, `build_document`) |
-| `…/imaging/` | `sniff` (magic bytes), `decode` (the only pixel access), `metadata` (EXIF/ICC), `fingerprint` (hash ignoring EXIF), `capabilities`, `render` (the renderer), `assets` (fonts/textures catalog) |
+| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos`, `tags`, `geocode`, `artworks` (create/save/snapshots), `render` (cache, jobs, region), `templates` (presets, artwork defaults), `colors` (photo palette, swatches, curated presets) |
+| `…/domain/` | PURE: `document` (artwork document v1 + reference checks), `geometry`, `quality` (tiers), `placement`, `constraints` (editor solver §7.3), `alternatives` (§7.6), `templates` (style/layout docs, `build_document`) |
+| `…/imaging/` | `sniff` (magic bytes), `decode` (the only pixel access), `metadata` (EXIF/ICC), `fingerprint` (hash ignoring EXIF), `capabilities`, `render` (the renderer), `palette` (OKLab k-means), `assets` (fonts/textures catalog) |
 | `…/assets/` | `geonames/`, `fonts/` (OFL, `scripts/build_fonts.py`), `textures/` (CC0, `scripts/generate_textures.py`), `presets/` (built-in styles/layouts JSON) |
 | `…/localsend/` | LocalSend v2 receiver: `app.py` (protocol routes, own TLS port), `discovery.py` (multicast), `identity.py` (cert/fingerprint), `client.py` (outgoing TLS), `runner.py` (lifespan); logic in `services/localsend.py`, admin API `api/localsend.py` |
 | `…/jobs/` | `queue.py` persistent in-process job queue (lanes, retries, coalescing); `gate.py` render concurrency |
@@ -60,8 +64,11 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `scripts/` | `build_geonames.py`, `build_fonts.py`, `generate_textures.py`, `bench_render.py`, `render_parity/` (S3 page) |
 | `frontend/src/api/` | `client.ts` (openapi-fetch + `ApiError`), `queries.ts` (TanStack Query hooks), `events.ts` (SSE), generated `schema.d.ts` |
 | `frontend/src/app/` | `router.tsx`, `AuthGate.tsx` (role routing), `Shell.tsx` (sidebar), `commands.ts` (shortcuts/palette registry), `theme.ts` |
-| `frontend/src/editor/core/` | PURE TS mirror of `domain/` (`geometry.ts`, `quality.ts`, `placement.ts`); relative imports with `.ts` extension (run by Node in `scripts/conformance.ts`) |
-| `frontend/src/features/` | `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, viewer, create dialog), `devices/`, `auth/`, `mobile/`, `settings/`, `tags/`, `localsend/` |
+| `frontend/src/editor/core/` | PURE TS mirror of `domain/` (`geometry`, `quality`, `placement`, `constraints`, `alternatives`) + `snapping.ts` (client-only) and `document.ts` (the document with every optional field filled in); relative imports with `.ts` extension (run by Node in `scripts/conformance.ts`) |
+| `frontend/src/editor/` | `EditorPage.tsx` (layout, shortcuts, review queue), `store.ts` (working document, undo/redo on Immer patches, autosave + conflicts), `operations.ts` (pure document mutations: how a change propagates), `actions.ts` (what the UI calls), `TvPreview.tsx` |
+| `…/editor/canvas/` | `EditorStage.tsx` (Konva stage, gestures, overlays), `SlotNode.tsx` (bands, photo, shadows), `CaptionNode.tsx`, `texture.ts`, `fonts.ts`, `useOrientedImage.ts` |
+| `…/editor/panels/` | `FramingPanel`, `StylePanel`, `ColorField` (picker + swatches + palette + presets), `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`, `Controls` |
+| `frontend/src/features/` | `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, viewer, create dialog), `devices/`, `auth/`, `mobile/`, `settings/`, `tags/`, `localsend/` (the editor lives in `src/editor/`, not here) |
 | `frontend/src/shared/` | UI primitives (`ui/`), `format.ts`, `cn.ts` |
 | `frontend/src/i18n/` | i18next setup; strings in `locales/en/common.json` |
 | `docs/` | Plan, specs, ADRs (`adr/`), research findings (`research/`), progress |
@@ -83,6 +90,11 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
   inbox → SSE `photo.ingested` (or `photo.ingest_failed` with a problem code).
 - Frontend: server state only in TanStack Query; SSE invalidates `["photos"]`; upload queue is a Zustand store
   outside React (hash → open/resume → chunks with retry → wait for SSE, polling fallback).
+- Editor flow: `EditorPage` loads the artwork + its photos' sizes → `openArtwork` puts the working document in
+  the Zustand store (outside React) → a control calls `editor/actions` → `editor/operations` mutates an Immer
+  draft → `store.edit()` records patches (undo/redo, grouped per gesture) and debounces a `PUT document` with
+  `If-Match`. Only `operations.ts` knows how a change propagates (margins re-place the slot, a crop edit under
+  `native` pushes into the margins…), so the rules stay testable and replayable.
 
 ## Invariants (never break)
 
@@ -99,6 +111,10 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
    without a fallback: the app runs over plain HTTP on the LAN.
 9. `taken_at` is floating camera-local time: never timezone-convert it (display with `timeZone: "UTC"`).
 10. Shortcuts are registered through `useRegisterCommands` (they appear in the palette and cheat sheet).
+11. The editor never writes a document the server would reject: every geometry change goes through
+    `domain/constraints` ↔ `editor/core/constraints.ts` (aspect consistency + the quality lock).
+12. Pointer gestures never drive React state per event: accumulate and flush once per animation frame
+    (§8.5 budget — and a per-event render freezes the tab, see Gotchas).
 
 ## Conventions
 
@@ -143,3 +159,34 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 - A render holds all decoded originals of the document in memory (parallel decode); `render_workers` bounds it.
 - `ArtworkDocument.schema_version` is serialized as `"schema"` (alias): dump with `canonical()`.
 - `pkill -f "the_frame_v2 serve"` also matches your own shell command line: use `pkill -f "[t]he_frame_v2 serve"`.
+- **Editor performance is a correctness issue**: one React render + canvas redraw per mouse event makes the tab
+  unresponsive for tens of seconds (the event queue outruns the renderer). Crop dragging, stage panning and the
+  loupe's pointer all batch into `requestAnimationFrame` in `EditorStage`; keep any new gesture that way.
+- Canvas shadows allocate a surface covering the shape **and** its shadow: never draw the inner-shadow ring far
+  away (S3's trick froze the tab). It is drawn around the layer and clipped — `docs/rendering-spec.md` §8.2.
+- Radix layers (dialog, popover) see `Escape` in the **capture** phase on the document while the command
+  registry (tinykeys) listens on `window` (bubble): a layer must `stopPropagation` in `onEscapeKeyDown`, or
+  `Escape` closes the popover *and* runs the page's own `Escape` command (it used to leave the editor).
+- Konva does not put a `Text` node's `y` on the line top (it translates by `(ascent − descent) / 2 +
+  lineHeight / 2` and draws `alphabetic`), and its font shorthand includes the weight: caption placement and
+  measurement go through `editor/canvas/fonts.ts`, which replicates both — the renderer's baseline rule does
+  **not** apply on the canvas (`docs/research/render-parity.md`).
+- The Chrome-extension harness cannot screenshot this app reliably: captures time out while the loupe image
+  is on screen, and a Konva canvas can come back **black** although its pixels are correct. Read the canvas
+  with `getImageData` (or the DOM) before believing a screenshot.
+- Under `fit_in_mat` + `native` the margins **are** the crop: `fit_in_mat` re-derives the crop from the
+  available area on every margin edit (both directions), and a crop edit re-derives the margins. Deriving it
+  only when the crop overflowed made margins one-way (the photo never grew back — `docs/geometry-and-quality.md`
+  §7.4).
+- Editor number fields keep the typed text while focused (`panels/Controls.tsx`) and never snap it: the §7.5
+  tolerance is 8 *screen* px, so a typed margin was swallowed by the nearest stop. Sliders still snap.
+- Radix focuses the first tabbable element of a dialog, which is the close cross: a dialog whose `Enter`
+  should confirm passes `onOpenAutoFocus` and focuses its submit button (`CreateArtworksDialog`).
+- Query results are new objects on every render: never feed them straight into a store (`openArtwork` only
+  writes `sizes` when a photo id is actually new, or the editor re-renders in a loop).
+- The React Compiler lint forbids `setState` in an effect body: derive the value during render instead (the
+  stage view falls back to `fit()`, image/texture hooks read a module cache and only `setState` in the async
+  callback).
+- Dev over the Vite proxy is **not** trusted as localhost (`xfwd` adds `X-Forwarded-For`, invariant 5): the
+  first load asks for the setup code printed in the server log. Point Vite at another backend with
+  `THE_FRAME_V2_BACKEND=http://127.0.0.1:<port>`.

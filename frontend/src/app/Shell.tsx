@@ -64,6 +64,7 @@ export function Shell() {
   const toggleTheme = useTheme((s) => s.toggle);
   const setPaletteOpen = useCommands((s) => s.setPaletteOpen);
   const setCheatSheetOpen = useCommands((s) => s.setCheatSheetOpen);
+  const toggleCheatSheet = useCommands((s) => s.toggleCheatSheet);
 
   const commands = useMemo<Command[]>(() => {
     const go = (to: string) => () => void navigate({ to });
@@ -81,7 +82,8 @@ export function Shell() {
         label: "shortcuts.title",
         group: "commands.groups.general",
         shortcut: "Shift+?",
-        run: () => setCheatSheetOpen(true),
+        // Toggles: `?` opens the cheat sheet and closes it again (it stays bound while it shows).
+        run: toggleCheatSheet,
       },
       {
         id: "theme.toggle",
@@ -146,7 +148,7 @@ export function Shell() {
         run: go("/m"),
       },
     ];
-  }, [navigate, openFiles, openFolder, setCheatSheetOpen, setPaletteOpen, toggleTheme]);
+  }, [navigate, openFiles, openFolder, setPaletteOpen, toggleCheatSheet, toggleTheme]);
   useRegisterCommands(commands);
 
   const library: NavItem[] = [

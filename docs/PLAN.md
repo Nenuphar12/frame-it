@@ -1,6 +1,7 @@
 # the_frame_v2 — Implementation Plan
 
-> Status: **Phases 0–4 implemented (Phase 4: 2026-09-17), Phase 5 next** — details in `docs/progress.md` · Created 2026-09-16 · Placeholder name `the_frame_v2` (rename before open-sourcing)
+> Status: **Phases 0–5 implemented and signed off** (Phase 5 verified in a browser 2026-09-19; see
+> `docs/progress.md`) · Created 2026-09-16 · Placeholder name `the_frame_v2` (rename before open-sourcing)
 >
 > This plan is the single source of truth for scope and sequencing. Specs (§5–§9, §12) live in dedicated
 > files under `docs/` (linked in place). Agents: read `AGENTS.md` first (see §3).
@@ -298,7 +299,9 @@ the UI). Lists use keyset pagination (`?cursor=&limit=`). All payloads are Pydan
 | collections | CRUD, `POST /collections/{id}/move` (parent, position), `GET /collections/{id}/items?include_nested=`, `POST /collections/{id}/items` (add), `POST /collections/{id}/items/reorder`, `DELETE /collections/{id}/items/{artwork_id}` | read: uploader+, write: admin |
 | tags | `GET /tags?q=` (autocomplete), `POST /tags`, `PATCH /tags/{id}` (rename/color), `POST /tags/{id}/merge` | create: uploader+, else admin |
 | templates | `GET/POST/PATCH/DELETE /frame-styles`, `/layouts`; `POST /artworks/from-artwork-to-style`, `GET /frame-styles/{id}/usage`, `POST /frame-styles/{id}/push-update/preview`, `POST /frame-styles/{id}/push-update` (same for layouts); `GET /fonts`, `GET /textures`, `GET /presets/colors` | admin |
-| swatches | CRUD + reorder | admin |
+| swatches | `GET/POST /swatches`, `PATCH/DELETE /swatches/{id}`, `POST /swatches/reorder` | admin |
+| colours | `GET /photos/{id}/palette` (OKLab k-means, cached), `GET /presets/colors` | admin |
+| defaults | `GET/PUT /artwork-defaults` ({style_id, layout_id}) | admin |
 | trash | `GET /trash`, `POST /trash/restore`, `POST /trash/purge`, `DELETE` flows use `?cascade=trash_artworks|empty_slots` | admin |
 | exports | `POST /exports` ({kind: full/partial/renders/template, selection, options}) → job; `GET /exports/{job_id}/download` (streaming) | admin |
 | imports | `POST /imports` (chunked upload reuse) → staging job; `GET /imports/{id}/report`; `POST /imports/{id}/apply` ({policies, per-item decisions}); `DELETE /imports/{id}` | admin |
@@ -521,6 +524,11 @@ keeps scale exactly 1 while editing margins and crop; alternatives appear when u
 undo/redo covers every edit; reloading the page never loses more than 1 s of edits; client preview matches server
 render within S3 tolerances.
 
+**State (2026-09-19)**: done. All nine items are implemented, `make check` is green and the AC were
+exercised in a real browser (client-vs-server parity measured: MAE ≤ 1.5/255, `docs/research/render-parity.md`),
+except the "40 photos" scale of the review run (done on 11 drafts). Captions stay read-only here (editing them
+is Phase 6, item 4). Verification notes and the three bugs it found: `docs/progress.md` (2026-09-19).
+
 ### Phase 6 — Multi-photo compositions
 
 1. Add/remove slots, photo picker (search/filter, drag from filmstrip), swap photos between slots, empty slots.
@@ -632,7 +640,8 @@ artwork → collection → export) completes without reading code.
 
 - Final project name and license (Phase 10).
 - ~~Exact bundled fonts and texture set (Phase 4)~~ — decided in ADR-0008.
-- Color-picker presets list (Phase 5).
+- ~~Color-picker presets list (Phase 5)~~ — curated mat colours shipped in `services/colors.py` (`CURATED`,
+  served by `GET /presets/colors`): museum white, warm off-white, linen, stone, charcoal, black.
 - ~~Built-in styles look~~ — reviewed on real renders (2026-09-17): styles, layouts, fonts and textures kept;
   Float mount lost its inner white band; default style stays Gallery recessed (may change later).
 

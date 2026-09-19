@@ -87,20 +87,30 @@ def native_crop_for_area(area: Size, source: Size, crop_ratio: str, previous: Re
     return Rect(x, y, size.w, size.h)
 
 
-def margins_for_slot(slot: Size, previous: Margins, linked: bool, canvas: Size = CANVAS) -> Margins:
+def margins_for_slot(
+    slot: Size,
+    previous: Margins,
+    linked: bool,
+    canvas: Size = CANVAS,
+    mirror_x: bool = False,
+    mirror_y: bool = False,
+) -> Margins:
     """Native linking, crop edited: redistribute the free space around a slot of size `slot`.
 
     Per-side proportions of `previous` are preserved (equal split when both sides were 0). When
     `linked`, all four margins take the smallest half of the free space (margins are minimums).
+    `mirror_x` / `mirror_y` split their axis evenly so the two sides stay equal.
     """
     extra_x = max(0, canvas.w - slot.w)
     extra_y = max(0, canvas.h - slot.h)
     if linked:
         uniform = math.floor(min(extra_x, extra_y) / 2)
         return Margins(uniform, uniform, uniform, uniform)
-    left = _share(extra_x, previous.left, previous.right)
-    top = _share(extra_y, previous.top, previous.bottom)
-    return Margins(top=top, right=extra_x - left, bottom=extra_y - top, left=left)
+    left = extra_x // 2 if mirror_x else _share(extra_x, previous.left, previous.right)
+    top = extra_y // 2 if mirror_y else _share(extra_y, previous.top, previous.bottom)
+    right = left if mirror_x else extra_x - left
+    bottom = top if mirror_y else extra_y - top
+    return Margins(top=top, right=right, bottom=bottom, left=left)
 
 
 def _share(extra: int, first: int, second: int) -> int:
@@ -113,13 +123,13 @@ def fit_in_mat(
 ) -> SlotPlacement:
     """`fit_in_mat` placement for a single slot (margins are minimums).
 
-    `native`: the slot is the crop size; when the crop does not fit the available area, the crop is
-    reduced by native linking first.
+    `native`: the slot is the crop size, so the crop always takes the available area's size
+    (native linking, §7.4) — it shrinks when the margins grow and grows back when they shrink,
+    within the source. The crop centre is kept.
     """
     area = available_area(margins)
     if lock == "native":
-        if crop.w > area.w or crop.h > area.h:
-            crop = native_crop_for_area(Size(area.w, area.h), source, crop_ratio, crop)
+        crop = native_crop_for_area(Size(area.w, area.h), source, crop_ratio, crop)
         return SlotPlacement(fit_rect(area, Size(crop.w, crop.h), "native"), crop, "native")
     return SlotPlacement(fit_rect(area, Size(crop.w, crop.h), lock), crop, lock)
 

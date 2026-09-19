@@ -1,3 +1,4 @@
+import { useNavigate } from "@tanstack/react-router";
 import { Frame } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -18,6 +19,7 @@ const FILTERS: { key: string; filter: ArtworkFilter }[] = [
 
 export function ArtworksPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [filterKey, setFilterKey] = useState("all");
   const filter = FILTERS.find((f) => f.key === filterKey)!.filter;
   const artworks = useArtworks(filter);
@@ -79,6 +81,13 @@ export function ArtworksPage() {
                 key={artwork.id}
                 type="button"
                 onClick={() => setOpenId(artwork.id)}
+                onDoubleClick={() =>
+                  void navigate({
+                    to: "/editor/$artworkId",
+                    params: { artworkId: artwork.id },
+                  })
+                }
+                title={t("editor.open")}
                 className="group overflow-hidden rounded-md border border-border bg-panel text-left outline-offset-2 hover:border-muted"
               >
                 <div className="relative aspect-video bg-panel-2">
@@ -107,6 +116,9 @@ export function ArtworksPage() {
           artworkId={openId}
           ids={items.map((a) => a.id)}
           onNavigate={setOpenId}
+          onEdit={(id) =>
+            void navigate({ to: "/editor/$artworkId", params: { artworkId: id } })
+          }
           onClose={() => setOpenId(null)}
         />
       )}

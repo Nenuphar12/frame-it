@@ -70,6 +70,11 @@ class MarginsSpec(DocModel):
     bottom: int = Field(default=0, ge=0, le=CANVAS_HEIGHT - 1)
     left: int = Field(default=0, ge=0, le=CANVAS_WIDTH - 1)
     linked: bool = False
+    """All four margins move together."""
+    mirror_x: bool = False
+    """`left` and `right` stay equal."""
+    mirror_y: bool = False
+    """`top` and `bottom` stay equal."""
 
     @model_validator(mode="after")
     def _leaves_room(self) -> MarginsSpec:

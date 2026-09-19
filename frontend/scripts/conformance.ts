@@ -4,6 +4,8 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import * as alternatives from "../src/editor/core/alternatives.ts";
+import * as constraints from "../src/editor/core/constraints.ts";
 import * as geometry from "../src/editor/core/geometry.ts";
 import * as placement from "../src/editor/core/placement.ts";
 import * as quality from "../src/editor/core/quality.ts";
@@ -35,12 +37,47 @@ const FUNCTIONS: Record<string, Fn> = {
   native_crop_for_area: (x) =>
     placement.nativeCropForArea(a(x, "area"), a(x, "source"), a(x, "crop_ratio"), a(x, "previous")),
   margins_for_slot: (x) =>
-    placement.marginsForSlot(a(x, "slot"), a(x, "previous"), a(x, "linked")),
+    placement.marginsForSlot(
+      a(x, "slot"),
+      a(x, "previous"),
+      a(x, "linked"),
+      geometry.CANVAS,
+      a(x, "mirror_x"),
+      a(x, "mirror_y"),
+    ),
   fit_in_mat: (x) =>
     placement.fitInMat(a(x, "source"), a(x, "crop"), a(x, "crop_ratio"), a(x, "margins"), a(x, "lock")),
   fill: (x) => placement.fill(a(x, "source"), a(x, "lock")),
   fill_slot: (x) => placement.fillSlot(a(x, "rect"), a(x, "source"), a(x, "lock")),
   fit_slot: (x) => placement.fitSlot(a(x, "rect"), a(x, "source"), a(x, "lock")),
+  resize_slot: (x) =>
+    constraints.resizeSlot(
+      a(x, "state"),
+      a(x, "requested"),
+      a(x, "source"),
+      a(x, "lock"),
+      a(x, "anchor"),
+    ),
+  resize_crop: (x) =>
+    constraints.resizeCrop(a(x, "state"), a(x, "requested"), a(x, "source"), a(x, "lock")),
+  pan_crop: (x) => constraints.panCrop(a(x, "state"), a(x, "dx"), a(x, "dy"), a(x, "source")),
+  zoom_crop: (x) =>
+    constraints.zoomCrop(a(x, "state"), a(x, "factor"), a(x, "source"), a(x, "lock")),
+  apply_lock: (x) => constraints.applyLock(a(x, "state"), a(x, "lock"), a(x, "source")),
+  apply_crop_ratio: (x) =>
+    constraints.applyCropRatio(a(x, "state"), a(x, "ratio"), a(x, "source"), a(x, "lock")),
+  alternatives: (x) =>
+    alternatives.alternatives(
+      a(x, "state"),
+      a(x, "source"),
+      a(x, "lock"),
+      a(x, "placement"),
+      a(x, "margins"),
+      a(x, "linked"),
+      a(x, "crop_ratio"),
+      a(x, "mirror_x"),
+      a(x, "mirror_y"),
+    ),
 };
 
 function close(actual: unknown, expected: unknown): boolean {

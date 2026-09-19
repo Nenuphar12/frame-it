@@ -14,7 +14,9 @@ exposed through OpenAPI → TS types. **Array order = z-order (first is back-mos
     "texture": null                                    // or { "id": "paper-01", "strength": 0.35 }
   },
   "placement": "fit_in_mat",                            // fit_in_mat | fill | manual (multi-slot ⇒ manual)
-  "margins": { "top": 240, "right": 240, "bottom": 300, "left": 240, "linked": false },
+  "margins": { "top": 240, "right": 240, "bottom": 300, "left": 240,
+               "linked": false,                        // all four sides move together
+               "mirror_x": false, "mirror_y": false }, // left = right / top = bottom
   "slots": [
     {
       "id": "s_01",

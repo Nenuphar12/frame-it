@@ -18,6 +18,14 @@ const DYNAMIC_PREFIXES = [
   "artworks.tiers",
   "artworks.tierHints",
   "artworks.create.placements",
+  "editor.tabs",
+  "editor.sides",
+  "editor.lock",
+  "editor.placement",
+  "editor.ratios",
+  "editor.alternatives",
+  "editor.colors.kinds",
+  "editor.history.reasons",
 ];
 
 const has = (key) => {

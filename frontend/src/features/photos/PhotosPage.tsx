@@ -162,9 +162,19 @@ export function PhotosPage() {
         photoIds={creatingIds ?? []}
         open={creatingIds !== null}
         onOpenChange={(open) => !open && setCreatingIds(null)}
-        onCreated={() => {
+        onCreated={(ids) => {
           clear();
-          void navigate({ to: "/artworks" });
+          const first = ids[0];
+          if (first) {
+            // Straight into the review queue: validate & next until the batch is done.
+            void navigate({
+              to: "/editor/$artworkId",
+              params: { artworkId: first },
+              search: { queue: ids.join(",") },
+            });
+          } else {
+            void navigate({ to: "/artworks" });
+          }
         }}
       />
     </div>

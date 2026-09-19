@@ -4,6 +4,27 @@
  */
 
 export interface paths {
+    "/api/v1/artwork-defaults": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Artwork Defaults
+         * @description Style and layout used when creating artworks without an explicit choice.
+         */
+        get: operations["artwork_defaults_api_v1_artwork_defaults_get"];
+        /** Set Artwork Defaults */
+        put: operations["set_artwork_defaults_api_v1_artwork_defaults_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/artworks": {
         parameters: {
             query?: never;
@@ -599,6 +620,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/photos/{photo_id}/palette": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Photo Palette
+         * @description Mat colours suggested from the photo (dominant, muted and complementary; cached).
+         */
+        get: operations["photo_palette_api_v1_photos__photo_id__palette_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/photos/{photo_id}/proxy": {
         parameters: {
             query?: never;
@@ -633,6 +674,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/presets/colors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Color Presets */
+        get: operations["color_presets_api_v1_presets_colors_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/render/region": {
         parameters: {
             query?: never;
@@ -651,6 +709,62 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/swatches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Swatches */
+        get: operations["list_swatches_api_v1_swatches_get"];
+        put?: never;
+        /**
+         * Create Swatch
+         * @description Save a colour (an existing swatch with the same colour is returned unchanged).
+         */
+        post: operations["create_swatch_api_v1_swatches_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/swatches/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reorder Swatches */
+        post: operations["reorder_swatches_api_v1_swatches_reorder_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/swatches/{swatch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Swatch */
+        delete: operations["delete_swatch_api_v1_swatches__swatch_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Swatch */
+        patch: operations["update_swatch_api_v1_swatches__swatch_id__patch"];
         trace?: never;
     };
     "/api/v1/system/info": {
@@ -824,6 +938,20 @@ export interface components {
             style_id?: string | null;
             /** Title */
             title?: string | null;
+        };
+        /** ArtworkDefaultsIn */
+        ArtworkDefaultsIn: {
+            /** Layout Id */
+            layout_id: string;
+            /** Style Id */
+            style_id: string;
+        };
+        /** ArtworkDefaultsOut */
+        ArtworkDefaultsOut: {
+            /** Layout Id */
+            layout_id: string;
+            /** Style Id */
+            style_id: string;
         };
         /** ArtworkDocument */
         ArtworkDocument: {
@@ -1086,6 +1214,13 @@ export interface components {
             /** Position */
             position: number;
         };
+        /** ColorPresetOut */
+        ColorPresetOut: {
+            /** Color */
+            color: string;
+            /** Name */
+            name: string;
+        };
         /** CountOut */
         CountOut: {
             /** Count */
@@ -1130,12 +1265,25 @@ export interface components {
             /** Role */
             role?: ("admin" | "uploader") | null;
         };
+        /** FontMetricsOut */
+        FontMetricsOut: {
+            /** Ascender */
+            ascender: number;
+            /** Descender */
+            descender: number;
+            /** Units Per Em */
+            units_per_em: number;
+            /** Weight */
+            weight: number;
+        };
         /** FontOut */
         FontOut: {
             /** Category */
             category: string;
             /** Id */
             id: string;
+            /** Metrics */
+            metrics: components["schemas"]["FontMetricsOut"][];
             /** Name */
             name: string;
             /** Weights */
@@ -1361,6 +1509,16 @@ export interface components {
              */
             linked: boolean;
             /**
+             * Mirror X
+             * @default false
+             */
+            mirror_x: boolean;
+            /**
+             * Mirror Y
+             * @default false
+             */
+            mirror_y: boolean;
+            /**
              * Right
              * @default 0
              */
@@ -1434,6 +1592,18 @@ export interface components {
             role: "admin" | "uploader";
             /** Url */
             url: string;
+        };
+        /** PaletteEntryOut */
+        PaletteEntryOut: {
+            /** Color */
+            color: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "dominant" | "muted" | "complementary";
+            /** Weight */
+            weight: number;
         };
         /** PhotoIdsIn */
         PhotoIdsIn: {
@@ -1644,6 +1814,37 @@ export interface components {
             crop_ratio: string;
             orient?: components["schemas"]["OrientSpec"];
         };
+        /** SwatchCreateIn */
+        SwatchCreateIn: {
+            /** Color */
+            color: string;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+        };
+        /** SwatchOut */
+        SwatchOut: {
+            /** Color */
+            color: string;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Position */
+            position: number;
+        };
+        /** SwatchReorderIn */
+        SwatchReorderIn: {
+            /** Ids */
+            ids: string[];
+        };
+        /** SwatchUpdateIn */
+        SwatchUpdateIn: {
+            /** Name */
+            name?: string | null;
+        };
         /** SystemInfo */
         SystemInfo: {
             capabilities: components["schemas"]["Capabilities"];
@@ -1771,6 +1972,59 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    artwork_defaults_api_v1_artwork_defaults_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtworkDefaultsOut"];
+                };
+            };
+        };
+    };
+    set_artwork_defaults_api_v1_artwork_defaults_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtworkDefaultsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtworkDefaultsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_artworks_api_v1_artworks_get: {
         parameters: {
             query?: {
@@ -2930,6 +3184,37 @@ export interface operations {
             };
         };
     };
+    photo_palette_api_v1_photos__photo_id__palette_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                photo_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaletteEntryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     photo_proxy_api_v1_photos__photo_id__proxy_get: {
         parameters: {
             query?: never;
@@ -2989,6 +3274,26 @@ export interface operations {
             };
         };
     };
+    color_presets_api_v1_presets_colors_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ColorPresetOut"][];
+                };
+            };
+        };
+    };
     render_region_api_v1_render_region_post: {
         parameters: {
             query?: never;
@@ -3009,6 +3314,156 @@ export interface operations {
                 };
                 content: {
                     "image/png": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_swatches_api_v1_swatches_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwatchOut"][];
+                };
+            };
+        };
+    };
+    create_swatch_api_v1_swatches_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwatchCreateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwatchOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reorder_swatches_api_v1_swatches_reorder_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwatchReorderIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwatchOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_swatch_api_v1_swatches__swatch_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                swatch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_swatch_api_v1_swatches__swatch_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                swatch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwatchUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwatchOut"];
                 };
             };
             /** @description Validation Error */

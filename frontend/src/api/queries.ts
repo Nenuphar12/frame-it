@@ -2,6 +2,7 @@ import {
   keepPreviousData,
   useInfiniteQuery,
   useMutation,
+  useQueries,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -24,6 +25,13 @@ export const queryKeys = {
   artwork: (id: string) => ["artworks", "detail", id] as const,
   frameStyles: ["templates", "styles"] as const,
   layouts: ["templates", "layouts"] as const,
+  fonts: ["assets", "fonts"] as const,
+  textures: ["assets", "textures"] as const,
+  colorPresets: ["colors", "presets"] as const,
+  palette: (photoId: string) => ["colors", "palette", photoId] as const,
+  swatches: ["colors", "swatches"] as const,
+  snapshots: (artworkId: string) => ["artworks", "snapshots", artworkId] as const,
+  artworkDefaults: ["templates", "defaults"] as const,
 };
 
 export interface ArtworkFilter {
@@ -294,6 +302,7 @@ export function useArtworkActions() {
       favorite?: boolean;
       title?: string;
       status?: "draft";
+      tag_ids?: string[];
     }) => unwrap(api.PATCH("/api/v1/artworks/{artwork_id}", { ...path(id), body })),
     onSuccess,
   });
@@ -312,4 +321,130 @@ export function useArtworkActions() {
     onSuccess: () => onSuccess(),
   });
   return { update, validate, duplicate, trash };
+}
+
+// ---- editor: assets, colours, snapshots (Phase 5) ----------------------------------------------
+
+export function useFonts() {
+  return useQuery({
+    queryKey: queryKeys.fonts,
+    queryFn: () => unwrap(api.GET("/api/v1/fonts")),
+    staleTime: Infinity,
+  });
+}
+
+export function useTextures() {
+  return useQuery({
+    queryKey: queryKeys.textures,
+    queryFn: () => unwrap(api.GET("/api/v1/textures")),
+    staleTime: Infinity,
+  });
+}
+
+export function useColorPresets() {
+  return useQuery({
+    queryKey: queryKeys.colorPresets,
+    queryFn: () => unwrap(api.GET("/api/v1/presets/colors")),
+    staleTime: Infinity,
+  });
+}
+
+/** Mat colours suggested from a photo (server-side k-means, cached there too). */
+export function usePhotoPalette(photoId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.palette(photoId ?? ""),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/v1/photos/{photo_id}/palette", {
+          params: { path: { photo_id: photoId! } },
+        }),
+      ),
+    enabled: photoId !== null,
+    staleTime: Infinity,
+  });
+}
+
+export function useSwatches() {
+  return useQuery({
+    queryKey: queryKeys.swatches,
+    queryFn: () => unwrap(api.GET("/api/v1/swatches")),
+  });
+}
+
+export function useSwatchActions() {
+  const qc = useQueryClient();
+  const onSuccess = () => void qc.invalidateQueries({ queryKey: queryKeys.swatches });
+  const create = useMutation({
+    mutationFn: (vars: { color: string; name?: string }) =>
+      unwrap(api.POST("/api/v1/swatches", { body: { color: vars.color, name: vars.name ?? "" } })),
+    onSuccess,
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) =>
+      unwrap(api.DELETE("/api/v1/swatches/{swatch_id}", { params: { path: { swatch_id: id } } })),
+    onSuccess,
+  });
+  return { create, remove };
+}
+
+export function useSnapshots(artworkId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.snapshots(artworkId ?? ""),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/v1/artworks/{artwork_id}/snapshots", {
+          params: { path: { artwork_id: artworkId! } },
+        }),
+      ),
+    enabled: artworkId !== null,
+  });
+}
+
+export function useRestoreSnapshot() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { artworkId: string; snapshotId: string }) =>
+      unwrap(
+        api.POST("/api/v1/artworks/{artwork_id}/snapshots/{snapshot_id}/restore", {
+          params: { path: { artwork_id: vars.artworkId, snapshot_id: vars.snapshotId } },
+        }),
+      ),
+    onSuccess: (artwork) => {
+      qc.setQueryData(queryKeys.artwork(artwork.id), artwork);
+      void qc.invalidateQueries({ queryKey: ["artworks"] });
+    },
+  });
+}
+
+export function useArtworkDefaults() {
+  return useQuery({
+    queryKey: queryKeys.artworkDefaults,
+    queryFn: () => unwrap(api.GET("/api/v1/artwork-defaults")),
+    staleTime: 60_000,
+  });
+}
+
+export function useSetArtworkDefaults() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { style_id: string; layout_id: string }) =>
+      unwrap(api.PUT("/api/v1/artwork-defaults", { body })),
+    onSuccess: (defaults) => qc.setQueryData(queryKeys.artworkDefaults, defaults),
+  });
+}
+
+/** Details of several photos at once (the editor needs their pixel sizes for the geometry). */
+export function usePhotosByIds(ids: string[]) {
+  return useQueries({
+    queries: ids.map((id) => ({
+      queryKey: queryKeys.photo(id),
+      queryFn: () =>
+        unwrap(api.GET("/api/v1/photos/{photo_id}", { params: { path: { photo_id: id } } })),
+      staleTime: 60_000,
+    })),
+    combine: (results) => ({
+      photos: results.flatMap((result) => (result.data ? [result.data] : [])),
+      isLoading: results.some((result) => result.isLoading),
+    }),
+  });
 }

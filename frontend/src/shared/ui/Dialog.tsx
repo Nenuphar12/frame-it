@@ -12,6 +12,11 @@ interface DialogProps {
   description?: string;
   children: ReactNode;
   className?: string;
+  /**
+   * Focus put on open. Radix otherwise focuses the first tabbable element, which is the close
+   * cross: `Enter` on a freshly opened dialog then *cancels* it instead of confirming.
+   */
+  onOpenAutoFocus?: (event: Event) => void;
 }
 
 export function Dialog({
@@ -21,6 +26,7 @@ export function Dialog({
   description,
   children,
   className,
+  onOpenAutoFocus,
 }: DialogProps) {
   const { t } = useTranslation();
   return (
@@ -28,6 +34,10 @@ export function Dialog({
       <RadixDialog.Portal>
         <RadixDialog.Overlay className="fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px]" />
         <RadixDialog.Content
+          // `Escape` closes the dialog and nothing else: Radix handles it in the capture phase on
+          // the document, the command registry listens on `window` (bubble) — see ColorField.
+          onEscapeKeyDown={(event) => event.stopPropagation()}
+          onOpenAutoFocus={onOpenAutoFocus}
           className={cn(
             "fixed top-1/2 left-1/2 z-50 w-[min(92vw,32rem)] -translate-x-1/2 -translate-y-1/2",
             "rounded-xl border border-border bg-panel p-5 shadow-2xl",

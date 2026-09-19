@@ -186,6 +186,16 @@
           "title": "Linked",
           "type": "boolean"
         },
+        "mirror_x": {
+          "default": false,
+          "title": "Mirror X",
+          "type": "boolean"
+        },
+        "mirror_y": {
+          "default": false,
+          "title": "Mirror Y",
+          "type": "boolean"
+        },
         "right": {
           "default": 0,
           "maximum": 3839,

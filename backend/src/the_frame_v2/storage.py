@@ -36,3 +36,6 @@ class Storage:
 
     def upload_temp_path(self, session_id: str) -> Path:
         return self.uploads / f"{session_id}.part"
+
+    def palette_path(self, sha256: str) -> Path:
+        return self.cache / "palettes" / f"{sha256}.json"

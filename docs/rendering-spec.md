@@ -57,10 +57,15 @@ whenever output pixels change.
 | Texture | Build tinted tile via ImageData with the exact formula, use as pattern | Exact |
 | Bands | Rects | Exact |
 | Drop shadow | Canvas `shadowBlur = blur × stageScale` (canvas blur = 2σ), offsets × stageScale | S3: max diff 3/255 |
-| Inner shadow | Clip to rect, even-odd ring drawn far away with compensating shadow offset (rotate the offset for rotated slots) | S3: max diff 3/255 |
+| Inner shadow | Clip to the layer rect, even-odd ring **around** it casts the shadow (its own ink is clipped away); offset scaled and rotated into device space by hand | S3: max diff 3/255 |
 | Captions | Same font files via `@font-face`, Konva Text; shift by `spacing/2` (middle) or `spacing` (end): canvas also spaces after the last glyph | S3: ink boxes ±2 px; TV preview uses server render |
 
 **TV preview and loupe always use server renders** (authoritative).
+
+Canvas shadows are drawn into a surface covering the shape *and* its shadow, so the ring must stay next to the
+layer (`3σ + |offset|` of padding): S3's "draw the ring 20 000 px away and compensate with the offset" made
+Skia allocate a huge surface and froze the tab (Phase 5). Clipping already hides the ring's ink, so no
+compensation offset is needed at all.
 
 ### 8.3 Decoding & color (`imaging/decode.py`, `color.py`)
 
