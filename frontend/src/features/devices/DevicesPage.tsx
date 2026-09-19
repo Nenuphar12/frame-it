@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Laptop, QrCode, Smartphone, Trash2 } from "lucide-react";
-import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -25,9 +24,16 @@ function PairDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: b
     mutationFn: (r: Role) =>
       unwrap(api.POST("/api/v1/devices/pairing-codes", { body: { role: r } })),
     onSuccess: async (data) => {
-      setQr(await QRCode.toDataURL(data.url, { margin: 1, width: 320 }));
       setRemaining(data.expires_in_seconds);
       setInitialCount(devices.data?.length ?? 0);
+      // `qrcode` is 22 kB and only this dialog needs it: loaded on demand. The code and the URL
+      // are shown as text anyway, so a failed load costs the picture, not the pairing.
+      try {
+        const { default: QRCode } = await import("qrcode");
+        setQr(await QRCode.toDataURL(data.url, { margin: 1, width: 320 }));
+      } catch {
+        setQr(null);
+      }
     },
   });
 

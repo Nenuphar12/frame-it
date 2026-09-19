@@ -1,14 +1,14 @@
 /**
  * Upload queue shared by desktop and mobile.
  *
- * Pipeline per file: hash (SHA-256, hash-wasm — works over plain HTTP) → open/resume session →
+ * Pipeline per file: hash (SHA-256, hash-wasm — works over plain HTTP, loaded on demand) →
+ * open/resume session →
  * PATCH chunks (retry with backoff, resume from server offset) → wait for ingestion (SSE, with
  * polling fallback). Protocol: docs/PLAN.md §10 "uploads".
  *
  * Files received by the LocalSend receiver are mirrored as "remote" items (no `file`, driven by
  * `localsend.*` events only), so already-sent photos are reported in the same tray.
  */
-import { createSHA256 } from "hash-wasm";
 import { create } from "zustand";
 
 import { API_BASE, ApiError, api, CLIENT_HEADERS, toProblem, unwrap } from "@/api/client";
@@ -185,6 +185,11 @@ async function process(id: string) {
 
 async function hashFile(id: string, file: File): Promise<string> {
   patch(id, { status: "hashing", progress: 0 });
+  // 18 kB (wasm inlined) that only an actual upload needs: kept out of the initial bundle, which
+  // every page — the phone upload page included — would otherwise download. The module registry
+  // caches it, so only the first file of a session pays; a failed load lands in `runItem`'s catch
+  // as a retryable `failed` item, like any other network error.
+  const { createSHA256 } = await import("hash-wasm");
   const hasher = await createSHA256();
   hasher.init();
   for (let offset = 0; offset < file.size; offset += HASH_SLICE) {

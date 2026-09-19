@@ -21,6 +21,11 @@ export default defineConfig({
     outDir: "../backend/src/the_frame_v2/static",
     emptyOutDir: true,
     sourcemap: false,
-    chunkSizeWarningLimit: 800,
+    // The main chunk is ~1010 kB raw / ~318 kB gzip, half of it Konva + its React reconciler for
+    // the editor. Served from the LAN under immutable hashed names, that is a few milliseconds, so
+    // the editor route is deliberately *not* lazy yet: it would need a stale-chunk error boundary
+    // (`emptyOutDir` removes the old chunks on rebuild) — see `docs/progress.md`. The limit sits
+    // just above today's size so the warning still trips when a new dependency lands.
+    chunkSizeWarningLimit: 1100,
   },
 });
