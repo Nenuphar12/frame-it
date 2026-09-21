@@ -1,7 +1,7 @@
 # the_frame_v2 — Implementation Plan
 
-> Status: **Phases 0–5 implemented and signed off** (Phase 5 verified in a browser 2026-09-19; see
-> `docs/progress.md`) · Created 2026-09-16 · Placeholder name `the_frame_v2` (rename before open-sourcing)
+> Status: **Phases 0–6 implemented** (Phase 6 driven in a browser 2026-09-21; see `docs/progress.md`) ·
+> Created 2026-09-16 · Placeholder name `the_frame_v2` (rename before open-sourcing)
 >
 > This plan is the single source of truth for scope and sequencing. Specs (§5–§9, §12) live in dedicated
 > files under `docs/` (linked in place). Agents: read `AGENTS.md` first (see §3).
@@ -539,6 +539,13 @@ is Phase 6, item 4). Verification notes and the three bugs it found: `docs/progr
 
 **AC**: build a 1+2 collage and a rotated polaroid pile in < 2 min each; server render matches preview; rotated slots
 never show `native`; quality badges per slot correct.
+
+**State (2026-09-21)**: done. Slots panel (z-order list with drag, add/remove, photo picker, swap, empty slot,
+fit/fill), free-form move/resize/rotate on the canvas with smart guides (canvas, slot edges/centres, **equal
+gaps**, `Alt` to disable), multi-selection (Shift-click) with align/distribute/same size/copy decorations
+(`domain/arrange.py` ↔ `editor/core/arrange.ts`, §7.7), caption editing (panel + double-click inline on the
+canvas, drag to move) and the shortcuts `a`, `t`, `[`, `]`, `Delete`, `$mod+a`. Verified in a browser over CDP
+(see `docs/progress.md` for what was exercised and the three bugs it found).
 
 ### Phase 7 — Templates
 

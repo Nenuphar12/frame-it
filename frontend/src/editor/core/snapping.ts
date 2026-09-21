@@ -108,3 +108,100 @@ export function slotCandidates(
   }
   return candidates;
 }
+
+/**
+ * Positions where the dragged rect would repeat a gap that already exists between two other
+ * slots — the "equal gaps" stop of §7.5. Candidates are *start* coordinates of the moving rect
+ * (its left or top edge); the caller adds them to `slotCandidates` for the same axis.
+ *
+ * Only the gaps between consecutive slots along the axis are considered: those are the ones the
+ * eye compares. A gap of 0 (two slots touching) makes the dragged slot touch its neighbour too.
+ */
+export function gapCandidates(others: Rect[], axis: "x" | "y", moving: Size): SnapCandidate[] {
+  const start = (rect: Rect) => (axis === "x" ? rect.x : rect.y);
+  const size = (rect: Rect) => (axis === "x" ? rect.w : rect.h);
+  const span = axis === "x" ? moving.w : moving.h;
+  const sorted = [...others].sort((a, b) => start(a) - start(b));
+  const gaps = new Set<number>();
+  for (let index = 1; index < sorted.length; index++) {
+    const previous = sorted[index - 1]!;
+    const current = sorted[index]!;
+    gaps.add(Math.round(start(current) - (start(previous) + size(previous))));
+  }
+  const candidates: SnapCandidate[] = [];
+  for (const gap of gaps) {
+    for (const rect of others) {
+      candidates.push(
+        { value: start(rect) + size(rect) + gap, kind: "gap", label: "editor.snap.equalGap" },
+        { value: start(rect) - gap - span, kind: "gap", label: "editor.snap.equalGap" },
+      );
+    }
+  }
+  return candidates;
+}
+
+/** Candidates for one edge of a dragged or resized slot: canvas, other slots and equal gaps. */
+export function compositionCandidates(
+  others: Rect[],
+  axis: "x" | "y",
+  moving: Size | null,
+  canvas: Size = CANVAS,
+): SnapCandidate[] {
+  const candidates = slotCandidates(others, axis, canvas);
+  return moving ? [...candidates, ...gapCandidates(others, axis, moving)] : candidates;
+}
+
+export interface RectSnap {
+  /** The rect after snapping (same size, moved by at most `tolerance` on each axis). */
+  rect: Rect;
+  /** Document coordinates of the guides to draw, `null` when that axis did not snap. */
+  guides: { x: number | null; y: number | null };
+}
+
+/**
+ * Snap a dragged slot: its left edge, centre and right edge are all candidates for a stop, and
+ * the closest hit wins (same for the vertical axis). Returns the corrected rect and where to
+ * draw the magenta guides (§7.5).
+ */
+export function snapRect(
+  rect: Rect,
+  others: Rect[],
+  tolerance: number,
+  canvas: Size = CANVAS,
+): RectSnap {
+  const size = { w: rect.w, h: rect.h };
+  const axis = (value: number, span: number, which: "x" | "y") => {
+    const candidates = compositionCandidates(others, which, size, canvas);
+    // The three probes are expressed as the rect's start, so their offsets cancel out.
+    const probes: [number, number][] = [
+      [value, 0],
+      [value + span / 2, span / 2],
+      [value + span, span],
+    ];
+    let best: { value: number; guide: number; distance: number } | null = null;
+    for (const [probe, offset] of probes) {
+      const shifted = candidates.map((candidate) => ({
+        ...candidate,
+        value: candidate.value - offset,
+      }));
+      const result = snap(probe - offset, shifted, tolerance);
+      if (!result.hit) continue;
+      const distance = Math.abs(result.value - (probe - offset));
+      if (!best || distance < best.distance) {
+        best = { value: result.value, guide: result.value + offset, distance };
+      }
+    }
+    return best;
+  };
+  const horizontal = axis(rect.x, rect.w, "x");
+  const vertical = axis(rect.y, rect.h, "y");
+  return {
+    rect: {
+      x: horizontal ? Math.round(horizontal.value) : rect.x,
+      y: vertical ? Math.round(vertical.value) : rect.y,
+      w: rect.w,
+      h: rect.h,
+    },
+    guides: { x: horizontal?.guide ?? null, y: vertical?.guide ?? null },
+  };
+}

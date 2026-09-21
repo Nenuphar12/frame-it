@@ -25,7 +25,7 @@ import {
   slotSource,
   type PhotoSizes,
 } from "@/editor/operations";
-import { Field, NumberField, PanelSection, Segmented, Slider } from "./Controls";
+import { Field, IconButton, NumberField, PanelSection, Segmented, Slider } from "./Controls";
 import { SlotQualityBadge } from "./QualityBadge";
 
 const SIDES: Side[] = ["top", "right", "bottom", "left"];
@@ -203,6 +203,43 @@ export function FramingPanel({ doc, slot, sizes, stageScale, onSnap }: FramingPa
               </span>
             )}
           </div>
+          {doc.placement === "manual" && (
+            <>
+              <Field label={t("editor.slots.position")}>
+                <NumberField
+                  value={slot.rect.x}
+                  min={-20000}
+                  max={20000}
+                  onChange={(x) => actions.setSlotPosition(x, slot.rect.y)}
+                  suffix="x"
+                />
+                <NumberField
+                  value={slot.rect.y}
+                  min={-20000}
+                  max={20000}
+                  onChange={(y) => actions.setSlotPosition(slot.rect.x, y)}
+                  suffix="y"
+                />
+              </Field>
+              <Field label={t("editor.slots.size")}>
+                <NumberField
+                  value={slot.rect.w}
+                  min={1}
+                  max={20000}
+                  // Typed sizes grow to the right and down: the top-left corner stays put.
+                  onChange={(w) => actions.resizeSlot({ w, h: slot.rect.h }, [0, 0], null)}
+                  suffix="w"
+                />
+                <NumberField
+                  value={slot.rect.h}
+                  min={1}
+                  max={20000}
+                  onChange={(h) => actions.resizeSlot({ w: slot.rect.w, h }, [0, 0], null)}
+                  suffix="h"
+                />
+              </Field>
+            </>
+          )}
           <Field label={t("editor.rotation")}>
             <Slider
               value={slot.rotation}
@@ -252,28 +289,6 @@ function Toggle({
         "rounded p-0.5 text-muted hover:text-text disabled:opacity-50 disabled:hover:text-muted",
         pressed && "bg-panel-2 text-text",
       )}
-    >
-      {children}
-    </button>
-  );
-}
-
-function IconButton({
-  title,
-  onClick,
-  children,
-}: {
-  title: string;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      title={title}
-      aria-label={title}
-      onClick={onClick}
-      className="inline-flex h-7 w-7 items-center justify-center rounded border border-border text-muted hover:text-text"
     >
       {children}
     </button>

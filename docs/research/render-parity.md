@@ -61,3 +61,13 @@ the text width without the weight in the font shorthand (so an anchored caption 
 `editor/canvas/fonts.ts` now replicates Konva's own rule and font shorthand; the numbers above are after the
 fix (caption band MAE 2.38 → 1.08). There is no automated guard: it depends on browser font metrics, which
 the Node conformance script cannot measure.
+
+## Caption rotation pivot (2026-09-21, Phase 6)
+
+The renderer rotates a caption around its **anchor point** (`caption.x`, `caption.y` — the baseline anchor;
+`_draw_caption` passes it as the affine pivot). A Konva `Text` node rotates around its own `x`/`y`, which is
+the top-left of the text box, so a rotated caption drifted by up to the text's width on the canvas while the
+server drew it correctly. `CaptionNode` now positions the node *on* the anchor point and shifts the glyphs off
+it with `offsetX`/`offsetY` (the anchor shift and the baseline offset of `canvas/fonts.ts`), so both rotate
+around the same point. It only showed on captions with a non-zero rotation, which nothing could produce before
+captions became editable.

@@ -771,6 +771,42 @@
       }
     },
     {
+      "name": "ratio label 3840x2160",
+      "fn": "ratio_label",
+      "input": {
+        "w": 3840,
+        "h": 2160
+      },
+      "expected": "16:9"
+    },
+    {
+      "name": "ratio label 1000x562",
+      "fn": "ratio_label",
+      "input": {
+        "w": 1000,
+        "h": 562
+      },
+      "expected": "500:281"
+    },
+    {
+      "name": "ratio label 1200x800",
+      "fn": "ratio_label",
+      "input": {
+        "w": 1200,
+        "h": 800
+      },
+      "expected": "3:2"
+    },
+    {
+      "name": "ratio label 997x613",
+      "fn": "ratio_label",
+      "input": {
+        "w": 997,
+        "h": 613
+      },
+      "expected": "997:613"
+    },
+    {
       "name": "fit slot native",
       "fn": "fit_slot",
       "input": {

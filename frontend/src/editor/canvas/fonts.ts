@@ -71,3 +71,31 @@ export function anchorShift(
   if (anchor === "end") return -width + letterSpacingPx;
   return 0;
 }
+
+/**
+ * Ink-ish box of a caption in document coordinates, *before* rotation: what the selection
+ * outline draws and what the pointer hit-tests. The width is the advance width the canvas will
+ * use, the height a generous line box around the baseline (the exact ink box is the renderer's
+ * business — `docs/research/render-parity.md`).
+ */
+export function captionBox(caption: {
+  text: string;
+  size: number;
+  font: string;
+  weight: number;
+  letter_spacing: number;
+  x: number;
+  y: number;
+  anchor: "start" | "middle" | "end";
+}): { x: number; y: number; w: number; h: number } {
+  const family = fontFamily(caption.font, caption.weight);
+  const spacing = caption.letter_spacing * caption.size;
+  const width = measureText(caption.text, caption.size, family, caption.weight, spacing);
+  const baseline = baselineOffset(caption.size, family, caption.weight);
+  return {
+    x: Math.round(caption.x + anchorShift(width, caption.anchor, spacing)),
+    y: Math.round(caption.y - baseline),
+    w: Math.max(1, Math.round(width)),
+    h: Math.max(1, Math.round(caption.size * 1.3)),
+  };
+}

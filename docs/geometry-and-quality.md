@@ -85,8 +85,12 @@ is 8 screen px, which is tens of document px on a fitted stage, so snapping a ty
 Client-only (the tolerance is in *screen* pixels, so it depends on the stage zoom) but pure: `snap(value,
 candidates, tolerance)` picks the best candidate by priority, then by distance. Candidate generators:
 `margin_candidates` (used by the margin controls: the quality point is the margin that makes the available area
-exactly as wide/tall as the crop, i.e. scale 1) and `slot_candidates` (canvas and slot edges/centres, for the
-free-form slot dragging of Phase 6). Equal gaps between slots come with Phase 6.
+exactly as wide/tall as the crop, i.e. scale 1), `slot_candidates` (canvas and slot edges/centres) and
+`gap_candidates` (**equal gaps**: every gap between two consecutive slots along the axis becomes a stop on
+either side of every other slot). `composition_candidates` combines the last two, and `snap_rect` applies them
+to a dragged slot — its left edge, centre and right edge are all candidates and the closest hit wins, which is
+what draws the magenta guide. Slot decorations (bands, shadows) are ignored: the snapped rectangle is the
+photo area, the same rectangle the document stores.
 
 ### 7.6 Alternatives when upscaled
 
@@ -102,3 +106,24 @@ Implemented in `domain/alternatives.py` ↔ `editor/core/alternatives.ts` (fixtu
 document fields that must follow. Under `fit_in_mat`, **shrink** also grows the margins around the smaller slot
 (`margins_for_slot`, keeping the per-side proportions). A lock of `free` goes back to `no_upscale` when an
 alternative removes the enlargement. Empty list when the slot is not upscaled.
+
+### 7.7 Arranging several slots (`domain/arrange.py` ↔ `editor/core/arrange.ts`)
+
+Free-form compositions (`placement = manual`) need operations on a *selection* of slots. They are pure and
+mirrored like the rest (fixtures `conformance/geometry/arrange.json`); they only move and resize **rects**, so
+a caller that changes a size runs the result through the constraint solver (§7.3) to keep the crop consistent.
+
+| Function | Behaviour |
+|---|---|
+| `bounding_box(rects)` | Smallest rect containing them all — the reference of every alignment. |
+| `align(rects, edge)` | Moves each rect onto one edge (or centre line) of the bounding box; sizes never change, and aligning twice is a no-op. |
+| `distribute(rects, axis)` | Equal gaps along the axis, the two extreme rects staying put. Fewer than three rects have no gap to equalise. Rects are ordered by position, the result keeps the input order, and negative gaps (overlapping slots) stay even. |
+| `same_size(rects, reference)` | Every rect takes the reference's size, keeping its centre. |
+| `new_slot_size(area, source)` | Size of a slot the user adds: `NEW_SLOT_FRACTION` (0.45) of the area, at the photo's aspect when there is one. |
+| `new_slot_rect(existing, area, size)` | Where it lands: centred in the area, stepping aside by `NEW_SLOT_STEP` (96 px) from a position an existing slot already occupies, then kept inside the area. |
+
+The editor applies them in `editor/operations.ts`. Two rules live there rather than in the pure layer because
+they are about *slots*, not rectangles: **same size** asks the solver for the largest size that fits *inside*
+the reference box (a slot's shape follows its crop, and the solver's cover semantics would otherwise make
+slots bigger than the reference), and a **rotated** slot is repositioned around the anchor point of the drag
+in its own frame, so dragging a corner of a tilted slot keeps the opposite corner still.

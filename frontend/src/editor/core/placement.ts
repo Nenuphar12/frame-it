@@ -179,3 +179,10 @@ export function fitSlot(rect: Rect, source: Size, lock: QualityLock): SlotPlacem
     lock === "native" && (source.w > rect.w || source.h > rect.h) ? "no_upscale" : lock;
   return { rect: fitRect(rect, source, effective), crop, quality_lock: effective };
 }
+
+/** `w:h` reduced by their greatest common divisor (crop ratio of a slot with a fixed shape). */
+export function ratioLabel(w: number, h: number): string {
+  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+  const divisor = gcd(Math.abs(w), Math.abs(h)) || 1;
+  return `${Math.round(w / divisor)}:${Math.round(h / divisor)}`;
+}

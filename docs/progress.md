@@ -216,3 +216,54 @@ needs a stale-chunk error boundary first: `build.emptyOutDir` deletes the old ha
 before a rebuild would 404 on entering the editor (`/assets` is `StaticFiles`, so it is a clean 404, not
 `index.html`). Worth doing when Phase 6 grows the editor further.
 
+## 2026-09-21 — Phase 6 (multi-photo compositions)
+
+**Pure core (mirrored Python/TypeScript, 134 conformance cases, was 107)**: `domain/arrange.py` ↔
+`editor/core/arrange.ts` (§7.7) — bounding box, align on six edges, distribute with equal gaps, same size,
+and where a slot the user adds lands (`new_slot_size` / `new_slot_rect`, cascading off the slots already
+there). `ratio_label` gained its TypeScript mirror. Snapping (client-only, §7.5) gained the **equal-gap**
+candidates promised for this phase plus `snap_rect`, which snaps a dragged slot by its left edge, centre and
+right edge at once; 22 behaviour tests in `tests/unit/test_arrange.py`.
+
+**Editor**: slots panel (front-first list = the z-order, drag to reorder, add/remove, photo picker with
+search, replace, swap, empty a slot, fit/fill), free-form move/resize/rotate on the canvas (eight handles and
+a rotation knob drawn by `SelectionOverlay`, hit-tested by `canvas/hit.ts`; `Shift` snaps the angle to 15°,
+`Alt` disables snapping), multi-selection by Shift-click with align/distribute/same size/copy decorations,
+caption editing (panel for every property, double-click on the canvas for the text, drag to move), position
+and size fields for manual slots, and the shortcuts `a` (add slot), `t` (caption), `[` / `]` (z-order),
+`Delete`, `$mod+a` (select every slot); the arrow keys now nudge the selected slots (or the caption), and
+still the crop under the crop tool.
+
+**Bugs found while driving it**:
+1. *A slot added with a freshly picked photo was built as an empty one* — the editor only knows the sizes of
+   the photos already in the document, so the crop took the slot's shape instead of the photo's (and the lock
+   fell back to `free`). `store.ensurePhotoSize` now fetches the size before the operation runs (invariant 13).
+2. *"Same size" made slots bigger than the reference*: the constraint solver resizes with **cover** semantics,
+   so a slot whose aspect differs from the reference grew past it. It now fits *inside* the reference box.
+3. *Clicking one slot of a multi-selection did not collapse the selection onto it* (the selection is kept on
+   mousedown so the group can be dragged); it now collapses on mouseup when the pointer never moved.
+Also fixed on the way: captions rotated around their text box on the canvas instead of their anchor point,
+where the renderer pivots (`docs/research/render-parity.md`) — invisible until captions became editable.
+
+**Verified** (production build served by the backend on trusted localhost, against a copy of the dev library):
+`make check` green (332 backend tests, 134 conformance cases, mypy strict, ESLint, tsc, i18n). In the browser:
+adding a slot from the picker (placement switches to `manual`, 4:3 photo → 908×684 slot, lock `no_upscale`),
+dragging it (snapped its right edge to the canvas centre), resizing by the SE handle (908×684 → 1217×916 with
+the crop growing to the full 4080×3072 photo, aspect consistent), rotating by the knob (38.1°, lock kept),
+Shift-click multi-selection ("3 slots selected"), distribute (gaps 517/518), align top, same size (a 3:4 slot
+became 511×679 inside the 900×678 reference), copy decorations, z-order by button and by `]`, nudging with the
+arrows (227 → 230) with undo/redo, swapping two photos (each re-cropped to its new slot), emptying and
+re-filling a slot, adding a caption and editing it inline, dropping a photo from the picker onto the mat (a new
+slot lands under the pointer), and **equal-gap snapping** (dragged 20 px short of the stop, landed exactly on
+it; `Alt` moved the raw 35 px instead). The server rendered every state (`render.png` 200, 5 slots + captions).
+
+**Tooling note**: the Chrome-extension harness could not drive the app at all this time — the page never goes
+idle (the SSE stream), so `executeScript`/`--dump-dom`/`--virtual-time-budget` all time out. The session used a
+throwaway CDP driver instead (headless `chromium --remote-debugging-port` + `Runtime.evaluate`), which works
+well; two harness gotchas are now in AGENTS.md (dispatch mouse events on the `<canvas>`, give synthetic
+`KeyboardEvent`s a `code`).
+
+**Not done / follow-ups**: no marquee (rubber-band) selection — slots are picked by click and Shift-click; the
+photo picker has search but no tag/date filters; a dropped photo may land partly outside the canvas (allowed by
+the document, clipped at render); the editor route is still not lazy (the bundle note of 2026-09-19 stands, and
+this phase added ~15 kB of editor code).

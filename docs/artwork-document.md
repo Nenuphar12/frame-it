@@ -62,6 +62,11 @@ Implementation: `backend/src/the_frame_v2/domain/document.py`; JSON Schemas in `
   "crop"]`, `type = "crop_out_of_bounds"`); a malformed request body gives 422 `validation_error` with the same
   shape (`loc` prefixed by `body`).
 
+**Editing** (Phase 6): the editor creates slot ids as `s_<n>` and caption ids as `c_<n>` (never reusing one),
+adds a slot with `NEW_SLOT_FRACTION` of the available area at the photo's aspect (§7.7), and switches
+`placement` to `manual` as soon as a second slot exists. A slot without a photo carries `quality_lock = free`
+and a crop the size of its rect (a placeholder); filling it takes `no_upscale` back.
+
 **Evolution**: `schema` bumps require a pure migration function `migrate_vN_to_vN+1` in both `domain/document.py`
 and archive import; documents are migrated on read and persisted on next save.
 

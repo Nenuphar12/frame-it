@@ -137,7 +137,8 @@
       "possibly_downscaled": "Low resolution: the phone may have sent a reduced copy.",
       "below_tv_resolution": "Smaller than 3840×2160: it cannot fill the TV pixel-perfectly.",
       "high_bit_depth_reduced": "16-bit image: it is converted to 8-bit for display."
-    }
+    },
+    "loadMore": "Load more"
   },
   "tags": {
     "placeholder": "Add tags…",
@@ -366,7 +367,10 @@
       "shadow": "Shadow",
       "artwork": "Artwork",
       "tags": "Tags",
-      "history": "History"
+      "history": "History",
+      "slots": "Slots",
+      "arrange": "Arrange",
+      "captions": "Captions"
     },
     "placement": {
       "label": "Placement",
@@ -450,7 +454,8 @@
       "canvasEdge": "Canvas edge",
       "canvasCenter": "Canvas centre",
       "slotEdge": "Slot edge",
-      "slotCenter": "Slot centre"
+      "slotCenter": "Slot centre",
+      "equalGap": "Equal gaps"
     },
     "alternatives": {
       "title": "This photo is being enlarged",
@@ -529,8 +534,66 @@
       "nudge": "Nudge the photo by 1 px",
       "nudge10": "Nudge the photo by 10 px",
       "open": "Open in the editor",
-      "fit": "Fit the artwork to the view"
+      "fit": "Fit the artwork to the view",
+      "addSlot": "Add a slot",
+      "deleteSelection": "Remove the selection",
+      "bringForward": "Bring the slot forward",
+      "sendBackward": "Send the slot backward",
+      "addCaption": "Add a caption",
+      "selectAllSlots": "Select every slot"
     },
-    "open": "Edit"
+    "open": "Edit",
+    "slots": {
+      "slot": "Slot {{index}}",
+      "add": "Add a slot",
+      "remove": "Remove the selected slots",
+      "pickPhoto": "Choose a photo",
+      "replacePhoto": "Replace the photo",
+      "swap": "Swap the two photos",
+      "fitToPhoto": "Fit the slot to the photo",
+      "fillSlot": "Fill the slot with the photo",
+      "bringForward": "Bring forward",
+      "sendBackward": "Send backward",
+      "position": "Position",
+      "size": "Size",
+      "addEmpty": "Add an empty slot",
+      "clearPhoto": "Empty the slot"
+    },
+    "arrange": {
+      "align": {
+        "left": "Align left edges",
+        "h_center": "Align centres horizontally",
+        "right": "Align right edges",
+        "top": "Align top edges",
+        "v_center": "Align centres vertically",
+        "bottom": "Align bottom edges"
+      },
+      "distributeX": "Equal horizontal gaps",
+      "distributeY": "Equal vertical gaps",
+      "sameSize": "Same size as the last selected slot",
+      "applyDecorations": "Copy bands, shadow and lock to the others",
+      "hint": "Shift-click a second slot to align, distribute or resize them together.",
+      "selected_one": "{{count}} slot selected",
+      "selected_other": "{{count}} slots selected"
+    },
+    "captions": {
+      "add": "Add a caption",
+      "remove": "Remove the caption",
+      "none": "No caption yet.",
+      "placeholder": "Your caption",
+      "text": "Text",
+      "font": "Font",
+      "weight": "Weight",
+      "size": "Size",
+      "color": "Colour",
+      "letterSpacing": "Spacing",
+      "anchor": "Anchor",
+      "anchors": {
+        "start": "Left",
+        "middle": "Centre",
+        "end": "Right"
+      },
+      "position": "Position"
+    }
   }
 }

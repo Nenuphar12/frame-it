@@ -26,6 +26,8 @@ const DYNAMIC_PREFIXES = [
   "editor.alternatives",
   "editor.colors.kinds",
   "editor.history.reasons",
+  "editor.arrange.align",
+  "editor.captions.anchors",
 ];
 
 const has = (key) => {

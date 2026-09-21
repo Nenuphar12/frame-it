@@ -5,6 +5,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import * as alternatives from "../src/editor/core/alternatives.ts";
+import * as arrange from "../src/editor/core/arrange.ts";
 import * as constraints from "../src/editor/core/constraints.ts";
 import * as geometry from "../src/editor/core/geometry.ts";
 import * as placement from "../src/editor/core/placement.ts";
@@ -50,6 +51,7 @@ const FUNCTIONS: Record<string, Fn> = {
   fill: (x) => placement.fill(a(x, "source"), a(x, "lock")),
   fill_slot: (x) => placement.fillSlot(a(x, "rect"), a(x, "source"), a(x, "lock")),
   fit_slot: (x) => placement.fitSlot(a(x, "rect"), a(x, "source"), a(x, "lock")),
+  ratio_label: (x) => placement.ratioLabel(a(x, "w"), a(x, "h")),
   resize_slot: (x) =>
     constraints.resizeSlot(
       a(x, "state"),
@@ -66,6 +68,12 @@ const FUNCTIONS: Record<string, Fn> = {
   apply_lock: (x) => constraints.applyLock(a(x, "state"), a(x, "lock"), a(x, "source")),
   apply_crop_ratio: (x) =>
     constraints.applyCropRatio(a(x, "state"), a(x, "ratio"), a(x, "source"), a(x, "lock")),
+  bounding_box: (x) => arrange.boundingBox(a(x, "rects")),
+  align: (x) => arrange.align(a(x, "rects"), a(x, "edge")),
+  distribute: (x) => arrange.distribute(a(x, "rects"), a(x, "axis")),
+  same_size: (x) => arrange.sameSize(a(x, "rects"), a(x, "reference")),
+  new_slot_size: (x) => arrange.newSlotSize(a(x, "area"), a(x, "source")),
+  new_slot_rect: (x) => arrange.newSlotRect(a(x, "existing"), a(x, "area"), a(x, "size")),
   alternatives: (x) =>
     alternatives.alternatives(
       a(x, "state"),

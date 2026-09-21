@@ -169,3 +169,29 @@ export function Segmented<T extends string>({
     </div>
   );
 }
+
+/** Square icon button used by the panels (orientation, slots, arranging). */
+export function IconButton({
+  title,
+  onClick,
+  disabled,
+  children,
+}: {
+  title: string;
+  onClick: () => void;
+  disabled?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      disabled={disabled}
+      onClick={onClick}
+      className="inline-flex h-7 w-7 items-center justify-center rounded border border-border text-muted hover:text-text disabled:opacity-40 disabled:hover:text-muted"
+    >
+      {children}
+    </button>
+  );
+}

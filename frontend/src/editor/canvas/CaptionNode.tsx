@@ -1,12 +1,15 @@
-// Captions on the canvas. Read-only in Phase 5 (adding and editing them is Phase 6, §14): they
-// are drawn so an imported or template-provided caption is visible while framing the photo.
+// Captions on the canvas.
+//
+// The node's origin is the caption's *anchor point* (`x`, `y` = the baseline anchor) and the text
+// is shifted off it with `offsetX`/`offsetY`, so Konva rotates the caption around that point —
+// which is what the renderer does (`_draw_caption` pivots on the anchor, §8.1 step 4).
 import { useEffect, useMemo, useState } from "react";
 import { Text } from "react-konva";
 
 import type { DocCaption } from "@/editor/core/document.ts";
 import { anchorShift, baselineOffset, fontFamily, loadFont, measureText } from "./fonts.ts";
 
-export function CaptionNode({ caption }: { caption: DocCaption }) {
+export function CaptionNode({ caption, hidden = false }: { caption: DocCaption; hidden?: boolean }) {
   const [ready, setReady] = useState(false);
   const family = fontFamily(caption.font, caption.weight);
 
@@ -34,14 +37,17 @@ export function CaptionNode({ caption }: { caption: DocCaption }) {
   return (
     <Text
       text={caption.text}
-      x={caption.x + anchorShift(width, caption.anchor, spacing)}
-      y={caption.y - baseline}
+      x={caption.x}
+      y={caption.y}
+      offsetX={-anchorShift(width, caption.anchor, spacing)}
+      offsetY={baseline}
       rotation={caption.rotation}
       fontFamily={family}
       fontSize={caption.size}
       fontStyle={String(caption.weight)}
       fill={caption.color}
       letterSpacing={spacing}
+      visible={!hidden}
       listening={false}
     />
   );

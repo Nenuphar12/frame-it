@@ -18,7 +18,7 @@ from typing import Any
 
 import pytest
 
-from the_frame_v2.domain import alternatives, constraints, geometry, placement, quality
+from the_frame_v2.domain import alternatives, arrange, constraints, geometry, placement, quality
 from the_frame_v2.domain.constraints import SlotState
 from the_frame_v2.domain.geometry import Margins, Orient, Rect, Size
 from the_frame_v2.domain.quality import SlotGeometry
@@ -109,6 +109,7 @@ FUNCTIONS: dict[str, tuple[Callable[..., Any], dict[str, Callable[[Any], Any]]]]
     "fill": (placement.fill, {"source": _size, "lock": str}),
     "fill_slot": (placement.fill_slot, {"rect": _rect, "source": _size, "lock": str}),
     "fit_slot": (placement.fit_slot, {"rect": _rect, "source": _size, "lock": str}),
+    "ratio_label": (placement.ratio_label, {"w": int, "h": int}),
     "resize_slot": (
         constraints.resize_slot,
         {
@@ -132,6 +133,21 @@ FUNCTIONS: dict[str, tuple[Callable[..., Any], dict[str, Callable[[Any], Any]]]]
     "apply_crop_ratio": (
         constraints.apply_crop_ratio,
         {"state": _state, "ratio": lambda v: v, "source": _size, "lock": str},
+    ),
+    "bounding_box": (arrange.bounding_box, {"rects": lambda v: [_rect(r) for r in v]}),
+    "align": (arrange.align, {"rects": lambda v: [_rect(r) for r in v], "edge": str}),
+    "distribute": (arrange.distribute, {"rects": lambda v: [_rect(r) for r in v], "axis": str}),
+    "same_size": (
+        arrange.same_size,
+        {"rects": lambda v: [_rect(r) for r in v], "reference": int},
+    ),
+    "new_slot_size": (
+        arrange.new_slot_size,
+        {"area": _rect, "source": lambda v: None if v is None else _size(v)},
+    ),
+    "new_slot_rect": (
+        arrange.new_slot_rect,
+        {"existing": lambda v: [_rect(r) for r in v], "area": _rect, "size": _size},
     ),
     "alternatives": (
         alternatives.alternatives,
@@ -185,6 +201,23 @@ FILL_STATE = {
     "rect": {"x": 0, "y": 0, "w": 3840, "h": 2160},
     "crop": {"x": 0, "y": 119, "w": 1000, "h": 562},
 }
+
+
+EDGES = ["left", "h_center", "right", "top", "v_center", "bottom"]
+THREE = [
+    {"x": 200, "y": 200, "w": 1200, "h": 800},
+    {"x": 1600, "y": 340, "w": 900, "h": 1200},
+    {"x": 2750, "y": 180, "w": 1000, "h": 700},
+]
+"""Three slots of a 1+2 collage: different sizes, different positions."""
+SHUFFLED = [THREE[2], THREE[0], THREE[1]]
+OVERLAPPING = [
+    {"x": 200, "y": 200, "w": 1200, "h": 800},
+    {"x": 900, "y": 200, "w": 1200, "h": 800},
+    {"x": 1400, "y": 200, "w": 1200, "h": 800},
+]
+AREA = {"x": 200, "y": 200, "w": 3440, "h": 1760}
+"""Available area of the default margins (canvas minus M_DEFAULT)."""
 
 
 def _q(rw: int, rh: int, cw: int, ch: int, rot: float = 0, photo: bool = True) -> dict[str, Any]:
@@ -540,6 +573,10 @@ CASES: dict[str, list[tuple[str, str, dict[str, Any]]]] = {
                 "lock": "no_upscale",
             },
         ),
+        *[
+            (f"ratio label {w}x{h}", "ratio_label", {"w": w, "h": h})
+            for w, h in ((3840, 2160), (1000, 562), (1200, 800), (997, 613))
+        ],
         (
             "fit slot native",
             "fit_slot",
@@ -747,6 +784,43 @@ CASES: dict[str, list[tuple[str, str, dict[str, Any]]]] = {
             "apply crop ratio under native",
             "apply_crop_ratio",
             {"state": NATIVE_STATE, "ratio": 16 / 9, "source": SRC, "lock": "native"},
+        ),
+    ],
+    "arrange.json": [
+        ("bounding box", "bounding_box", {"rects": THREE}),
+        *[(f"align {e}", "align", {"rects": THREE, "edge": e}) for e in EDGES],
+        ("distribute x", "distribute", {"rects": THREE, "axis": "x"}),
+        ("distribute y", "distribute", {"rects": THREE, "axis": "y"}),
+        ("distribute keeps the input order", "distribute", {"rects": SHUFFLED, "axis": "x"}),
+        ("distribute two is a no-op", "distribute", {"rects": THREE[:2], "axis": "x"}),
+        ("distribute overlapping", "distribute", {"rects": OVERLAPPING, "axis": "x"}),
+        ("same size first", "same_size", {"rects": THREE, "reference": 0}),
+        ("same size last", "same_size", {"rects": THREE, "reference": 2}),
+        ("new slot size empty", "new_slot_size", {"area": AREA, "source": None}),
+        (
+            "new slot size portrait",
+            "new_slot_size",
+            {"area": AREA, "source": {"w": 3000, "h": 4000}},
+        ),
+        ("new slot size wide", "new_slot_size", {"area": AREA, "source": SRC}),
+        (
+            "new slot rect first",
+            "new_slot_rect",
+            {"existing": [], "area": AREA, "size": {"w": 1500, "h": 800}},
+        ),
+        (
+            "new slot rect cascades",
+            "new_slot_rect",
+            {
+                "existing": [{"x": 1170, "y": 680, "w": 1500, "h": 800}],
+                "area": AREA,
+                "size": {"w": 1500, "h": 800},
+            },
+        ),
+        (
+            "new slot rect clamped into the area",
+            "new_slot_rect",
+            {"existing": [], "area": AREA, "size": {"w": 3600, "h": 2000}},
         ),
     ],
     "alternatives.json": [

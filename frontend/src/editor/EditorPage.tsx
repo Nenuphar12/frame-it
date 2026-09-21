@@ -34,10 +34,14 @@ import { EditorStage } from "./canvas/EditorStage";
 import * as actions from "./actions";
 import type { Side } from "./core/snapping.ts";
 import { AlternativesPanel } from "./panels/AlternativesPanel";
+import { ArrangePanel } from "./panels/ArrangePanel";
+import { CaptionsPanel } from "./panels/CaptionsPanel";
 import { FramingPanel } from "./panels/FramingPanel";
 import { InfoSheet } from "./panels/InfoSheet";
 import { Loupe } from "./panels/Loupe";
 import { DocumentQualityBadge } from "./panels/QualityBadge";
+import { SlotsPanel } from "./panels/SlotsPanel";
+import { PhotoPicker } from "./panels/PhotoPicker";
 import { StylePanel } from "./panels/StylePanel";
 import {
   canRedo,
@@ -49,6 +53,9 @@ import {
   resolveConflict,
   save,
   select,
+  selectCaption,
+  selectMany,
+  selectedCaption,
   selectedSlot,
   setTool,
   undo,
@@ -92,7 +99,9 @@ export function EditorPage() {
   const doc = useEditor((state) => state.doc);
   const slot = useEditor(selectedSlot);
   const storeSizes = useEditor((state) => state.sizes);
-  const selectedSlotId = useEditor((state) => state.selectedSlotId);
+  const selectedSlotIds = useEditor((state) => state.selectedSlotIds);
+  const selectedCaptionId = useEditor((state) => state.selectedCaptionId);
+  const caption = useEditor(selectedCaption);
   const tool = useEditor((state) => state.tool);
   const saveState = useEditor((state) => state.saveState);
   const saveError = useEditor((state) => state.saveError);
@@ -107,6 +116,7 @@ export function EditorPage() {
   const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null);
   const [guides, setGuides] = useState<{ x?: number | null; y?: number | null }>({});
   const [stageScale, setStageScale] = useState(0.25);
+  const [picking, setPicking] = useState(false);
 
   // ---- queue (review flow) ---------------------------------------------------------------------
   const queueFilter = useMemo(() => ({ status: "draft" as const }), []);
@@ -170,7 +180,7 @@ export function EditorPage() {
   // ---- shortcuts (§11.5) -----------------------------------------------------------------------
   const commands = useMemo<Command[]>(() => {
     const group = "commands.groups.editor";
-    const nudge = (dx: number, dy: number) => () => actions.nudgeCrop(dx, dy);
+    const nudge = (dx: number, dy: number) => () => actions.nudge(dx, dy);
     return [
       { id: "editor.undo", label: "editor.commands.undo", group, shortcut: "$mod+z", run: undo },
       {
@@ -293,6 +303,51 @@ export function EditorPage() {
         shortcut: "Escape",
         run: () => void navigate({ to: "/artworks" }),
       },
+      {
+        id: "editor.addSlot",
+        label: "editor.commands.addSlot",
+        group,
+        shortcut: "a",
+        run: () => setPicking(true),
+      },
+      {
+        id: "editor.deleteSelection",
+        label: "editor.commands.deleteSelection",
+        group,
+        shortcut: "Delete",
+        run: () => {
+          if (useEditor.getState().selectedCaptionId) actions.removeCaption();
+          else actions.removeSelectedSlots();
+        },
+      },
+      {
+        id: "editor.bringForward",
+        label: "editor.commands.bringForward",
+        group,
+        shortcut: "]",
+        run: () => actions.moveInOrder(1),
+      },
+      {
+        id: "editor.sendBackward",
+        label: "editor.commands.sendBackward",
+        group,
+        shortcut: "[",
+        run: () => actions.moveInOrder(-1),
+      },
+      {
+        id: "editor.addCaption",
+        label: "editor.commands.addCaption",
+        group,
+        shortcut: "t",
+        run: () => actions.addCaption(t("editor.captions.placeholder")),
+      },
+      {
+        id: "editor.selectAllSlots",
+        label: "editor.commands.selectAllSlots",
+        group,
+        shortcut: "$mod+a",
+        run: () => selectMany((useEditor.getState().doc?.slots ?? []).map((item) => item.id)),
+      },
       { id: "editor.nudgeLeft", label: "editor.commands.nudge", group, shortcut: "ArrowLeft", run: nudge(-1, 0) },
       { id: "editor.nudgeRight", label: "editor.commands.nudge", group, shortcut: "ArrowRight", run: nudge(1, 0) },
       { id: "editor.nudgeUp", label: "editor.commands.nudge", group, shortcut: "ArrowUp", run: nudge(0, -1) },
@@ -302,7 +357,7 @@ export function EditorPage() {
       { id: "editor.nudgeUp10", label: "editor.commands.nudge10", group, shortcut: "Shift+ArrowUp", run: nudge(0, -10) },
       { id: "editor.nudgeDown10", label: "editor.commands.nudge10", group, shortcut: "Shift+ArrowDown", run: nudge(0, 10) },
     ];
-  }, [navigate, step, validateAndNext]);
+  }, [navigate, step, t, validateAndNext]);
   useRegisterCommands(commands);
 
   if (artwork.error) {
@@ -378,10 +433,23 @@ export function EditorPage() {
             doc={doc}
             sizes={storeSizes}
             tool={tool}
-            selectedSlotId={selectedSlotId}
-            onSelect={select}
+            selectedSlotIds={selectedSlotIds}
+            selectedCaptionId={selectedCaptionId}
+            onSelectSlot={select}
+            onSelectCaption={selectCaption}
             onPanCrop={actions.panCrop}
             onZoomCrop={actions.zoomCrop}
+            onMoveSlots={actions.moveSlots}
+            onResizeSlot={actions.resizeSlot}
+            onRotateSlot={actions.setRotation}
+            onMoveCaption={actions.moveCaption}
+            onEditCaption={(id, text) => {
+              selectCaption(id);
+              actions.updateCaption({ text }, null);
+            }}
+            onDropPhoto={(photoId, slotId, at) =>
+              void (slotId ? actions.setSlotPhoto(slotId, photoId) : actions.addSlot(photoId, at))
+            }
             onPointer={setPointer}
             onScaleChange={setStageScale}
             guides={guides}
@@ -410,6 +478,14 @@ export function EditorPage() {
           {tab === "design" ? (
             <>
               {slot && <AlternativesPanel doc={doc} slot={slot} sizes={storeSizes} />}
+              <SlotsPanel
+                doc={doc}
+                selectedIds={selectedSlotIds}
+                onSelect={(slotId, additive) => select(slotId, additive ? "toggle" : "replace")}
+              />
+              {selectedSlotIds.length > 1 && (
+                <ArrangePanel selectedCount={selectedSlotIds.length} />
+              )}
               <FramingPanel
                 doc={doc}
                 slot={slot}
@@ -424,6 +500,7 @@ export function EditorPage() {
                 }
               />
               <StylePanel doc={doc} slot={slot} />
+              <CaptionsPanel doc={doc} caption={caption} onSelect={selectCaption} />
             </>
           ) : (
             <InfoSheet
@@ -453,6 +530,17 @@ export function EditorPage() {
           ))}
         </footer>
       )}
+
+      <PhotoPicker
+        open={picking}
+        onOpenChange={setPicking}
+        used={photoIds}
+        onPickEmpty={() => void actions.addSlot(null)}
+        onPick={(photoId) => {
+          void actions.addSlot(photoId);
+          setPicking(false);
+        }}
+      />
 
       {tv && (
         <TvPreview

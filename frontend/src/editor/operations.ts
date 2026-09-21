@@ -5,15 +5,32 @@
 // margins (native linking, §7.4), switching the lock repairs the slot (§7.3). Keeping them out of
 // components means the store can replay them for undo/redo and the rules stay testable.
 import {
+  CENTER,
   applyCropRatio,
   applyLock,
   panCrop as panCropSolver,
   resizeCrop,
+  resizeSlot,
   zoomCrop as zoomCropSolver,
+  type Anchor,
   type SlotState,
 } from "@/editor/core/constraints.ts";
 import type { Alternative } from "@/editor/core/alternatives.ts";
-import type { DocMargins, DocSlot, EditorDocument, Placement } from "@/editor/core/document.ts";
+import {
+  align,
+  distribute,
+  newSlotRect,
+  newSlotSize,
+  type Axis,
+  type Edge,
+} from "@/editor/core/arrange.ts";
+import type {
+  DocCaption,
+  DocMargins,
+  DocSlot,
+  EditorDocument,
+  Placement,
+} from "@/editor/core/document.ts";
 import {
   orientedSize,
   parseRatio,
@@ -23,10 +40,14 @@ import {
   type Size,
 } from "@/editor/core/geometry.ts";
 import {
+  availableArea,
   fill,
+  fillSlot,
   fitInMat,
+  fitSlot,
   largestCrop,
   marginsForSlot,
+  ratioLabel,
   type QualityLock,
   type SlotPlacement,
 } from "@/editor/core/placement.ts";
@@ -313,4 +334,354 @@ export function applyAlternative(
   slot.quality_lock = alternative.quality_lock;
   if (alternative.placement) doc.placement = alternative.placement;
   if (alternative.margins) doc.margins = { ...doc.margins, ...alternative.margins };
+}
+
+// ---- multi-slot compositions (Phase 6) ---------------------------------------------------------
+/** Hard limits of the document schema (`domain/document.py`). */
+export const MAX_SLOTS = 32;
+export const MAX_CAPTIONS = 32;
+/** Canvas coordinates and sizes are bounded (`MAX_COORD`): the editor never writes past them. */
+export const MAX_COORD = 20_000;
+
+const coord = (value: number) => Math.max(-MAX_COORD, Math.min(MAX_COORD, Math.round(value)));
+const length = (value: number) => Math.max(1, Math.min(MAX_COORD, Math.round(value)));
+
+/** Next free `s_N` / `c_N` id (document ids are `[A-Za-z0-9_-]{1,64}`). */
+function nextId(prefix: string, taken: readonly string[]): string {
+  let n = taken.length + 1;
+  while (taken.includes(`${prefix}${n}`)) n += 1;
+  return `${prefix}${n}`;
+}
+
+/** A composition needs `manual` placement (a document rule): switching keeps the geometry. */
+function goManual(doc: EditorDocument): void {
+  doc.placement = "manual";
+}
+
+/** Where new slots are dropped and where "fit in the area" works from. */
+function area(doc: EditorDocument): Rect {
+  return availableArea(doc.margins, { w: doc.canvas.width, h: doc.canvas.height });
+}
+
+/**
+ * Add a slot showing `photoId` (or an empty one). The document becomes `manual` as soon as it
+ * holds more than one slot; decorations are inherited from the front-most slot so a new photo
+ * matches the others.
+ */
+export function addSlot(
+  doc: EditorDocument,
+  photoId: string | null,
+  sizes: PhotoSizes,
+  at: { x: number; y: number } | null = null,
+): string | null {
+  if (doc.slots.length >= MAX_SLOTS) return null;
+  if (doc.slots.length >= 1) goManual(doc);
+  const source = photoId ? (sizes[photoId] ?? null) : null;
+  const target = area(doc);
+  const size = newSlotSize(target, source);
+  // A photo dropped on the canvas lands where it was dropped; the panel's "add" cascades.
+  const rect = at
+    ? { x: coord(at.x - size.w / 2), y: coord(at.y - size.h / 2), w: size.w, h: size.h }
+    : newSlotRect(
+        doc.slots.map((slot) => slot.rect),
+        target,
+        size,
+      );
+  const model = doc.slots[doc.slots.length - 1];
+  const placed = source
+    ? fitSlot(rect, source, "no_upscale")
+    : { rect, crop: { x: 0, y: 0, w: rect.w, h: rect.h }, quality_lock: "free" as QualityLock };
+  const slot: DocSlot = {
+    id: nextId("s_", doc.slots.map((s) => s.id)),
+    photo_id: photoId,
+    rect: placed.rect,
+    rotation: 0,
+    source: {
+      orient: { rotate: 0, flip_h: false },
+      crop: placed.crop,
+      crop_ratio: source ? "original" : "free",
+    },
+    quality_lock: placed.quality_lock,
+    bands: model ? model.bands.map((band) => ({ ...band })) : [],
+    shadow: model?.shadow ? { ...model.shadow } : null,
+  };
+  doc.slots.push(slot); // last = front-most (array order is the z-order)
+  return slot.id;
+}
+
+export function removeSlots(doc: EditorDocument, slotIds: readonly string[]): void {
+  doc.slots = doc.slots.filter((slot) => !slotIds.includes(slot.id));
+  if (doc.slots.length !== 1 && doc.placement !== "manual") goManual(doc);
+}
+
+/** Put a photo in a slot (or empty it with `null`), re-framing it the way the placement implies. */
+export function setSlotPhoto(
+  doc: EditorDocument,
+  slot: DocSlot,
+  photoId: string | null,
+  sizes: PhotoSizes,
+): void {
+  // A slot without a photo carries a `free` lock (nothing constrains a placeholder): a slot
+  // being filled takes the default lock back, and `fill_slot` relaxes it if the photo is small.
+  const wasEmpty = slot.photo_id === null;
+  slot.photo_id = photoId;
+  slot.source.orient = { rotate: 0, flip_h: false };
+  if (wasEmpty && photoId) slot.quality_lock = "no_upscale";
+  const source = photoId ? (sizes[photoId] ?? null) : null;
+  if (!source) {
+    slot.source.crop = { x: 0, y: 0, w: slot.rect.w, h: slot.rect.h };
+    slot.source.crop_ratio = "free";
+    slot.quality_lock = "free";
+    return;
+  }
+  if (doc.placement !== "manual") {
+    // Single-slot artwork: the whole photo, re-placed inside the margins (§7.4).
+    slot.source.crop = { x: 0, y: 0, w: source.w, h: source.h };
+    slot.source.crop_ratio = "original";
+    replace(doc, sizes);
+    return;
+  }
+  // Composition: the slot keeps its shape, the photo is cropped to it.
+  write(slot, fillSlot(slot.rect, source, slot.quality_lock));
+  slot.source.crop_ratio = ratioLabel(slot.rect.w, slot.rect.h);
+}
+
+/** Exchange the photos of two slots; each one is re-cropped to the shape it lands in. */
+export function swapPhotos(
+  doc: EditorDocument,
+  firstId: string,
+  secondId: string,
+  sizes: PhotoSizes,
+): void {
+  const first = doc.slots.find((slot) => slot.id === firstId);
+  const second = doc.slots.find((slot) => slot.id === secondId);
+  if (!first || !second || first === second) return;
+  const photo = first.photo_id;
+  const orient = { ...first.source.orient };
+  setSlotPhoto(doc, first, second.photo_id, sizes);
+  first.source.orient = { ...second.source.orient };
+  setSlotPhoto(doc, second, photo, sizes);
+  second.source.orient = orient;
+}
+
+// ---- free-form geometry (manual placement) -----------------------------------------------------
+/**
+ * `size` placed so that the anchor point of `rect` does not move — in the slot's own frame, so a
+ * rotated slot pivots around the handle the user is holding.
+ */
+function anchored(rect: Rect, size: Size, anchor: Anchor, rotation: number): Rect {
+  const radians = (rotation * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const rotate = (x: number, y: number) => ({ x: x * cos - y * sin, y: x * sin + y * cos });
+  const center = { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 };
+  const before = rotate((anchor[0] - 0.5) * rect.w, (anchor[1] - 0.5) * rect.h);
+  const after = rotate((anchor[0] - 0.5) * size.w, (anchor[1] - 0.5) * size.h);
+  return {
+    x: coord(center.x + before.x - after.x - size.w / 2),
+    y: coord(center.y + before.y - after.y - size.h / 2),
+    w: size.w,
+    h: size.h,
+  };
+}
+
+export function moveSlot(slot: DocSlot, dx: number, dy: number): void {
+  slot.rect = { ...slot.rect, x: coord(slot.rect.x + dx), y: coord(slot.rect.y + dy) };
+}
+
+export function setSlotPosition(slot: DocSlot, x: number, y: number): void {
+  slot.rect = { ...slot.rect, x: coord(x), y: coord(y) };
+}
+
+/**
+ * Resize a slot (transform handles or the size fields). The constraint solver decides what the
+ * crop does (§7.3) and `anchor` is the point of the current rect the drag keeps fixed, so the
+ * opposite edge is the one that follows the pointer.
+ */
+export function resizeSlotTo(
+  doc: EditorDocument,
+  slot: DocSlot,
+  requested: Size,
+  anchor: Anchor,
+  sizes: PhotoSizes,
+): void {
+  const size = { w: length(requested.w), h: length(requested.h) };
+  const before = slot.rect;
+  const source = slotSource(slot, sizes);
+  if (!source) {
+    // Empty slot: nothing to keep consistent, the crop is only a placeholder of the same shape.
+    slot.rect = { ...anchored(before, size, anchor, slot.rotation) };
+    slot.source.crop = { x: 0, y: 0, w: slot.rect.w, h: slot.rect.h };
+    return;
+  }
+  const placed = resizeSlot(state(slot), size, source, slot.quality_lock, anchor);
+  write(slot, placed);
+  // The solver anchors an axis-aligned rect; a rotated slot must keep its *rotated* anchor point
+  // where it is, or dragging a corner walks the slot across the canvas.
+  slot.rect = anchored(before, { w: placed.rect.w, h: placed.rect.h }, anchor, slot.rotation);
+  if (doc.placement !== "manual") marginsFollowSlot(doc, slot);
+}
+
+/** Slot shrunk to the photo's shape inside its current rect ("fit slot to photo"). */
+export function fitSlotToPhoto(doc: EditorDocument, slot: DocSlot, sizes: PhotoSizes): void {
+  const source = slotSource(slot, sizes);
+  if (!source) return;
+  write(slot, fitSlot(slot.rect, source, slot.quality_lock));
+  slot.source.crop_ratio = "original";
+  if (doc.placement !== "manual") marginsFollowSlot(doc, slot);
+}
+
+/** Photo cropped to the slot's shape ("fill slot"). */
+export function fillSlotWithPhoto(doc: EditorDocument, slot: DocSlot, sizes: PhotoSizes): void {
+  const source = slotSource(slot, sizes);
+  if (!source) return;
+  write(slot, fillSlot(slot.rect, source, slot.quality_lock));
+  slot.source.crop_ratio = ratioLabel(slot.rect.w, slot.rect.h);
+  if (doc.placement !== "manual") marginsFollowSlot(doc, slot);
+}
+
+// ---- z-order (array order, first = back-most) --------------------------------------------------
+export function moveSlotInOrder(doc: EditorDocument, slotId: string, delta: number): void {
+  const from = doc.slots.findIndex((slot) => slot.id === slotId);
+  if (from < 0) return;
+  const to = Math.max(0, Math.min(doc.slots.length - 1, from + delta));
+  if (to === from) return;
+  const [slot] = doc.slots.splice(from, 1);
+  if (slot) doc.slots.splice(to, 0, slot);
+}
+
+/** List drag & drop: move the slot at `from` to index `to` (both in document order). */
+export function reorderSlots(doc: EditorDocument, from: number, to: number): void {
+  if (from === to || from < 0 || from >= doc.slots.length) return;
+  const [slot] = doc.slots.splice(from, 1);
+  if (slot) doc.slots.splice(Math.max(0, Math.min(doc.slots.length, to)), 0, slot);
+}
+
+// ---- arranging a selection ---------------------------------------------------------------------
+function selectedSlots(doc: EditorDocument, ids: readonly string[]): DocSlot[] {
+  return doc.slots.filter((slot) => ids.includes(slot.id));
+}
+
+export function alignSlots(doc: EditorDocument, ids: readonly string[], edge: Edge): void {
+  const slots = selectedSlots(doc, ids);
+  if (slots.length < 2) return;
+  const rects = align(slots.map((slot) => slot.rect), edge);
+  slots.forEach((slot, index) => {
+    const rect = rects[index];
+    if (rect) slot.rect = { ...slot.rect, x: coord(rect.x), y: coord(rect.y) };
+  });
+}
+
+export function distributeSlots(doc: EditorDocument, ids: readonly string[], axis: Axis): void {
+  const slots = selectedSlots(doc, ids);
+  if (slots.length < 3) return;
+  const rects = distribute(slots.map((slot) => slot.rect), axis);
+  slots.forEach((slot, index) => {
+    const rect = rects[index];
+    if (rect) slot.rect = { ...slot.rect, x: coord(rect.x), y: coord(rect.y) };
+  });
+}
+
+/**
+ * Give every selected slot the size of the primary one (the last picked).
+ *
+ * A slot's shape is tied to its crop, so most of them cannot take the reference size exactly:
+ * each one takes the largest size *inside* the reference box instead. Asking the solver for the
+ * reference size directly would use its cover semantics (§7.3) and make slots **larger** than
+ * the reference, which is the opposite of what the command promises.
+ */
+export function sameSizeSlots(
+  doc: EditorDocument,
+  ids: readonly string[],
+  primaryId: string,
+  sizes: PhotoSizes,
+): void {
+  const slots = selectedSlots(doc, ids);
+  const model = slots.find((slot) => slot.id === primaryId);
+  if (slots.length < 2 || !model) return;
+  const box = { w: model.rect.w, h: model.rect.h };
+  for (const slot of slots) {
+    if (slot === model) continue;
+    const scale = Math.min(box.w / slot.rect.w, box.h / slot.rect.h);
+    resizeSlotTo(
+      doc,
+      slot,
+      { w: Math.max(1, slot.rect.w * scale), h: Math.max(1, slot.rect.h * scale) },
+      CENTER,
+      sizes,
+    );
+  }
+}
+
+/** Copy the bands, the shadow and the quality lock of one slot onto the others. */
+export function applyDecorations(
+  doc: EditorDocument,
+  sourceId: string,
+  ids: readonly string[],
+  sizes: PhotoSizes,
+): void {
+  const model = doc.slots.find((slot) => slot.id === sourceId);
+  if (!model) return;
+  for (const slot of selectedSlots(doc, ids)) {
+    if (slot === model) continue;
+    slot.bands = model.bands.map((band) => ({ ...band }));
+    slot.shadow = model.shadow ? { ...model.shadow } : null;
+    setLock(doc, slot, model.quality_lock, sizes);
+  }
+}
+
+// ---- captions ----------------------------------------------------------------------------------
+export const CAPTION_DEFAULTS = {
+  font: "cormorant-garamond",
+  weight: 500,
+  size: 64,
+  color: "#3A3A3A",
+  letter_spacing: 0.02,
+  anchor: "middle" as const,
+  rotation: 0,
+};
+
+/** New caption, centred in the bottom margin of the canvas (where a mount caption goes). */
+export function addCaption(
+  doc: EditorDocument,
+  text: string,
+  defaults: Partial<DocCaption> = {},
+): string | null {
+  if (doc.captions.length >= MAX_CAPTIONS) return null;
+  const bottom = doc.margins.bottom;
+  const caption: DocCaption = {
+    ...CAPTION_DEFAULTS,
+    ...defaults,
+    id: nextId("c_", doc.captions.map((c) => c.id)),
+    text,
+    x: Math.round(doc.canvas.width / 2),
+    y: doc.canvas.height - Math.round(bottom > 120 ? bottom / 2 : 96),
+  };
+  doc.captions.push(caption);
+  return caption.id;
+}
+
+export function updateCaption(
+  doc: EditorDocument,
+  captionId: string,
+  patch: Partial<DocCaption>,
+): void {
+  const caption = doc.captions.find((item) => item.id === captionId);
+  if (!caption) return;
+  Object.assign(caption, patch);
+  caption.x = coord(caption.x);
+  caption.y = coord(caption.y);
+  caption.size = Math.max(4, Math.min(1000, Math.round(caption.size)));
+  caption.rotation = Math.round(Math.max(-180, Math.min(180, caption.rotation)) * 10) / 10;
+}
+
+export function moveCaption(doc: EditorDocument, captionId: string, dx: number, dy: number): void {
+  const caption = doc.captions.find((item) => item.id === captionId);
+  if (!caption) return;
+  caption.x = coord(caption.x + dx);
+  caption.y = coord(caption.y + dy);
+}
+
+export function removeCaption(doc: EditorDocument, captionId: string): void {
+  doc.captions = doc.captions.filter((caption) => caption.id !== captionId);
 }

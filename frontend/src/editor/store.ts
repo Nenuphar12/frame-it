@@ -45,7 +45,10 @@ interface EditorState {
   saved: EditorDocument | null;
   version: number;
   sizes: PhotoSizes;
-  selectedSlotId: string | null;
+  /** Selected slots, in the order they were picked: the last one is the *primary* (§11.2). */
+  selectedSlotIds: string[];
+  /** Captions and slots are selected exclusively (the panels show one or the other). */
+  selectedCaptionId: string | null;
   tool: Tool;
   undo: Step[];
   redo: Step[];
@@ -62,7 +65,8 @@ const initial: EditorState = {
   saved: null,
   version: 0,
   sizes: {},
-  selectedSlotId: null,
+  selectedSlotIds: [],
+  selectedCaptionId: null,
   tool: "select",
   undo: [],
   redo: [],
@@ -97,9 +101,30 @@ export function openArtwork(artwork: Artwork, sizes: PhotoSizes): void {
     saved: doc,
     version: artwork.document_version,
     sizes,
-    selectedSlotId: doc.slots[0]?.id ?? null,
+    selectedSlotIds: doc.slots[0] ? [doc.slots[0].id] : [],
   });
   void createOpenedSnapshot(artwork.id);
+}
+
+/**
+ * Make sure a photo's pixel size is known before an operation needs it.
+ *
+ * The editor only knows the sizes of the photos *already* in the document (`openArtwork`), so a
+ * photo picked for a new slot has none: without this, the slot is built as if it were empty (the
+ * crop takes the slot's shape instead of the photo's).
+ */
+export async function ensurePhotoSize(photoId: string): Promise<void> {
+  if (useEditor.getState().sizes[photoId]) return;
+  try {
+    const photo = await unwrap(
+      api.GET("/api/v1/photos/{photo_id}", { params: { path: { photo_id: photoId } } }),
+    );
+    useEditor.setState((state) => ({
+      sizes: { ...state.sizes, [photo.id]: { w: photo.width, h: photo.height } },
+    }));
+  } catch {
+    // Unknown photo: the operation falls back to an empty slot, which the user can still fill.
+  }
 }
 
 export function closeEditor(): void {
@@ -192,8 +217,31 @@ export function redo(): void {
   scheduleSave();
 }
 
-export function select(slotId: string | null): void {
-  useEditor.setState({ selectedSlotId: slotId });
+/**
+ * Select slots. `toggle` adds or removes one (Shift/Ctrl-click) — the multi-selection the
+ * arrange operations work on; the last id stays the primary one the property panels edit.
+ */
+export function select(slotId: string | null, mode: "replace" | "toggle" = "replace"): void {
+  const current = useEditor.getState().selectedSlotIds;
+  if (slotId === null) {
+    useEditor.setState({ selectedSlotIds: [], selectedCaptionId: null });
+    return;
+  }
+  const next =
+    mode === "toggle"
+      ? current.includes(slotId)
+        ? current.filter((id) => id !== slotId)
+        : [...current, slotId]
+      : [slotId];
+  useEditor.setState({ selectedSlotIds: next, selectedCaptionId: null });
+}
+
+export function selectMany(slotIds: string[]): void {
+  useEditor.setState({ selectedSlotIds: slotIds, selectedCaptionId: null });
+}
+
+export function selectCaption(captionId: string | null): void {
+  useEditor.setState({ selectedCaptionId: captionId, selectedSlotIds: [] });
 }
 
 export function setTool(tool: Tool): void {
@@ -302,8 +350,15 @@ export function resolveConflict(choice: "mine" | "theirs"): void {
 }
 
 // ---- selectors ---------------------------------------------------------------------------------
+/** The slot the property panels edit: the last one picked. */
+export const primarySlotId = (state: EditorState) =>
+  state.selectedSlotIds[state.selectedSlotIds.length - 1] ?? null;
+
 export const selectedSlot = (state: EditorState) =>
-  state.doc?.slots.find((slot) => slot.id === state.selectedSlotId) ?? null;
+  state.doc?.slots.find((slot) => slot.id === primarySlotId(state)) ?? null;
+
+export const selectedCaption = (state: EditorState) =>
+  state.doc?.captions.find((caption) => caption.id === state.selectedCaptionId) ?? null;
 
 export const canUndo = (state: EditorState) => state.undo.length > 0;
 export const canRedo = (state: EditorState) => state.redo.length > 0;
