@@ -74,6 +74,8 @@ with a desktop editor and a phone upload companion on the same LAN.
 | **Placement** | How a single-slot artwork is laid out: `fit_in_mat` (default) · `fill` · `manual`. |
 | **Frame style** | Reusable template: mat, margins, slot decorations, caption defaults. |
 | **Layout** | Reusable template: slot geometry, locks, caption positions. |
+| **Recipe** | A named split tree (rows/columns of cells) that a solver turns into slot rects — the parametric replacement for a layout's absolute rects (Phase 7, `docs/simple-editor.md`). |
+| **Composition** | The document block holding a recipe id plus its parameters (balance, outer margins, gutters, format, border, caption). Source of truth for the slots it derives. |
 | **Inbox** | Photos uploaded but not yet processed into artworks (or dismissed). |
 | **Proxy** | Downsized sRGB JPEG of a photo (long edge 2560) used by the editor preview. |
 | **Render hash** | Hash of everything that influences a render; keys the render cache. |
@@ -333,7 +335,8 @@ CLI (`the_frame_v2`): `serve`, `doctor`, `setup-code`, `export`, `import`, `serv
 | Review flow | Editor in "queue mode": filmstrip of queued items, `Enter` = validate & next, `S` = skip, `J/K` prev/next, progress "12 / 40". |
 | Artworks / Favorites / Collection | Virtualized grid of render thumbs with badges (tier, favorite, draft, incomplete, outdated template); bulk actions (tag, add to collection, favorite, delete, export). Collection header: cover, description, dates, include-nested toggle, manual reorder mode. |
 | Photos | Virtualized grid; detail drawer (EXIF, map-less place, usage list, tags). |
-| Editor | Canvas center (fit to viewport, zoom/pan), left: slots list (z-order drag, add slot, photo picker), right: properties (placement, margins, lock, crop ratio, orient, rotation, bands, shadow, mat color/texture, captions), top: quality summary + undo/redo + TV preview + loupe toggle, bottom: filmstrip. Alternatives panel pops when a slot becomes upscaled. |
+| Editor (Simple, default) | Canvas center, right: one column — layout picker (schemas), Balance, format chips, Outer/Gap sliders, photos (swap, reframe, zoom), background & border, caption. Top: mode switch + quality summary + undo/redo + TV preview + loupe. `docs/simple-editor.md`. |
+| Editor (Advanced ᴮᴱᵀᴬ) | Same page behind the mode switch, with a warning strip: left slots list (z-order drag, add slot, photo picker), right properties (placement, margins, lock, crop ratio, orient, rotation, bands, shadow, mat color/texture, captions), bottom filmstrip. Free-form edits detach the artwork from its layout. Alternatives panel pops when a slot becomes upscaled. |
 | Templates | Tabs Frame styles / Layouts; cards with preview on a sample photo; edit, duplicate, delete, export/import JSON; usage + push update with before/after grid. |
 | Trash | Items with days remaining; restore (with batch), delete permanently, empty. |
 | Devices | Pair device (role, QR + URL), list, rename, role, revoke. |
@@ -452,8 +455,8 @@ Each task lists **deliverables** and **acceptance criteria (AC)**. A phase ends 
 green, docs + **AGENTS.md updated** (status section), short demo note in `docs/progress.md`. Driving the AC in a
 real browser is **expected but not blocking** — see §13.6.
 
-Dependency graph: `0 → 1 → 2 → 3 → 4 → 5 → 6 → 7`; `8` can start after `4` (parallel with 5–7);
-`9` after `7` and `8`; `10` last.
+Dependency graph: `0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8`; `9` can start after `4` (parallel with 5–8);
+`10` after `8` and `9`; `11` last.
 
 ### Phase 0 — Research spikes (de-risking)
 
@@ -570,19 +573,41 @@ gaps**, `Alt` to disable), multi-selection (Shift-click) with align/distribute/s
 canvas, drag to move) and the shortcuts `a`, `t`, `[`, `]`, `Delete`, `$mod+a`. Verified in a browser over CDP
 (see `docs/progress.md` for what was exercised and the three bugs it found).
 
-### Phase 7 — Templates
+### Phase 7 — Simple editor & parametric layouts
 
-1. Frame styles & layouts CRUD UI and API, "Save as style / layout" from an artwork, cards with sample previews.
-2. Apply to artwork (copy + origin/revision), outdated indicator.
-3. Usage & push update: preview grid (before/after), `pre_template_update` snapshots, layout update only for matching
-   slot count (crops recomputed around previous centers).
-4. Batch create from inbox with style + layout (multi-slot layouts consume photos in selection order), then review flow.
-5. Template file export/import (`.tfstyle.json`, `.tflayout.json`).
+Full spec: `docs/simple-editor.md` (decisions taken with the user on 2026-09-21).
+
+1. `composition` block in the artwork document (optional, schema stays v1) + the pure solver
+   `domain/composition.py` ↔ `editor/core/composition.ts`, conformance fixtures, recipe catalogue
+   (`assets/presets/recipes.json`, rich for 2–4 photos, one default for 5–6) and `GET /recipes`.
+2. Server authority: `PUT document` re-solves and overwrites slot rects (crops re-fitted around their previous
+   centre); `POST /artworks` takes a composition instead of a layout id.
+3. Simple editor panel: layout picker drawn by the solver itself, `Balance`, format chips
+   (`Original` for a single photo, `Fill`, ratios, custom), `Outer`/`Gap` sliders expandable to four,
+   reframe + zoom inside a cell, photo swap, background & border, caption above/below.
+4. `[Simple] [Advanced ᴮᴱᵀᴬ]` switch on the editor page, Simple by default, warning strip on the beta side;
+   a free-form edit sets `composition.detached` and Simple offers a confirmed, undoable **Re-apply layout**.
+
+**AC**: a 3-photo hero composition from an empty draft in under 30 s using only the picker and the two sliders;
+switching format to 3:2 keeps every reframe; the server-stored rects equal the ones the editor previewed;
+`make check` green with the new conformance cases.
+
+### Phase 8 — Templates
+
+1. Frame styles CRUD UI and API, "Save as style" from an artwork, cards with sample previews.
+2. "Save as layout" saves a **recipe + parameters** (Phase 7's composition), not absolute rects; the layout
+   half of the pre-Phase-7 template code is rewritten around it.
+3. Apply to artwork (copy + origin/revision), outdated indicator.
+4. Usage & push update: preview grid (before/after), `pre_template_update` snapshots, layout update only for
+   matching slot count (crops recomputed around previous centers).
+5. Batch create from inbox with style + layout (multi-slot layouts consume photos in selection order), then
+   review flow. `settings.artwork_defaults` becomes style + recipe + format.
+6. Template file export/import (`.tfstyle.json`, `.tflayout.json`).
 
 **AC**: editing a style never alters artworks until push update; push update is undoable via snapshot; batch create
 of 40 photos produces 40 drafts in the review queue.
 
-### Phase 8 — Organization
+### Phase 9 — Organization
 
 1. Tags: autocomplete, create inline, tag manager (rename, merge, color, counts).
 2. Favorites everywhere (grid, editor, phone upload), Favorites view.
@@ -597,7 +622,7 @@ of 40 photos produces 40 drafts in the review queue.
 smart collections update live; deleting a used photo lists affected artworks and both cascade options behave;
 purge frees disk space.
 
-### Phase 9 — Export / Import
+### Phase 10 — Export / Import
 
 1. Archive writer (full/partial, optional renders) as streamed job + download; CLI `export`.
 2. Archive reader: validation & safety, migrations, staging.
@@ -609,7 +634,7 @@ purge frees disk space.
 renders; partial import into a non-empty library classifies new/identical/conflicting correctly and all three
 policies work; malicious archive fixtures are rejected.
 
-### Phase 10 — Hardening & polish
+### Phase 11 — Hardening & polish
 
 1. Performance pass against §8.5 on seeded library; memory profiling of renders.
 2. Accessibility pass (focus management, labels, contrast in both themes).
@@ -665,12 +690,13 @@ artwork → collection → export) completes without reading code.
 | Preview ≠ render (shadows, text) | Integer geometry, identical texture formula, spike S3, server-rendered TV preview & loupe, golden tests |
 | Memory spikes rendering many 48 MP sources | Sequential slot processing, libvips streaming, render_workers=1, LRU of 2 decoded images |
 | Localhost trust abused via browser | Host allowlist, Origin + custom header, SameSite=Strict, no CORS |
-| Scope size (10 phases) | Strict phase gating; phases 8 and 5–7 parallelizable; each phase shippable |
+| Scope size (11 phases) | Strict phase gating; phases 9 and 5–8 parallelizable; each phase shippable |
 | SQLite concurrency with job workers | WAL, short transactions, single writer lock around job state updates |
 
 ### Open questions (to decide at the indicated phase)
 
-- Final project name and license (Phase 10).
+- Final project name and license (Phase 11).
+- Caption band factor (1.5 × size) reserved by the composition solver (Phase 7, `docs/simple-editor.md` §10).
 - ~~Exact bundled fonts and texture set (Phase 4)~~ — decided in ADR-0008.
 - ~~Color-picker presets list (Phase 5)~~ — curated mat colours shipped in `services/colors.py` (`CURATED`,
   served by `GET /presets/colors`): museum white, warm off-white, linen, stone, charcoal, black.

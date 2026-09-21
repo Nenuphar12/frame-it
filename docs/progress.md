@@ -63,8 +63,9 @@ artworks keep their document).
 native 3840×2160 photo renders bit-identical to its decode; E2E on a copy of the dev library with real phone
 photos (create 6 artworks, polaroid pile via API, viewer shortcuts, live updates).
 
-**Known limits / follow-ups**: collections can only be listed (creation in Phase 8), so the phone collection
-picker stays empty; trashed artworks cannot be restored before Phase 8; no ESLint rule for literal JSX strings
+**Known limits / follow-ups**: collections can only be listed (creation in Phase 9 — renumbered when the
+simple editor became Phase 7), so the phone collection picker stays empty; trashed artworks cannot be
+restored before Phase 9; no ESLint rule for literal JSX strings
 yet; Docker image not rebuilt/tested with the fonts (Pango/fontconfig in the slim image); collage renders hold
 all decoded originals in memory.
 

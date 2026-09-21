@@ -15,7 +15,10 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
   undo/autosave, review queue) and **multi-photo compositions** (slots panel with z-order, photo picker,
   free-form move/resize/rotate with smart guides, multi-selection + align/distribute, caption editing).
 - **Phase 6 (2026-09-21)**: `make check` green and the composition tools driven in a browser over CDP
-  (`docs/progress.md`). **Next: Phase 7 (templates), `docs/PLAN.md` §14.**
+  (`docs/progress.md`).
+- **Next: Phase 7 — simple editor & parametric layouts** (`docs/simple-editor.md`, `docs/PLAN.md` §14):
+  a `composition` block drives the slots from a recipe + margin/format parameters, and the manual Phase 6
+  tools become an "Advanced (beta)" mode behind a switch. Templates moved to Phase 8.
 - Verified by the user on real hardware (2026-09-17): Android uploads (both pickers keep full quality but
   Android zeroes GPS → no place; see `docs/research/phone-uploads.md`), Docker image build/run/persistence.
 
@@ -133,6 +136,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 ## Where specs live
 
 `docs/PLAN.md` (scope, phases, DoD) · `docs/data-model.md` · `docs/localsend.md` · `docs/artwork-document.md` ·
+`docs/simple-editor.md` (Phase 7: compositions, recipes, the solver) ·
 `docs/geometry-and-quality.md` · `docs/rendering-spec.md` · `docs/security.md` · `docs/archive-format.md` ·
 `docs/schemas/` (generated) · `docs/adr/` · `docs/research/` · `NOTICE.md` (asset licenses)
 
