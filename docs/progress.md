@@ -261,7 +261,9 @@ it; `Alt` moved the raw 35 px instead). The server rendered every state (`render
 idle (the SSE stream), so `executeScript`/`--dump-dom`/`--virtual-time-budget` all time out. The session used a
 throwaway CDP driver instead (headless `chromium --remote-debugging-port` + `Runtime.evaluate`), which works
 well; two harness gotchas are now in AGENTS.md (dispatch mouse events on the `<canvas>`, give synthetic
-`KeyboardEvent`s a `code`).
+`KeyboardEvent`s a `code`). Because that tooling is not dependable, browser verification is now written down as
+a **soft** requirement (`docs/PLAN.md` §13.6 and DoD item 5): still the preferred evidence for UI work, but a
+phase is no longer held back by it — what could not be driven is recorded here instead.
 
 **Not done / follow-ups**: no marquee (rubber-band) selection — slots are picked by click and Shift-click; the
 photo picker has search but no tag/date filters; a dropped photo may land partly outside the canvas (allowed by

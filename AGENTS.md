@@ -175,9 +175,13 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
   lineHeight / 2` and draws `alphabetic`), and its font shorthand includes the weight: caption placement and
   measurement go through `editor/canvas/fonts.ts`, which replicates both — the renderer's baseline rule does
   **not** apply on the canvas (`docs/research/render-parity.md`).
-- The Chrome-extension harness cannot screenshot this app reliably: captures time out while the loupe image
-  is on screen, and a Konva canvas can come back **black** although its pixels are correct. Read the canvas
-  with `getImageData` (or the DOM) before believing a screenshot.
+- **Verifying in a browser is expected but never blocking** (`docs/PLAN.md` §13.6): the Chrome-extension
+  harness can no longer drive this app (the SSE stream keeps the page from ever going idle, so `executeScript`,
+  screenshots and `--dump-dom` all time out). CDP works: headless `chromium --remote-debugging-port` +
+  `Runtime.evaluate` against the production build served by the backend on trusted localhost. Check the saved
+  document through the API rather than screenshots — a Konva canvas can capture **black** although its pixels
+  are correct. No harness ⇒ verify what you can (`make check`, conformance, API, render endpoints) and say in
+  `docs/progress.md` what was not driven in a browser.
 - Under `fit_in_mat` + `native` the margins **are** the crop: `fit_in_mat` re-derives the crop from the
   available area on every margin edit (both directions), and a crop edit re-derives the margins. Deriving it
   only when the crop overflowed made margins one-way (the photo never grew back — `docs/geometry-and-quality.md`
@@ -197,15 +201,11 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 - Konva binds its mouse listeners **below** the container div, so a synthetic event must be dispatched on the
   `<canvas>` (or Konva's content div), never on the outer `[data-tool]` element — and tinykeys drops any
   `KeyboardEvent` without a `code`, so synthetic shortcuts need `{ key, code }`. Both cost an E2E session.
+  The dev server is not the place for this: over the Vite proxy the app is not trusted as localhost (below).
 - A slot without a photo is a placeholder: `quality_lock = free` and a crop the size of its rect. Filling it
   takes `no_upscale` back, or an emptied slot would silently allow upscaling afterwards.
 - "Same size" fits each slot *inside* the reference box: the solver's `resize_slot` has **cover** semantics
   (§7.3), so asking for the reference size directly makes the other slots bigger than it.
-- Chrome-extension driving of this app times out (the SSE stream never lets the page go idle, and
-  `--dump-dom` / `--virtual-time-budget` hang for the same reason). Drive it over CDP instead: a headless
-  `chromium --remote-debugging-port` plus `Runtime.evaluate` works, and the production build served by the
-  backend on trusted localhost needs no setup code (`scripts/` has no helper; the Phase 6 session used a
-  throwaway one).
 - Dev over the Vite proxy is **not** trusted as localhost (`xfwd` adds `X-Forwarded-For`, invariant 5): the
   first load asks for the setup code printed in the server log. Point Vite at another backend with
   `THE_FRAME_V2_BACKEND=http://127.0.0.1:<port>`.

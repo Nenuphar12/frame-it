@@ -422,12 +422,35 @@ max channel diff ≤ 8 (text regions ≤ 32). `make golden-update` regenerates w
 Generated synthetically (scripts) where possible; real-device samples (Android JPEG / Ultra HDR,
 AVIF) are small, owned by the user and licensed CC0 in-repo.
 
+### 13.6 Manual verification in a browser (soft requirement)
+
+There is no frontend test suite (§13), so UI work is verified by hand. Phases 1–6 were each driven in a real
+browser and that is still the **preferred** evidence — it found bugs no backend test could (render loops, a
+frozen tab, snapping that swallowed typed values, a caption drawn 14 px too high).
+
+It is **not a blocking requirement**, because the tooling is not dependable:
+
+- The Chrome-extension harness can no longer drive this app at all: the SSE stream (`/api/v1/events`) means the
+  page never goes idle, so `executeScript`, screenshots and `get_page_text` time out — and so do
+  `chromium --dump-dom` and `--virtual-time-budget`, for the same reason.
+- What does work (2026-09-21) is CDP: a headless `chromium --remote-debugging-port=<port>` plus
+  `Runtime.evaluate`, against the **production build served by the backend on trusted localhost** (no setup
+  code). Synthetic events need care: mouse events go to the `<canvas>` (Konva listens below the container div)
+  and a `KeyboardEvent` needs a `code` or tinykeys drops it.
+
+So: drive the AC in a browser when a harness is available, and prefer checking the *saved document* through the
+API over screenshots (a Konva canvas can capture black although its pixels are correct). When it is not
+available, verify what can be verified without one — `make check`, the pure core through the conformance
+fixtures, the API and the render endpoints — and **write in `docs/progress.md` what was not driven in a
+browser**, so the gap is known rather than assumed away. A phase is not held back by the harness.
+
 ---
 
 ## 14. Phases & milestones
 
 Each task lists **deliverables** and **acceptance criteria (AC)**. A phase ends with: all AC met, `make check`
-green, docs + **AGENTS.md updated** (status section), short demo note in `docs/progress.md`.
+green, docs + **AGENTS.md updated** (status section), short demo note in `docs/progress.md`. Driving the AC in a
+real browser is **expected but not blocking** — see §13.6.
 
 Dependency graph: `0 → 1 → 2 → 3 → 4 → 5 → 6 → 7`; `8` can start after `4` (parallel with 5–7);
 `9` after `7` and `8`; `10` last.
@@ -624,8 +647,10 @@ artwork → collection → export) completes without reading code.
 2. Backend tests added/updated; `make check` green.
 3. API types regenerated if the API changed; conformance fixtures updated if geometry changed.
 4. User-facing strings in i18n files; keyboard shortcut + palette command for new actions.
-5. **`AGENTS.md` updated** (commands, repo map, invariants, gotchas, phase status) when anything it describes changed.
-6. No TODO without an issue/plan reference.
+5. UI changes driven in a browser **when a harness is available** (§13.6 — soft, never blocking); when none is,
+   what was not driven is written down in `docs/progress.md` instead of being assumed to work.
+6. **`AGENTS.md` updated** (commands, repo map, invariants, gotchas, phase status) when anything it describes changed.
+7. No TODO without an issue/plan reference.
 
 ---
 
