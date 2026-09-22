@@ -4,6 +4,8 @@
 // `fit_in_mat` artwork re-places the slot, editing the crop of a `native` slot re-computes the
 // margins (native linking, §7.4), switching the lock repairs the slot (§7.3). Keeping them out of
 // components means the store can replay them for undo/redo and the rules stay testable.
+import { current } from "immer";
+
 import {
   CENTER,
   applyCropRatio,
@@ -16,6 +18,7 @@ import {
   type SlotState,
 } from "@/editor/core/constraints.ts";
 import type { Alternative } from "@/editor/core/alternatives.ts";
+import { applyComposition, type Composition, type Recipe } from "@/editor/core/composition.ts";
 import {
   align,
   distribute,
@@ -157,11 +160,7 @@ function clampMargins(margins: DocMargins, doc: EditorDocument): DocMargins {
   return { ...margins, top, right, bottom, left };
 }
 
-export function setPlacement(
-  doc: EditorDocument,
-  placement: Placement,
-  sizes: PhotoSizes,
-): void {
+export function setPlacement(doc: EditorDocument, placement: Placement, sizes: PhotoSizes): void {
   if (doc.slots.length !== 1) return; // multi-slot artworks are always `manual`
   doc.placement = placement;
   if (placement === "manual") return; // switching to manual keeps the current geometry (§7.4)
@@ -201,7 +200,10 @@ export function setCropRatio(
   const source = slotSource(slot, sizes);
   if (!source) return;
   slot.source.crop_ratio = cropRatio;
-  write(slot, applyCropRatio(state(slot), parseRatio(cropRatio, source), source, slot.quality_lock));
+  write(
+    slot,
+    applyCropRatio(state(slot), parseRatio(cropRatio, source), source, slot.quality_lock),
+  );
   afterCropChange(doc, slot, sizes);
 }
 
@@ -221,8 +223,15 @@ export function setOrient(
   const turned = previous.rotate !== orient.rotate && (previous.rotate + orient.rotate) % 180 !== 0;
   if (turned) {
     // The crop swapped width and height: the slot must follow it.
-    write(slot, resizeCrop({ rect: slot.rect, crop: slot.source.crop }, slot.source.crop, source,
-      slot.quality_lock === "native" ? "native" : "free"));
+    write(
+      slot,
+      resizeCrop(
+        { rect: slot.rect, crop: slot.source.crop },
+        slot.source.crop,
+        source,
+        slot.quality_lock === "native" ? "native" : "free",
+      ),
+    );
     slot.quality_lock = slot.quality_lock === "native" ? "native" : slot.quality_lock;
   }
   afterCropChange(doc, slot, sizes);
@@ -230,8 +239,12 @@ export function setOrient(
 
 export function rotateSource(doc: EditorDocument, slot: DocSlot, turns: number, sizes: PhotoSizes) {
   const rotate = (((slot.source.orient.rotate + turns * 90) % 360) + 360) % 360;
-  setOrient(doc, slot, { rotate: rotate as Orient["rotate"], flip_h: slot.source.orient.flip_h },
-    sizes);
+  setOrient(
+    doc,
+    slot,
+    { rotate: rotate as Orient["rotate"], flip_h: slot.source.orient.flip_h },
+    sizes,
+  );
 }
 
 export function flipSource(doc: EditorDocument, slot: DocSlot, sizes: PhotoSizes): void {
@@ -263,8 +276,18 @@ export function zoomCrop(
 ): void {
   const source = slotSource(slot, sizes);
   if (!source) return;
-  write(slot, zoomCropSolver(state(slot), factor, source, slot.quality_lock));
-  afterCropChange(doc, slot, sizes);
+  // Under an attached block the cell owns the rect: zoom with the lock off so the constraint
+  // solver cannot shrink the slot, then put the §3.7 lock back (`relock`).
+  const parametric = cellOwnsRect(doc);
+  const lock = parametric ? "free" : slot.quality_lock;
+  write(slot, zoomCropSolver(state(slot), factor, source, lock));
+  if (parametric) relock(slot);
+  else afterCropChange(doc, slot, sizes);
+}
+
+/** True while a composition — not the slots — decides the geometry (§5). */
+export function cellOwnsRect(doc: EditorDocument): boolean {
+  return doc.composition !== null && !doc.composition.detached;
 }
 
 /**
@@ -392,7 +415,10 @@ export function addSlot(
     ? fitSlot(rect, source, "no_upscale")
     : { rect, crop: { x: 0, y: 0, w: rect.w, h: rect.h }, quality_lock: "free" as QualityLock };
   const slot: DocSlot = {
-    id: nextId("s_", doc.slots.map((s) => s.id)),
+    id: nextId(
+      "s_",
+      doc.slots.map((s) => s.id),
+    ),
     photo_id: photoId,
     rect: placed.rect,
     rotation: 0,
@@ -565,7 +591,10 @@ function selectedSlots(doc: EditorDocument, ids: readonly string[]): DocSlot[] {
 export function alignSlots(doc: EditorDocument, ids: readonly string[], edge: Edge): void {
   const slots = selectedSlots(doc, ids);
   if (slots.length < 2) return;
-  const rects = align(slots.map((slot) => slot.rect), edge);
+  const rects = align(
+    slots.map((slot) => slot.rect),
+    edge,
+  );
   slots.forEach((slot, index) => {
     const rect = rects[index];
     if (rect) slot.rect = { ...slot.rect, x: coord(rect.x), y: coord(rect.y) };
@@ -575,7 +604,10 @@ export function alignSlots(doc: EditorDocument, ids: readonly string[], edge: Ed
 export function distributeSlots(doc: EditorDocument, ids: readonly string[], axis: Axis): void {
   const slots = selectedSlots(doc, ids);
   if (slots.length < 3) return;
-  const rects = distribute(slots.map((slot) => slot.rect), axis);
+  const rects = distribute(
+    slots.map((slot) => slot.rect),
+    axis,
+  );
   slots.forEach((slot, index) => {
     const rect = rects[index];
     if (rect) slot.rect = { ...slot.rect, x: coord(rect.x), y: coord(rect.y) };
@@ -652,7 +684,10 @@ export function addCaption(
   const caption: DocCaption = {
     ...CAPTION_DEFAULTS,
     ...defaults,
-    id: nextId("c_", doc.captions.map((c) => c.id)),
+    id: nextId(
+      "c_",
+      doc.captions.map((c) => c.id),
+    ),
     text,
     x: Math.round(doc.canvas.width / 2),
     y: doc.canvas.height - Math.round(bottom > 120 ? bottom / 2 : 96),
@@ -684,4 +719,164 @@ export function moveCaption(doc: EditorDocument, captionId: string, dx: number, 
 
 export function removeCaption(doc: EditorDocument, captionId: string): void {
   doc.captions = doc.captions.filter((caption) => caption.id !== captionId);
+}
+
+// ---- parametric compositions (Phase 7) ---------------------------------------------------------
+/**
+ * The recipe of an **attached** block: the cells own the geometry then, so any operation that
+ * would move a slot has to go through `resolveComposition` instead of writing a rect.
+ */
+export function attachedRecipe(doc: EditorDocument, recipes: readonly Recipe[]): Recipe | null {
+  const block = doc.composition;
+  if (!block || block.detached) return null;
+  return recipes.find((recipe) => recipe.id === block.recipe) ?? null;
+}
+
+/**
+ * The balance to keep when the recipe changes: recipes declare **different** ranges (`hero-left`
+ * is 0.40–0.75, `hero-right` 0.25–0.60), so carrying the value over unclamped would build a
+ * document the server rejects with `balance_out_of_range` (invariant 11).
+ */
+export function balanceFor(recipe: Recipe, balance: number | null): number | null {
+  if (!recipe.balance || balance === null) return null;
+  return Math.min(recipe.balance.max, Math.max(recipe.balance.min, balance));
+}
+
+/**
+ * Re-solve the block and write §3.7's table into the draft — the client half of the server
+ * authority: the editor previews exactly what `PUT document` will store (same function, mirrored).
+ */
+export function resolveComposition(
+  doc: EditorDocument,
+  recipes: readonly Recipe[],
+  sizes: PhotoSizes,
+): void {
+  const recipe = attachedRecipe(doc, recipes);
+  if (!recipe) return;
+  const next = applyComposition(current(doc), recipe, sizes);
+  doc.placement = next.placement;
+  doc.margins = next.margins;
+  doc.slots = next.slots;
+  doc.captions = next.captions;
+}
+
+/** Merge a patch into the block (the panel's controls) and re-solve. */
+export function setComposition(
+  doc: EditorDocument,
+  patch: Partial<Composition>,
+  recipes: readonly Recipe[],
+  sizes: PhotoSizes,
+): void {
+  if (!doc.composition) return;
+  doc.composition = { ...doc.composition, ...patch };
+  resolveComposition(doc, recipes, sizes);
+}
+
+/**
+ * Give a hand-built artwork a composition (§6.1: an artwork without a block shows the picker).
+ *
+ * The mat, the photos and their order are kept; everything the block owns is re-derived. A single
+ * photo starts on `original` — the whole photo in the mat, today's `fit_in_mat` — and several on
+ * `fill`, the same defaults `POST /artworks` applies server-side (§7).
+ */
+export function attachComposition(
+  doc: EditorDocument,
+  recipe: Recipe,
+  recipes: readonly Recipe[],
+  sizes: PhotoSizes,
+): void {
+  const previous = doc.composition;
+  // The block owns the captions from now on (§3.7), so a caption the artwork already had has to
+  // move into it — dropping the user's text on the way in would be the worst kind of surprise.
+  const existing = doc.captions[0];
+  doc.composition = {
+    recipe: recipe.id,
+    balance: previous?.balance ?? null,
+    outer: previous ? { ...previous.outer } : { x: 120, y: 120 },
+    gutter: previous ? { ...previous.gutter } : { x: 80, y: 80 },
+    format: previous?.format ?? (recipe.count === 1 ? "original" : "fill"),
+    border: previous?.border ? { ...previous.border } : null,
+    caption: previous
+      ? { ...previous.caption }
+      : { text: existing?.text ?? "", place: existing ? "below" : "none" },
+    detached: false,
+  };
+  if (doc.composition.format === "original" && doc.slots.length !== 1) {
+    doc.composition.format = "fill"; // structural rule of the document model
+  }
+  doc.composition.balance = balanceFor(recipe, doc.composition.balance);
+  resolveComposition(doc, recipes, sizes);
+}
+
+/**
+ * Keep the block valid when the number of photos changes (§4.4).
+ *
+ * The count comes from the photos, so a slot added or removed in the Advanced editor has to pick a
+ * recipe again: the same family when one exists for the new count, else that count's first entry.
+ * Beyond the catalogue (7 photos and up) the slots become the truth — the block is memory (§5),
+ * which is also what keeps the server from rejecting the save with `recipe_slot_count`.
+ */
+export function recipeFollowsPhotoCount(
+  doc: EditorDocument,
+  recipes: readonly Recipe[],
+  sizes: PhotoSizes,
+): void {
+  const block = doc.composition;
+  if (!block || block.detached) return;
+  const count = doc.slots.length;
+  const active = recipes.find((recipe) => recipe.id === block.recipe);
+  if (active && active.count === count) return;
+  const family = active ? active.id.split("-").slice(1).join("-") : "";
+  const sameCount = recipes.filter((recipe) => recipe.count === count);
+  const next = sameCount.find((recipe) => recipe.id.split("-").slice(1).join("-") === family);
+  const chosen = next ?? sameCount[0];
+  if (!chosen) {
+    block.detached = true;
+    return;
+  }
+  block.recipe = chosen.id;
+  block.balance = balanceFor(chosen, block.balance);
+  if (block.format === "original" && count !== 1) block.format = "fill";
+  resolveComposition(doc, recipes, sizes);
+}
+
+/**
+ * A free-form edit just happened: the slots become the truth and the block is kept as memory (§5).
+ *
+ * The rule for calling this is mechanical — **an edit detaches exactly when `apply` would
+ * overwrite it**. Moving, resizing or rotating a slot, its bands, lock, crop ratio, the margins,
+ * the placement and the captions' geometry are all re-derived by §3.7, so a hand-made version of
+ * them would silently disappear on the next save. A shadow, the mat and a caption's typography are
+ * *not* touched by `apply`, so they round-trip and must not cost the user their layout link.
+ */
+export function detach(doc: EditorDocument): void {
+  if (doc.composition && !doc.composition.detached) doc.composition.detached = true;
+}
+
+/**
+ * "Re-apply layout" (§5): re-solve from the remembered parameters and clear the flag.
+ *
+ * One `store.edit()` patch like any other, so `⌘Z` brings the hand-made geometry straight back —
+ * which is what makes the action safe to offer as a single button.
+ */
+export function reapplyLayout(
+  doc: EditorDocument,
+  recipes: readonly Recipe[],
+  sizes: PhotoSizes,
+): void {
+  if (!doc.composition) return;
+  doc.composition.detached = false;
+  recipeFollowsPhotoCount(doc, recipes, sizes);
+  resolveComposition(doc, recipes, sizes);
+}
+
+/**
+ * The lock of a slot whose rect belongs to a cell: `no_upscale` unless the framing upscales — the
+ * §3.7 rule. A reframe must never drag the rect, and under `no_upscale` the constraint solver
+ * shrinks the slot as soon as the crop gets smaller than it (§7.3), so Simple reframes with the
+ * lock off and restores it here.
+ */
+export function relock(slot: DocSlot): void {
+  slot.quality_lock =
+    slot.rect.w > slot.source.crop.w || slot.rect.h > slot.source.crop.h ? "free" : "no_upscale";
 }

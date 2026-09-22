@@ -12,11 +12,13 @@ from typing import Literal
 
 from pydantic import Field, model_validator
 
+from the_frame_v2.domain.composition import CaptionStyle, Recipe, apply, cell_id
 from the_frame_v2.domain.document import (
     MAX_SLOTS,
     ArtworkDocument,
     AssetId,
     Band,
+    Composition,
     CropSpec,
     DocModel,
     HexColor,
@@ -133,6 +135,53 @@ def _slot(
         bands=[b.model_copy() for b in defaults.bands],
         shadow=defaults.shadow.model_copy() if defaults.shadow else None,
     )
+
+
+def caption_style(style: FrameStyleDocument) -> CaptionStyle:
+    """The style's caption typography, as `domain/composition` wants it (§3.7)."""
+    defaults = style.caption_defaults
+    return CaptionStyle(
+        font=defaults.font,
+        weight=defaults.weight,
+        size=defaults.size,
+        color=defaults.color,
+        letter_spacing=defaults.letter_spacing,
+    )
+
+
+def build_composition_document(
+    style: FrameStyleDocument,
+    recipe: Recipe,
+    composition: Composition,
+    photos: Sequence[PhotoInput | None],
+) -> ArtworkDocument:
+    """New parametric artwork: the style's mat and decorations, the composition's geometry.
+
+    The slots start as whole photos fitted in the canvas — a valid document, and the framing
+    `apply` preserves (§4.1): a full-photo crop keeps zoom 1, so every cell gets the centred cover
+    crop a new artwork wants. `apply` then writes the real geometry, captions and margins (§3.7).
+    """
+    defaults = style.slot_defaults
+    canvas = Rect(0, 0, CANVAS.w, CANVAS.h)
+    slots: list[Slot] = []
+    for index, photo in enumerate(photos):
+        slot_id = cell_id(index)
+        if photo is None:
+            empty = SlotPlacement(canvas, Rect(0, 0, canvas.w, canvas.h), "free")
+            slots.append(_slot(slot_id, None, empty, "free", 0, defaults))
+        else:
+            slots.append(
+                _slot(slot_id, photo, fit_slot(canvas, photo.size, "free"), "original", 0, defaults)
+            )
+    skeleton = ArtworkDocument(
+        mat=style.mat.model_copy(deep=True),
+        placement="manual",
+        margins=style.margins.model_copy(),
+        composition=composition,
+        slots=slots,
+    )
+    sizes = {photo.id: photo.size for photo in photos if photo is not None}
+    return apply(skeleton, recipe, sizes, caption_style(style))
 
 
 def build_document(

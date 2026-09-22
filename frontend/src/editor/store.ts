@@ -7,6 +7,7 @@ import { applyPatches, enablePatches, produceWithPatches, type Patch } from "imm
 import { create } from "zustand";
 
 import { ApiError, api, unwrap, type Artwork } from "@/api/client";
+import type { Recipe } from "@/editor/core/composition.ts";
 import {
   normalizeDocument,
   sameDocument,
@@ -45,6 +46,8 @@ interface EditorState {
   saved: EditorDocument | null;
   version: number;
   sizes: PhotoSizes;
+  /** The bundled recipe catalogue (`GET /recipes`): what the composition operations solve with. */
+  recipes: Recipe[];
   /** Selected slots, in the order they were picked: the last one is the *primary* (§11.2). */
   selectedSlotIds: string[];
   /** Captions and slots are selected exclusively (the panels show one or the other). */
@@ -65,6 +68,7 @@ const initial: EditorState = {
   saved: null,
   version: 0,
   sizes: {},
+  recipes: [],
   selectedSlotIds: [],
   selectedCaptionId: null,
   tool: "select",
@@ -96,6 +100,7 @@ export function openArtwork(artwork: Artwork, sizes: PhotoSizes): void {
   const doc = normalizeDocument(artwork.document);
   useEditor.setState({
     ...initial,
+    recipes: state.recipes,
     artworkId: artwork.id,
     doc,
     saved: doc,
@@ -104,6 +109,17 @@ export function openArtwork(artwork: Artwork, sizes: PhotoSizes): void {
     selectedSlotIds: doc.slots[0] ? [doc.slots[0].id] : [],
   });
   void createOpenedSnapshot(artwork.id);
+}
+
+/**
+ * The recipe catalogue is static and shared by every artwork, so it is kept out of `openArtwork`.
+ * Written only when the ids actually change: a query result is a new array on every render.
+ */
+export function setRecipes(recipes: Recipe[]): void {
+  const current = useEditor.getState().recipes;
+  const same =
+    current.length === recipes.length && current.every((r, i) => r.id === recipes[i]?.id);
+  if (!same) useEditor.setState({ recipes });
 }
 
 /**
@@ -186,6 +202,7 @@ export function replaceDocument(document: EditorDocument): void {
     doc.mat = document.mat;
     doc.placement = document.placement;
     doc.margins = document.margins;
+    doc.composition = document.composition;
     doc.slots = document.slots;
     doc.captions = document.captions;
   });

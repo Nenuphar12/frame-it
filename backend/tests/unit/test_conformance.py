@@ -18,10 +18,21 @@ from typing import Any
 
 import pytest
 
-from the_frame_v2.domain import alternatives, arrange, constraints, geometry, placement, quality
+from the_frame_v2.domain import (
+    alternatives,
+    arrange,
+    composition,
+    constraints,
+    geometry,
+    placement,
+    quality,
+)
+from the_frame_v2.domain.composition import Cell
 from the_frame_v2.domain.constraints import SlotState
+from the_frame_v2.domain.document import Composition, parse_document
 from the_frame_v2.domain.geometry import Margins, Orient, Rect, Size
 from the_frame_v2.domain.quality import SlotGeometry
+from the_frame_v2.services import recipes as recipe_catalog
 
 FIXTURES = Path(__file__).resolve().parents[3] / "conformance" / "geometry"
 
@@ -52,6 +63,42 @@ def _center(v: list[float] | None) -> tuple[float, float] | None:
 
 def _state(v: dict[str, Any]) -> SlotState:
     return SlotState(_rect(v["rect"]), _rect(v["crop"]))
+
+
+def _recipe(recipe_id: str) -> composition.Recipe:
+    recipe = recipe_catalog.find(recipe_id)
+    assert recipe is not None, recipe_id
+    return recipe
+
+
+def _composition(v: dict[str, Any]) -> Composition:
+    return Composition.model_validate(v)
+
+
+def _sizes(v: list[dict[str, int] | None]) -> list[Size | None]:
+    return [None if s is None else _size(s) for s in v]
+
+
+def _cells(v: list[dict[str, Any]]) -> list[Cell]:
+    return [Cell(c["id"], _rect(c["rect"]), c["ratio_label"]) for c in v]
+
+
+def _photo_sizes(v: dict[str, dict[str, int]]) -> dict[str, Size]:
+    return {photo_id: _size(size) for photo_id, size in v.items()}
+
+
+def _caption_style(v: dict[str, Any] | None) -> composition.CaptionStyle | None:
+    return None if v is None else composition.CaptionStyle(**v)
+
+
+def _apply(
+    doc: dict[str, Any],
+    recipe: composition.Recipe,
+    photo_sizes: dict[str, Size],
+    caption: composition.CaptionStyle | None,
+) -> dict[str, Any]:
+    """`composition.apply` on a raw document, back to raw — the fixture is JSON on both sides."""
+    return composition.apply(parse_document(doc), recipe, photo_sizes, caption).canonical()
 
 
 # name → (function, {argument: converter})
@@ -149,6 +196,57 @@ FUNCTIONS: dict[str, tuple[Callable[..., Any], dict[str, Callable[[Any], Any]]]]
         arrange.new_slot_rect,
         {"existing": lambda v: [_rect(r) for r in v], "area": _rect, "size": _size},
     ),
+    "composition_solve": (
+        composition.solve,
+        {
+            "recipe": _recipe,
+            "composition": _composition,
+            "photo_sizes": _sizes,
+            "caption_size": int,
+        },
+    ),
+    "composition_solve_strict": (
+        composition.solve_strict,
+        {
+            "recipe": _recipe,
+            "composition": _composition,
+            "photo_sizes": _sizes,
+            "caption_size": int,
+        },
+    ),
+    "composition_apply": (
+        _apply,
+        {
+            "doc": lambda v: v,
+            "recipe": _recipe,
+            "photo_sizes": _photo_sizes,
+            "caption": _caption_style,
+        },
+    ),
+    "composition_block_area": (
+        composition.block_area,
+        {"composition": _composition, "caption_size": int},
+    ),
+    "composition_block_margins": (
+        composition.block_margins,
+        {"cells": _cells, "border": int},
+    ),
+    "composition_refit_crop": (
+        composition.refit_crop,
+        {
+            "previous": lambda v: None if v is None else _rect(v),
+            "source": _size,
+            "ratio": lambda v: v,
+        },
+    ),
+    "composition_caption_band": (
+        composition.caption_band,
+        {"caption_size": int, "gutter_y": int},
+    ),
+    "composition_format_ratio": (
+        composition.format_ratio,
+        {"composition_format": str},
+    ),
     "alternatives": (
         alternatives.alternatives,
         {
@@ -229,6 +327,125 @@ def _q(rw: int, rh: int, cw: int, ch: int, rot: float = 0, photo: bool = True) -
         "rotation": rot,
         "has_photo": photo,
     }
+
+
+def _comp(
+    recipe: str,
+    fmt: str = "fill",
+    *,
+    border: int | None = None,
+    caption: str = "none",
+    balance: float | None = None,
+    outer: tuple[int, int] = (120, 120),
+    gutter: tuple[int, int] = (80, 80),
+) -> dict[str, Any]:
+    """A complete composition block: fixtures carry every field (the TS mirror has no defaults)."""
+    return {
+        "recipe": recipe,
+        "balance": balance,
+        "outer": {"x": outer[0], "y": outer[1]},
+        "gutter": {"x": gutter[0], "y": gutter[1]},
+        "format": fmt,
+        "border": None if border is None else {"width": border, "color": "#FFFFFF"},
+        "caption": {"text": "" if caption == "none" else "Kyoto - April 2026", "place": caption},
+        "detached": False,
+    }
+
+
+RECIPES = recipe_catalog.all_recipes()
+PHOTOS: list[dict[str, int] | None] = [
+    {"w": 6000, "h": 4000},
+    {"w": 3000, "h": 4000},
+    {"w": 4000, "h": 4000},
+    {"w": 5000, "h": 2000},
+    {"w": 4000, "h": 6000},
+    {"w": 6000, "h": 3000},
+]
+"""One per cell of the biggest recipe; `auto` and `original` read the first."""
+BALANCED = [r for r in RECIPES if r.balance is not None]
+CELLS_3 = [
+    {"id": "c1", "rect": {"x": 120, "y": 284, "w": 2387, "h": 1592}, "ratio_label": "2387:1592"},
+    {"id": "c2", "rect": {"x": 2587, "y": 284, "w": 1133, "h": 756}, "ratio_label": "1133:756"},
+    {"id": "c3", "rect": {"x": 2587, "y": 1120, "w": 1133, "h": 756}, "ratio_label": "1133:756"},
+]
+"""The `three-hero-left` 3:2 block of docs/simple-editor.md §3.5."""
+
+CAPTION_STYLE = {
+    "font": "inter",
+    "weight": 400,
+    "size": 72,
+    "color": "#222222",
+    "letter_spacing": 0.05,
+}
+
+
+def _doc_slot(
+    index: int,
+    photo_id: str | None = None,
+    *,
+    crop: tuple[int, int, int, int] = (0, 0, 3000, 2000),
+    rotate: int = 0,
+    shadow: bool = False,
+) -> dict[str, Any]:
+    """A slot as it reaches the server: deliberately wrong geometry, real framing to preserve.
+
+    The rect is half the crop — valid (the aspects match) but nowhere near the solver's cell, so
+    the fixture shows that the composition, not the payload, decides where a slot lands.
+    """
+    return {
+        "id": f"c{index + 1}",
+        "photo_id": photo_id,
+        "rect": {"x": 100, "y": 100, "w": crop[2] // 2, "h": crop[3] // 2},
+        "rotation": 12.5,
+        "source": {
+            "orient": {"rotate": rotate, "flip_h": False},
+            "crop": {"x": crop[0], "y": crop[1], "w": crop[2], "h": crop[3]},
+            "crop_ratio": "3:2",
+        },
+        "quality_lock": "free",
+        "bands": [{"width": 9, "color": "#000000"}],
+        "shadow": (
+            {
+                "type": "drop",
+                "offset_x": 8,
+                "offset_y": 8,
+                "blur": 20,
+                "color": "#000000",
+                "opacity": 0.4,
+            }
+            if shadow
+            else None
+        ),
+    }
+
+
+def _doc(
+    comp: dict[str, Any],
+    slots: list[dict[str, Any]],
+    captions: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """A complete document: fixtures carry every field (the TS mirror has no defaults)."""
+    return {
+        "schema": 1,
+        "canvas": {"width": 3840, "height": 2160},
+        "mat": {"color": "#F2EFE8", "texture": None},
+        "placement": "manual",
+        "margins": {
+            "top": 7,
+            "right": 7,
+            "bottom": 7,
+            "left": 7,
+            "linked": True,
+            "mirror_x": True,
+            "mirror_y": True,
+        },
+        "composition": comp,
+        "slots": slots,
+        "captions": captions or [],
+    }
+
+
+SIZES_3 = {"p1": {"w": 6000, "h": 4000}, "p2": {"w": 3000, "h": 4000}, "p3": {"w": 4000, "h": 4000}}
 
 
 CASES: dict[str, list[tuple[str, str, dict[str, Any]]]] = {
@@ -899,6 +1116,331 @@ CASES: dict[str, list[tuple[str, str, dict[str, Any]]]] = {
                 "mirror_y": False,
             },
         ),
+    ],
+    "composition.json": [
+        *[
+            (
+                f"solve {recipe.id} {fmt} border={border} caption={caption}",
+                "composition_solve",
+                {
+                    "recipe": recipe.id,
+                    "composition": _comp(recipe.id, fmt, border=border, caption=caption),
+                    "photo_sizes": PHOTOS[: recipe.count],
+                    "caption_size": 48,
+                },
+            )
+            for recipe in RECIPES
+            for fmt in ("fill", "3:2")
+            for border in (None, 24)
+            for caption in ("none", "below")
+        ],
+        *[
+            (
+                f"solve {recipe.id} balance {edge}",
+                "composition_solve",
+                {
+                    "recipe": recipe.id,
+                    "composition": _comp(
+                        recipe.id,
+                        balance=getattr(recipe.balance, edge),
+                    ),
+                    "photo_sizes": PHOTOS[: recipe.count],
+                    "caption_size": 48,
+                },
+            )
+            for recipe in BALANCED
+            for edge in ("min", "max")
+        ],
+        *[
+            (
+                f"solve single {fmt} photo {photo['w']}x{photo['h']}",
+                "composition_solve",
+                {
+                    "recipe": "single",
+                    "composition": _comp("single", fmt),
+                    "photo_sizes": [photo],
+                    "caption_size": 48,
+                },
+            )
+            for fmt in ("original", "fill", "1:1", "16:9")
+            for photo in ({"w": 6000, "h": 4000}, {"w": 3000, "h": 4000})
+        ],
+        (
+            "solve single original without a photo",
+            "composition_solve",
+            {
+                "recipe": "single",
+                "composition": _comp("single", "original"),
+                "photo_sizes": [None],
+                "caption_size": 48,
+            },
+        ),
+        (
+            "solve caption above",
+            "composition_solve",
+            {
+                "recipe": "two-side-by-side",
+                "composition": _comp("two-side-by-side", caption="above"),
+                "photo_sizes": PHOTOS[:2],
+                "caption_size": 48,
+            },
+        ),
+        (
+            "solve portrait format",
+            "composition_solve",
+            {
+                "recipe": "three-row",
+                "composition": _comp("three-row", "2:3"),
+                "photo_sizes": PHOTOS[:3],
+                "caption_size": 48,
+            },
+        ),
+        (
+            "solve zero margins",
+            "composition_solve",
+            {
+                "recipe": "four-grid",
+                "composition": _comp("four-grid", outer=(0, 0), gutter=(0, 0)),
+                "photo_sizes": PHOTOS[:4],
+                "caption_size": 48,
+            },
+        ),
+        (
+            "solve over-constrained relaxes",
+            "composition_solve",
+            {
+                "recipe": "six-grid-3x2",
+                "composition": _comp(
+                    "six-grid-3x2", border=200, outer=(800, 450), gutter=(400, 400)
+                ),
+                "photo_sizes": PHOTOS[:6],
+                "caption_size": 48,
+            },
+        ),
+        *[
+            (
+                f"apply three-hero-left {fmt} border={border} caption={caption}",
+                "composition_apply",
+                {
+                    "doc": _doc(
+                        _comp("three-hero-left", fmt, border=border, caption=caption),
+                        [
+                            _doc_slot(0, "p1", crop=(1200, 800, 3000, 2000)),
+                            _doc_slot(1, "p2", crop=(0, 0, 1500, 2000), shadow=True),
+                            _doc_slot(2, "p3", crop=(500, 500, 2000, 2000)),
+                        ],
+                    ),
+                    "recipe": "three-hero-left",
+                    "photo_sizes": SIZES_3,
+                    "caption": None,
+                },
+            )
+            for fmt in ("fill", "3:2")
+            for border in (None, 24)
+            for caption in ("none", "below")
+        ],
+        (
+            "apply keeps an empty slot a placeholder",
+            "composition_apply",
+            {
+                "doc": _doc(
+                    _comp("three-row"),
+                    [_doc_slot(0, "p1"), _doc_slot(1), _doc_slot(2, "p3")],
+                ),
+                "recipe": "three-row",
+                "photo_sizes": SIZES_3,
+                "caption": None,
+            },
+        ),
+        (
+            "apply with an unknown photo",
+            "composition_apply",
+            {
+                "doc": _doc(
+                    _comp("two-side-by-side"),
+                    [_doc_slot(0, "p1"), _doc_slot(1, "gone")],
+                ),
+                "recipe": "two-side-by-side",
+                "photo_sizes": SIZES_3,
+                "caption": None,
+            },
+        ),
+        (
+            "apply through a 90 degrees orient",
+            "composition_apply",
+            {
+                "doc": _doc(
+                    _comp("two-stacked", "3:2"),
+                    [
+                        _doc_slot(0, "p1", rotate=90, crop=(0, 0, 2000, 3000)),
+                        _doc_slot(1, "p2", rotate=270),
+                    ],
+                ),
+                "recipe": "two-stacked",
+                "photo_sizes": SIZES_3,
+                "caption": None,
+            },
+        ),
+        (
+            "apply caption above with the style typography",
+            "composition_apply",
+            {
+                "doc": _doc(
+                    _comp("two-side-by-side", caption="above"),
+                    [_doc_slot(0, "p1"), _doc_slot(1, "p2")],
+                ),
+                "recipe": "two-side-by-side",
+                "photo_sizes": SIZES_3,
+                "caption": CAPTION_STYLE,
+            },
+        ),
+        (
+            "apply keeps the document's own caption typography and id",
+            "composition_apply",
+            {
+                "doc": _doc(
+                    _comp("two-side-by-side", caption="below"),
+                    [_doc_slot(0, "p1"), _doc_slot(1, "p2")],
+                    [
+                        {
+                            "id": "legacy",
+                            "text": "moved and restyled",
+                            "font": "inter",
+                            "weight": 600,
+                            "size": 31,
+                            "color": "#101010",
+                            "letter_spacing": -0.01,
+                            "x": 10,
+                            "y": 10,
+                            "anchor": "start",
+                            "rotation": 3.5,
+                        }
+                    ],
+                ),
+                "recipe": "two-side-by-side",
+                "photo_sizes": SIZES_3,
+                "caption": None,
+            },
+        ),
+        (
+            "apply drops a caption whose text is empty",
+            "composition_apply",
+            {
+                "doc": _doc(
+                    {
+                        **_comp("two-side-by-side", caption="below"),
+                        "caption": {
+                            "text": "  ",
+                            "place": "below",
+                        },
+                    },
+                    [_doc_slot(0, "p1"), _doc_slot(1, "p2")],
+                ),
+                "recipe": "two-side-by-side",
+                "photo_sizes": SIZES_3,
+                "caption": None,
+            },
+        ),
+        (
+            "apply single original",
+            "composition_apply",
+            {
+                "doc": _doc(_comp("single", "original"), [_doc_slot(0, "p2")]),
+                "recipe": "single",
+                "photo_sizes": SIZES_3,
+                "caption": None,
+            },
+        ),
+        (
+            "apply leaves a detached document alone",
+            "composition_apply",
+            {
+                "doc": _doc(
+                    {**_comp("two-side-by-side"), "detached": True},
+                    [_doc_slot(0, "p1"), _doc_slot(1, "p2")],
+                ),
+                "recipe": "two-side-by-side",
+                "photo_sizes": SIZES_3,
+                "caption": None,
+            },
+        ),
+        (
+            "apply an over-constrained document",
+            "composition_apply",
+            {
+                "doc": _doc(
+                    _comp("six-grid-3x2", border=200, outer=(800, 450), gutter=(400, 400)),
+                    [_doc_slot(i, f"p{(i % 3) + 1}") for i in range(6)],
+                ),
+                "recipe": "six-grid-3x2",
+                "photo_sizes": SIZES_3,
+                "caption": None,
+            },
+        ),
+        *[
+            (
+                f"solve strict {label}",
+                "composition_solve_strict",
+                {
+                    "recipe": "six-grid-3x2",
+                    "composition": _comp("six-grid-3x2", border=border, gutter=gutter),
+                    "photo_sizes": PHOTOS[:6],
+                    "caption_size": 48,
+                },
+            )
+            # the second one is over-constrained: `solve` would hide it behind the ladder
+            for label, border, gutter in (("roomy", None, (80, 80)), ("slivers", 200, (400, 400)))
+        ],
+        (
+            "block area plain",
+            "composition_block_area",
+            {"composition": _comp("four-grid"), "caption_size": 48},
+        ),
+        (
+            "block area caption below",
+            "composition_block_area",
+            {"composition": _comp("four-grid", caption="below"), "caption_size": 48},
+        ),
+        (
+            "block area caption above",
+            "composition_block_area",
+            {"composition": _comp("four-grid", caption="above"), "caption_size": 72},
+        ),
+        ("block margins no border", "composition_block_margins", {"cells": CELLS_3, "border": 0}),
+        ("block margins border 24", "composition_block_margins", {"cells": CELLS_3, "border": 24}),
+        ("block margins empty", "composition_block_margins", {"cells": [], "border": 0}),
+        (
+            "refit crop fresh",
+            "composition_refit_crop",
+            {"previous": None, "source": SRC, "ratio": 1.5},
+        ),
+        (
+            "refit crop keeps the zoom",
+            "composition_refit_crop",
+            {"previous": {"x": 2000, "y": 1000, "w": 3000, "h": 2000}, "source": SRC, "ratio": 1.0},
+        ),
+        (
+            "refit crop clamps into the source",
+            "composition_refit_crop",
+            {"previous": {"x": 5000, "y": 3500, "w": 900, "h": 600}, "source": SRC, "ratio": 1.5},
+        ),
+        (
+            "refit crop free ratio",
+            "composition_refit_crop",
+            {"previous": {"x": 100, "y": 100, "w": 3000, "h": 2000}, "source": SRC, "ratio": None},
+        ),
+        *[
+            (
+                f"caption band {size}",
+                "composition_caption_band",
+                {"caption_size": size, "gutter_y": 80},
+            )
+            for size in (48, 72, 31)
+        ],
+        *[
+            (f"format ratio {fmt}", "composition_format_ratio", {"composition_format": fmt})
+            for fmt in ("fill", "original", "3:2", "2:3", "1:1", "16:9")
+        ],
     ],
 }
 

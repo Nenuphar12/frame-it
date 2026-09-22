@@ -41,6 +41,11 @@ Length = Annotated[int, Field(ge=1, le=MAX_COORD)]
 CropRatio = Annotated[
     str, StringConstraints(pattern=r"^(original|free|[1-9][0-9]{0,4}:[1-9][0-9]{0,4})$")
 ]
+CompositionFormat = Annotated[
+    str, StringConstraints(pattern=r"^(fill|original|[1-9][0-9]{0,3}:[1-9][0-9]{0,3})$")
+]
+"""`fill`, `original` (1-cell recipes only) or `w:h` with `w, h` ∈ [1, 1000] (checked below)."""
+MAX_FORMAT_TERM = 1000
 QualityLock = Literal["native", "no_upscale", "free"]
 Placement = Literal["fit_in_mat", "fill", "manual"]
 
@@ -188,6 +193,63 @@ class Caption(DocModel):
         return self
 
 
+class CompositionAxis(DocModel):
+    """A per-axis length in canvas px (`x` = horizontal, `y` = vertical)."""
+
+    x: int = Field(ge=0, le=800)
+    y: int = Field(ge=0, le=450)
+
+
+class CompositionGutter(DocModel):
+    x: int = Field(ge=0, le=400)
+    y: int = Field(ge=0, le=400)
+
+
+class CompositionBorder(DocModel):
+    width: int = Field(ge=1, le=200)
+    color: HexColor = "#FFFFFF"
+
+
+class CompositionCaption(DocModel):
+    text: str = Field(default="", max_length=500)
+    place: Literal["none", "above", "below"] = "none"
+
+    @model_validator(mode="after")
+    def _single_line(self) -> CompositionCaption:
+        if any(ch in self.text for ch in "\r\n\t"):
+            raise ValueError("captions are single-line")
+        return self
+
+
+class Composition(DocModel):
+    """Parametric layout (Phase 7, docs/simple-editor.md §2).
+
+    Source of truth for `slots` and the derived caption while `detached` is false. Absent on legacy
+    or hand-built artworks — `schema` stays 1, so there is nothing to migrate.
+    """
+
+    recipe: AssetId
+    balance: float | None = Field(default=None, ge=0, le=1)
+    """Share of the root split's first child; `None` = the recipe's default. Fill format only."""
+    outer: CompositionAxis = Field(default_factory=lambda: CompositionAxis(x=120, y=120))
+    """Minimum margin around the block, per axis."""
+    gutter: CompositionGutter = Field(default_factory=lambda: CompositionGutter(x=80, y=80))
+    """Exact gap between two printed edges, per axis."""
+    format: CompositionFormat = "fill"
+    border: CompositionBorder | None = None
+    caption: CompositionCaption = Field(default_factory=CompositionCaption)
+    detached: bool = False
+    """The slots have been hand-edited: they are the truth and this block is memory only (§5)."""
+
+    @model_validator(mode="after")
+    def _format_terms(self) -> Composition:
+        if ":" in self.format:
+            width, height = (int(term) for term in self.format.split(":"))
+            if width > MAX_FORMAT_TERM or height > MAX_FORMAT_TERM:
+                raise ValueError(f"format terms must be ≤ {MAX_FORMAT_TERM}")
+        return self
+
+
 class ArtworkDocument(DocModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True, serialize_by_alias=True)
 
@@ -196,6 +258,8 @@ class ArtworkDocument(DocModel):
     mat: Mat = Field(default_factory=Mat)
     placement: Placement = "fit_in_mat"
     margins: MarginsSpec = Field(default_factory=MarginsSpec)
+    composition: Composition | None = None
+    """Parametric layout driving `slots` and the derived caption (Phase 7); absent = hand-built."""
     slots: list[Slot] = Field(default_factory=list, max_length=MAX_SLOTS)
     """Array order = z-order (first is back-most)."""
     captions: list[Caption] = Field(default_factory=list, max_length=MAX_CAPTIONS)
@@ -210,6 +274,9 @@ class ArtworkDocument(DocModel):
             raise ValueError("caption ids must be unique")
         if self.placement != "manual" and len(self.slots) != 1:
             raise ValueError(f"placement {self.placement} requires exactly one slot")
+        composition = self.composition
+        if composition is not None and composition.format == "original" and len(self.slots) != 1:
+            raise ValueError("format 'original' requires exactly one slot")
         return self
 
     def photo_ids(self) -> list[str]:
@@ -224,6 +291,15 @@ class ArtworkDocument(DocModel):
 
 # ---- references (need library data) -------------------------------------------------------------
 @dataclass(frozen=True, slots=True)
+class RecipeSpec:
+    """What validating a `composition` needs from the recipe catalogue (`domain/composition.py`)."""
+
+    count: int
+    balance_min: float | None = None
+    balance_max: float | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class DocumentIssue:
     loc: tuple[str | int, ...]
     msg: str
@@ -233,19 +309,65 @@ class DocumentIssue:
         return {"loc": list(self.loc), "msg": self.msg, "type": self.type}
 
 
+def _composition_issues(
+    doc: ArtworkDocument, recipe_spec: Callable[[str], RecipeSpec | None]
+) -> list[DocumentIssue]:
+    """Catalogue checks of §2: the recipe exists, matches the slot count, balance is in range."""
+    composition = doc.composition
+    if composition is None:
+        return []
+    spec = recipe_spec(composition.recipe)
+    if spec is None:
+        return [DocumentIssue(("composition", "recipe"), "unknown recipe", "unknown_recipe")]
+    issues: list[DocumentIssue] = []
+    if not composition.detached and spec.count != len(doc.slots):
+        issues.append(
+            DocumentIssue(
+                ("composition", "recipe"),
+                f"recipe holds {spec.count} cells but the document has {len(doc.slots)} slots",
+                "recipe_slot_count",
+            )
+        )
+    balance, low, high = composition.balance, spec.balance_min, spec.balance_max
+    if balance is not None and (low is None or high is None):
+        issues.append(
+            DocumentIssue(
+                ("composition", "balance"), "recipe has no balance", "balance_not_supported"
+            )
+        )
+    elif (
+        balance is not None
+        and low is not None
+        and high is not None
+        and not (low <= balance <= high)
+    ):
+        issues.append(
+            DocumentIssue(
+                ("composition", "balance"),
+                f"balance must be within [{low}, {high}]",
+                "balance_out_of_range",
+            )
+        )
+    return issues
+
+
 def validate_references(
     doc: ArtworkDocument,
     photo_sizes: Mapping[str, Size],
     font_weights: Callable[[str], frozenset[int] | None],
     texture_exists: Callable[[str], bool],
+    recipe_spec: Callable[[str], RecipeSpec | None] = lambda _: None,
 ) -> list[DocumentIssue]:
     """Photos exist and crops lie inside their oriented source; fonts, weights and textures exist.
 
     `photo_sizes` maps usable photo ids to their EXIF-oriented size (missing = unknown or trashed).
+    `recipe_spec` resolves a composition's recipe id in the bundled catalogue (default: no
+    catalogue, so compositions are not checked — callers that have one pass it).
     """
     issues: list[DocumentIssue] = []
     if doc.mat.texture is not None and not texture_exists(doc.mat.texture.id):
         issues.append(DocumentIssue(("mat", "texture", "id"), "unknown texture", "unknown_texture"))
+    issues.extend(_composition_issues(doc, recipe_spec))
     for index, slot in enumerate(doc.slots):
         if slot.photo_id is None:
             continue

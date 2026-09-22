@@ -2,6 +2,7 @@
 // (docs/artwork-document.md) but with every optional field filled in, so edits never have to
 // guess a default. `normalizeDocument` is applied on load and the result is sent back as is.
 import type { ArtworkDocument as ApiDocument } from "@/api/client";
+import type { Composition } from "./composition.ts";
 import { CANVAS_HEIGHT, CANVAS_WIDTH, type Margins, type Orient, type Rect } from "./geometry.ts";
 import type { QualityLock } from "./placement.ts";
 
@@ -72,8 +73,27 @@ export interface EditorDocument {
   mat: Mat;
   placement: Placement;
   margins: DocMargins;
+  /** Parametric layout driving the slots (Phase 7); null = hand-built or legacy. */
+  composition: Composition | null;
   slots: DocSlot[];
   captions: DocCaption[];
+}
+
+/** Fill in the optional fields of a `composition` block so edits never have to guess a default. */
+export function normalizeComposition(raw: NonNullable<ApiDocument["composition"]>): Composition {
+  return {
+    recipe: raw.recipe,
+    balance: raw.balance ?? null,
+    outer: { x: raw.outer?.x ?? 120, y: raw.outer?.y ?? 120 },
+    gutter: { x: raw.gutter?.x ?? 80, y: raw.gutter?.y ?? 80 },
+    format: raw.format ?? "fill",
+    border: raw.border ? { ...raw.border } : null,
+    caption: {
+      text: raw.caption?.text ?? "",
+      place: raw.caption?.place ?? "none",
+    },
+    detached: raw.detached ?? false,
+  };
 }
 
 /** Fill in every optional field of an API document (the server always sends them; be safe). */
@@ -102,6 +122,7 @@ export function normalizeDocument(raw: ApiDocument): EditorDocument {
       mirror_x: margins.mirror_x ?? false,
       mirror_y: margins.mirror_y ?? false,
     },
+    composition: raw.composition ? normalizeComposition(raw.composition) : null,
     slots: (raw.slots ?? []).map((slot) => ({
       id: slot.id,
       photo_id: slot.photo_id ?? null,

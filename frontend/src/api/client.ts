@@ -17,6 +17,7 @@ export type ArtworkSummary = Schemas["ArtworkSummaryOut"];
 export type ArtworkDocument = Schemas["ArtworkDocument"];
 export type FrameStyle = Schemas["FrameStyleOut"];
 export type Layout = Schemas["LayoutOut"];
+export type ApiRecipe = Schemas["RecipeOut"];
 export type Font = Schemas["FontOut"];
 export type Texture = Schemas["TextureOut"];
 export type Swatch = Schemas["SwatchOut"];

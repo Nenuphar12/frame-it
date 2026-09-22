@@ -1,4 +1,4 @@
-"""Templates (read-only until Phase 7), bundled assets and region renders."""
+"""Templates and composition recipes (read-only; editing UI in Phase 8), assets, region renders."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ from the_frame_v2.api.schemas import (
     FontOut,
     FrameStyleOut,
     LayoutOut,
+    RecipeOut,
     RegionRenderIn,
     TextureOut,
 )
@@ -23,7 +24,7 @@ from the_frame_v2.db.session import Database
 from the_frame_v2.domain.geometry import Rect
 from the_frame_v2.errors import not_found
 from the_frame_v2.imaging.assets import catalog
-from the_frame_v2.services import render, templates
+from the_frame_v2.services import recipes, render, templates
 
 router = APIRouter(tags=["templates"])
 _ASSET_CACHE = {"Cache-Control": "private, max-age=86400"}
@@ -37,6 +38,12 @@ def list_frame_styles(_: Admin, session: DbSession) -> list[FrameStyleOut]:
 @router.get("/layouts")
 def list_layouts(_: Admin, session: DbSession) -> list[LayoutOut]:
     return [LayoutOut.model_validate(layout) for layout in templates.list_layouts(session)]
+
+
+@router.get("/recipes")
+def list_recipes(_: Admin) -> list[RecipeOut]:
+    """Bundled composition recipes (docs/simple-editor.md §6.4). Static: not user-editable."""
+    return [RecipeOut.model_validate(r, from_attributes=True) for r in recipes.all_recipes()]
 
 
 @router.get("/artwork-defaults")

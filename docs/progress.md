@@ -270,3 +270,209 @@ phase is no longer held back by it — what could not be driven is recorded here
 photo picker has search but no tag/date filters; a dropped photo may land partly outside the canvas (allowed by
 the document, clipped at render); the editor route is still not lazy (the bundle note of 2026-09-19 stands, and
 this phase added ~15 kB of editor code).
+
+## 2026-09-21 — Phase 7 stage 1 (composition block, solver, recipe catalogue)
+
+The parametric foundations of `docs/simple-editor.md`. **Nothing in the UI uses them yet** — this is
+the layer stages 2–4 build on.
+
+**The document** gained an optional `composition` block (`schema` stays 1, so no migration and every
+existing document stays valid): recipe id, `balance`, `outer`/`gutter` per axis, `format`, `border`,
+`caption`, `detached`. The catalogue checks — the recipe exists, its cell count matches the slots,
+`balance` is in range — need the catalogue, so they live in `validate_references` and surface as
+`unknown_recipe` / `recipe_slot_count` / `balance_out_of_range` / `balance_not_supported`. Two rules
+are structural and rejected by the model itself: `format: "original"` needs exactly one slot, and a
+ratio's terms are ≤ 1000. A **detached** block may hold any slot count — the slots are the truth then,
+so an artwork hand-edited in Advanced mode still round-trips.
+
+**The solver** (`domain/composition.py` ↔ `editor/core/composition.ts`, 186 conformance cases, all
+agreeing first try) implements §3: `fill` as a weighted split with exact gutters, and ratio formats
+through the bottom-up affine relation `w = α·h + β` on **footprints**, fitted and centred in the
+available area, then walked top-down with float edges. Plus `block_area` (the caption band),
+`block_margins` (what §3.7 writes back to `margins`) and `refit_crop` (§4.1, centre + zoom kept).
+
+**The catalogue**: `assets/presets/recipes.json`, 17 recipes — 1 single, 4 pairs, 5 triples, 5 quads,
+one each for 5 and 6, seven of them declaring a `balance` range. Not a template: no DB table, no
+seeding, stable ids, served read-only by `GET /api/v1/recipes` (admin) and read straight off disk by
+the conformance script, so the client and both solvers share one source. Names are in i18n under
+`recipes.*`.
+
+**Two spec bugs found while implementing it**, both now fixed in `docs/simple-editor.md`:
+1. *The worked example was off by one*: it rounded the block's float **height** (1591) where the
+   solver rounds **edges** (284.4 … 1875.6 → 284 … 1876, so 1592). The same reason makes a cell's
+   aspect exact only to `1 + r` px of width, not the 1 px §8 promised — the test asserts the honest
+   bound now.
+2. *§3.5 said an `auto` cell takes "the photo's own aspect"*, which is exactly what the `original`
+   format already means — so every ratio chip would have been a no-op for a single photo. `auto` now
+   means the format turned the photo's way (portrait photo + `3:2` → a 2:3 cell), which is what §3.1's
+   "the photo's own orientation" says.
+
+Also decided while implementing: the over-constrained recovery of §3.6 is a **fixed ladder** (gutters
+scaled ×10/10…0/10, then `outer`) rather than the bisection the spec suggested — the two solvers must
+agree bit for bit, and eleven divisions by ten give identical doubles in Python and JavaScript.
+
+**Verified**: `make check` green — 674 backend tests (was 332), 320 conformance cases (was 134), mypy
+strict, ESLint, tsc, i18n. 152 of the new tests are behaviour tests in `tests/unit/test_composition.py`
+(tiling, aspects, centring, balance monotonicity, borders, no overlap, totality at every slider
+extreme, crop preservation); 4 are API tests covering the catalogue endpoint and the composition
+problem codes. **Not driven in a browser** (§13.6): stage 1 ships no UI, so there is nothing to drive —
+the endpoint is covered by an API test and the solver by conformance on both sides.
+
+**Not done** (stages 2–4): the server does not re-solve on save, `POST /artworks` still takes a
+`layout_id`, and there is no Simple panel, mode switch or `Re-apply layout`. `settings.artwork_defaults`
+still names a style + layout (Phase 8, §10).
+
+## 2026-09-22 — Phase 7 stage 2 (server authority)
+
+The composition is now the **source of truth** for the geometry, not a decoration of the document.
+
+**The write-back** (`docs/simple-editor.md` §3.7) is one pure, mirrored function —
+`composition.apply` ↔ `applyComposition` — and it is the only implementation of that table: rects
+from the cells, rotation zeroed, crops re-fitted around their previous centre at their previous
+zoom (§4.1), `crop_ratio` from the cell, `no_upscale` downgraded to `free` when the framing would
+upscale, the border as a band, `margins` = the block's footprint insets, `placement = manual`, and
+the one derived caption. 17 conformance cases run it **document in, document out**, so Python and
+TypeScript agree field by field rather than on rects alone — they did, first try.
+
+**On save**: `validated()` parses, checks the library references, then re-solves, so `PUT document`
+and snapshot restore share one authority. A client bug can no longer persist a wrong rect, and an
+API test proves it: half-size rects at the origin come back as the solved ones, with the reframe
+intact and the lock downgraded to `free`. A **detached** block is stored verbatim (§5).
+
+**On create**: `POST /artworks` takes `composition: {recipe?, format?, balance?, outer?, gutter?,
+border?, caption?}`, all optional — and it is now the **default**: without a `layout_id` the photos
+get the first recipe for their count, `original` for one photo and `fill` above. An explicit
+`layout_id` still builds a Phase 6 document with no block, which is what the current create dialog
+and the Advanced editor use. New codes: `unknown_recipe`, `no_recipe`, `recipe_slot_count`,
+`layout_and_composition`.
+
+**Three decisions the spec did not pin**, now written into §3.7: the caption baseline is
+`1.05 × size` below its line's top (pure number, no font metrics, computed from the nominal `outer`
+so a relaxed block does not drag the text with it); the composition owns the caption's *text and
+side* while the document owns its *typography* (so a restyled caption survives a re-solve); and a
+blank caption text derives no caption at all (the document model requires `text` ≥ 1 char).
+
+**One bug found by reasoning about `aspect_consistent`**: `refit_crop` scaled the largest crop's
+width *and* height by the zoom, rounding two independent sides. The error budget of
+`aspect_consistent` is exactly `(rect.w + rect.h)(1 + k)/2` — the two roundings can reach it, so
+the server could have rejected its own output. The height now comes from the width and the ratio;
+the four existing fixtures were unchanged by the fix (verified by hand), and a parametrized test
+re-validates an applied document for every recipe × format.
+
+**Verified**: `make check` green — 817 backend tests (was 695), 337 conformance cases (was 320),
+mypy strict, ESLint, tsc, i18n. **Not driven in a browser** (§13.6): stage 2 ships no UI. The
+render path is covered anyway, since every artwork the API tests create now goes through the
+composition path and renders.
+
+**Known gap, closed by stage 4**: the Advanced editor ignores the document the server returns, so a
+free-form slot move on a *composition-backed* artwork would be silently re-solved away. Nothing
+reaches that state today — the create dialog always sends `layout_id`, so every artwork the UI
+makes has no block — but stage 4's `detached` flag (set by the first free-form edit) is what makes
+it safe, and it must land before the Simple/Advanced switch does.
+
+## 2026-09-22 — Phase 7 stage 3 (the Simple panel)
+
+The parametric editor is now something you can use: pick a layout, move two sliders.
+
+**The panel** (`editor/panels/SimplePanel.tsx`) follows §6.2 top to bottom — Layout, Balance,
+Format, Margins, Photos, Background, Border, Caption. Every control writes into the `composition`
+block and lets `applyComposition` re-derive the geometry, so the editor previews exactly what the
+server will store (the same mirrored function, stage 2). The layout picker draws its schemas by
+**running the solver** at thumbnail parameters (§6.3): a new recipe in `recipes.json` appears with a
+correct schema for free, and a thumbnail can never drift from the real layout.
+
+**Slider bounds** are a bisection on `solve_strict` — a new mirrored primitive: one attempt, no
+relaxation ladder. Bisecting on `solve` would have been quietly wrong, because the ladder answers
+"roomy" for an over-constrained value by laying the block out with *other* gutters. The bisection
+itself is client-only (`editor/core/bounds.ts`, like `snapping.ts`): the server needs no such rule,
+its solver is total.
+
+**Three rules the panel forced into the open**, now in §6.2 of the spec:
+1. *Attaching a block must not eat a caption.* A hand-built artwork shows the picker alone; picking
+   a layout attaches a block, which from then on owns the captions (§3.7) — so an existing caption's
+   text moves into the block instead of being deleted on the next solve.
+2. *Reframing turns the lock off.* Under `no_upscale` the constraint solver shrinks the **slot** as
+   soon as the crop gets smaller than it (§7.3), which fights the cell. A reframe inside a cell now
+   zooms with the lock off and restores §3.7's lock afterwards (`relock`), so the rect belongs to
+   the composition at all times.
+3. *Balance is clamped when the recipe changes.* The declared ranges differ between recipes
+   (`hero-left` 0.40–0.75, `hero-right` 0.25–0.60), so carrying the value over unclamped builds a
+   document the server rejects with `balance_out_of_range`. Found by reading the catalogue after
+   the browser run had already set 0.7 on a hero-left; `balanceFor` clamps, and the browser now
+   shows 0.75 → 60 % on the switch, stored without a 422.
+4. *The photo count keeps the block valid.* A slot added or removed in the Advanced editor re-picks
+   the recipe (§4.4); past the catalogue (7 photos and up) the block detaches, which is also what
+   stops the server rejecting the save with `recipe_slot_count`.
+
+**Verified in a real browser** (§13.6, headless Chromium over CDP against the production build on
+trusted localhost — the harness the AGENTS.md gotcha describes):
+
+- a 3-photo artwork created by `POST /artworks` with no layout id comes back parametric
+  (`three-row`, `fill`);
+- picking *Hero left* shows Balance at the recipe's 62 % default; switching the format to `3:2`
+  replaces the slider with the "the format sets the proportions" hint (§4.3);
+- dragging *Outer* to 320 shows `→ 373` next to it — and 373 px is exactly the margin the **server**
+  stored after re-solving, which is the phase's AC: *the server-stored rects equal the ones the
+  editor previewed*. The cells come out 3:2 to the rounding bound (2120×1414, 1000×667);
+- a hand-built artwork shows "Pick a layout…" and attaches a block when one is picked, carrying its
+  caption into it (`y = 2018`, the derived baseline);
+- typing a caption switches it on *below*, dragging photo 1 onto photo 2 swaps them and re-frames
+  both crops, zooming cell 2 to 3× changes only the crop (the rect stays the cell), and a 24 px
+  border lands as a band on every slot.
+
+**Verified**: `make check` green — 822 backend tests, 339 conformance cases, mypy strict, ESLint,
+tsc, i18n.
+
+**Not done** (stage 4): there is no `[Simple] [Advanced ᴮᴱᵀᴬ]` switch yet — the Simple panel sits on
+top of the Advanced stack in the design tab, which is how it stays reachable for a hand-built
+artwork. Free-form edits still do not set `detached`, so the gap flagged in the stage-2 note is
+still open: a slot moved by hand on a composition-backed artwork is re-solved away on save. Stage 4
+closes it, together with the banner and **Re-apply layout**.
+
+## 2026-09-22 — Phase 7 stage 4 (the mode switch and `detached`) — **phase complete**
+
+The editor now has two modes and a safe door between them.
+
+**The switch** sits in the header (`[Simple] [Advanced ᴮᴱᵀᴬ]`, Simple default for every artwork,
+registered as a palette command with no shortcut). Advanced shows the Phase 6 stack under the
+warning strip. The canvas is shared but not identical: in Simple the stage runs the **crop**
+gesture, so dragging reframes a photo inside its fixed cell and the transform handles are never
+offered — the select/crop toggle is an Advanced control and is hidden in Simple.
+
+**Detaching** (§5) is the interesting half. The rule the code applies is mechanical: **an edit
+detaches exactly when `apply` would overwrite it**. That turned a vague list ("rotation, free
+placement, per-slot decorations") into 20-odd call sites with an answer each:
+
+- *detach*: move / resize / rotate a slot, align / distribute / same-size, fit / fill to photo,
+  bands, quality lock, crop ratio, margins, placement, alternatives, a caption's position, adding
+  or removing a caption;
+- *do not detach*: the shadow, the mat, a caption's typography — `apply` leaves them alone, so they
+  survive the next solve and must not cost the user their layout link;
+- *re-solve instead*: orienting a photo (90°/flip changes the aspect an `original`/`auto` cell
+  follows), re-ordering slots (the array order **is** the cell assignment, so it reads as a swap)
+  and adding or removing a photo (§4.4).
+
+A caption's text was the one field both modes write: typed on the canvas it now goes into
+`composition.caption.text`, not just onto the caption, or the next solve would take it back.
+
+**Re-apply layout** is one `store.edit()` patch behind a confirm dialog — which is exactly what
+makes it safe to offer as a button: `⌘Z` puts the hand-made geometry back.
+
+**Verified in a real browser** (CDP, production build on trusted localhost): Simple is the default
+and shows the Layout panel; Advanced shows the beta strip and the old stack; an arrow-key nudge in
+Advanced detaches; back in Simple the banner replaces the controls; Re-apply asks for confirmation
+and restores the solved cells (`detached: false`, rects back to 120/2382 on the server); one `⌘Z`
+brings the banner *and* the hand-made geometry back (`detached: true`, `x = 122` — the two nudges),
+all of it round-tripping through the server. A shadow change in Advanced leaves `detached` false.
+
+**A process note worth keeping**: the header switch silently did not land the first time — the
+scripted replacement missed because prettier had reformatted the block, and that particular
+substitution had no assertion. The browser run caught it immediately (the header had no switch at
+all). Script every edit with an assertion, and never take "the checks are green" as evidence that a
+UI change is actually *there*.
+
+**Verified**: `make check` green — 822 backend tests, 339 conformance cases, mypy strict, ESLint,
+tsc, i18n. Phase 7 is complete; `settings.artwork_defaults` still names a style + layout rather
+than a style + recipe + format (§10, left to Phase 8 with the rest of the template work), and the
+create dialog still sends a `layout_id`, so artworks made from the Photos page are hand-built until
+the user picks a layout in the editor. Both are Phase 8's to change.

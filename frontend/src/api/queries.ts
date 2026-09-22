@@ -25,6 +25,7 @@ export const queryKeys = {
   artwork: (id: string) => ["artworks", "detail", id] as const,
   frameStyles: ["templates", "styles"] as const,
   layouts: ["templates", "layouts"] as const,
+  recipes: ["templates", "recipes"] as const,
   fonts: ["assets", "fonts"] as const,
   textures: ["assets", "textures"] as const,
   colorPresets: ["colors", "presets"] as const,
@@ -255,6 +256,15 @@ export function useLayouts() {
     queryKey: queryKeys.layouts,
     queryFn: () => unwrap(api.GET("/api/v1/layouts")),
     staleTime: 60_000,
+  });
+}
+
+/** The bundled composition catalogue (§6.3): static, so it never goes stale. */
+export function useRecipes() {
+  return useQuery({
+    queryKey: queryKeys.recipes,
+    queryFn: () => unwrap(api.GET("/api/v1/recipes")),
+    staleTime: Infinity,
   });
 }
 

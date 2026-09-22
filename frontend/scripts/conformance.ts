@@ -6,6 +6,7 @@ import { join } from "node:path";
 
 import * as alternatives from "../src/editor/core/alternatives.ts";
 import * as arrange from "../src/editor/core/arrange.ts";
+import * as composition from "../src/editor/core/composition.ts";
 import * as constraints from "../src/editor/core/constraints.ts";
 import * as geometry from "../src/editor/core/geometry.ts";
 import * as placement from "../src/editor/core/placement.ts";
@@ -15,6 +16,20 @@ type Args = Record<string, unknown>;
 type Fn = (args: Args) => unknown;
 
 const a = <T>(args: Args, key: string) => args[key] as T;
+
+// Recipes come from the backend's bundled catalogue — one source for both solvers (§7).
+const CATALOG = JSON.parse(
+  readFileSync(
+    join(import.meta.dirname, "../../backend/src/the_frame_v2/assets/presets/recipes.json"),
+    "utf8",
+  ),
+) as { recipes: composition.Recipe[] };
+
+function recipe(id: string): composition.Recipe {
+  const found = CATALOG.recipes.find((r) => r.id === id);
+  if (!found) throw new Error(`unknown recipe ${id}`);
+  return found;
+}
 
 const FUNCTIONS: Record<string, Fn> = {
   round_half_even: (x) => geometry.roundHalfEven(a(x, "value")),
@@ -47,7 +62,13 @@ const FUNCTIONS: Record<string, Fn> = {
       a(x, "mirror_y"),
     ),
   fit_in_mat: (x) =>
-    placement.fitInMat(a(x, "source"), a(x, "crop"), a(x, "crop_ratio"), a(x, "margins"), a(x, "lock")),
+    placement.fitInMat(
+      a(x, "source"),
+      a(x, "crop"),
+      a(x, "crop_ratio"),
+      a(x, "margins"),
+      a(x, "lock"),
+    ),
   fill: (x) => placement.fill(a(x, "source"), a(x, "lock")),
   fill_slot: (x) => placement.fillSlot(a(x, "rect"), a(x, "source"), a(x, "lock")),
   fit_slot: (x) => placement.fitSlot(a(x, "rect"), a(x, "source"), a(x, "lock")),
@@ -74,6 +95,33 @@ const FUNCTIONS: Record<string, Fn> = {
   same_size: (x) => arrange.sameSize(a(x, "rects"), a(x, "reference")),
   new_slot_size: (x) => arrange.newSlotSize(a(x, "area"), a(x, "source")),
   new_slot_rect: (x) => arrange.newSlotRect(a(x, "existing"), a(x, "area"), a(x, "size")),
+  composition_solve: (x) =>
+    composition.solve(
+      recipe(a(x, "recipe")),
+      a(x, "composition"),
+      a(x, "photo_sizes"),
+      a(x, "caption_size"),
+    ),
+  composition_solve_strict: (x) =>
+    composition.solveStrict(
+      recipe(a(x, "recipe")),
+      a(x, "composition"),
+      a(x, "photo_sizes"),
+      a(x, "caption_size"),
+    ),
+  composition_apply: (x) =>
+    composition.applyComposition(
+      a(x, "doc"),
+      recipe(a(x, "recipe")),
+      a(x, "photo_sizes"),
+      a(x, "caption"),
+    ),
+  composition_block_area: (x) => composition.blockArea(a(x, "composition"), a(x, "caption_size")),
+  composition_block_margins: (x) => composition.blockMargins(a(x, "cells"), a(x, "border")),
+  composition_refit_crop: (x) =>
+    composition.refitCrop(a(x, "previous"), a(x, "source"), a(x, "ratio")),
+  composition_caption_band: (x) => composition.captionBand(a(x, "caption_size"), a(x, "gutter_y")),
+  composition_format_ratio: (x) => composition.formatRatio(a(x, "composition_format")),
   alternatives: (x) =>
     alternatives.alternatives(
       a(x, "state"),
@@ -90,7 +138,10 @@ const FUNCTIONS: Record<string, Fn> = {
 
 function close(actual: unknown, expected: unknown): boolean {
   if (typeof expected === "number") {
-    return typeof actual === "number" && Math.abs(actual - expected) <= 1e-12 * Math.max(1, Math.abs(expected));
+    return (
+      typeof actual === "number" &&
+      Math.abs(actual - expected) <= 1e-12 * Math.max(1, Math.abs(expected))
+    );
   }
   if (Array.isArray(expected)) {
     return (
@@ -113,7 +164,9 @@ function close(actual: unknown, expected: unknown): boolean {
 const dir = join(import.meta.dirname, "../../conformance/geometry");
 let count = 0;
 const failures: string[] = [];
-for (const file of readdirSync(dir).filter((f) => f.endsWith(".json")).sort()) {
+for (const file of readdirSync(dir)
+  .filter((f) => f.endsWith(".json"))
+  .sort()) {
   const { cases } = JSON.parse(readFileSync(join(dir, file), "utf8")) as {
     cases: { name: string; fn: string; input: Args; expected: unknown }[];
   };
@@ -133,7 +186,9 @@ for (const file of readdirSync(dir).filter((f) => f.endsWith(".json")).sort()) {
   }
 }
 if (failures.length > 0) {
-  console.error(`Geometry conformance failed (${failures.length}/${count}):\n  ${failures.join("\n  ")}`);
+  console.error(
+    `Geometry conformance failed (${failures.length}/${count}):\n  ${failures.join("\n  ")}`,
+  );
   process.exit(1);
 }
 console.log(`Geometry conformance OK (${count} cases)`);

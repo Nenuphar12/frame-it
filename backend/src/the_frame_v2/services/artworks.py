@@ -26,23 +26,29 @@ from the_frame_v2.db.models import (
     ArtworkTag,
     Collection,
     CollectionItem,
-    Layout,
     Photo,
     PhotoPendingMeta,
     Tag,
 )
+from the_frame_v2.domain import composition as composition_solver
+from the_frame_v2.domain.composition import Recipe
 from the_frame_v2.domain.document import (
     ArtworkDocument,
+    Composition,
     DocumentIssue,
     parse_document,
     validate_references,
 )
 from the_frame_v2.domain.geometry import Size
-from the_frame_v2.domain.templates import PhotoInput, build_document
+from the_frame_v2.domain.templates import (
+    PhotoInput,
+    build_composition_document,
+    build_document,
+)
 from the_frame_v2.errors import ProblemError, not_found
 from the_frame_v2.ids import new_id, utcnow
 from the_frame_v2.imaging.assets import catalog
-from the_frame_v2.services import templates
+from the_frame_v2.services import recipes, templates
 
 MAX_SNAPSHOTS = 20
 MAX_LIMIT = 500
@@ -90,18 +96,38 @@ def photo_sizes(session: Session, photo_ids: Sequence[str]) -> dict[str, Size]:
 
 
 def check_references(session: Session, doc: ArtworkDocument) -> None:
+    _check_references(doc, photo_sizes(session, doc.photo_ids()))
+
+
+def _check_references(doc: ArtworkDocument, sizes: Mapping[str, Size]) -> None:
     assets = catalog()
     issues = validate_references(
-        doc, photo_sizes(session, doc.photo_ids()), assets.font_weights, assets.texture_exists
+        doc, sizes, assets.font_weights, assets.texture_exists, recipes.spec
     )
     if issues:
         raise invalid_document(issues)
 
 
+def resolved(doc: ArtworkDocument, sizes: Mapping[str, Size]) -> ArtworkDocument:
+    """Server authority (§7): while attached, the composition — not the payload — sets the geometry.
+
+    The two solvers are identical (conformance), so this is a no-op for a healthy client; a buggy
+    one simply cannot persist a wrong rect. A detached block, or none at all, leaves `doc` alone:
+    the slots are the truth then (§5). An unknown recipe is left to `_check_references`.
+    """
+    composition = doc.composition
+    if composition is None or composition.detached:
+        return doc
+    recipe = recipes.find(composition.recipe)
+    return doc if recipe is None else composition_solver.apply(doc, recipe, sizes)
+
+
 def validated(session: Session, raw: Mapping[str, Any]) -> ArtworkDocument:
+    """Parse, check against the library, then let the composition re-derive the geometry."""
     doc = parse_or_raise(raw)
-    check_references(session, doc)
-    return doc
+    sizes = photo_sizes(session, doc.photo_ids())
+    _check_references(doc, sizes)
+    return resolved(doc, sizes)
 
 
 # ---- persistence helpers ------------------------------------------------------------------------
@@ -160,6 +186,44 @@ def _default_title(photo: Photo) -> str:
     return PurePath(photo.original_filename).stem[:256]
 
 
+def _composition_for(
+    photo_count: int, requested: Mapping[str, Any] | None
+) -> tuple[Recipe, Composition]:
+    """The recipe and the block a new parametric artwork starts from (§7).
+
+    Nothing requested ⇒ the first catalogue entry for that many photos, `original` for a single
+    photo (the whole photo in the mat, today's `fit_in_mat`) and `fill` above.
+    """
+    params = dict(requested or {})
+    recipe_id = params.pop("recipe", None)
+    recipe = recipes.find(recipe_id) if recipe_id else recipes.for_count(photo_count)
+    if recipe is None and recipe_id:
+        raise ProblemError(422, "unknown_recipe", "Unknown composition", str(recipe_id))
+    if recipe is None:
+        raise ProblemError(
+            422, "no_recipe", "No composition for this number of photos", str(photo_count)
+        )
+    if recipe.count != photo_count:
+        raise ProblemError(
+            422,
+            "recipe_slot_count",
+            "Wrong number of photos for this composition",
+            f"{recipe.id} holds {recipe.count} photo(s), {photo_count} given",
+        )
+    params.setdefault("format", "original" if photo_count == 1 else "fill")
+    try:
+        return recipe, Composition(recipe=recipe.id, **params)
+    except ValidationError as exc:
+        raise invalid_document(
+            [
+                DocumentIssue(
+                    ("composition", *e["loc"]), e["msg"].removeprefix("Value error, "), e["type"]
+                )
+                for e in exc.errors(include_url=False)
+            ]
+        ) from exc
+
+
 def create_artwork(
     session: Session,
     photo_ids: Sequence[str],
@@ -168,11 +232,20 @@ def create_artwork(
     layout_id: str | None = None,
     placement: str | None = None,
     title: str | None = None,
+    composition: Mapping[str, Any] | None = None,
 ) -> Artwork:
-    """New draft from photos (in slot order), a frame style and a layout (defaults when omitted).
+    """New draft from photos (in slot order), a frame style and a composition or a layout.
+
+    Parametric by default (docs/simple-editor.md §7): without a `layout_id` the photos are laid
+    out by a recipe, which is what the Simple editor then edits. An explicit `layout_id` keeps the
+    Phase 6 path — a hand-placed document with no `composition` block, for the Advanced editor.
 
     Photos leave the inbox; their pending upload metadata (favorite, collections) is applied once.
     """
+    if layout_id is not None and composition is not None:
+        raise ProblemError(
+            422, "layout_and_composition", "Pass a layout or a composition, not both"
+        )
     photos = {
         p.id: p
         for p in session.scalars(
@@ -182,20 +255,23 @@ def create_artwork(
     missing = [i for i in photo_ids if i not in photos]
     if missing:
         raise ProblemError(422, "unknown_photo", "Unknown photo", missing[0])
-    default_style, default_layout = templates.defaults(session)
+    default_style, _ = templates.defaults(session)
     style_row, style = templates.get_style(session, style_id or default_style)
-    if layout_id is None:
-        layout_id = _layout_for(session, default_layout, len(photo_ids))
-    layout_row, layout = templates.get_layout(session, layout_id)
-    if len(photo_ids) > len(layout.slots):
-        raise ProblemError(
-            422,
-            "too_many_photos",
-            "Too many photos for this layout",
-            f"{layout_row.name} has {len(layout.slots)} slot(s)",
-        )
     inputs = [PhotoInput(i, Size(photos[i].width, photos[i].height)) for i in photo_ids]
-    doc = build_document(style, layout, inputs, placement)  # type: ignore[arg-type]
+    layout_row = None
+    if layout_id is None:
+        recipe, block = _composition_for(len(photo_ids), composition)
+        doc = build_composition_document(style, recipe, block, inputs)
+    else:
+        layout_row, layout = templates.get_layout(session, layout_id)
+        if len(photo_ids) > len(layout.slots):
+            raise ProblemError(
+                422,
+                "too_many_photos",
+                "Too many photos for this layout",
+                f"{layout_row.name} has {len(layout.slots)} slot(s)",
+            )
+        doc = build_document(style, layout, inputs, placement)  # type: ignore[arg-type]
     check_references(session, doc)
 
     first = photos[photo_ids[0]] if photo_ids else None
@@ -203,8 +279,8 @@ def create_artwork(
         title=(title if title is not None else (_default_title(first) if first else ""))[:256],
         origin_style_id=style_row.id,
         origin_style_revision=style_row.revision,
-        origin_layout_id=layout_row.id,
-        origin_layout_revision=layout_row.revision,
+        origin_layout_id=layout_row.id if layout_row else None,
+        origin_layout_revision=layout_row.revision if layout_row else None,
     )
     session.add(artwork)
     session.flush()
@@ -214,23 +290,6 @@ def create_artwork(
         if photo.inbox_state == "inbox":
             photo.inbox_state = "processed"
     return artwork
-
-
-def _layout_for(session: Session, default_layout: str, photo_count: int) -> str:
-    """The default layout if it has enough slots, else the first built-in with that slot count."""
-    row = session.get(Layout, default_layout)
-    if row is not None and row.slot_count >= max(1, photo_count):
-        return row.id
-    candidate = session.scalars(
-        select(Layout.id)
-        .where(Layout.slot_count == photo_count)
-        .order_by(Layout.builtin.desc(), Layout.name)
-    ).first()
-    if candidate is None:
-        raise ProblemError(
-            422, "no_layout", "No layout for this number of photos", str(photo_count)
-        )
-    return candidate
 
 
 def _apply_pending_meta(session: Session, artwork: Artwork, photo_ids: list[str]) -> None:

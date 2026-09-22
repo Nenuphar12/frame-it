@@ -3,6 +3,16 @@
     "schemas": {
       "ArtworkCreateIn": {
         "properties": {
+          "composition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompositionIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "layout_id": {
             "anyOf": [
               {
@@ -118,6 +128,16 @@
             "maxItems": 32,
             "title": "Captions",
             "type": "array"
+          },
+          "composition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Composition"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "margins": {
             "$ref": "#/components/schemas/MarginsSpec"
@@ -556,6 +576,36 @@
         "title": "ArtworkUpdateIn",
         "type": "object"
       },
+      "BalanceRange": {
+        "additionalProperties": false,
+        "properties": {
+          "default": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Default",
+            "type": "number"
+          },
+          "max": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Max",
+            "type": "number"
+          },
+          "min": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Min",
+            "type": "number"
+          }
+        },
+        "required": [
+          "min",
+          "max",
+          "default"
+        ],
+        "title": "BalanceRange",
+        "type": "object"
+      },
       "Band": {
         "additionalProperties": false,
         "properties": {
@@ -832,6 +882,241 @@
           "color"
         ],
         "title": "ColorPresetOut",
+        "type": "object"
+      },
+      "Composition": {
+        "additionalProperties": false,
+        "description": "Parametric layout (Phase 7, docs/simple-editor.md \u00a72).\n\nSource of truth for `slots` and the derived caption while `detached` is false. Absent on legacy\nor hand-built artworks \u2014 `schema` stays 1, so there is nothing to migrate.",
+        "properties": {
+          "balance": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance"
+          },
+          "border": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompositionBorder"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "caption": {
+            "$ref": "#/components/schemas/CompositionCaption"
+          },
+          "detached": {
+            "default": false,
+            "title": "Detached",
+            "type": "boolean"
+          },
+          "format": {
+            "default": "fill",
+            "pattern": "^(fill|original|[1-9][0-9]{0,3}:[1-9][0-9]{0,3})$",
+            "title": "Format",
+            "type": "string"
+          },
+          "gutter": {
+            "$ref": "#/components/schemas/CompositionGutter"
+          },
+          "outer": {
+            "$ref": "#/components/schemas/CompositionAxis"
+          },
+          "recipe": {
+            "pattern": "^[a-z0-9-]{1,64}$",
+            "title": "Recipe",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recipe"
+        ],
+        "title": "Composition",
+        "type": "object"
+      },
+      "CompositionAxis": {
+        "additionalProperties": false,
+        "description": "A per-axis length in canvas px (`x` = horizontal, `y` = vertical).",
+        "properties": {
+          "x": {
+            "maximum": 800.0,
+            "minimum": 0.0,
+            "title": "X",
+            "type": "integer"
+          },
+          "y": {
+            "maximum": 450.0,
+            "minimum": 0.0,
+            "title": "Y",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "x",
+          "y"
+        ],
+        "title": "CompositionAxis",
+        "type": "object"
+      },
+      "CompositionBorder": {
+        "additionalProperties": false,
+        "properties": {
+          "color": {
+            "default": "#FFFFFF",
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "title": "Color",
+            "type": "string"
+          },
+          "width": {
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "width"
+        ],
+        "title": "CompositionBorder",
+        "type": "object"
+      },
+      "CompositionCaption": {
+        "additionalProperties": false,
+        "properties": {
+          "place": {
+            "default": "none",
+            "enum": [
+              "none",
+              "above",
+              "below"
+            ],
+            "title": "Place",
+            "type": "string"
+          },
+          "text": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "title": "CompositionCaption",
+        "type": "object"
+      },
+      "CompositionGutter": {
+        "additionalProperties": false,
+        "properties": {
+          "x": {
+            "maximum": 400.0,
+            "minimum": 0.0,
+            "title": "X",
+            "type": "integer"
+          },
+          "y": {
+            "maximum": 400.0,
+            "minimum": 0.0,
+            "title": "Y",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "x",
+          "y"
+        ],
+        "title": "CompositionGutter",
+        "type": "object"
+      },
+      "CompositionIn": {
+        "additionalProperties": false,
+        "description": "Parameters of a new parametric artwork (docs/simple-editor.md \u00a77): all optional.\n\nSame fields as the document's `composition` block, minus `detached` (a new artwork never is).\n`recipe` defaults to the first catalogue entry for the number of photos, `format` to\n`original` for a single photo and `fill` above.",
+        "properties": {
+          "balance": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance"
+          },
+          "border": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompositionBorder"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "caption": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompositionCaption"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "format": {
+            "anyOf": [
+              {
+                "pattern": "^(fill|original|[1-9][0-9]{0,3}:[1-9][0-9]{0,3})$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Format"
+          },
+          "gutter": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompositionGutter"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "outer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompositionAxis"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recipe": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe"
+          }
+        },
+        "title": "CompositionIn",
         "type": "object"
       },
       "CountOut": {
@@ -2124,6 +2409,122 @@
           }
         },
         "title": "PhotoUpdateIn",
+        "type": "object"
+      },
+      "RecipeCell": {
+        "additionalProperties": false,
+        "description": "A leaf: one cell. `auto` takes the photo's own orientation (1-cell recipes).",
+        "properties": {
+          "cell": {
+            "enum": [
+              "landscape",
+              "portrait",
+              "square",
+              "auto"
+            ],
+            "title": "Cell",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cell"
+        ],
+        "title": "RecipeCell",
+        "type": "object"
+      },
+      "RecipeOut": {
+        "description": "A catalogue entry: the client solves and draws its picker schemas from this (\u00a76.3).",
+        "properties": {
+          "balance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BalanceRange"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name_key": {
+            "title": "Name Key",
+            "type": "string"
+          },
+          "tree": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecipeCell"
+              },
+              {
+                "$ref": "#/components/schemas/RecipeSplit"
+              }
+            ],
+            "title": "Tree"
+          }
+        },
+        "required": [
+          "id",
+          "count",
+          "name_key",
+          "balance",
+          "tree"
+        ],
+        "title": "RecipeOut",
+        "type": "object"
+      },
+      "RecipeSplit": {
+        "additionalProperties": false,
+        "description": "`row`: children left\u2192right, separated by `gutter.x`. `col`: top\u2192bottom, `gutter.y`.",
+        "properties": {
+          "children": {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RecipeCell"
+                },
+                {
+                  "$ref": "#/components/schemas/RecipeSplit"
+                }
+              ]
+            },
+            "maxItems": 8,
+            "minItems": 2,
+            "title": "Children",
+            "type": "array"
+          },
+          "split": {
+            "enum": [
+              "row",
+              "col"
+            ],
+            "title": "Split",
+            "type": "string"
+          },
+          "weights": {
+            "items": {
+              "exclusiveMinimum": 0.0,
+              "maximum": 1000.0,
+              "type": "number"
+            },
+            "maxItems": 8,
+            "minItems": 2,
+            "title": "Weights",
+            "type": "array"
+          }
+        },
+        "required": [
+          "split",
+          "weights",
+          "children"
+        ],
+        "title": "RecipeSplit",
         "type": "object"
       },
       "RectSpec": {
@@ -4798,6 +5199,32 @@
         "summary": "Color Presets",
         "tags": [
           "colors"
+        ]
+      }
+    },
+    "/api/v1/recipes": {
+      "get": {
+        "description": "Bundled composition recipes (docs/simple-editor.md \u00a76.4). Static: not user-editable.",
+        "operationId": "list_recipes_api_v1_recipes_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RecipeOut"
+                  },
+                  "title": "Response List Recipes Api V1 Recipes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Recipes",
+        "tags": [
+          "templates"
         ]
       }
     },

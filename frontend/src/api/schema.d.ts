@@ -691,6 +691,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/recipes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Recipes
+         * @description Bundled composition recipes (docs/simple-editor.md §6.4). Static: not user-editable.
+         */
+        get: operations["list_recipes_api_v1_recipes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/render/region": {
         parameters: {
             query?: never;
@@ -928,6 +948,7 @@ export interface components {
     schemas: {
         /** ArtworkCreateIn */
         ArtworkCreateIn: {
+            composition?: components["schemas"]["CompositionIn"] | null;
             /** Layout Id */
             layout_id?: string | null;
             /** Photo Ids */
@@ -958,6 +979,7 @@ export interface components {
             canvas?: components["schemas"]["CanvasSpec"];
             /** Captions */
             captions?: components["schemas"]["Caption"][];
+            composition?: components["schemas"]["Composition"] | null;
             margins?: components["schemas"]["MarginsSpec"];
             mat?: components["schemas"]["Mat"];
             /**
@@ -1085,6 +1107,15 @@ export interface components {
             tag_ids?: string[] | null;
             /** Title */
             title?: string | null;
+        };
+        /** BalanceRange */
+        BalanceRange: {
+            /** Default */
+            default: number;
+            /** Max */
+            max: number;
+            /** Min */
+            min: number;
         };
         /** Band */
         Band: {
@@ -1220,6 +1251,94 @@ export interface components {
             color: string;
             /** Name */
             name: string;
+        };
+        /**
+         * Composition
+         * @description Parametric layout (Phase 7, docs/simple-editor.md §2).
+         *
+         *     Source of truth for `slots` and the derived caption while `detached` is false. Absent on legacy
+         *     or hand-built artworks — `schema` stays 1, so there is nothing to migrate.
+         */
+        Composition: {
+            /** Balance */
+            balance?: number | null;
+            border?: components["schemas"]["CompositionBorder"] | null;
+            caption?: components["schemas"]["CompositionCaption"];
+            /**
+             * Detached
+             * @default false
+             */
+            detached: boolean;
+            /**
+             * Format
+             * @default fill
+             */
+            format: string;
+            gutter?: components["schemas"]["CompositionGutter"];
+            outer?: components["schemas"]["CompositionAxis"];
+            /** Recipe */
+            recipe: string;
+        };
+        /**
+         * CompositionAxis
+         * @description A per-axis length in canvas px (`x` = horizontal, `y` = vertical).
+         */
+        CompositionAxis: {
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
+        /** CompositionBorder */
+        CompositionBorder: {
+            /**
+             * Color
+             * @default #FFFFFF
+             */
+            color: string;
+            /** Width */
+            width: number;
+        };
+        /** CompositionCaption */
+        CompositionCaption: {
+            /**
+             * Place
+             * @default none
+             * @enum {string}
+             */
+            place: "none" | "above" | "below";
+            /**
+             * Text
+             * @default
+             */
+            text: string;
+        };
+        /** CompositionGutter */
+        CompositionGutter: {
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
+        /**
+         * CompositionIn
+         * @description Parameters of a new parametric artwork (docs/simple-editor.md §7): all optional.
+         *
+         *     Same fields as the document's `composition` block, minus `detached` (a new artwork never is).
+         *     `recipe` defaults to the first catalogue entry for the number of photos, `format` to
+         *     `original` for a single photo and `fill` above.
+         */
+        CompositionIn: {
+            /** Balance */
+            balance?: number | null;
+            border?: components["schemas"]["CompositionBorder"] | null;
+            caption?: components["schemas"]["CompositionCaption"] | null;
+            /** Format */
+            format?: string | null;
+            gutter?: components["schemas"]["CompositionGutter"] | null;
+            outer?: components["schemas"]["CompositionAxis"] | null;
+            /** Recipe */
+            recipe?: string | null;
         };
         /** CountOut */
         CountOut: {
@@ -1680,6 +1799,47 @@ export interface components {
             inbox_state?: ("inbox" | "processed" | "dismissed") | null;
             /** Tag Ids */
             tag_ids?: string[] | null;
+        };
+        /**
+         * RecipeCell
+         * @description A leaf: one cell. `auto` takes the photo's own orientation (1-cell recipes).
+         */
+        RecipeCell: {
+            /**
+             * Cell
+             * @enum {string}
+             */
+            cell: "landscape" | "portrait" | "square" | "auto";
+        };
+        /**
+         * RecipeOut
+         * @description A catalogue entry: the client solves and draws its picker schemas from this (§6.3).
+         */
+        RecipeOut: {
+            balance: components["schemas"]["BalanceRange"] | null;
+            /** Count */
+            count: number;
+            /** Id */
+            id: string;
+            /** Name Key */
+            name_key: string;
+            /** Tree */
+            tree: components["schemas"]["RecipeCell"] | components["schemas"]["RecipeSplit"];
+        };
+        /**
+         * RecipeSplit
+         * @description `row`: children left→right, separated by `gutter.x`. `col`: top→bottom, `gutter.y`.
+         */
+        RecipeSplit: {
+            /** Children */
+            children: (components["schemas"]["RecipeCell"] | components["schemas"]["RecipeSplit"])[];
+            /**
+             * Split
+             * @enum {string}
+             */
+            split: "row" | "col";
+            /** Weights */
+            weights: number[];
         };
         /** RectSpec */
         RectSpec: {
@@ -3290,6 +3450,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ColorPresetOut"][];
+                };
+            };
+        };
+    };
+    list_recipes_api_v1_recipes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipeOut"][];
                 };
             };
         };

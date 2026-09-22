@@ -127,6 +127,159 @@
       "title": "Caption",
       "type": "object"
     },
+    "Composition": {
+      "additionalProperties": false,
+      "description": "Parametric layout (Phase 7, docs/simple-editor.md \u00a72).\n\nSource of truth for `slots` and the derived caption while `detached` is false. Absent on legacy\nor hand-built artworks \u2014 `schema` stays 1, so there is nothing to migrate.",
+      "properties": {
+        "balance": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Balance"
+        },
+        "border": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CompositionBorder"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "caption": {
+          "$ref": "#/$defs/CompositionCaption"
+        },
+        "detached": {
+          "default": false,
+          "title": "Detached",
+          "type": "boolean"
+        },
+        "format": {
+          "default": "fill",
+          "pattern": "^(fill|original|[1-9][0-9]{0,3}:[1-9][0-9]{0,3})$",
+          "title": "Format",
+          "type": "string"
+        },
+        "gutter": {
+          "$ref": "#/$defs/CompositionGutter"
+        },
+        "outer": {
+          "$ref": "#/$defs/CompositionAxis"
+        },
+        "recipe": {
+          "pattern": "^[a-z0-9-]{1,64}$",
+          "title": "Recipe",
+          "type": "string"
+        }
+      },
+      "required": [
+        "recipe"
+      ],
+      "title": "Composition",
+      "type": "object"
+    },
+    "CompositionAxis": {
+      "additionalProperties": false,
+      "description": "A per-axis length in canvas px (`x` = horizontal, `y` = vertical).",
+      "properties": {
+        "x": {
+          "maximum": 800,
+          "minimum": 0,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "maximum": 450,
+          "minimum": 0,
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "CompositionAxis",
+      "type": "object"
+    },
+    "CompositionBorder": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "default": "#FFFFFF",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Color",
+          "type": "string"
+        },
+        "width": {
+          "maximum": 200,
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "width"
+      ],
+      "title": "CompositionBorder",
+      "type": "object"
+    },
+    "CompositionCaption": {
+      "additionalProperties": false,
+      "properties": {
+        "place": {
+          "default": "none",
+          "enum": [
+            "none",
+            "above",
+            "below"
+          ],
+          "title": "Place",
+          "type": "string"
+        },
+        "text": {
+          "default": "",
+          "maxLength": 500,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "title": "CompositionCaption",
+      "type": "object"
+    },
+    "CompositionGutter": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "maximum": 400,
+          "minimum": 0,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "maximum": 400,
+          "minimum": 0,
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "CompositionGutter",
+      "type": "object"
+    },
     "CropSpec": {
       "additionalProperties": false,
       "properties": {
@@ -481,6 +634,17 @@
       "maxItems": 32,
       "title": "Captions",
       "type": "array"
+    },
+    "composition": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Composition"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "margins": {
       "$ref": "#/$defs/MarginsSpec"

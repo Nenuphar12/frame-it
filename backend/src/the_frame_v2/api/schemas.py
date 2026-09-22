@@ -7,7 +7,16 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from the_frame_v2.domain.document import ArtworkDocument, Placement
+from the_frame_v2.domain.composition import BalanceRange, RecipeNode
+from the_frame_v2.domain.document import (
+    ArtworkDocument,
+    CompositionAxis,
+    CompositionBorder,
+    CompositionCaption,
+    CompositionFormat,
+    CompositionGutter,
+    Placement,
+)
 from the_frame_v2.domain.templates import FrameStyleDocument, LayoutDocument
 
 RoleName = Literal["admin", "uploader"]
@@ -285,14 +294,35 @@ class ArtworkPageOut(ApiModel):
     next_cursor: str | None
 
 
+class CompositionIn(BaseModel):
+    """Parameters of a new parametric artwork (docs/simple-editor.md §7): all optional.
+
+    Same fields as the document's `composition` block, minus `detached` (a new artwork never is).
+    `recipe` defaults to the first catalogue entry for the number of photos, `format` to
+    `original` for a single photo and `fill` above.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    recipe: str | None = None
+    balance: float | None = Field(default=None, ge=0, le=1)
+    outer: CompositionAxis | None = None
+    gutter: CompositionGutter | None = None
+    format: CompositionFormat | None = None
+    border: CompositionBorder | None = None
+    caption: CompositionCaption | None = None
+
+
 class ArtworkCreateIn(BaseModel):
     photo_ids: list[str] = Field(min_length=1, max_length=32)
     """Photos in slot order."""
     style_id: str | None = None
     layout_id: str | None = None
-    """Default: the default layout if it has enough slots, else a built-in with exactly as many."""
+    """Phase 6 path: a hand-placed document with no `composition`, for the Advanced editor."""
+    composition: CompositionIn | None = None
+    """Parametric layout; mutually exclusive with `layout_id`. Neither ⇒ the defaults of §7."""
     placement: Placement | None = None
-    """Single-slot layouts only (default `fit_in_mat`)."""
+    """Single-slot layouts only (default `fit_in_mat`); ignored on the composition path."""
     title: str | None = Field(default=None, max_length=256)
 
 
@@ -343,6 +373,16 @@ class LayoutOut(ApiModel):
     builtin: bool
     slot_count: int
     document: LayoutDocument
+
+
+class RecipeOut(ApiModel):
+    """A catalogue entry: the client solves and draws its picker schemas from this (§6.3)."""
+
+    id: str
+    count: int
+    name_key: str
+    balance: BalanceRange | None
+    tree: RecipeNode
 
 
 class ArtworkDefaultsOut(ApiModel):

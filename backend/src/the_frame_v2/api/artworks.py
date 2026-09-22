@@ -106,6 +106,7 @@ def create_artwork(body: ArtworkCreateIn, _: Admin, ctx: Ctx, session: DbSession
         layout_id=body.layout_id,
         placement=body.placement,
         title=body.title,
+        composition=(body.composition.model_dump(exclude_none=True) if body.composition else None),
     )
     _changed(ctx, session, artwork.id, rerender=True)
     ctx.broker.publish(Event("photo.updated", {"photo_ids": body.photo_ids}, audience="all"))

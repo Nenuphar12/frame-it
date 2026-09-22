@@ -8,17 +8,24 @@
 Self-hosted web app to prepare pictures for a 4K art-mode TV (Samsung The Frame, 3840×2160): phone uploads in
 full quality over the LAN, pixel-perfect framing/compositions, collections, export/import.
 
-- **Current state (2026-09-21): Phases 0–6 done** — foundations, device auth & pairing, resumable uploads,
-  LocalSend receiver, ingest, Photos + Inbox UI, phone upload page; artwork document + geometry (Python/TS
-  mirrored), pyvips renderer, built-in styles/layouts, artworks API; **editor** (Konva canvas,
-  crop/placement/locks with the constraint solver, colour tools, alternatives, loupe, TV preview,
-  undo/autosave, review queue) and **multi-photo compositions** (slots panel with z-order, photo picker,
-  free-form move/resize/rotate with smart guides, multi-selection + align/distribute, caption editing).
-- **Phase 6 (2026-09-21)**: `make check` green and the composition tools driven in a browser over CDP
-  (`docs/progress.md`).
-- **Next: Phase 7 — simple editor & parametric layouts** (`docs/simple-editor.md`, `docs/PLAN.md` §14):
-  a `composition` block drives the slots from a recipe + margin/format parameters, and the manual Phase 6
-  tools become an "Advanced (beta)" mode behind a switch. Templates moved to Phase 8.
+- **Current state (2026-09-22): Phases 0–7 done** — foundations, device auth &
+  pairing, resumable uploads, LocalSend receiver, ingest, Photos + Inbox UI, phone upload page; artwork
+  document + geometry (Python/TS mirrored), pyvips renderer, built-in styles/layouts, artworks API;
+  **editor** (Konva canvas, crop/placement/locks with the constraint solver, colour tools, alternatives,
+  loupe, TV preview, undo/autosave, review queue) and **multi-photo compositions** (slots panel with
+  z-order, photo picker, free-form move/resize/rotate with smart guides, multi-selection +
+  align/distribute, caption editing).
+- **Phase 7 (2026-09-21/22, `docs/simple-editor.md`)**: parametric compositions end to end — the
+  optional `composition` block, the pure mirrored **solver**, the 17-entry recipe catalogue and
+  `GET /recipes`; **server authority** (`composition.apply` writes §3.7's table, `PUT document`
+  re-solves on every save, `POST /artworks` takes a composition and is parametric by default); the
+  **Simple panel** (picker drawn by the solver, Balance, format chips, bounded Outer/Gap sliders,
+  reframe/zoom, swap, background, border, caption); and the **`[Simple] [Advanced ᴮᴱᵀᴬ]` switch**
+  with `detached` and a confirmed, undoable **Re-apply layout**.
+- **Next: Phase 8** (`docs/PLAN.md` §14): templates rebuilt around recipes — a saved layout becomes
+  recipe + parameters, and `settings.artwork_defaults` should name a style + recipe + format
+  instead of a style + layout. The create dialog still sends a `layout_id`, so artworks made from
+  the Photos page are hand-built until a layout is picked in the editor; that moves with it.
 - Verified by the user on real hardware (2026-09-17): Android uploads (both pickers keep full quality but
   Android zeroes GPS → no place; see `docs/research/phone-uploads.md`), Docker image build/run/persistence.
 
@@ -51,10 +58,10 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `…/context.py` | `AppContext` service container (`app.state.ctx`) |
 | `…/api/` | Thin routers + `schemas.py` (Pydantic API models = OpenAPI source) + `deps.py` (auth deps) |
 | `…/auth/` | `principal.py` (cookie/localhost → role), `middleware.py` (Host/CSRF/headers), `ratelimit.py` |
-| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos`, `tags`, `geocode`, `artworks` (create/save/snapshots), `render` (cache, jobs, region), `templates` (presets, artwork defaults), `colors` (photo palette, swatches, curated presets) |
-| `…/domain/` | PURE: `document` (artwork document v1 + reference checks), `geometry`, `quality` (tiers), `placement`, `constraints` (editor solver §7.3), `alternatives` (§7.6), `arrange` (align/distribute/new slot, §7.7), `templates` (style/layout docs, `build_document`) |
+| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos`, `tags`, `geocode`, `artworks` (create/save/snapshots), `render` (cache, jobs, region), `templates` (presets, artwork defaults), `recipes` (the bundled composition catalogue, no DB), `colors` (photo palette, swatches, curated presets) |
+| `…/domain/` | PURE: `document` (artwork document v1 + the `composition` block + reference checks), `geometry`, `quality` (tiers), `placement`, `constraints` (editor solver §7.3), `alternatives` (§7.6), `arrange` (align/distribute/new slot, §7.7), `composition` (recipe trees, the parametric solver and `apply` = what it writes into a document, `docs/simple-editor.md` §3), `templates` (style/layout docs, `build_document`) |
 | `…/imaging/` | `sniff` (magic bytes), `decode` (the only pixel access), `metadata` (EXIF/ICC), `fingerprint` (hash ignoring EXIF), `capabilities`, `render` (the renderer), `palette` (OKLab k-means), `assets` (fonts/textures catalog) |
-| `…/assets/` | `geonames/`, `fonts/` (OFL, `scripts/build_fonts.py`), `textures/` (CC0, `scripts/generate_textures.py`), `presets/` (built-in styles/layouts JSON) |
+| `…/assets/` | `geonames/`, `fonts/` (OFL, `scripts/build_fonts.py`), `textures/` (CC0, `scripts/generate_textures.py`), `presets/` (built-in styles/layouts + `recipes.json`) |
 | `…/localsend/` | LocalSend v2 receiver: `app.py` (protocol routes, own TLS port), `discovery.py` (multicast), `identity.py` (cert/fingerprint), `client.py` (outgoing TLS), `runner.py` (lifespan); logic in `services/localsend.py`, admin API `api/localsend.py` |
 | `…/jobs/` | `queue.py` persistent in-process job queue (lanes, retries, coalescing); `gate.py` render concurrency |
 | `…/events.py` | Thread-safe SSE broker (`/api/v1/events`) |
@@ -66,10 +73,10 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `scripts/` | `build_geonames.py`, `build_fonts.py`, `generate_textures.py`, `bench_render.py`, `render_parity/` (S3 page) |
 | `frontend/src/api/` | `client.ts` (openapi-fetch + `ApiError`), `queries.ts` (TanStack Query hooks), `events.ts` (SSE), generated `schema.d.ts` |
 | `frontend/src/app/` | `router.tsx`, `AuthGate.tsx` (role routing), `Shell.tsx` (sidebar), `commands.ts` (shortcuts/palette registry), `theme.ts` |
-| `frontend/src/editor/core/` | PURE TS mirror of `domain/` (`geometry`, `quality`, `placement`, `constraints`, `alternatives`, `arrange`) + `snapping.ts` (client-only) and `document.ts` (the document with every optional field filled in); relative imports with `.ts` extension (run by Node in `scripts/conformance.ts`) |
+| `frontend/src/editor/core/` | PURE TS mirror of `domain/` (`geometry`, `quality`, `placement`, `constraints`, `alternatives`, `arrange`, `composition`) + `snapping.ts` and `bounds.ts` (client-only) and `document.ts` (the document with every optional field filled in); relative imports with `.ts` extension (run by Node in `scripts/conformance.ts`) |
 | `frontend/src/editor/` | `EditorPage.tsx` (layout, shortcuts, review queue), `store.ts` (working document, undo/redo on Immer patches, autosave + conflicts), `operations.ts` (pure document mutations: how a change propagates), `actions.ts` (what the UI calls), `TvPreview.tsx` |
 | `…/editor/canvas/` | `EditorStage.tsx` (Konva stage, one pointer pipeline for every gesture, overlays), `SlotNode.tsx` (bands, photo, shadows), `CaptionNode.tsx`, `SelectionOverlay.tsx` (outlines + transform handles), `hit.ts` (rotation-aware hit tests, handle maths), `texture.ts`, `fonts.ts`, `useOrientedImage.ts` |
-| `…/editor/panels/` | `SlotsPanel` (z-order, add/remove, photos), `PhotoPicker`, `ArrangePanel` (align/distribute), `CaptionsPanel`, `FramingPanel`, `StylePanel`, `ColorField` (picker + swatches + palette + presets), `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`, `Controls` |
+| `…/editor/panels/` | `SimplePanel` (the parametric editor, §6.2) + `RecipePicker` (schemas drawn by the solver), `SlotsPanel` (z-order, add/remove, photos), `PhotoPicker`, `ArrangePanel` (align/distribute), `CaptionsPanel`, `FramingPanel`, `StylePanel`, `ColorField` (picker + swatches + palette + presets), `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`, `Controls` |
 | `frontend/src/features/` | `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, viewer, create dialog), `devices/`, `auth/`, `mobile/`, `settings/`, `tags/`, `localsend/` (the editor lives in `src/editor/`, not here) |
 | `frontend/src/shared/` | UI primitives (`ui/`), `format.ts`, `cn.ts` |
 | `frontend/src/i18n/` | i18next setup; strings in `locales/en/common.json` |
@@ -92,6 +99,13 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
   inbox → SSE `photo.ingested` (or `photo.ingest_failed` with a problem code).
 - Frontend: server state only in TanStack Query; SSE invalidates `["photos"]`; upload queue is a Zustand store
   outside React (hash → open/resume → chunks with retry → wait for SSE, polling fallback).
+- Compositions (Phase 7, `docs/simple-editor.md`): an optional `composition` block holds a recipe id
+  plus parameters (balance, outer, gutter, format, border, caption). `domain/composition.solve` turns it
+  into cells — **footprints** (photo rect + border) so `gutter`/`outer` describe what the eye sees, then
+  deflated by the border into the slot rects. The block is the source of truth while `detached = false`:
+  `services/artworks.validated()` parses, checks references, then **re-solves** (`composition.apply`),
+  so no client can persist a rect the composition does not imply. `POST /artworks` without a
+  `layout_id` is parametric; with one it builds a Phase 6 document carrying no block.
 - Editor selection: `selectedSlotIds` (Shift/Ctrl-click adds; the **last** id is the *primary* one the
   property panels edit) and `selectedCaptionId` are exclusive. Framing and cropping act on the primary slot,
   locks/decorations on every selected slot, arranging on the selection (`editor/operations.ts`).
@@ -186,6 +200,49 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
   document through the API rather than screenshots — a Konva canvas can capture **black** although its pixels
   are correct. No harness ⇒ verify what you can (`make check`, conformance, API, render endpoints) and say in
   `docs/progress.md` what was not driven in a browser.
+- The composition solver rounds **edges**, never sizes: a 3:2 cell can come out 2387×1592 rather than
+  ×1591, and a cell's aspect is only exact to `1 + r` px of width (two rounded edges per side). Assert
+  `|w − a·h| ≤ 1 + a`, not `≤ 1`.
+- The solver's over-constrained recovery is a **fixed ladder** (gutters ×10/10…0/10, then `outer`), not a
+  bisection: the two solvers have to agree bit for bit, and `i/10` gives the same doubles in both
+  languages. Keep it that way — and keep the recipe catalogue the *one* source both read
+  (`conformance.ts` loads `backend/…/presets/recipes.json` straight off disk).
+- **An edit detaches a composition exactly when `apply` would overwrite it** (§3.7's table): slot
+  geometry, bands, lock, crop ratio, margins, placement and a caption's position do; the shadow,
+  the mat and a caption's typography do not. Orienting a photo, re-ordering slots and changing the
+  photo count **re-solve** instead. Put any new editor action on one of those three lists, or it
+  will either eat the user's edit on the next save or drop the layout link for nothing.
+- A caption's text belongs to the block: an edit on the canvas writes `composition.caption.text`,
+  not just the caption, or the next solve takes it back.
+- The Simple panel's sliders bisect on **`solve_strict`**, never on `solve`: the relaxation ladder
+  answers "roomy" for an over-constrained value by laying the block out with *other* gutters, so a
+  bisection on `solve` silently returns a bound that does not hold.
+- A reframe inside a cell must zoom with the quality lock **off** (`relock` puts §3.7's lock back):
+  under `no_upscale` the constraint solver shrinks the *slot* as soon as the crop gets smaller than
+  it (§7.3), which fights the composition for ownership of the rect.
+- Attaching a composition to a hand-built artwork moves its caption's text into the block: from
+  then on the block owns `captions` (§3.7), so anything left behind is deleted by the next solve.
+  Same reflex for any new field the block starts owning.
+- Adding or removing a slot while a block is attached must re-pick the recipe
+  (`recipeFollowsPhotoCount`) or the save fails with `recipe_slot_count`: the count comes from the
+  photos, and past 6 photos the block detaches.
+- A crop whose width **and** height are rounded independently can fall just outside
+  `aspect_consistent` — the tolerance is exactly the budget of two roundings. `refit_crop` derives
+  the height from the width and the target ratio for that reason: the server must never re-solve a
+  document into one it would itself reject (invariant 11).
+- `composition.apply` (↔ `applyComposition`) is the **only** writer of `docs/simple-editor.md` §3.7:
+  the server calls it on every save, the editor will call it to preview. Change it in both languages
+  and add a `composition_apply` conformance case — those fixtures compare whole documents, so a field
+  the two sides disagree on shows up there rather than in the browser.
+- `POST /artworks` **without** `layout_id` is now parametric (a recipe, no `origin_layout_id`); an
+  explicit `layout_id` keeps the Phase 6 path. `settings.artwork_defaults.layout_id` no longer
+  decides anything for a new composition artwork (Phase 8 moves it to a recipe).
+- A recipe cell of kind `auto` means *the format turned the photo's way* (portrait photo + `3:2` → a 2:3
+  cell), **not** the photo's own aspect — that is what the `original` format is for. Reading §3.5 the
+  other way makes every ratio chip a no-op for a single photo.
+- `make format` runs prettier over the whole frontend, but `make lint` only runs ESLint: a lot of editor
+  files have never been prettier-formatted, so `make format` rewrites ~20 files you did not touch. Format
+  your own files, then `git checkout --` the rest.
 - Under `fit_in_mat` + `native` the margins **are** the crop: `fit_in_mat` re-derives the crop from the
   available area on every margin edit (both directions), and a crop edit re-derives the margins. Deriving it
   only when the crop overflowed made margins one-way (the photo never grew back — `docs/geometry-and-quality.md`

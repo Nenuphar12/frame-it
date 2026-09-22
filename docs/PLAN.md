@@ -1,6 +1,6 @@
 # the_frame_v2 — Implementation Plan
 
-> Status: **Phases 0–6 implemented** (Phase 6 driven in a browser 2026-09-21; see `docs/progress.md`) ·
+> Status: **Phases 0–7 implemented** (see `docs/progress.md`) ·
 > Created 2026-09-16 · Placeholder name `the_frame_v2` (rename before open-sourcing)
 >
 > This plan is the single source of truth for scope and sequencing. Specs (§5–§9, §12) live in dedicated
@@ -577,20 +577,34 @@ canvas, drag to move) and the shortcuts `a`, `t`, `[`, `]`, `Delete`, `$mod+a`. 
 
 Full spec: `docs/simple-editor.md` (decisions taken with the user on 2026-09-21).
 
-1. `composition` block in the artwork document (optional, schema stays v1) + the pure solver
-   `domain/composition.py` ↔ `editor/core/composition.ts`, conformance fixtures, recipe catalogue
-   (`assets/presets/recipes.json`, rich for 2–4 photos, one default for 5–6) and `GET /recipes`.
-2. Server authority: `PUT document` re-solves and overwrites slot rects (crops re-fitted around their previous
-   centre); `POST /artworks` takes a composition instead of a layout id.
-3. Simple editor panel: layout picker drawn by the solver itself, `Balance`, format chips
-   (`Original` for a single photo, `Fill`, ratios, custom), `Outer`/`Gap` sliders expandable to four,
-   reframe + zoom inside a cell, photo swap, background & border, caption above/below.
-4. `[Simple] [Advanced ᴮᴱᵀᴬ]` switch on the editor page, Simple by default, warning strip on the beta side;
-   a free-form edit sets `composition.detached` and Simple offers a confirmed, undoable **Re-apply layout**.
+1. ✅ **done (2026-09-21)** — `composition` block in the artwork document (optional, schema stays v1)
+   + the pure solver `domain/composition.py` ↔ `editor/core/composition.ts`, 186 conformance cases,
+   recipe catalogue (`assets/presets/recipes.json`, 17 entries: rich for 2–4 photos, one default for
+   5–6) and `GET /recipes`.
+2. ✅ **done (2026-09-22)** — server authority: the mirrored `composition.apply` (§3.7's table),
+   `PUT document` re-solves and overwrites the slot rects (crops re-fitted around their previous
+   centre, locks downgraded, border → band, margins and the derived caption written back), and
+   `POST /artworks` takes a composition — the default when no `layout_id` is given.
+3. ✅ **done (2026-09-22)** — Simple editor panel: layout picker drawn by the solver itself,
+   `Balance`, format chips (`Original` for a single photo, `Fill`, ratios, custom), `Outer`/`Gap`
+   sliders expandable to four and bounded by a bisection on `solve_strict`, reframe + zoom inside a
+   cell, photo swap, background & border, caption above/below. A hand-built artwork shows the
+   picker and attaches a block when one is chosen.
+4. ✅ **done (2026-09-22)** — `[Simple] [Advanced ᴮᴱᵀᴬ]` switch on the editor page, Simple by
+   default, warning strip on the beta side; a free-form edit sets `composition.detached` (the rule:
+   an edit detaches exactly when `apply` would overwrite it) and Simple offers a confirmed,
+   undoable **Re-apply layout**.
 
 **AC**: a 3-photo hero composition from an empty draft in under 30 s using only the picker and the two sliders;
 switching format to 3:2 keeps every reframe; the server-stored rects equal the ones the editor previewed;
 `make check` green with the new conformance cases.
+
+**State (2026-09-22)**: done, all four stages. Driven in a real browser over CDP (§13.6): the AC
+"the server-stored rects equal the ones the editor previewed" was checked directly — the effective
+margin the panel displayed is the one the server stored after re-solving. The detach loop
+(free-form edit → banner → Re-apply → `⌘Z`) round-trips through the server, and a shadow change
+does **not** detach. Not measured: the "under 30 s" stopwatch, and the review-queue flow in Simple
+mode.
 
 ### Phase 8 — Templates
 
@@ -696,7 +710,8 @@ artwork → collection → export) completes without reading code.
 ### Open questions (to decide at the indicated phase)
 
 - Final project name and license (Phase 11).
-- Caption band factor (1.5 × size) reserved by the composition solver (Phase 7, `docs/simple-editor.md` §10).
+- Caption band factor (1.5 × size) reserved by the composition solver: implemented and pinned by
+  conformance, still to be checked against a real render (Phase 7 stage 3, `docs/simple-editor.md` §10).
 - ~~Exact bundled fonts and texture set (Phase 4)~~ — decided in ADR-0008.
 - ~~Color-picker presets list (Phase 5)~~ — curated mat colours shipped in `services/colors.py` (`CURATED`,
   served by `GET /presets/colors`): museum white, warm off-white, linen, stone, charcoal, black.

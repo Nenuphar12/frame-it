@@ -253,6 +253,10 @@
     "unknown_layout": "Unknown layout.",
     "too_many_photos": "Too many photos for this layout.",
     "no_layout": "No layout has that many slots.",
+    "unknown_recipe": "Unknown composition.",
+    "no_recipe": "No composition holds that many photos.",
+    "recipe_slot_count": "This composition needs a different number of photos.",
+    "layout_and_composition": "Pass a layout or a composition, not both.",
     "invalid_document": "The artwork is invalid.",
     "version_conflict": "The artwork was changed elsewhere. Reload it.",
     "artwork_incomplete": "Fill every slot before marking the artwork ready.",
@@ -371,6 +375,53 @@
       "slots": "Slots",
       "arrange": "Arrange",
       "captions": "Captions"
+    },
+    "simple": {
+      "layout": "Layout",
+      "attachHint": "Pick a layout to arrange these photos automatically.",
+      "noRecipe": "No built-in layout holds {{count}} photos — arrange them by hand below.",
+      "balance": "Balance",
+      "balanceInert": "The format sets the proportions, so Balance has no effect here.",
+      "format": "Format",
+      "formats": {
+        "fill": "Fill",
+        "original": "Original"
+      },
+      "customFormat": "Custom ratio, for example 7:5",
+      "margins": "Margins",
+      "more": "More",
+      "outer": "Outer",
+      "outerX": "Outer ↔",
+      "outerY": "Outer ↕",
+      "gap": "Gap",
+      "gapX": "Gap ↔",
+      "gapY": "Gap ↕",
+      "effectiveHint": "The margin is a minimum: the block is centred, so the space around it is larger.",
+      "photos": "Photos",
+      "photoCell": "Cell {{index}} — click to select, drag onto another to swap",
+      "empty": "Empty",
+      "reframeHint": "Drag the photo on the canvas to move it inside its cell.",
+      "background": "Background",
+      "border": "Border",
+      "width": "Width",
+      "color": "Colour",
+      "caption": "Caption",
+      "captionPlace": "Caption position",
+      "places": {
+        "none": "None",
+        "below": "Below",
+        "above": "Above"
+      },
+      "detached": "The slots have been edited by hand, so this layout no longer drives them. Re-apply it to go back to the saved settings — undo brings your edits straight back.",
+      "reapply": "Re-apply layout",
+      "reapplyConfirm": "The slots go back to the layout's own geometry. Your hand-made placement is one undo away."
+    },
+    "mode": {
+      "label": "Editing mode",
+      "simple": "Simple",
+      "advanced": "Advanced",
+      "beta": "BETA",
+      "betaWarning": "Advanced tools are beta — free-form edits drop the layout link."
     },
     "placement": {
       "label": "Placement",
@@ -540,7 +591,8 @@
       "bringForward": "Bring the slot forward",
       "sendBackward": "Send the slot backward",
       "addCaption": "Add a caption",
-      "selectAllSlots": "Select every slot"
+      "selectAllSlots": "Select every slot",
+      "toggleMode": "Switch Simple / Advanced"
     },
     "open": "Edit",
     "slots": {
@@ -595,5 +647,24 @@
       },
       "position": "Position"
     }
+  },
+  "recipes": {
+    "single": "Single",
+    "two-side-by-side": "Side by side",
+    "two-stacked": "Stacked",
+    "two-hero-left": "Hero left",
+    "two-hero-right": "Hero right",
+    "three-row": "Row of three",
+    "three-hero-left": "Hero left",
+    "three-hero-right": "Hero right",
+    "three-one-over-two": "One over two",
+    "three-two-over-one": "Two over one",
+    "four-grid": "Grid",
+    "four-row": "Row of four",
+    "four-hero-left": "Hero left",
+    "four-hero-right": "Hero right",
+    "four-one-over-three": "One over three",
+    "five-two-over-three": "Two over three",
+    "six-grid-3x2": "Grid of six"
   }
 }

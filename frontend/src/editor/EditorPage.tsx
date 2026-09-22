@@ -24,6 +24,7 @@ import {
   useArtworkActions,
   useArtworks,
   usePhotosByIds,
+  useRecipes,
 } from "@/api/queries";
 import { useRegisterCommands, type Command } from "@/app/commands";
 import { cn } from "@/shared/cn";
@@ -40,6 +41,7 @@ import { FramingPanel } from "./panels/FramingPanel";
 import { InfoSheet } from "./panels/InfoSheet";
 import { Loupe } from "./panels/Loupe";
 import { DocumentQualityBadge } from "./panels/QualityBadge";
+import { SimplePanel } from "./panels/SimplePanel";
 import { SlotsPanel } from "./panels/SlotsPanel";
 import { PhotoPicker } from "./panels/PhotoPicker";
 import { StylePanel } from "./panels/StylePanel";
@@ -52,6 +54,7 @@ import {
   replaceDocument,
   resolveConflict,
   save,
+  setRecipes,
   select,
   selectCaption,
   selectMany,
@@ -64,6 +67,7 @@ import {
 import { TvPreview } from "./TvPreview";
 
 type Tab = "design" | "artwork";
+type Mode = "simple" | "advanced";
 
 export function EditorPage() {
   const { t } = useTranslation();
@@ -72,10 +76,14 @@ export function EditorPage() {
   const navigate = useNavigate();
   const artwork = useArtwork(artworkId);
   const { validate } = useArtworkActions();
+  const recipes = useRecipes();
 
   const photoIds = useMemo(
-    () =>
-      [...new Set((artwork.data?.document.slots ?? []).flatMap((s) => (s.photo_id ? [s.photo_id] : [])))],
+    () => [
+      ...new Set(
+        (artwork.data?.document.slots ?? []).flatMap((s) => (s.photo_id ? [s.photo_id] : [])),
+      ),
+    ],
     [artwork.data],
   );
   const { photos } = usePhotosByIds(photoIds);
@@ -97,6 +105,7 @@ export function EditorPage() {
   );
 
   const doc = useEditor((state) => state.doc);
+  const catalogue = useEditor((state) => state.recipes);
   const slot = useEditor(selectedSlot);
   const storeSizes = useEditor((state) => state.sizes);
   const selectedSlotIds = useEditor((state) => state.selectedSlotIds);
@@ -111,6 +120,8 @@ export function EditorPage() {
   const redoable = useEditor(canRedo);
 
   const [tab, setTab] = useState<Tab>("design");
+  // Simple is the default for every artwork (§6.1); Advanced is today's panel stack, in beta.
+  const [mode, setMode] = useState<Mode>("simple");
   const [loupe, setLoupe] = useState(false);
   const [tv, setTv] = useState(false);
   const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null);
@@ -168,6 +179,11 @@ export function EditorPage() {
   useEffect(() => {
     if (artwork.data && photoIds.every((id) => sizes[id])) openArtwork(artwork.data, sizes);
   }, [artwork.data, photoIds, sizes]);
+
+  // The catalogue is what the composition operations solve with (`editor/operations`).
+  useEffect(() => {
+    if (recipes.data) setRecipes(recipes.data);
+  }, [recipes.data]);
 
   useEffect(
     () => () => {
@@ -261,6 +277,12 @@ export function EditorPage() {
         run: () => actions.zoomCrop(1.08),
       },
       {
+        id: "editor.mode",
+        label: "editor.commands.toggleMode",
+        group,
+        run: () => setMode((value) => (value === "simple" ? "advanced" : "simple")),
+      },
+      {
         id: "editor.loupe",
         label: "editor.commands.loupe",
         group,
@@ -288,7 +310,13 @@ export function EditorPage() {
         shortcut: "s",
         run: () => step(1),
       },
-      { id: "editor.next", label: "editor.commands.next", group, shortcut: "j", run: () => step(1) },
+      {
+        id: "editor.next",
+        label: "editor.commands.next",
+        group,
+        shortcut: "j",
+        run: () => step(1),
+      },
       {
         id: "editor.previous",
         label: "editor.commands.previous",
@@ -348,14 +376,62 @@ export function EditorPage() {
         shortcut: "$mod+a",
         run: () => selectMany((useEditor.getState().doc?.slots ?? []).map((item) => item.id)),
       },
-      { id: "editor.nudgeLeft", label: "editor.commands.nudge", group, shortcut: "ArrowLeft", run: nudge(-1, 0) },
-      { id: "editor.nudgeRight", label: "editor.commands.nudge", group, shortcut: "ArrowRight", run: nudge(1, 0) },
-      { id: "editor.nudgeUp", label: "editor.commands.nudge", group, shortcut: "ArrowUp", run: nudge(0, -1) },
-      { id: "editor.nudgeDown", label: "editor.commands.nudge", group, shortcut: "ArrowDown", run: nudge(0, 1) },
-      { id: "editor.nudgeLeft10", label: "editor.commands.nudge10", group, shortcut: "Shift+ArrowLeft", run: nudge(-10, 0) },
-      { id: "editor.nudgeRight10", label: "editor.commands.nudge10", group, shortcut: "Shift+ArrowRight", run: nudge(10, 0) },
-      { id: "editor.nudgeUp10", label: "editor.commands.nudge10", group, shortcut: "Shift+ArrowUp", run: nudge(0, -10) },
-      { id: "editor.nudgeDown10", label: "editor.commands.nudge10", group, shortcut: "Shift+ArrowDown", run: nudge(0, 10) },
+      {
+        id: "editor.nudgeLeft",
+        label: "editor.commands.nudge",
+        group,
+        shortcut: "ArrowLeft",
+        run: nudge(-1, 0),
+      },
+      {
+        id: "editor.nudgeRight",
+        label: "editor.commands.nudge",
+        group,
+        shortcut: "ArrowRight",
+        run: nudge(1, 0),
+      },
+      {
+        id: "editor.nudgeUp",
+        label: "editor.commands.nudge",
+        group,
+        shortcut: "ArrowUp",
+        run: nudge(0, -1),
+      },
+      {
+        id: "editor.nudgeDown",
+        label: "editor.commands.nudge",
+        group,
+        shortcut: "ArrowDown",
+        run: nudge(0, 1),
+      },
+      {
+        id: "editor.nudgeLeft10",
+        label: "editor.commands.nudge10",
+        group,
+        shortcut: "Shift+ArrowLeft",
+        run: nudge(-10, 0),
+      },
+      {
+        id: "editor.nudgeRight10",
+        label: "editor.commands.nudge10",
+        group,
+        shortcut: "Shift+ArrowRight",
+        run: nudge(10, 0),
+      },
+      {
+        id: "editor.nudgeUp10",
+        label: "editor.commands.nudge10",
+        group,
+        shortcut: "Shift+ArrowUp",
+        run: nudge(0, -10),
+      },
+      {
+        id: "editor.nudgeDown10",
+        label: "editor.commands.nudge10",
+        group,
+        shortcut: "Shift+ArrowDown",
+        run: nudge(0, 10),
+      },
     ];
   }, [navigate, step, t, validateAndNext]);
   useRegisterCommands(commands);
@@ -389,18 +465,65 @@ export function EditorPage() {
           {artwork.data.title || t("artworks.untitled")}
         </span>
         <DocumentQualityBadge doc={doc} />
-        <div className="mx-2 flex rounded-md border border-border p-0.5">
-          <ToolButton active={tool === "select"} onClick={() => setTool("select")} label={t("editor.commands.select")}>
-            <MousePointer2 size={14} />
-          </ToolButton>
-          <ToolButton active={tool === "crop"} onClick={() => setTool("crop")} label={t("editor.commands.crop")}>
-            <Crop size={14} />
-          </ToolButton>
+        <div
+          className="mx-2 flex rounded-md border border-border p-0.5"
+          role="radiogroup"
+          aria-label={t("editor.mode.label")}
+        >
+          {(["simple", "advanced"] as Mode[]).map((value) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={mode === value}
+              onClick={() => setMode(value)}
+              className={cn(
+                "rounded px-2 py-1 text-[11px] text-muted",
+                mode === value && "bg-panel-2 text-text",
+              )}
+            >
+              {t(`editor.mode.${value}`)}
+              {value === "advanced" && (
+                <sup className="ml-0.5 text-[8px]">{t("editor.mode.beta")}</sup>
+              )}
+            </button>
+          ))}
         </div>
-        <Button size="sm" variant="ghost" onClick={undo} disabled={!undoable} aria-label={t("editor.commands.undo")}>
+        {/* The select/crop tools belong to the free-form editor; Simple always reframes. */}
+        {mode === "advanced" && (
+          <div className="flex rounded-md border border-border p-0.5">
+            <ToolButton
+              active={tool === "select"}
+              onClick={() => setTool("select")}
+              label={t("editor.commands.select")}
+            >
+              <MousePointer2 size={14} />
+            </ToolButton>
+            <ToolButton
+              active={tool === "crop"}
+              onClick={() => setTool("crop")}
+              label={t("editor.commands.crop")}
+            >
+              <Crop size={14} />
+            </ToolButton>
+          </div>
+        )}
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={undo}
+          disabled={!undoable}
+          aria-label={t("editor.commands.undo")}
+        >
           <Undo2 size={14} />
         </Button>
-        <Button size="sm" variant="ghost" onClick={redo} disabled={!redoable} aria-label={t("editor.commands.redo")}>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={redo}
+          disabled={!redoable}
+          aria-label={t("editor.commands.redo")}
+        >
           <Redo2 size={14} />
         </Button>
         <Button size="sm" variant={loupe ? "primary" : "ghost"} onClick={() => setLoupe((v) => !v)}>
@@ -416,12 +539,19 @@ export function EditorPage() {
               {t("editor.queue.progress", { current: index + 1, total: queue.length })}
             </span>
           )}
-          <Button size="sm" variant="ghost" onClick={() => step(1)} disabled={index < 0 || index >= queue.length - 1}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => step(1)}
+            disabled={index < 0 || index >= queue.length - 1}
+          >
             <SkipForward size={14} /> {t("editor.queue.skip")} <Kbd>S</Kbd>
           </Button>
           <Button size="sm" variant="primary" onClick={validateAndNext}>
             <Check size={14} />
-            {artwork.data.status === "ready" ? t("editor.queue.validated") : t("artworks.markReady")}
+            {artwork.data.status === "ready"
+              ? t("editor.queue.validated")
+              : t("artworks.markReady")}
             <Kbd>↵</Kbd>
           </Button>
         </div>
@@ -432,7 +562,7 @@ export function EditorPage() {
           <EditorStage
             doc={doc}
             sizes={storeSizes}
-            tool={tool}
+            tool={mode === "simple" ? "crop" : tool}
             selectedSlotIds={selectedSlotIds}
             selectedCaptionId={selectedCaptionId}
             onSelectSlot={select}
@@ -475,8 +605,19 @@ export function EditorPage() {
               </button>
             ))}
           </div>
-          {tab === "design" ? (
+          {tab === "design" && mode === "simple" ? (
+            <SimplePanel
+              doc={doc}
+              recipes={catalogue}
+              sizes={storeSizes}
+              selectedSlotId={slot?.id ?? null}
+              onSelectSlot={(slotId) => select(slotId)}
+            />
+          ) : tab === "design" ? (
             <>
+              <p className="border-b border-border bg-panel-2 px-3 py-2 text-[11px] text-muted">
+                {t("editor.mode.betaWarning")}
+              </p>
               {slot && <AlternativesPanel doc={doc} slot={slot} sizes={storeSizes} />}
               <SlotsPanel
                 doc={doc}
@@ -503,11 +644,7 @@ export function EditorPage() {
               <CaptionsPanel doc={doc} caption={caption} onSelect={selectCaption} />
             </>
           ) : (
-            <InfoSheet
-              artwork={artwork.data}
-              photos={photos}
-              openedSnapshotId={openedSnapshotId}
-            />
+            <InfoSheet artwork={artwork.data} photos={photos} openedSnapshotId={openedSnapshotId} />
           )}
         </aside>
       </div>
@@ -594,10 +731,7 @@ function ToolButton({
       aria-pressed={active}
       aria-label={label}
       title={label}
-      className={cn(
-        "rounded px-2 py-1 text-muted",
-        active && "bg-panel-2 text-text",
-      )}
+      className={cn("rounded px-2 py-1 text-muted", active && "bg-panel-2 text-text")}
     >
       {children}
     </button>
@@ -622,7 +756,9 @@ function SaveState({ state, error }: { state: string; error: string | null }) {
       </span>
     );
   }
-  if (state === "dirty") return <span className="text-xs text-muted">{t("editor.save.pending")}</span>;
-  if (state === "saved") return <span className="text-xs text-muted">{t("editor.save.saved")}</span>;
+  if (state === "dirty")
+    return <span className="text-xs text-muted">{t("editor.save.pending")}</span>;
+  if (state === "saved")
+    return <span className="text-xs text-muted">{t("editor.save.saved")}</span>;
   return null;
 }

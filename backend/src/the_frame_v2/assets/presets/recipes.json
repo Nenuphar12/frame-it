@@ -1,0 +1,287 @@
+{
+  "version": 1,
+  "recipes": [
+    {
+      "id": "single",
+      "count": 1,
+      "name_key": "recipes.single",
+      "tree": { "cell": "auto" }
+    },
+    {
+      "id": "two-side-by-side",
+      "count": 2,
+      "name_key": "recipes.two-side-by-side",
+      "tree": {
+        "split": "row",
+        "weights": [1, 1],
+        "children": [{ "cell": "portrait" }, { "cell": "portrait" }]
+      }
+    },
+    {
+      "id": "two-stacked",
+      "count": 2,
+      "name_key": "recipes.two-stacked",
+      "tree": {
+        "split": "col",
+        "weights": [1, 1],
+        "children": [{ "cell": "landscape" }, { "cell": "landscape" }]
+      }
+    },
+    {
+      "id": "two-hero-left",
+      "count": 2,
+      "name_key": "recipes.two-hero-left",
+      "balance": { "min": 0.4, "max": 0.75, "default": 0.62 },
+      "tree": {
+        "split": "row",
+        "weights": [2, 1],
+        "children": [{ "cell": "landscape" }, { "cell": "portrait" }]
+      }
+    },
+    {
+      "id": "two-hero-right",
+      "count": 2,
+      "name_key": "recipes.two-hero-right",
+      "balance": { "min": 0.25, "max": 0.6, "default": 0.38 },
+      "tree": {
+        "split": "row",
+        "weights": [1, 2],
+        "children": [{ "cell": "portrait" }, { "cell": "landscape" }]
+      }
+    },
+    {
+      "id": "three-row",
+      "count": 3,
+      "name_key": "recipes.three-row",
+      "tree": {
+        "split": "row",
+        "weights": [1, 1, 1],
+        "children": [{ "cell": "portrait" }, { "cell": "portrait" }, { "cell": "portrait" }]
+      }
+    },
+    {
+      "id": "three-hero-left",
+      "count": 3,
+      "name_key": "recipes.three-hero-left",
+      "balance": { "min": 0.4, "max": 0.75, "default": 0.62 },
+      "tree": {
+        "split": "row",
+        "weights": [2, 1],
+        "children": [
+          { "cell": "landscape" },
+          {
+            "split": "col",
+            "weights": [1, 1],
+            "children": [{ "cell": "landscape" }, { "cell": "landscape" }]
+          }
+        ]
+      }
+    },
+    {
+      "id": "three-hero-right",
+      "count": 3,
+      "name_key": "recipes.three-hero-right",
+      "balance": { "min": 0.25, "max": 0.6, "default": 0.38 },
+      "tree": {
+        "split": "row",
+        "weights": [1, 2],
+        "children": [
+          {
+            "split": "col",
+            "weights": [1, 1],
+            "children": [{ "cell": "landscape" }, { "cell": "landscape" }]
+          },
+          { "cell": "landscape" }
+        ]
+      }
+    },
+    {
+      "id": "three-one-over-two",
+      "count": 3,
+      "name_key": "recipes.three-one-over-two",
+      "balance": { "min": 0.3, "max": 0.7, "default": 0.5 },
+      "tree": {
+        "split": "col",
+        "weights": [1, 1],
+        "children": [
+          { "cell": "landscape" },
+          {
+            "split": "row",
+            "weights": [1, 1],
+            "children": [{ "cell": "portrait" }, { "cell": "portrait" }]
+          }
+        ]
+      }
+    },
+    {
+      "id": "three-two-over-one",
+      "count": 3,
+      "name_key": "recipes.three-two-over-one",
+      "balance": { "min": 0.3, "max": 0.7, "default": 0.5 },
+      "tree": {
+        "split": "col",
+        "weights": [1, 1],
+        "children": [
+          {
+            "split": "row",
+            "weights": [1, 1],
+            "children": [{ "cell": "portrait" }, { "cell": "portrait" }]
+          },
+          { "cell": "landscape" }
+        ]
+      }
+    },
+    {
+      "id": "four-grid",
+      "count": 4,
+      "name_key": "recipes.four-grid",
+      "tree": {
+        "split": "col",
+        "weights": [1, 1],
+        "children": [
+          {
+            "split": "row",
+            "weights": [1, 1],
+            "children": [{ "cell": "landscape" }, { "cell": "landscape" }]
+          },
+          {
+            "split": "row",
+            "weights": [1, 1],
+            "children": [{ "cell": "landscape" }, { "cell": "landscape" }]
+          }
+        ]
+      }
+    },
+    {
+      "id": "four-row",
+      "count": 4,
+      "name_key": "recipes.four-row",
+      "tree": {
+        "split": "row",
+        "weights": [1, 1, 1, 1],
+        "children": [
+          { "cell": "portrait" },
+          { "cell": "portrait" },
+          { "cell": "portrait" },
+          { "cell": "portrait" }
+        ]
+      }
+    },
+    {
+      "id": "four-hero-left",
+      "count": 4,
+      "name_key": "recipes.four-hero-left",
+      "balance": { "min": 0.4, "max": 0.75, "default": 0.62 },
+      "tree": {
+        "split": "row",
+        "weights": [2, 1],
+        "children": [
+          { "cell": "landscape" },
+          {
+            "split": "col",
+            "weights": [1, 1, 1],
+            "children": [
+              { "cell": "landscape" },
+              { "cell": "landscape" },
+              { "cell": "landscape" }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "four-hero-right",
+      "count": 4,
+      "name_key": "recipes.four-hero-right",
+      "balance": { "min": 0.25, "max": 0.6, "default": 0.38 },
+      "tree": {
+        "split": "row",
+        "weights": [1, 2],
+        "children": [
+          {
+            "split": "col",
+            "weights": [1, 1, 1],
+            "children": [
+              { "cell": "landscape" },
+              { "cell": "landscape" },
+              { "cell": "landscape" }
+            ]
+          },
+          { "cell": "landscape" }
+        ]
+      }
+    },
+    {
+      "id": "four-one-over-three",
+      "count": 4,
+      "name_key": "recipes.four-one-over-three",
+      "balance": { "min": 0.35, "max": 0.75, "default": 0.6 },
+      "tree": {
+        "split": "col",
+        "weights": [3, 2],
+        "children": [
+          { "cell": "landscape" },
+          {
+            "split": "row",
+            "weights": [1, 1, 1],
+            "children": [
+              { "cell": "landscape" },
+              { "cell": "landscape" },
+              { "cell": "landscape" }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "five-two-over-three",
+      "count": 5,
+      "name_key": "recipes.five-two-over-three",
+      "tree": {
+        "split": "col",
+        "weights": [1, 1],
+        "children": [
+          {
+            "split": "row",
+            "weights": [1, 1],
+            "children": [{ "cell": "landscape" }, { "cell": "landscape" }]
+          },
+          {
+            "split": "row",
+            "weights": [1, 1, 1],
+            "children": [{ "cell": "portrait" }, { "cell": "portrait" }, { "cell": "portrait" }]
+          }
+        ]
+      }
+    },
+    {
+      "id": "six-grid-3x2",
+      "count": 6,
+      "name_key": "recipes.six-grid-3x2",
+      "tree": {
+        "split": "col",
+        "weights": [1, 1],
+        "children": [
+          {
+            "split": "row",
+            "weights": [1, 1, 1],
+            "children": [
+              { "cell": "landscape" },
+              { "cell": "landscape" },
+              { "cell": "landscape" }
+            ]
+          },
+          {
+            "split": "row",
+            "weights": [1, 1, 1],
+            "children": [
+              { "cell": "landscape" },
+              { "cell": "landscape" },
+              { "cell": "landscape" }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
