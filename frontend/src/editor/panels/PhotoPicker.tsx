@@ -7,8 +7,8 @@ import { useTranslation } from "react-i18next";
 
 import { photoThumbUrl } from "@/api/client";
 import { usePhotos } from "@/api/queries";
-import { PHOTO_MIME } from "@/editor/canvas/EditorStage";
 import { cn } from "@/shared/cn";
+import { PHOTO_MIME, startInternalDrag } from "@/shared/dnd";
 import { Button } from "@/shared/ui/Button";
 import { Dialog } from "@/shared/ui/Dialog";
 import { Spinner } from "@/shared/ui/Misc";
@@ -23,7 +23,13 @@ interface PhotoPickerProps {
   onPickEmpty?: () => void;
 }
 
-export function PhotoPicker({ open, onOpenChange, used = [], onPick, onPickEmpty }: PhotoPickerProps) {
+export function PhotoPicker({
+  open,
+  onOpenChange,
+  used = [],
+  onPick,
+  onPickEmpty,
+}: PhotoPickerProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const photos = usePhotos({ q: query || undefined });
@@ -51,10 +57,9 @@ export function PhotoPicker({ open, onOpenChange, used = [], onPick, onPickEmpty
             key={photo.id}
             type="button"
             draggable
-            onDragStart={(event) => {
-              event.dataTransfer.setData(PHOTO_MIME, photo.id);
-              event.dataTransfer.effectAllowed = "copy";
-            }}
+            onDragStart={(event) =>
+              startInternalDrag(event.dataTransfer, PHOTO_MIME, photo.id, "copy")
+            }
             onClick={() => {
               onPick(photo.id);
               onOpenChange(false);

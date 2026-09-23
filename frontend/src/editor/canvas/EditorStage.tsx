@@ -16,6 +16,7 @@ import type { DocCaption, EditorDocument } from "@/editor/core/document.ts";
 import type { Rect as DocRect, Size } from "@/editor/core/geometry.ts";
 import { availableArea } from "@/editor/core/placement.ts";
 import { snapRect, TOLERANCE_PX } from "@/editor/core/snapping.ts";
+import { PHOTO_MIME } from "@/shared/dnd";
 import { slotSource, type PhotoSizes } from "@/editor/operations";
 import { CaptionNode } from "./CaptionNode.tsx";
 import { captionBox } from "./fonts.ts";
@@ -186,11 +187,10 @@ export function EditorStage({
     [],
   );
 
-  const area = useMemo(() => availableArea(doc.margins, { w: width, h: height }), [
-    doc.margins,
-    width,
-    height,
-  ]);
+  const area = useMemo(
+    () => availableArea(doc.margins, { w: width, h: height }),
+    [doc.margins, width, height],
+  );
   const selectedSlots = doc.slots.filter((slot) => selectedSlotIds.includes(slot.id));
   const primaryId = selectedSlotIds[selectedSlotIds.length - 1] ?? null;
   const primary = doc.slots.find((slot) => slot.id === primaryId) ?? null;
@@ -263,7 +263,10 @@ export function EditorStage({
       return;
     }
     if (!move) return;
-    const delta = { x: (move.x - origin.current.x) / scale, y: (move.y - origin.current.y) / scale };
+    const delta = {
+      x: (move.x - origin.current.x) / scale,
+      y: (move.y - origin.current.y) / scale,
+    };
     if (current.mode === "pan") {
       // Panning pins the view: `fit()` is the starting point while it still follows the container.
       origin.current = { x: move.x, y: move.y };
@@ -371,12 +374,21 @@ export function EditorStage({
     if (handle && primary) {
       gesture.current =
         handle === "rotate"
-          ? { mode: "rotate", rect: primary.rect, offset: angleTo(primary.rect, point) - primary.rotation }
+          ? {
+              mode: "rotate",
+              rect: primary.rect,
+              offset: angleTo(primary.rect, point) - primary.rotation,
+            }
           : { mode: "resize", handle, rect: primary.rect, rotation: primary.rotation };
       return;
     }
     if (tool === "crop") {
-      gesture.current = primary ? { mode: "crop" } : { mode: "pan" };
+      // Clicking a photo picks it, then drags its crop: in Simple mode this is the *only* way to
+      // choose which photo the panel edits, and going through the right column for it is exactly
+      // what the feedback called unintuitive (remarks.md #3).
+      const hitSlot = slotAt(doc.slots, point);
+      if (hitSlot && hitSlot.id !== primaryId) onSelectSlot(hitSlot.id, "replace");
+      gesture.current = hitSlot || primary ? { mode: "crop" } : { mode: "pan" };
       return;
     }
     const hitCaption = captionAt(point);
@@ -478,8 +490,7 @@ export function EditorStage({
   const editingBox = editing ? boxes.get(editing.id) : null;
   const guideX = guides?.x ?? snapGuides.x;
   const guideY = guides?.y ?? snapGuides.y;
-  const cursor =
-    tool === "crop" ? "grab" : moving ? "grabbing" : "default";
+  const cursor = tool === "crop" ? "grab" : moving ? "grabbing" : "default";
 
   return (
     <div
@@ -602,24 +613,27 @@ export function EditorStage({
           }}
         />
       )}
-      <StageControls view={view} onFit={() => setView(null)} onZoom={(factor) =>
-        setView((current) => {
-          if (!current) return current;
-          const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, current.scale * factor));
-          const ratio = scale / current.scale;
-          return {
-            scale,
-            x: box.width / 2 - (box.width / 2 - current.x) * ratio,
-            y: box.height / 2 - (box.height / 2 - current.y) * ratio,
-          };
-        })
-      } />
+      <StageControls
+        view={view}
+        onFit={() => setView(null)}
+        onZoom={(factor) =>
+          setView((current) => {
+            if (!current) return current;
+            const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, current.scale * factor));
+            const ratio = scale / current.scale;
+            return {
+              scale,
+              x: box.width / 2 - (box.width / 2 - current.x) * ratio,
+              y: box.height / 2 - (box.height / 2 - current.y) * ratio,
+            };
+          })
+        }
+      />
     </div>
   );
 }
 
 /** Drag & drop payload of a photo dragged out of the picker onto the canvas. */
-export const PHOTO_MIME = "text/x-the-frame-photo";
 
 function StageControls({
   view,
@@ -632,7 +646,11 @@ function StageControls({
 }) {
   return (
     <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-md border border-border bg-panel/90 px-1.5 py-1 text-xs backdrop-blur">
-      <button type="button" className="px-1.5 py-0.5 hover:text-accent" onClick={() => onZoom(1 / 1.2)}>
+      <button
+        type="button"
+        className="px-1.5 py-0.5 hover:text-accent"
+        onClick={() => onZoom(1 / 1.2)}
+      >
         −
       </button>
       <span className="w-12 text-center tabular-nums text-muted">

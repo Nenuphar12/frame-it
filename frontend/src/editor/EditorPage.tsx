@@ -23,6 +23,7 @@ import {
   useArtwork,
   useArtworkActions,
   useArtworks,
+  useFrameStyles,
   usePhotosByIds,
   useRecipes,
 } from "@/api/queries";
@@ -77,6 +78,7 @@ export function EditorPage() {
   const artwork = useArtwork(artworkId);
   const { validate } = useArtworkActions();
   const recipes = useRecipes();
+  const styles = useFrameStyles();
 
   const photoIds = useMemo(
     () => [
@@ -294,7 +296,7 @@ export function EditorPage() {
         label: "editor.commands.tvPreview",
         group,
         shortcut: "p",
-        run: () => setTv(true),
+        run: () => setTv((value) => !value),
       },
       {
         id: "editor.validate",
@@ -609,6 +611,7 @@ export function EditorPage() {
             <SimplePanel
               doc={doc}
               recipes={catalogue}
+              styles={styles.data ?? []}
               sizes={storeSizes}
               selectedSlotId={slot?.id ?? null}
               onSelectSlot={(slotId) => select(slotId)}

@@ -76,7 +76,11 @@ export function resizeSlot(
   let wanted = cover(requested, { w: crop.w, h: crop.h });
   if (lock === "native") {
     crop = cropOfSize(wanted, source, crop);
-    return { rect: anchored(state.rect, { w: crop.w, h: crop.h }, anchor), crop, quality_lock: lock };
+    return {
+      rect: anchored(state.rect, { w: crop.w, h: crop.h }, anchor),
+      crop,
+      quality_lock: lock,
+    };
   }
   if (lock === "no_upscale" && (wanted.w > crop.w || wanted.h > crop.h)) {
     const grown = largestCrop(
@@ -133,18 +137,40 @@ export function panCrop(state: SlotState, dx: number, dy: number, source: Size):
   return clampCrop({ x: x + dx, y: y + dy, w, h }, source);
 }
 
-/** Zoom the photo inside the slot: `factor > 1` shows more of it, `< 1` crops tighter. */
+/**
+ * Zoom the photo inside the slot: `factor > 1` shows more of it, `< 1` crops tighter.
+ *
+ * The crop keeps the **rect's** aspect, whatever the factor: the width is scaled and the height
+ * derived from it. Rounding the two sides on their own drifts, and so does re-deriving the aspect
+ * from the rounded crop at every step — the rect is the one reference that does not move. A crop
+ * whose aspect has drifted away from its rect's makes `resizeCrop` resize the *slot* to match,
+ * which is the "zoom out and the frame changes size" bug. The bound is `largestCrop`, the widest
+ * crop of that aspect inside the photo, so zooming out lands exactly on the whole photo instead of
+ * clamping each axis against an edge.
+ *
+ * A zoom always moves by at least one pixel when it can: `roundHalfEven(8 * 1.06) === 8` left a
+ * crop that had been zoomed in far enough stuck at its size for ever, with no way back out.
+ */
 export function zoomCrop(
   state: SlotState,
   factor: number,
   source: Size,
   lock: QualityLock,
 ): SlotPlacement {
-  const size = {
-    w: Math.max(MIN_SIZE, roundHalfEven(state.crop.w * factor)),
-    h: Math.max(MIN_SIZE, roundHalfEven(state.crop.h * factor)),
+  const ratio = state.rect.w / state.rect.h;
+  const full = largestCrop(source, ratio);
+  let width = Math.max(MIN_SIZE, Math.min(full.w, roundHalfEven(state.crop.w * factor)));
+  if (width === state.crop.w && factor > 1) width = Math.min(full.w, width + 1);
+  else if (width === state.crop.w && factor < 1) width = Math.max(MIN_SIZE, width - 1);
+  const height = Math.max(MIN_SIZE, Math.min(full.h, roundHalfEven(width / ratio)));
+  const [cx, cy] = cropCenter(state.crop);
+  const requested = {
+    x: Math.min(Math.max(0, roundHalfEven(cx - width / 2)), source.w - width),
+    y: Math.min(Math.max(0, roundHalfEven(cy - height / 2)), source.h - height),
+    w: width,
+    h: height,
   };
-  return resizeCrop(state, cropOfSize(size, source, state.crop), source, lock);
+  return resizeCrop(state, requested, source, lock);
 }
 
 /** Repair a slot after the user switched its quality lock, preserving the framing. */

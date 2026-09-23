@@ -159,6 +159,22 @@
         "caption": {
           "$ref": "#/$defs/CompositionCaption"
         },
+        "cell_formats": {
+          "items": {
+            "anyOf": [
+              {
+                "pattern": "^(original|[1-9][0-9]{0,3}:[1-9][0-9]{0,3})$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "maxItems": 32,
+          "title": "Cell Formats",
+          "type": "array"
+        },
         "detached": {
           "default": false,
           "title": "Detached",

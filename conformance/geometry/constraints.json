@@ -801,6 +801,170 @@
       }
     },
     {
+      "name": "zoom out past the whole photo keeps the crop's aspect",
+      "fn": "zoom_crop",
+      "input": {
+        "state": {
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 1147,
+            "h": 1920
+          },
+          "crop": {
+            "x": 1500,
+            "y": 500,
+            "w": 1147,
+            "h": 1920
+          }
+        },
+        "factor": 4.0,
+        "source": {
+          "w": 4080,
+          "h": 3072
+        },
+        "lock": "no_upscale"
+      },
+      "expected": {
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 1147,
+          "h": 1920
+        },
+        "crop": {
+          "x": 1156,
+          "y": 0,
+          "w": 1835,
+          "h": 3072
+        },
+        "quality_lock": "no_upscale"
+      }
+    },
+    {
+      "name": "zoom out to exactly the whole photo",
+      "fn": "zoom_crop",
+      "input": {
+        "state": {
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 2000,
+            "h": 1000
+          },
+          "crop": {
+            "x": 0,
+            "y": 536,
+            "w": 4080,
+            "h": 2040
+          }
+        },
+        "factor": 2.0,
+        "source": {
+          "w": 4080,
+          "h": 3072
+        },
+        "lock": "free"
+      },
+      "expected": {
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 2000,
+          "h": 1000
+        },
+        "crop": {
+          "x": 0,
+          "y": 536,
+          "w": 4080,
+          "h": 2040
+        },
+        "quality_lock": "free"
+      }
+    },
+    {
+      "name": "zoom in keeps the rect's aspect, not the rounded crop's",
+      "fn": "zoom_crop",
+      "input": {
+        "state": {
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 2387,
+            "h": 1592
+          },
+          "crop": {
+            "x": 0,
+            "y": 0,
+            "w": 4000,
+            "h": 2668
+          }
+        },
+        "factor": 0.9433962264150942,
+        "source": {
+          "w": 4000,
+          "h": 3000
+        },
+        "lock": "free"
+      },
+      "expected": {
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 2387,
+          "h": 1592
+        },
+        "crop": {
+          "x": 113,
+          "y": 76,
+          "w": 3774,
+          "h": 2517
+        },
+        "quality_lock": "free"
+      }
+    },
+    {
+      "name": "a zoom that rounds to nothing still moves a pixel",
+      "fn": "zoom_crop",
+      "input": {
+        "state": {
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 1800,
+            "h": 1200
+          },
+          "crop": {
+            "x": 1494,
+            "y": 994,
+            "w": 8,
+            "h": 5
+          }
+        },
+        "factor": 1.06,
+        "source": {
+          "w": 3000,
+          "h": 2000
+        },
+        "lock": "free"
+      },
+      "expected": {
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 1800,
+          "h": 1200
+        },
+        "crop": {
+          "x": 1494,
+          "y": 994,
+          "w": 9,
+          "h": 6
+        },
+        "quality_lock": "free"
+      }
+    },
+    {
       "name": "apply lock native",
       "fn": "apply_lock",
       "input": {

@@ -95,6 +95,23 @@ export const setMatColor = (color: string, group: string | null = "mat-color") =
 export const setTexture = (id: string | null, strength: number, group: string | null = null) =>
   edit((doc) => ops.setTexture(doc, id, strength), group);
 
+/** Re-dress the artwork in a frame style: mat, shadow, border and caption typography. */
+export const applyStyle = (style: ops.StyleDocument) =>
+  edit((doc) => ops.applyStyle(doc, style, recipes(), sizes()));
+
+/**
+ * Caption size (the Simple panel's slider). It is not a free-form edit: the band the solver
+ * reserves is a function of the size (§3.3), so the block re-solves around the new one — and the
+ * typography round-trips, `apply` reading it back off the document (§3.7).
+ */
+export const setCaptionSize = (size: number, group: string | null = "caption-size") =>
+  edit((doc) => {
+    const caption = doc.captions[0];
+    if (!caption) return;
+    ops.updateCaption(doc, caption.id, { size: Math.max(4, Math.min(1000, Math.round(size))) });
+    reflow(doc);
+  }, group);
+
 export const setLock = (lock: QualityLock) =>
   onSlots((doc, slot) => {
     ops.setLock(doc, slot, lock, sizes());
@@ -136,6 +153,10 @@ export const panCrop = (dx: number, dy: number) =>
 
 export const zoomCrop = (factor: number) =>
   onSlot((doc, slot) => ops.zoomCrop(doc, slot, factor, sizes()), "crop-zoom");
+
+/** Show the photo pixel for pixel inside its cell (the Simple panel's "Native 100%"). */
+export const setNativeFraming = () =>
+  onSlot((doc, slot) => ops.setNativeFraming(doc, slot, sizes()));
 
 /** Absolute photo zoom (the panel's slider, §7.5); the wheel uses `zoomCrop`. */
 export const setZoom = (zoom: number) =>
@@ -376,17 +397,9 @@ export function setRecipe(recipeId: string): void {
   if (!recipe) return;
   edit((doc) => {
     if (doc.composition && !doc.composition.detached) {
-      const format =
-        doc.composition.format === "original" && recipe.count !== 1
-          ? "fill"
-          : doc.composition.format;
       ops.setComposition(
         doc,
-        {
-          recipe: recipe.id,
-          format,
-          balance: ops.balanceFor(recipe, doc.composition.balance),
-        },
+        { recipe: recipe.id, balance: ops.balanceFor(recipe, doc.composition.balance) },
         recipes(),
         sizes(),
       );

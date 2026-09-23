@@ -352,9 +352,14 @@
       },
       "summary_one": "Creates {{count}} artwork (draft).",
       "summary_other": "Creates {{count}} artworks (drafts), photos in selection order.",
-      "emptySlots": "The last one will have empty slots.",
       "submit_one": "Create {{count}} artwork",
-      "submit_other": "Create {{count}} artworks"
+      "submit_other": "Create {{count}} artworks",
+      "grouping": "What to create",
+      "groupings": {
+        "together": "One artwork with the {{count}} photos",
+        "separate": "One artwork per photo"
+      },
+      "noRecipe": "No built-in layout holds {{count}} photos, so they go one per artwork."
     }
   },
   "editor": {
@@ -414,7 +419,21 @@
       },
       "detached": "The slots have been edited by hand, so this layout no longer drives them. Re-apply it to go back to the saved settings — undo brings your edits straight back.",
       "reapply": "Re-apply layout",
-      "reapplyConfirm": "The slots go back to the layout's own geometry. Your hand-made placement is one undo away."
+      "reapplyConfirm": "The slots go back to the layout's own geometry. Your hand-made placement is one undo away.",
+      "orientation": "Orientation",
+      "landscape": "Landscape",
+      "portrait": "Portrait",
+      "swapHint": "Drag a photo onto another to swap them, or use the arrows.",
+      "position": "Position",
+      "moveEarlier": "Swap with the previous cell",
+      "moveLater": "Swap with the next cell",
+      "cellOf": "cell {{index}} of {{total}}",
+      "cellFormat": "This photo",
+      "sameAsLayout": "Same as layout",
+      "native": "Native 100%",
+      "nativeHint": "Zoom so the photo is shown pixel for pixel (no scaling).",
+      "style": "Style",
+      "customStyle": "Custom"
     },
     "mode": {
       "label": "Editing mode",

@@ -87,6 +87,7 @@ export function normalizeComposition(raw: NonNullable<ApiDocument["composition"]
     outer: { x: raw.outer?.x ?? 120, y: raw.outer?.y ?? 120 },
     gutter: { x: raw.gutter?.x ?? 80, y: raw.gutter?.y ?? 80 },
     format: raw.format ?? "fill",
+    cell_formats: [...(raw.cell_formats ?? [])],
     border: raw.border ? { ...raw.border } : null,
     caption: {
       text: raw.caption?.text ?? "",

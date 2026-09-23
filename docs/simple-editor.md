@@ -35,6 +35,8 @@ hand-built artwork and every existing document stays valid, so there is no migra
     "outer":  { "x": 120, "y": 120 },  // minimum margin around the block, per axis
     "gutter": { "x": 80,  "y": 80 },   // gap between footprints, per axis, exact
     "format": "fill",                  // "fill" | "original" | "1:1" | "3:2" | … | "w:h"
+                                       // a ratio carries its orientation: 4:3 ≠ 3:4
+    "cell_formats": [null, "1:1"],     // per-cell override, slot order; null inherits (§3.5)
     "border": { "width": 24, "color": "#FFFFFF" },   // null ⇒ no border; applied to every cell
     "caption": { "text": "Kyoto — April 2026", "place": "below" },  // place: "none" | "above" | "below"
     "detached": false                  // true ⇒ the slots are the truth, this block is memory only (§5)
@@ -53,8 +55,10 @@ Validation (in addition to the v1 rules):
 - `balance` ∈ the recipe's declared range; ignored (and hidden) unless `format = "fill"`.
 - `outer.x` ∈ [0, 800], `outer.y` ∈ [0, 450], `gutter.{x,y}` ∈ [0, 400]. Values that leave a cell narrower
   than `MIN_CELL = 40` px are clamped by the solver (§3.6), never rejected — an imported document must open.
-- `format`: `"fill"`, `"original"` (only for a 1-cell recipe — a structural rule, so it is rejected
-  by the document model itself), or a ratio `w:h` with `w, h` ∈ [1, 1000].
+- `format`: `"fill"`, `"original"` (every cell takes its own photo's aspect — good for any count) or a
+  ratio `w:h` with `w, h` ∈ [1, 1000].
+- `cell_formats`: at most one entry per slot (more is rejected); each is `null`, `"original"` or a
+  ratio — `"fill"` is not a per-cell value.
 - `border.width` ∈ [1, 200] when present.
 
 ## 3. The solver ✅
@@ -131,11 +135,22 @@ Each cell's `ratio_label` is its own `w:h`; leaf orientation is ignored.
 
 ### 3.5 Ratio format
 
-Every cell must end up at exactly the chosen aspect. Let `r ≥ 1` be the landscape form of the format
-(`3:2` and `2:3` are the same format); a cell's target aspect is `r` for `landscape`, `1/r` for `portrait`,
-`1` for `square`, and `r` or `1/r` for `auto` following the photo's orientation (§3.1).
+Every cell must end up at exactly the chosen aspect. **A format carries its orientation**: `4:3`
+and `3:4` are different pictures, and a cell takes the ratio exactly as written. Only two leaves
+read it differently — `auto` (the 1-cell recipe) turns the *landscape form* the photo's way, and
+`square` stays square. The recipe's `landscape` / `portrait` annotations therefore describe what a
+recipe is *for*, not what it forces: the chip the user picked wins.
+
 Under `format: "original"` every leaf takes the photo's own aspect; a leaf whose photo is unknown
-falls back to `A`'s aspect, so a single empty cell fills the mat exactly (today's `fit_in_mat`).
+falls back to `A`'s aspect, so a single empty cell fills the mat exactly (today's `fit_in_mat`). It is a
+format like any other, at any photo count — a row of three cells each keeping its own photo's shape is
+exactly what the solver's per-leaf aspect already expresses.
+
+**Per-cell formats.** `composition.cell_formats` overrides the block's format cell by cell, in slot
+order (`null` inherits) — a hero at `3:2` above two squares, or one photo keeping its own aspect
+next to two `4:3`s. An entry is a ratio or `original`, never `fill`: `fill` is a property of the
+whole block (the cells tile `A` exactly), so the overrides are ignored under it. The solver already
+computed a per-leaf aspect, so this is a parameter, not a new mechanism.
 
 **Bottom-up**, every node gets an affine relation `w = α·h + β` between its footprint dimensions:
 
@@ -281,6 +296,10 @@ photo reframes it inside its fixed cell and the transform handles are never offe
 returns nothing unless the select tool is active). The select/crop toggle itself is an Advanced
 control and is hidden in Simple, which has only one gesture to offer.
 
+Clicking a photo on the canvas **selects** it before the crop gesture starts, in both modes. In Simple the
+canvas is then the natural way to choose which photo the panel edits — going to the right column for it is
+what the feedback called unintuitive (remarks.md #3) — and the chips stay as the way to *swap* two of them.
+
 ### 6.2 The Simple panel ✅
 
 One scrollable column, in this order:
@@ -289,18 +308,33 @@ One scrollable column, in this order:
 Layout      ┌──┐┌──┐┌──┐┌──┐┌──┐          schemas, numbered, current recipe selected
             └──┘└──┘└──┘└──┘└──┘
 Balance     ────●────  62%                 fill + asymmetric recipes only
-Format      [Original] [Fill] [1:1] [5:4] [4:3] [3:2] [16:9] [ … ]
+Format      [Fill] [Original] [1:1] [5:4] [4:3] [3:2] [16:9] [ … ]  + [Landscape] [Portrait]
 Margins     Outer  ────●────  120 px       ▸ More → Outer ↔ / ↕, Gap ↔ / ↕
-            Gap    ──●──────   80 px
-Photos      [1][2][3]                      drag to swap, click to select
-              selected → drag on canvas to pan · Zoom ──●── 1.4×
-Background  [swatch][swatch][swatch]  #F2EFE8
+            Gap    ──●──────   80 px       multi-photo only
+Photos      [1][2][3]                      drag to swap, click to select (or click it on the canvas)
+              selected → ◀ ▶ swap · cell 2 of 3
+              This photo  [Same as layout] [Original] [1:1] … + [Landscape] [Portrait]
+              Zoom ──●── 1.4×
+              Downscaled 63%  [Native 100%]   drag on the canvas to pan
+Background  Style [Gallery recessed ▾] · [swatch][swatch][swatch]  #F2EFE8
 Border      ──●──────  24 px  [■]
 Caption     [ Kyoto — April 2026        ]  ( ) none  (●) below  ( ) above
+            Size  ────●────  48 px
 ```
 
-- `Original` appears **only** for the 1-cell recipe (the photo's own aspect, centred — today's `fit_in_mat`,
-  and the default for a new single-photo artwork). Multi-photo recipes default to `Fill`.
+- `Original` is offered at any photo count (every cell takes its photo's aspect); it is the default for a
+  new single-photo artwork, where it is today's `fit_in_mat`. Multi-photo recipes default to `Fill`.
+- **The artwork's format and one cell's format are the same control** (`FormatChoice`), the per-cell one
+  with an extra `Same as layout` chip. They are the same setting at two scales, and a dropdown for one and
+  chips for the other made them read as two unrelated things (remarks.md #4).
+- **Style** re-dresses the artwork — mat, shadow, border and caption typography — without touching the
+  layout: the style's own `margins` are ignored, because under a block the margins are derived (§3.7). The
+  dropdown shows the style the mat currently *is*, or `Custom` once the colour has been edited on its own.
+- **Caption size** is a slider, not a hidden Advanced field. It is not a free-form edit: the band the solver
+  reserves is a function of the size (§3.3), so the block re-solves around it and the typography round-trips
+  (`apply` reads it back off the document, §3.7).
+- **A single-photo artwork hides what is about choosing a cell**: the layout picker (there is one 1-cell
+  recipe), the gap sliders, the photo chips, the swap arrows and the per-cell format (remarks.md #10).
 - Sliders snap to stops; typed values never snap and keep what you type while focused (`panels/Controls.tsx`,
   the §7.5 lesson).
 - Each `outer` slider shows its **effective** value next to the minimum when the block is centred with slack
@@ -308,6 +342,12 @@ Caption     [ Kyoto — April 2026        ]  ( ) none  (●) below  ( ) above
 - Every slider's max comes from the bisection of §3.6.
 - Reframe and zoom reuse the existing Framing controls and the existing pointer pipeline in `EditorStage`
   (invariant 12): panning a photo inside its cell is the crop gesture, with the rect fixed.
+- The **quality tier sits next to the zoom** — it is the number the zoom actually moves — with a
+  **Native 100%** button that frames the photo pixel for pixel (crop = the cell, exactly; going
+  through the rounded zoom value lands a pixel off and reads "Downscaled 100 %"). The button is
+  disabled when the photo is smaller than its cell, where native does not exist.
+- Swapping is offered twice: drag one photo chip onto another, or select one and use **◀ ▶**. A
+  drag nobody guesses is not a feature (remarks.md, phase 7 feedback #5).
 
 Decided while implementing (stage 3):
 
@@ -449,3 +489,6 @@ overwrites · Phase 7, templates shift to Phase 8.
   Phase 8 with the rest of the template work.
 - Mirrored variants (`*-hero-left` / `*-hero-right`) are separate entries. If the picker gets long, a `⇄`
   flip toggle on the recipe would halve it.
+- The recipes' `landscape` / `portrait` cell kinds are now inert (the format carries the
+  orientation, §3.5); only `auto` and `square` still change anything. They stay as documentation of
+  each recipe's intent, but a future catalogue pass could drop them.

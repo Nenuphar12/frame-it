@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from the_frame_v2.domain.composition import BalanceRange, RecipeNode
 from the_frame_v2.domain.document import (
     ArtworkDocument,
+    CellFormat,
     CompositionAxis,
     CompositionBorder,
     CompositionCaption,
@@ -309,6 +310,8 @@ class CompositionIn(BaseModel):
     outer: CompositionAxis | None = None
     gutter: CompositionGutter | None = None
     format: CompositionFormat | None = None
+    cell_formats: list[CellFormat | None] | None = None
+    """Per-cell override of `format`, in photo order; `null` entries inherit it."""
     border: CompositionBorder | None = None
     caption: CompositionCaption | None = None
 

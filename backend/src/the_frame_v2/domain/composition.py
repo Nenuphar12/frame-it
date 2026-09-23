@@ -187,11 +187,20 @@ def cell_id(index: int) -> str:
 
 
 def format_ratio(composition_format: str) -> float | None:
-    """Landscape form `r ≥ 1` of a ratio format; `None` for `fill` and `original`."""
+    """Aspect a ratio format asks for, **as written**; `None` for `fill` and `original`.
+
+    `4:3` and `3:4` are different formats: the one the user picked is the one the cells take
+    (§3.5). Only an `auto` leaf still turns the ratio the photo's way, and it uses
+    `landscape_ratio` for that.
+    """
     if ":" not in composition_format:
         return None
     width, height = (int(term) for term in composition_format.split(":"))
-    ratio = width / height
+    return width / height
+
+
+def landscape_ratio(ratio: float) -> float:
+    """`r ≥ 1` form of an aspect — what an `auto` leaf turns the photo's way."""
     return ratio if ratio >= 1 else 1 / ratio
 
 
@@ -311,7 +320,7 @@ def _attempt(
         _walk_fill(recipe.tree, box, _root_weights(recipe, composition), gutter_x, gutter_y, boxes)
     else:
         aspects = [
-            _leaf_aspect(cell, composition.format, _size_at(photo_sizes, index), area)
+            _leaf_aspect(cell, cell_format(composition, index), _size_at(photo_sizes, index), area)
             for index, cell in enumerate(leaves(recipe.tree))
         ]
         relation, _ = _relate(recipe.tree, aspects, 0, border, gutter_x, gutter_y)
@@ -324,6 +333,19 @@ def _size_at(photo_sizes: Sequence[Size | None], index: int) -> Size | None:
     return photo_sizes[index] if index < len(photo_sizes) else None
 
 
+def cell_format(composition: Composition, index: int) -> str:
+    """The format cell *index* is laid out with: its own override, else the block's (§3.5).
+
+    Overrides are per-cell aspects, so they only mean something under a ratio format — `fill` is a
+    property of the whole block (the cells tile the area exactly) and ignores them.
+    """
+    if composition.format == "fill":
+        return "fill"
+    if index < len(composition.cell_formats):
+        return composition.cell_formats[index] or composition.format
+    return composition.format
+
+
 def _leaf_aspect(cell: RecipeCell, fmt: str, photo: Size | None, area: Rect) -> float:
     """Target aspect (w/h) of a leaf's **photo** under a ratio format (§3.5).
 
@@ -331,6 +353,9 @@ def _leaf_aspect(cell: RecipeCell, fmt: str, photo: Size | None, area: Rect) -> 
     which makes a single empty cell fill the mat exactly (today's `fit_in_mat`). An `auto` leaf
     takes the *format* turned the photo's way — otherwise picking `1:1` for a single photo would
     do nothing at all (§3.3 "the photo's own orientation").
+
+    Every other leaf takes the format exactly as written, orientation included: `4:3` and `3:4`
+    are different pictures, and reading them as the same one is what made half the chips inert.
     """
     if fmt == "original":
         return photo.w / photo.h if photo else area.w / area.h
@@ -338,9 +363,10 @@ def _leaf_aspect(cell: RecipeCell, fmt: str, photo: Size | None, area: Rect) -> 
     if ratio is None:
         return area.w / area.h
     if cell.cell == "auto":
-        return 1 / ratio if photo is not None and photo.h > photo.w else ratio
-    if cell.cell == "portrait":
-        return 1 / ratio
+        upright = landscape_ratio(ratio)
+        return 1 / upright if photo is not None and photo.h > photo.w else upright
+    # `landscape` and `portrait` leaves both take the format as written: the chip the user picked
+    # is the shape they expect to see, and a per-cell override (§3.5) is how one cell differs.
     return 1.0 if cell.cell == "square" else ratio
 
 

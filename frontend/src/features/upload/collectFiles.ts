@@ -1,3 +1,5 @@
+import { isInternalDrag } from "@/shared/dnd";
+
 /** Collect files from a drop event, recursing into dropped folders. */
 export async function filesFromDataTransfer(dt: DataTransfer): Promise<File[]> {
   const entries = Array.from(dt.items)
@@ -36,5 +38,8 @@ async function readEntry(entry: FileSystemEntry): Promise<File[]> {
 }
 
 export function hasFiles(event: DragEvent | React.DragEvent): boolean {
-  return Array.from(event.dataTransfer?.types ?? []).includes("Files");
+  const types = Array.from(event.dataTransfer?.types ?? []);
+  // An in-app drag of a photo chip is an `<img>` drag, which Chrome also offers as a file: without
+  // this the whole window lit up with "Drop photos or a folder" while swapping two cells.
+  return types.includes("Files") && !isInternalDrag(types);
 }

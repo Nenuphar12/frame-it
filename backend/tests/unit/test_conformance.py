@@ -65,6 +65,11 @@ def _state(v: dict[str, Any]) -> SlotState:
     return SlotState(_rect(v["rect"]), _rect(v["crop"]))
 
 
+def _slot_state(rect: dict[str, int], crop: dict[str, int]) -> dict[str, Any]:
+    """A `SlotState` as the fixtures carry it."""
+    return {"rect": rect, "crop": crop}
+
+
 def _recipe(recipe_id: str) -> composition.Recipe:
     recipe = recipe_catalog.find(recipe_id)
     assert recipe is not None, recipe_id
@@ -338,6 +343,7 @@ def _comp(
     balance: float | None = None,
     outer: tuple[int, int] = (120, 120),
     gutter: tuple[int, int] = (80, 80),
+    cell_formats: list[str | None] | None = None,
 ) -> dict[str, Any]:
     """A complete composition block: fixtures carry every field (the TS mirror has no defaults)."""
     return {
@@ -346,6 +352,7 @@ def _comp(
         "outer": {"x": outer[0], "y": outer[1]},
         "gutter": {"x": gutter[0], "y": gutter[1]},
         "format": fmt,
+        "cell_formats": cell_formats or [],
         "border": None if border is None else {"width": border, "color": "#FFFFFF"},
         "caption": {"text": "" if caption == "none" else "Kyoto - April 2026", "place": caption},
         "detached": False,
@@ -968,6 +975,58 @@ CASES: dict[str, list[tuple[str, str, dict[str, Any]]]] = {
             {"state": NATIVE_STATE, "factor": 0.5, "source": SRC, "lock": "native"},
         ),
         (
+            "zoom out past the whole photo keeps the crop's aspect",
+            "zoom_crop",
+            {
+                "state": _slot_state(
+                    {"x": 0, "y": 0, "w": 1147, "h": 1920},
+                    {"x": 1500, "y": 500, "w": 1147, "h": 1920},
+                ),
+                "factor": 4.0,
+                "source": {"w": 4080, "h": 3072},
+                "lock": "no_upscale",
+            },
+        ),
+        (
+            "zoom out to exactly the whole photo",
+            "zoom_crop",
+            {
+                "state": _slot_state(
+                    {"x": 0, "y": 0, "w": 2000, "h": 1000},
+                    {"x": 0, "y": 536, "w": 4080, "h": 2040},
+                ),
+                "factor": 2.0,
+                "source": {"w": 4080, "h": 3072},
+                "lock": "free",
+            },
+        ),
+        (
+            "zoom in keeps the rect's aspect, not the rounded crop's",
+            "zoom_crop",
+            {
+                "state": _slot_state(
+                    {"x": 0, "y": 0, "w": 2387, "h": 1592},
+                    {"x": 0, "y": 0, "w": 4000, "h": 2668},
+                ),
+                "factor": 1 / 1.06,
+                "source": {"w": 4000, "h": 3000},
+                "lock": "free",
+            },
+        ),
+        (
+            "a zoom that rounds to nothing still moves a pixel",
+            "zoom_crop",
+            {
+                "state": _slot_state(
+                    {"x": 0, "y": 0, "w": 1800, "h": 1200},
+                    {"x": 1494, "y": 994, "w": 8, "h": 5},
+                ),
+                "factor": 1.06,
+                "source": {"w": 3000, "h": 2000},
+                "lock": "free",
+            },
+        ),
+        (
             "apply lock native",
             "apply_lock",
             {"state": FIT_STATE, "lock": "native", "source": SRC},
@@ -1192,6 +1251,38 @@ CASES: dict[str, list[tuple[str, str, dict[str, Any]]]] = {
                 "recipe": "three-row",
                 "composition": _comp("three-row", "2:3"),
                 "photo_sizes": PHOTOS[:3],
+                "caption_size": 48,
+            },
+        ),
+        (
+            "solve per-cell formats",
+            "composition_solve",
+            {
+                "recipe": "three-one-over-two",
+                "composition": _comp(
+                    "three-one-over-two", "3:2", cell_formats=[None, "1:1", "1:1"]
+                ),
+                "photo_sizes": PHOTOS[:3],
+                "caption_size": 48,
+            },
+        ),
+        (
+            "solve per-cell original next to a ratio",
+            "composition_solve",
+            {
+                "recipe": "two-side-by-side",
+                "composition": _comp("two-side-by-side", "3:2", cell_formats=[None, "original"]),
+                "photo_sizes": PHOTOS[:2],
+                "caption_size": 48,
+            },
+        ),
+        (
+            "solve per-cell formats are inert under fill",
+            "composition_solve",
+            {
+                "recipe": "two-side-by-side",
+                "composition": _comp("two-side-by-side", cell_formats=["1:1", "16:9"]),
+                "photo_sizes": PHOTOS[:2],
                 "caption_size": 48,
             },
         ),

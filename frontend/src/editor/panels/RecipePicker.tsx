@@ -16,6 +16,7 @@ const SCHEMA: Composition = {
   outer: { x: Math.round(CANVAS.w * 0.06), y: Math.round(CANVAS.h * 0.06) },
   gutter: { x: Math.round(CANVAS.w * 0.04), y: Math.round(CANVAS.h * 0.04) },
   format: "fill",
+  cell_formats: [],
   border: null,
   caption: { text: "", place: "none" },
   detached: false,

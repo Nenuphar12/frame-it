@@ -6,6 +6,7 @@
 // components means the store can replay them for undo/redo and the rules stay testable.
 import { current } from "immer";
 
+import type { FrameStyle } from "@/api/client";
 import {
   CENTER,
   applyCropRatio,
@@ -167,12 +168,59 @@ export function setPlacement(doc: EditorDocument, placement: Placement, sizes: P
   replace(doc, sizes);
 }
 
+/** A frame style's document, as `GET /frame-styles` sends it. */
+export type StyleDocument = FrameStyle["document"];
+
 export function setMatColor(doc: EditorDocument, color: string): void {
   doc.mat.color = color;
 }
 
 export function setTexture(doc: EditorDocument, id: string | null, strength: number): void {
   doc.mat.texture = id === null ? null : { id, strength };
+}
+
+/**
+ * Re-dress the artwork in a frame style (Gallery recessed, Linen, …) without touching its layout.
+ *
+ * A style is a *look*: the mat, the shadow under each photo, the band around it and the caption's
+ * typography. Its `margins` are deliberately left out — under a composition the block owns them
+ * (§3.7), and the whole point of changing the style in the editor is to keep the geometry the user
+ * arranged. The band becomes `composition.border` while a block is attached, since that is who
+ * writes `bands` from then on; a hand-built document takes the bands directly.
+ */
+export function applyStyle(
+  doc: EditorDocument,
+  style: StyleDocument,
+  recipes: readonly Recipe[],
+  sizes: PhotoSizes,
+): void {
+  // Every field of a style document is optional in the API schema (they all have defaults), so
+  // each one falls back to what the document already has rather than to a made-up value.
+  const mat = style.mat;
+  if (mat) doc.mat = { color: mat.color, texture: mat.texture ? { ...mat.texture } : null };
+  const defaults = style.slot_defaults;
+  const bands = defaults?.bands ?? [];
+  const block = doc.composition;
+  const attached = block !== null && !block.detached;
+  for (const slot of doc.slots) {
+    slot.shadow = defaults?.shadow ? { ...defaults.shadow } : null;
+    if (!attached) setBands(slot, bands);
+  }
+  const typography = style.caption_defaults;
+  if (typography) {
+    for (const caption of doc.captions) {
+      caption.font = typography.font ?? caption.font;
+      caption.weight = typography.weight ?? caption.weight;
+      caption.size = typography.size ?? caption.size;
+      caption.color = typography.color ?? caption.color;
+      caption.letter_spacing = typography.letter_spacing ?? caption.letter_spacing;
+    }
+  }
+  if (block && attached) {
+    const band = bands[0];
+    block.border = band ? { width: Math.max(1, Math.round(band.width)), color: band.color } : null;
+    resolveComposition(doc, recipes, sizes);
+  }
 }
 
 // ---- slot edits --------------------------------------------------------------------------------
@@ -268,6 +316,13 @@ export function panCrop(
   slot.source.crop = panCropSolver(state(slot), Math.round(dx), Math.round(dy), source);
 }
 
+/**
+ * Zoom the photo inside its slot by `factor` (> 1 shows more of it) — the wheel and `+` / `-`.
+ *
+ * It goes through the **same bounded scale as the slider** (`MIN_ZOOM`…`MAX_ZOOM`): an unbounded
+ * wheel used to shrink the crop a few pixels wide, where rounding destroys its aspect and the slot
+ * follows it (remarks.md #2). Scrolling can no longer take the document anywhere the slider cannot.
+ */
 export function zoomCrop(
   doc: EditorDocument,
   slot: DocSlot,
@@ -276,6 +331,17 @@ export function zoomCrop(
 ): void {
   const source = slotSource(slot, sizes);
   if (!source) return;
+  setPhotoZoom(doc, slot, zoomBase(slot, source).w / slot.source.crop.w / factor, sizes);
+}
+
+/** Apply a zoom factor to the crop, with the lock the current mode calls for. */
+function applyZoom(
+  doc: EditorDocument,
+  slot: DocSlot,
+  factor: number,
+  source: Size,
+  sizes: PhotoSizes,
+): void {
   // Under an attached block the cell owns the rect: zoom with the lock off so the constraint
   // solver cannot shrink the slot, then put the §3.7 lock back (`relock`).
   const parametric = cellOwnsRect(doc);
@@ -310,11 +376,37 @@ export function photoZoom(slot: DocSlot, sizes: PhotoSizes): number | null {
   return clampZoom(base.w / slot.source.crop.w);
 }
 
+/**
+ * Zoom at which the photo is shown pixel-for-pixel (scale 1, §7.2) — `null` when the cell is
+ * bigger than the photo, where "native" simply does not exist without upscaling.
+ */
+export function nativeZoom(slot: DocSlot, sizes: PhotoSizes): number | null {
+  const source = slotSource(slot, sizes);
+  if (!source) return null;
+  const zoom = zoomBase(slot, source).w / slot.rect.w;
+  return zoom >= MIN_ZOOM && zoom <= MAX_ZOOM ? Math.round(zoom * 100) / 100 : null;
+}
+
+/**
+ * Frame the photo pixel-for-pixel inside its cell: the crop becomes exactly the rect, centred on
+ * the current one. Going through the zoom slider instead lands a pixel off (the zoom is rounded
+ * to 1/100), which shows up as "Downscaled 100 %" — the one tier the badge must get right.
+ *
+ * A photo too small to fill the cell cannot be native: the caller offers the action only when
+ * `nativeZoom` says it exists.
+ */
+export function setNativeFraming(doc: EditorDocument, slot: DocSlot, sizes: PhotoSizes): void {
+  const source = slotSource(slot, sizes);
+  if (!source || source.w < slot.rect.w || source.h < slot.rect.h) return;
+  write(slot, applyLock(state(slot), "native", source));
+  if (cellOwnsRect(doc)) relock(slot); // the cell keeps the rect; `native` is a framing, not a lock
+}
+
 export function clampZoom(zoom: number): number {
   return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(zoom * 100) / 100));
 }
 
-/** Set the absolute zoom (slider / number field); the wheel keeps using `zoomCrop`. */
+/** Set the absolute zoom — the one door to the crop's size, for the slider and the wheel alike. */
 export function setPhotoZoom(
   doc: EditorDocument,
   slot: DocSlot,
@@ -324,7 +416,7 @@ export function setPhotoZoom(
   const source = slotSource(slot, sizes);
   if (!source) return;
   const target = zoomBase(slot, source).w / clampZoom(zoom);
-  zoomCrop(doc, slot, target / slot.source.crop.w, sizes);
+  applyZoom(doc, slot, target / slot.source.crop.w, source, sizes);
 }
 
 /** `fit_in_mat` re-places the slot around the new crop; `native` pushes the change to the margins. */
@@ -795,15 +887,13 @@ export function attachComposition(
     outer: previous ? { ...previous.outer } : { x: 120, y: 120 },
     gutter: previous ? { ...previous.gutter } : { x: 80, y: 80 },
     format: previous?.format ?? (recipe.count === 1 ? "original" : "fill"),
+    cell_formats: previous ? previous.cell_formats.slice(0, recipe.count) : [],
     border: previous?.border ? { ...previous.border } : null,
     caption: previous
       ? { ...previous.caption }
       : { text: existing?.text ?? "", place: existing ? "below" : "none" },
     detached: false,
   };
-  if (doc.composition.format === "original" && doc.slots.length !== 1) {
-    doc.composition.format = "fill"; // structural rule of the document model
-  }
   doc.composition.balance = balanceFor(recipe, doc.composition.balance);
   resolveComposition(doc, recipes, sizes);
 }
@@ -836,7 +926,8 @@ export function recipeFollowsPhotoCount(
   }
   block.recipe = chosen.id;
   block.balance = balanceFor(chosen, block.balance);
-  if (block.format === "original" && count !== 1) block.format = "fill";
+  // The per-cell overrides are positional: a shorter recipe drops the ones that no longer exist.
+  block.cell_formats = block.cell_formats.slice(0, count);
   resolveComposition(doc, recipes, sizes);
 }
 

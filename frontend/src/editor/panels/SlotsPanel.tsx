@@ -21,6 +21,7 @@ import * as actions from "@/editor/actions";
 import type { EditorDocument } from "@/editor/core/document.ts";
 import { MAX_SLOTS } from "@/editor/operations";
 import { cn } from "@/shared/cn";
+import { SLOT_MIME, startInternalDrag } from "@/shared/dnd";
 import { IconButton, PanelSection } from "./Controls";
 import { PhotoPicker } from "./PhotoPicker";
 import { SlotQualityBadge } from "./QualityBadge";
@@ -70,7 +71,10 @@ export function SlotsPanel({ doc, selectedIds, onSelect }: SlotsPanelProps) {
           <li
             key={slot.id}
             draggable
-            onDragStart={() => setDragging(slot.id)}
+            onDragStart={(event) => {
+              startInternalDrag(event.dataTransfer, SLOT_MIME, slot.id);
+              setDragging(slot.id);
+            }}
             onDragEnd={() => setDragging(null)}
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => {
@@ -88,7 +92,9 @@ export function SlotsPanel({ doc, selectedIds, onSelect }: SlotsPanelProps) {
           >
             <button
               type="button"
-              onClick={(event) => onSelect(slot.id, event.shiftKey || event.ctrlKey || event.metaKey)}
+              onClick={(event) =>
+                onSelect(slot.id, event.shiftKey || event.ctrlKey || event.metaKey)
+              }
               className="flex min-w-0 flex-1 items-center gap-2 text-left"
             >
               <span className="h-8 w-12 shrink-0 overflow-hidden rounded bg-panel-2">
@@ -103,7 +109,9 @@ export function SlotsPanel({ doc, selectedIds, onSelect }: SlotsPanelProps) {
                 )}
               </span>
               <span className="min-w-0 flex-1 truncate">
-                {slot.photo_id ? t("editor.slots.slot", { index: front.length - position }) : t("editor.quality.empty")}
+                {slot.photo_id
+                  ? t("editor.slots.slot", { index: front.length - position })
+                  : t("editor.quality.empty")}
               </span>
               <SlotQualityBadge slot={slot} />
             </button>
@@ -121,7 +129,11 @@ export function SlotsPanel({ doc, selectedIds, onSelect }: SlotsPanelProps) {
         </IconButton>
         <IconButton
           title={t("editor.slots.clearPhoto")}
-          disabled={selectedCount !== 1 || !selectedIds[0] || !doc.slots.find((slot) => slot.id === selectedIds[0])?.photo_id}
+          disabled={
+            selectedCount !== 1 ||
+            !selectedIds[0] ||
+            !doc.slots.find((slot) => slot.id === selectedIds[0])?.photo_id
+          }
           onClick={() => selectedIds[0] && void actions.setSlotPhoto(selectedIds[0], null)}
         >
           <ImageOff size={14} />

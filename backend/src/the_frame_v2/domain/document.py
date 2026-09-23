@@ -45,6 +45,10 @@ CompositionFormat = Annotated[
     str, StringConstraints(pattern=r"^(fill|original|[1-9][0-9]{0,3}:[1-9][0-9]{0,3})$")
 ]
 """`fill`, `original` (1-cell recipes only) or `w:h` with `w, h` ∈ [1, 1000] (checked below)."""
+CellFormat = Annotated[
+    str, StringConstraints(pattern=r"^(original|[1-9][0-9]{0,3}:[1-9][0-9]{0,3})$")
+]
+"""A per-cell format: a ratio or the photo's own aspect. `fill` is a property of the whole block."""
 MAX_FORMAT_TERM = 1000
 QualityLock = Literal["native", "no_upscale", "free"]
 Placement = Literal["fit_in_mat", "fill", "manual"]
@@ -236,6 +240,11 @@ class Composition(DocModel):
     gutter: CompositionGutter = Field(default_factory=lambda: CompositionGutter(x=80, y=80))
     """Exact gap between two printed edges, per axis."""
     format: CompositionFormat = "fill"
+    cell_formats: list[CellFormat | None] = Field(default_factory=list, max_length=MAX_SLOTS)
+    """Per-cell override of `format`, in slot order; `None` inherits.
+
+    Ignored under `fill`, where the cells tile the area exactly and have no aspect of their own.
+    """
     border: CompositionBorder | None = None
     caption: CompositionCaption = Field(default_factory=CompositionCaption)
     detached: bool = False
@@ -243,8 +252,10 @@ class Composition(DocModel):
 
     @model_validator(mode="after")
     def _format_terms(self) -> Composition:
-        if ":" in self.format:
-            width, height = (int(term) for term in self.format.split(":"))
+        for value in [self.format, *self.cell_formats]:
+            if value is None or ":" not in value:
+                continue
+            width, height = (int(term) for term in value.split(":"))
             if width > MAX_FORMAT_TERM or height > MAX_FORMAT_TERM:
                 raise ValueError(f"format terms must be ≤ {MAX_FORMAT_TERM}")
         return self
@@ -275,8 +286,8 @@ class ArtworkDocument(DocModel):
         if self.placement != "manual" and len(self.slots) != 1:
             raise ValueError(f"placement {self.placement} requires exactly one slot")
         composition = self.composition
-        if composition is not None and composition.format == "original" and len(self.slots) != 1:
-            raise ValueError("format 'original' requires exactly one slot")
+        if composition is not None and len(composition.cell_formats) > len(self.slots):
+            raise ValueError("more cell formats than slots")
         return self
 
     def photo_ids(self) -> list[str]:

@@ -476,3 +476,133 @@ tsc, i18n. Phase 7 is complete; `settings.artwork_defaults` still names a style 
 than a style + recipe + format (§10, left to Phase 8 with the rest of the template work), and the
 create dialog still sends a `layout_id`, so artworks made from the Photos page are hand-built until
 the user picks a layout in the editor. Both are Phase 8's to change.
+
+## 2026-09-22 — Phase 7 feedback round (`remarks.md`)
+
+Seven items came back from using the Simple editor. One was a false alarm (the "asymmetric" bottom
+margin was the caption band, which the user diagnosed themselves); the other six are treated.
+
+**#7 — the zoom bug, and it was a real one.** `zoom_crop` grew the crop by the factor and then
+clamped **width and height independently** against the photo. Scrolling out past the whole photo
+therefore reshaped the crop — and since a crop whose aspect no longer matches its slot makes
+`resize_crop` resize the *slot* to match, the cell visibly changed shape ("its frame is reduced or
+extended"). Under `no_upscale` the slot followed the crop as well. The fix bounds the **factor** so
+the crop stays inside the photo *with its aspect*, in both languages, with two conformance cases.
+Verified in the browser: 40 wheel-outs now stop at exactly 1.00×, the rect unchanged and the crop
+still at the cell's 0.7497.
+
+**#3 — `4:3` and `3:4` rendered the same.** They did: `format_ratio` returned the *landscape form*
+and the recipe's per-cell `landscape`/`portrait` annotation decided the orientation, which made
+half the chips inert. A format now carries its orientation — the cells take the ratio as written —
+and only `auto` (the 1-cell recipe) still turns it the photo's way. The panel gained a
+**[Landscape] [Portrait]** toggle next to the chips. The recipes' cell kinds are inert as a result;
+§10 notes they could be dropped.
+
+**#4 — per-photo formats.** `composition.cell_formats` overrides the block's format cell by cell
+(`null` inherits, `original` = that photo's own aspect, never `fill`). The solver already computed
+a per-leaf aspect, so this was a parameter rather than a mechanism; the panel exposes it as a
+"This photo" dropdown on the selected cell. A 1+2 with a `3:2` hero over two squares now works.
+
+**#6 — creating from a multi-selection.** Selecting three photos created *three* artworks, because
+the dialog defaulted to the one-slot "Single" layout and chunked the selection by slot count. It
+now offers "One artwork with the 3 photos" (default) versus "One artwork per photo", and the
+together path shows the recipe picker — so the dialog creates parametric artworks and the layout
+dropdown is gone. Phase 8's "the create dialog still sends a layout_id" note is settled early.
+
+**#2 — the zoom needed its tier.** The quality badge now sits under the zoom slider with a **Native
+100%** button next to it. The first implementation drove the existing zoom action and landed a
+pixel off — the badge read "Downscaled 100 %", which is exactly the lie the badge must never tell —
+so the action sets the crop to the cell's size directly (`setNativeFraming`). It reads **Native
+100%** and the stored crop equals the rect.
+
+**#5 — swapping was undiscoverable.** Drag-onto-another was the only way and nothing said so. There
+is now a hint line, a "cell 2 of 3" position row and **◀ ▶** buttons that swap with the neighbour.
+
+**Verified**: `make check` green — 832 backend tests, 344 conformance cases. Everything above was
+driven in a real browser (CDP): the create dialog from the Photos grid through to a stored 3-photo
+parametric artwork, then the format orientation, a per-cell `1:1`, the swap arrows, Native 100% and
+the wheel zoom-out, each checked against the **saved document** rather than the screen.
+
+## 2026-09-23 — Phase 7 feedback, second round (`remarks.md`)
+
+Ten items. Nine were actionable, one was a question answered in the reply (#7, below).
+
+**#2 — the zoom bug was still there, and worse than it looked.** The previous round bounded
+zooming *out*; nothing bounded zooming *in*. The wheel multiplied the crop by `1/1.06` without
+limit, so a few seconds of scrolling shrank it to a handful of pixels, where two independently
+rounded sides no longer describe the rect's aspect — and `resize_crop`'s answer to an inconsistent
+crop is to resize the **slot**. Reproduced exactly: 120 wheel steps in took a 1800×1200 rect with a
+3000×2000 crop to a 959×853 rect with an **8×8** crop, and zooming back out was stuck for ever
+(`round_half_even(8 × 1.06) == 8`). Two fixes, both needed:
+
+- `zoom_crop` (mirrored) now derives the height from the width and the **rect's** aspect, bounds
+  the result by `largest_crop(source, that aspect)`, and always moves at least one pixel. The rect
+  is the only reference that does not move: re-reading the aspect off the rounded crop every step
+  drifts just as badly. Round trip now exact — all the way in to 1×1 and back out to the whole
+  photo, with the rect untouched (four shapes checked, two conformance cases added).
+- the editor routes the **wheel** through the same bounded 1×–8× scale as the slider
+  (`zoomCrop` → `setPhotoZoom`), so scrolling cannot reach the pathological region at all.
+
+**#1 — the upload overlay hijacked cell swaps.** Dragging a photo chip lit up "Drop photos or a
+folder" across the window. A chip is an `<img>`, and Chrome offers such a drag to the page as a
+file, so `hasFiles` was right about the `types` and wrong about the intent. Internal drags now
+stamp themselves (`shared/dnd.ts`) and the global zone ignores a stamped drag — which also fixes
+the same flash when dragging from the photo picker onto the canvas.
+
+**#3 — clicking a photo on the canvas selects it.** In Simple the stage is always in crop mode, and
+crop mode went straight to the gesture on the *primary* slot without hit-testing. It now selects
+the photo under the pointer first, in both modes, so the canvas is a way to choose which photo the
+panel edits and the chips are left to do the swapping.
+
+**#4 — per-cell format, same control as the artwork's.** One `FormatChoice` component now serves
+both, the per-cell one with an extra `Same as layout` chip: they are the same setting at two
+scales, and chips-versus-dropdown made them read as unrelated.
+
+**#5 — `original` at any photo count.** The document model rejected it above one slot. The rule was
+conservative, not structural: `_leaf_aspect` has always given each leaf its own photo's aspect, and
+a 3- and 4-cell solve lands each cell on its photo's ratio within the §3.4 tolerance. The rule is
+gone (with the two client-side `original → fill` downgrades it forced), the chip is always offered.
+
+**#6 — caption size is a slider in Simple.** No schema change: `apply` reads the typography back
+off the document (§3.7), so the size round-trips on its own. It re-solves rather than detaches —
+the band the solver reserves is a function of the size (§3.3).
+
+**#8 — the frame style is changeable in the editor.** A dropdown in Background applies a style's
+mat, shadow, border and caption typography, deliberately *not* its margins: under a block the
+margins are derived, and the point is to re-dress the artwork without disturbing its layout. The
+band becomes `composition.border` while a block is attached, since that is what owns `bands`.
+
+**#9 — `P` toggles the TV preview** (it only ever opened it).
+
+**#10 — a single photo hides what is about choosing a cell**: the layout picker (there is exactly
+one 1-cell recipe), the gap sliders, the photo chips, the swap arrows and the per-cell format.
+
+**#7 — the answer, no code.** A dropdown of "best quality" downscales (50 %, 25 %) is not worth
+building: see the reply. The short version is that the renderer already resamples with a proper
+filter, so there is no aliasing to dodge, and the tier the badge reports depends on the *cell* size
+rather than on landing at a tidy fraction.
+
+**Verified**: `make check` green — 834 backend tests, 346 conformance cases, mypy strict, ESLint,
+tsc, i18n. Driven in a real browser (headless Chromium over CDP against the production build on
+trusted localhost), each result read back from the **saved document** rather than off the screen:
+
+- #2 — 200 wheel-ins then 300 wheel-outs on a 3-photo artwork: the crop stops at the 8× bound
+  (384×510 of a 3071×4080 photo) and comes back to the whole photo, with the rect at 1427×1896
+  before, during and after. The same sequence used to end at an 8×8 crop, a resized rect and no
+  way back.
+- #1 — a synthetic drag carrying a `File` raises the upload overlay; the same drag with our
+  `text/x-the-frame-slot` stamp does not. Checked on both `/photos` and the editor route.
+- #3 — clicking each of the three cells on the canvas moves the panel's "cell *n* of 3".
+- #4/#5 — the format chips write `format: "3:2"` and `cell_formats: ["1:1"]`, and the solver
+  answers with a 722×722 cell next to two 1083×722 ones; `original` on three photos gives each
+  cell its own photo's aspect (1.327, 1.327, 0.752).
+- #6 — the size slider takes the caption from 48 to 140 px and the margins re-solve around the
+  bigger band (bottom 772 → 841).
+- #8 — picking Linen writes its mat, a 12 px `#F6F2EA` border and an inner shadow.
+- #9 — `P` opens the preview and closes it again.
+- #10 — a one-photo artwork's panel has no Layout section, no Gap, no cell chips, no swap arrows
+  and no per-cell format; a three-photo one has all of them.
+
+Not driven: the native HTML drag that swaps two cells (a synthetic `dragstart`/`drop` pair does not
+reproduce a real mouse drag — the previous round checked it, and this change only adds a `setData`
+call to the existing handler).

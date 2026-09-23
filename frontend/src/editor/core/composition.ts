@@ -81,6 +81,8 @@ export interface Composition {
   /** Exact gap between two printed edges, per axis. */
   gutter: { x: number; y: number };
   format: string;
+  /** Per-cell override of `format`, in slot order; `null` inherits. Ignored under `fill` (§3.5). */
+  cell_formats: (string | null)[];
   border: CompositionBorder | null;
   caption: CompositionCaption;
   /** The slots have been hand-edited: they are the truth and this block is memory only (§5). */
@@ -125,13 +127,20 @@ export function leaves(node: RecipeNode): RecipeCell[] {
 
 export const cellId = (index: number): string => `c${index + 1}`;
 
-/** Landscape form `r ≥ 1` of a ratio format; `null` for `fill` and `original`. */
+/**
+ * Aspect a ratio format asks for, **as written**; `null` for `fill` and `original`.
+ *
+ * `4:3` and `3:4` are different formats: the one the user picked is the one the cells take (§3.5).
+ * Only an `auto` leaf still turns the ratio the photo's way, through `landscapeRatio`.
+ */
 export function formatRatio(compositionFormat: string): number | null {
   if (!compositionFormat.includes(":")) return null;
   const [width, height] = compositionFormat.split(":");
-  const ratio = Number(width) / Number(height);
-  return ratio >= 1 ? ratio : 1 / ratio;
+  return Number(width) / Number(height);
 }
+
+/** `r ≥ 1` form of an aspect — what an `auto` leaf turns the photo's way. */
+export const landscapeRatio = (ratio: number): number => (ratio >= 1 ? ratio : 1 / ratio);
 
 /** Height reserved on the caption's side, before solving (§3.3) — no font metrics involved. */
 export function captionBand(captionSize: number, gutterY: number): number {
@@ -241,7 +250,7 @@ function solveOnce(
     walkFill(recipe.tree, box, rootWeights(recipe, composition), gutterX, gutterY, boxes);
   } else {
     const aspects = leaves(recipe.tree).map((cell, index) =>
-      leafAspect(cell, composition.format, photoSizes[index] ?? null, area),
+      leafAspect(cell, cellFormat(composition, index), photoSizes[index] ?? null, area),
     );
     const [relation] = relate(recipe.tree, aspects, 0, border, gutterX, gutterY);
     walkRatio(recipe.tree, relation, fitBlock(relation.affine, box), gutterX, gutterY, boxes);
@@ -256,13 +265,31 @@ function solveOnce(
  * which makes a single empty cell fill the mat exactly (today's `fit_in_mat`). An `auto` leaf
  * takes the *format* turned the photo's way — otherwise picking `1:1` for a single photo would do
  * nothing at all (§3.3 "the photo's own orientation").
+ *
+ * Every other leaf takes the format exactly as written, orientation included: `4:3` and `3:4` are
+ * different pictures, and reading them as the same one is what made half the chips inert.
  */
+/**
+ * The format cell `index` is laid out with: its own override, else the block's (§3.5).
+ *
+ * Overrides are per-cell aspects, so they only mean something under a ratio format — `fill` is a
+ * property of the whole block (the cells tile the area exactly) and ignores them.
+ */
+export function cellFormat(composition: Composition, index: number): string {
+  if (composition.format === "fill") return "fill";
+  return composition.cell_formats[index] || composition.format;
+}
+
 function leafAspect(cell: RecipeCell, format: string, photo: Size | null, area: Rect): number {
   if (format === "original") return photo ? photo.w / photo.h : area.w / area.h;
   const ratio = formatRatio(format);
   if (ratio === null) return area.w / area.h;
-  if (cell.cell === "auto") return photo !== null && photo.h > photo.w ? 1 / ratio : ratio;
-  if (cell.cell === "portrait") return 1 / ratio;
+  if (cell.cell === "auto") {
+    const upright = landscapeRatio(ratio);
+    return photo !== null && photo.h > photo.w ? 1 / upright : upright;
+  }
+  // `landscape` and `portrait` leaves both take the format as written: the chip the user picked is
+  // the shape they expect to see, and a per-cell override (§3.5) is how one cell differs.
   return cell.cell === "square" ? 1 : ratio;
 }
 

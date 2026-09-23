@@ -18,6 +18,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -63,6 +64,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -108,6 +110,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -156,6 +159,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -204,6 +208,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -249,6 +254,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -294,6 +300,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -342,6 +349,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -390,6 +398,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -449,6 +458,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -508,6 +518,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -570,6 +581,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -632,6 +644,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -655,22 +668,22 @@
         {
           "id": "c1",
           "rect": {
-            "x": 600,
-            "y": 120,
-            "w": 1280,
-            "h": 1920
+            "x": 120,
+            "y": 493,
+            "w": 1760,
+            "h": 1174
           },
-          "ratio_label": "2:3"
+          "ratio_label": "880:587"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1960,
-            "y": 120,
-            "w": 1280,
-            "h": 1920
+            "y": 493,
+            "w": 1760,
+            "h": 1174
           },
-          "ratio_label": "2:3"
+          "ratio_label": "880:587"
         }
       ]
     },
@@ -691,6 +704,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -714,22 +728,22 @@
         {
           "id": "c1",
           "rect": {
-            "x": 701,
-            "y": 120,
-            "w": 1179,
-            "h": 1768
+            "x": 120,
+            "y": 417,
+            "w": 1760,
+            "h": 1174
           },
-          "ratio_label": "1179:1768"
+          "ratio_label": "880:587"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1960,
-            "y": 120,
-            "w": 1179,
-            "h": 1768
+            "y": 417,
+            "w": 1760,
+            "h": 1174
           },
-          "ratio_label": "1179:1768"
+          "ratio_label": "880:587"
         }
       ]
     },
@@ -750,6 +764,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -776,22 +791,22 @@
         {
           "id": "c1",
           "rect": {
-            "x": 608,
-            "y": 144,
-            "w": 1248,
-            "h": 1872
+            "x": 144,
+            "y": 509,
+            "w": 1712,
+            "h": 1142
           },
-          "ratio_label": "2:3"
+          "ratio_label": "856:571"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1984,
-            "y": 144,
-            "w": 1248,
-            "h": 1872
+            "y": 509,
+            "w": 1712,
+            "h": 1142
           },
-          "ratio_label": "2:3"
+          "ratio_label": "856:571"
         }
       ]
     },
@@ -812,6 +827,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -838,22 +854,22 @@
         {
           "id": "c1",
           "rect": {
-            "x": 709,
-            "y": 144,
-            "w": 1147,
-            "h": 1720
+            "x": 144,
+            "y": 433,
+            "w": 1712,
+            "h": 1142
           },
-          "ratio_label": "1147:1720"
+          "ratio_label": "856:571"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1984,
-            "y": 144,
-            "w": 1147,
-            "h": 1720
+            "y": 433,
+            "w": 1712,
+            "h": 1142
           },
-          "ratio_label": "1147:1720"
+          "ratio_label": "856:571"
         }
       ]
     },
@@ -874,6 +890,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -933,6 +950,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -992,6 +1010,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -1054,6 +1073,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -1116,6 +1136,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -1175,6 +1196,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -1234,6 +1256,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -1296,6 +1319,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -1358,6 +1382,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -1417,6 +1442,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -1476,6 +1502,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -1538,6 +1565,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -1600,6 +1628,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -1624,21 +1653,21 @@
           "id": "c1",
           "rect": {
             "x": 120,
-            "y": 268,
-            "w": 2437,
-            "h": 1624
+            "y": 493,
+            "w": 1760,
+            "h": 1174
           },
-          "ratio_label": "2437:1624"
+          "ratio_label": "880:587"
         },
         {
           "id": "c2",
           "rect": {
-            "x": 2637,
-            "y": 268,
-            "w": 1083,
-            "h": 1624
+            "x": 1960,
+            "y": 493,
+            "w": 1760,
+            "h": 1174
           },
-          "ratio_label": "1083:1624"
+          "ratio_label": "880:587"
         }
       ]
     },
@@ -1659,6 +1688,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -1683,21 +1713,21 @@
           "id": "c1",
           "rect": {
             "x": 120,
-            "y": 192,
-            "w": 2437,
-            "h": 1624
+            "y": 417,
+            "w": 1760,
+            "h": 1174
           },
-          "ratio_label": "2437:1624"
+          "ratio_label": "880:587"
         },
         {
           "id": "c2",
           "rect": {
-            "x": 2637,
-            "y": 192,
-            "w": 1083,
-            "h": 1624
+            "x": 1960,
+            "y": 417,
+            "w": 1760,
+            "h": 1174
           },
-          "ratio_label": "1083:1624"
+          "ratio_label": "880:587"
         }
       ]
     },
@@ -1718,6 +1748,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -1745,21 +1776,21 @@
           "id": "c1",
           "rect": {
             "x": 144,
-            "y": 290,
-            "w": 2370,
-            "h": 1580
+            "y": 509,
+            "w": 1712,
+            "h": 1142
           },
-          "ratio_label": "3:2"
+          "ratio_label": "856:571"
         },
         {
           "id": "c2",
           "rect": {
-            "x": 2642,
-            "y": 290,
-            "w": 1054,
-            "h": 1580
+            "x": 1984,
+            "y": 509,
+            "w": 1712,
+            "h": 1142
           },
-          "ratio_label": "527:790"
+          "ratio_label": "856:571"
         }
       ]
     },
@@ -1780,6 +1811,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -1807,21 +1839,21 @@
           "id": "c1",
           "rect": {
             "x": 144,
-            "y": 214,
-            "w": 2370,
-            "h": 1580
+            "y": 433,
+            "w": 1712,
+            "h": 1142
           },
-          "ratio_label": "3:2"
+          "ratio_label": "856:571"
         },
         {
           "id": "c2",
           "rect": {
-            "x": 2642,
-            "y": 214,
-            "w": 1054,
-            "h": 1580
+            "x": 1984,
+            "y": 433,
+            "w": 1712,
+            "h": 1142
           },
-          "ratio_label": "527:790"
+          "ratio_label": "856:571"
         }
       ]
     },
@@ -1842,6 +1874,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -1901,6 +1934,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -1960,6 +1994,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -2022,6 +2057,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -2084,6 +2120,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -2108,21 +2145,21 @@
           "id": "c1",
           "rect": {
             "x": 120,
-            "y": 268,
-            "w": 1083,
-            "h": 1624
+            "y": 493,
+            "w": 1760,
+            "h": 1174
           },
-          "ratio_label": "1083:1624"
+          "ratio_label": "880:587"
         },
         {
           "id": "c2",
           "rect": {
-            "x": 1283,
-            "y": 268,
-            "w": 2437,
-            "h": 1624
+            "x": 1960,
+            "y": 493,
+            "w": 1760,
+            "h": 1174
           },
-          "ratio_label": "2437:1624"
+          "ratio_label": "880:587"
         }
       ]
     },
@@ -2143,6 +2180,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -2167,21 +2205,21 @@
           "id": "c1",
           "rect": {
             "x": 120,
-            "y": 192,
-            "w": 1083,
-            "h": 1624
+            "y": 417,
+            "w": 1760,
+            "h": 1174
           },
-          "ratio_label": "1083:1624"
+          "ratio_label": "880:587"
         },
         {
           "id": "c2",
           "rect": {
-            "x": 1283,
-            "y": 192,
-            "w": 2437,
-            "h": 1624
+            "x": 1960,
+            "y": 417,
+            "w": 1760,
+            "h": 1174
           },
-          "ratio_label": "2437:1624"
+          "ratio_label": "880:587"
         }
       ]
     },
@@ -2202,6 +2240,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -2229,21 +2268,21 @@
           "id": "c1",
           "rect": {
             "x": 144,
-            "y": 290,
-            "w": 1054,
-            "h": 1580
+            "y": 509,
+            "w": 1712,
+            "h": 1142
           },
-          "ratio_label": "527:790"
+          "ratio_label": "856:571"
         },
         {
           "id": "c2",
           "rect": {
-            "x": 1326,
-            "y": 290,
-            "w": 2370,
-            "h": 1580
+            "x": 1984,
+            "y": 509,
+            "w": 1712,
+            "h": 1142
           },
-          "ratio_label": "3:2"
+          "ratio_label": "856:571"
         }
       ]
     },
@@ -2264,6 +2303,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -2291,21 +2331,21 @@
           "id": "c1",
           "rect": {
             "x": 144,
-            "y": 214,
-            "w": 1054,
-            "h": 1580
+            "y": 433,
+            "w": 1712,
+            "h": 1142
           },
-          "ratio_label": "527:790"
+          "ratio_label": "856:571"
         },
         {
           "id": "c2",
           "rect": {
-            "x": 1326,
-            "y": 214,
-            "w": 2370,
-            "h": 1580
+            "x": 1984,
+            "y": 433,
+            "w": 1712,
+            "h": 1142
           },
-          "ratio_label": "3:2"
+          "ratio_label": "856:571"
         }
       ]
     },
@@ -2326,6 +2366,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -2399,6 +2440,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -2472,6 +2514,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -2548,6 +2591,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -2624,6 +2668,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -2652,31 +2697,31 @@
           "id": "c1",
           "rect": {
             "x": 120,
-            "y": 220,
+            "y": 698,
             "w": 1147,
-            "h": 1720
+            "h": 764
           },
-          "ratio_label": "1147:1720"
+          "ratio_label": "1147:764"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1347,
-            "y": 220,
+            "y": 698,
             "w": 1146,
-            "h": 1720
+            "h": 764
           },
-          "ratio_label": "573:860"
+          "ratio_label": "3:2"
         },
         {
           "id": "c3",
           "rect": {
             "x": 2573,
-            "y": 220,
+            "y": 698,
             "w": 1147,
-            "h": 1720
+            "h": 764
           },
-          "ratio_label": "1147:1720"
+          "ratio_label": "1147:764"
         }
       ]
     },
@@ -2697,6 +2742,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -2725,31 +2771,31 @@
           "id": "c1",
           "rect": {
             "x": 120,
-            "y": 144,
+            "y": 622,
             "w": 1147,
-            "h": 1720
+            "h": 764
           },
-          "ratio_label": "1147:1720"
+          "ratio_label": "1147:764"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1347,
-            "y": 144,
+            "y": 622,
             "w": 1146,
-            "h": 1720
+            "h": 764
           },
-          "ratio_label": "573:860"
+          "ratio_label": "3:2"
         },
         {
           "id": "c3",
           "rect": {
             "x": 2573,
-            "y": 144,
+            "y": 622,
             "w": 1147,
-            "h": 1720
+            "h": 764
           },
-          "ratio_label": "1147:1720"
+          "ratio_label": "1147:764"
         }
       ]
     },
@@ -2770,6 +2816,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -2801,31 +2848,31 @@
           "id": "c1",
           "rect": {
             "x": 144,
-            "y": 256,
+            "y": 714,
             "w": 1099,
-            "h": 1648
+            "h": 732
           },
-          "ratio_label": "1099:1648"
+          "ratio_label": "1099:732"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1371,
-            "y": 256,
+            "y": 714,
             "w": 1098,
-            "h": 1648
+            "h": 732
           },
-          "ratio_label": "549:824"
+          "ratio_label": "3:2"
         },
         {
           "id": "c3",
           "rect": {
             "x": 2597,
-            "y": 256,
+            "y": 714,
             "w": 1099,
-            "h": 1648
+            "h": 732
           },
-          "ratio_label": "1099:1648"
+          "ratio_label": "1099:732"
         }
       ]
     },
@@ -2846,6 +2893,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -2877,31 +2925,31 @@
           "id": "c1",
           "rect": {
             "x": 144,
-            "y": 180,
+            "y": 638,
             "w": 1099,
-            "h": 1648
+            "h": 732
           },
-          "ratio_label": "1099:1648"
+          "ratio_label": "1099:732"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1371,
-            "y": 180,
+            "y": 638,
             "w": 1098,
-            "h": 1648
+            "h": 732
           },
-          "ratio_label": "549:824"
+          "ratio_label": "3:2"
         },
         {
           "id": "c3",
           "rect": {
             "x": 2597,
-            "y": 180,
+            "y": 638,
             "w": 1099,
-            "h": 1648
+            "h": 732
           },
-          "ratio_label": "1099:1648"
+          "ratio_label": "1099:732"
         }
       ]
     },
@@ -2922,6 +2970,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -2995,6 +3044,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -3068,6 +3118,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -3144,6 +3195,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -3220,6 +3272,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -3293,6 +3346,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -3366,6 +3420,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -3442,6 +3497,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -3518,6 +3574,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -3591,6 +3648,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -3664,6 +3722,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -3740,6 +3799,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -3816,6 +3876,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -3889,6 +3950,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -3962,6 +4024,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -4038,6 +4101,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -4114,6 +4178,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -4187,6 +4252,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -4260,6 +4326,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -4336,6 +4403,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -4412,6 +4480,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -4439,32 +4508,32 @@
         {
           "id": "c1",
           "rect": {
-            "x": 1249,
+            "x": 987,
             "y": 120,
-            "w": 1342,
-            "h": 894
+            "w": 1866,
+            "h": 1244
           },
-          "ratio_label": "671:447"
+          "ratio_label": "3:2"
         },
         {
           "id": "c2",
           "rect": {
-            "x": 1249,
-            "y": 1094,
-            "w": 631,
-            "h": 946
+            "x": 987,
+            "y": 1444,
+            "w": 893,
+            "h": 596
           },
-          "ratio_label": "631:946"
+          "ratio_label": "893:596"
         },
         {
           "id": "c3",
           "rect": {
             "x": 1960,
-            "y": 1094,
-            "w": 631,
-            "h": 946
+            "y": 1444,
+            "w": 893,
+            "h": 596
           },
-          "ratio_label": "631:946"
+          "ratio_label": "893:596"
         }
       ]
     },
@@ -4485,6 +4554,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -4512,32 +4582,32 @@
         {
           "id": "c1",
           "rect": {
-            "x": 1303,
+            "x": 1063,
             "y": 120,
-            "w": 1234,
-            "h": 823
+            "w": 1714,
+            "h": 1143
           },
-          "ratio_label": "1234:823"
+          "ratio_label": "1714:1143"
         },
         {
           "id": "c2",
           "rect": {
-            "x": 1303,
-            "y": 1023,
-            "w": 577,
-            "h": 865
+            "x": 1063,
+            "y": 1343,
+            "w": 817,
+            "h": 545
           },
-          "ratio_label": "577:865"
+          "ratio_label": "817:545"
         },
         {
           "id": "c3",
           "rect": {
             "x": 1960,
-            "y": 1023,
-            "w": 577,
-            "h": 865
+            "y": 1343,
+            "w": 817,
+            "h": 545
           },
-          "ratio_label": "577:865"
+          "ratio_label": "817:545"
         }
       ]
     },
@@ -4558,6 +4628,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -4588,32 +4659,32 @@
         {
           "id": "c1",
           "rect": {
-            "x": 1271,
+            "x": 1027,
             "y": 144,
-            "w": 1298,
-            "h": 866
+            "w": 1786,
+            "h": 1191
           },
-          "ratio_label": "649:433"
+          "ratio_label": "1786:1191"
         },
         {
           "id": "c2",
           "rect": {
-            "x": 1271,
-            "y": 1138,
-            "w": 585,
-            "h": 878
+            "x": 1027,
+            "y": 1463,
+            "w": 829,
+            "h": 553
           },
-          "ratio_label": "585:878"
+          "ratio_label": "829:553"
         },
         {
           "id": "c3",
           "rect": {
             "x": 1984,
-            "y": 1138,
-            "w": 585,
-            "h": 878
+            "y": 1463,
+            "w": 829,
+            "h": 553
           },
-          "ratio_label": "585:878"
+          "ratio_label": "829:553"
         }
       ]
     },
@@ -4634,6 +4705,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -4664,32 +4736,32 @@
         {
           "id": "c1",
           "rect": {
-            "x": 1324,
+            "x": 1103,
             "y": 144,
-            "w": 1192,
-            "h": 794
+            "w": 1634,
+            "h": 1090
           },
-          "ratio_label": "596:397"
+          "ratio_label": "817:545"
         },
         {
           "id": "c2",
           "rect": {
-            "x": 1324,
-            "y": 1066,
-            "w": 532,
-            "h": 798
+            "x": 1103,
+            "y": 1362,
+            "w": 753,
+            "h": 502
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         },
         {
           "id": "c3",
           "rect": {
             "x": 1984,
-            "y": 1066,
-            "w": 532,
-            "h": 798
+            "y": 1362,
+            "w": 753,
+            "h": 502
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         }
       ]
     },
@@ -4710,6 +4782,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -4783,6 +4856,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -4856,6 +4930,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -4932,6 +5007,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -5008,6 +5084,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -5035,32 +5112,32 @@
         {
           "id": "c1",
           "rect": {
-            "x": 1249,
+            "x": 987,
             "y": 120,
-            "w": 631,
-            "h": 946
+            "w": 893,
+            "h": 596
           },
-          "ratio_label": "631:946"
+          "ratio_label": "893:596"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1960,
             "y": 120,
-            "w": 631,
-            "h": 946
+            "w": 893,
+            "h": 596
           },
-          "ratio_label": "631:946"
+          "ratio_label": "893:596"
         },
         {
           "id": "c3",
           "rect": {
-            "x": 1249,
-            "y": 1146,
-            "w": 1342,
-            "h": 894
+            "x": 987,
+            "y": 796,
+            "w": 1866,
+            "h": 1244
           },
-          "ratio_label": "671:447"
+          "ratio_label": "3:2"
         }
       ]
     },
@@ -5081,6 +5158,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -5108,32 +5186,32 @@
         {
           "id": "c1",
           "rect": {
-            "x": 1303,
+            "x": 1063,
             "y": 120,
-            "w": 577,
-            "h": 865
+            "w": 817,
+            "h": 545
           },
-          "ratio_label": "577:865"
+          "ratio_label": "817:545"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1960,
             "y": 120,
-            "w": 577,
-            "h": 865
+            "w": 817,
+            "h": 545
           },
-          "ratio_label": "577:865"
+          "ratio_label": "817:545"
         },
         {
           "id": "c3",
           "rect": {
-            "x": 1303,
-            "y": 1065,
-            "w": 1234,
-            "h": 823
+            "x": 1063,
+            "y": 745,
+            "w": 1714,
+            "h": 1143
           },
-          "ratio_label": "1234:823"
+          "ratio_label": "1714:1143"
         }
       ]
     },
@@ -5154,6 +5232,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -5184,32 +5263,32 @@
         {
           "id": "c1",
           "rect": {
-            "x": 1271,
+            "x": 1027,
             "y": 144,
-            "w": 585,
-            "h": 878
+            "w": 829,
+            "h": 553
           },
-          "ratio_label": "585:878"
+          "ratio_label": "829:553"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1984,
             "y": 144,
-            "w": 585,
-            "h": 878
+            "w": 829,
+            "h": 553
           },
-          "ratio_label": "585:878"
+          "ratio_label": "829:553"
         },
         {
           "id": "c3",
           "rect": {
-            "x": 1271,
-            "y": 1150,
-            "w": 1298,
-            "h": 866
+            "x": 1027,
+            "y": 825,
+            "w": 1786,
+            "h": 1191
           },
-          "ratio_label": "649:433"
+          "ratio_label": "1786:1191"
         }
       ]
     },
@@ -5230,6 +5309,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -5260,32 +5340,32 @@
         {
           "id": "c1",
           "rect": {
-            "x": 1324,
+            "x": 1103,
             "y": 144,
-            "w": 532,
-            "h": 798
+            "w": 753,
+            "h": 502
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1984,
             "y": 144,
-            "w": 532,
-            "h": 798
+            "w": 753,
+            "h": 502
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         },
         {
           "id": "c3",
           "rect": {
-            "x": 1324,
-            "y": 1070,
-            "w": 1192,
-            "h": 794
+            "x": 1103,
+            "y": 774,
+            "w": 1634,
+            "h": 1090
           },
-          "ratio_label": "596:397"
+          "ratio_label": "817:545"
         }
       ]
     },
@@ -5306,6 +5386,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -5393,6 +5474,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -5480,6 +5562,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -5570,6 +5653,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -5660,6 +5744,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -5747,6 +5832,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -5834,6 +5920,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -5924,6 +6011,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -6014,6 +6102,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -6101,6 +6190,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -6188,6 +6278,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -6278,6 +6369,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -6368,6 +6460,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -6400,41 +6493,41 @@
           "id": "c1",
           "rect": {
             "x": 120,
-            "y": 450,
+            "y": 800,
             "w": 840,
-            "h": 1260
+            "h": 560
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1040,
-            "y": 450,
+            "y": 800,
             "w": 840,
-            "h": 1260
+            "h": 560
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         },
         {
           "id": "c3",
           "rect": {
             "x": 1960,
-            "y": 450,
+            "y": 800,
             "w": 840,
-            "h": 1260
+            "h": 560
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         },
         {
           "id": "c4",
           "rect": {
             "x": 2880,
-            "y": 450,
+            "y": 800,
             "w": 840,
-            "h": 1260
+            "h": 560
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         }
       ]
     },
@@ -6455,6 +6548,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -6487,41 +6581,41 @@
           "id": "c1",
           "rect": {
             "x": 120,
-            "y": 374,
+            "y": 724,
             "w": 840,
-            "h": 1260
+            "h": 560
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1040,
-            "y": 374,
+            "y": 724,
             "w": 840,
-            "h": 1260
+            "h": 560
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         },
         {
           "id": "c3",
           "rect": {
             "x": 1960,
-            "y": 374,
+            "y": 724,
             "w": 840,
-            "h": 1260
+            "h": 560
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         },
         {
           "id": "c4",
           "rect": {
             "x": 2880,
-            "y": 374,
+            "y": 724,
             "w": 840,
-            "h": 1260
+            "h": 560
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         }
       ]
     },
@@ -6542,6 +6636,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -6577,41 +6672,41 @@
           "id": "c1",
           "rect": {
             "x": 144,
-            "y": 486,
+            "y": 816,
             "w": 792,
-            "h": 1188
+            "h": 528
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1064,
-            "y": 486,
+            "y": 816,
             "w": 792,
-            "h": 1188
+            "h": 528
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         },
         {
           "id": "c3",
           "rect": {
             "x": 1984,
-            "y": 486,
+            "y": 816,
             "w": 792,
-            "h": 1188
+            "h": 528
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         },
         {
           "id": "c4",
           "rect": {
             "x": 2904,
-            "y": 486,
+            "y": 816,
             "w": 792,
-            "h": 1188
+            "h": 528
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         }
       ]
     },
@@ -6632,6 +6727,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -6667,41 +6763,41 @@
           "id": "c1",
           "rect": {
             "x": 144,
-            "y": 410,
+            "y": 740,
             "w": 792,
-            "h": 1188
+            "h": 528
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1064,
-            "y": 410,
+            "y": 740,
             "w": 792,
-            "h": 1188
+            "h": 528
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         },
         {
           "id": "c3",
           "rect": {
             "x": 1984,
-            "y": 410,
+            "y": 740,
             "w": 792,
-            "h": 1188
+            "h": 528
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         },
         {
           "id": "c4",
           "rect": {
             "x": 2904,
-            "y": 410,
+            "y": 740,
             "w": 792,
-            "h": 1188
+            "h": 528
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         }
       ]
     },
@@ -6722,6 +6818,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -6809,6 +6906,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -6896,6 +6994,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -6986,6 +7085,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -7076,6 +7176,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -7163,6 +7264,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -7250,6 +7352,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -7340,6 +7443,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -7430,6 +7534,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -7517,6 +7622,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -7604,6 +7710,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -7694,6 +7801,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -7784,6 +7892,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -7871,6 +7980,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -7958,6 +8068,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -8048,6 +8159,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -8138,6 +8250,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -8225,6 +8338,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -8312,6 +8426,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -8402,6 +8517,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -8492,6 +8608,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -8579,6 +8696,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -8666,6 +8784,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -8756,6 +8875,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -8846,6 +8966,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -8947,6 +9068,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -9048,6 +9170,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -9152,6 +9275,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -9256,6 +9380,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -9291,52 +9416,52 @@
         {
           "id": "c1",
           "rect": {
-            "x": 752,
+            "x": 208,
             "y": 120,
-            "w": 1128,
-            "h": 752
+            "w": 1672,
+            "h": 1115
           },
-          "ratio_label": "3:2"
+          "ratio_label": "1672:1115"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1960,
             "y": 120,
-            "w": 1128,
-            "h": 752
+            "w": 1672,
+            "h": 1115
           },
-          "ratio_label": "3:2"
+          "ratio_label": "1672:1115"
         },
         {
           "id": "c3",
           "rect": {
-            "x": 752,
-            "y": 952,
-            "w": 725,
-            "h": 1088
+            "x": 208,
+            "y": 1315,
+            "w": 1088,
+            "h": 725
           },
-          "ratio_label": "725:1088"
+          "ratio_label": "1088:725"
         },
         {
           "id": "c4",
           "rect": {
-            "x": 1557,
-            "y": 952,
-            "w": 726,
-            "h": 1088
+            "x": 1376,
+            "y": 1315,
+            "w": 1088,
+            "h": 725
           },
-          "ratio_label": "363:544"
+          "ratio_label": "1088:725"
         },
         {
           "id": "c5",
           "rect": {
-            "x": 2363,
-            "y": 952,
-            "w": 725,
-            "h": 1088
+            "x": 2544,
+            "y": 1315,
+            "w": 1088,
+            "h": 725
           },
-          "ratio_label": "725:1088"
+          "ratio_label": "1088:725"
         }
       ]
     },
@@ -9357,6 +9482,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -9392,52 +9518,52 @@
         {
           "id": "c1",
           "rect": {
-            "x": 843,
+            "x": 345,
             "y": 120,
-            "w": 1037,
-            "h": 691
+            "w": 1535,
+            "h": 1023
           },
-          "ratio_label": "1037:691"
+          "ratio_label": "1535:1023"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1960,
             "y": 120,
-            "w": 1037,
-            "h": 691
+            "w": 1535,
+            "h": 1023
           },
-          "ratio_label": "1037:691"
+          "ratio_label": "1535:1023"
         },
         {
           "id": "c3",
           "rect": {
-            "x": 843,
-            "y": 891,
-            "w": 665,
-            "h": 997
+            "x": 345,
+            "y": 1223,
+            "w": 997,
+            "h": 665
           },
-          "ratio_label": "665:997"
+          "ratio_label": "997:665"
         },
         {
           "id": "c4",
           "rect": {
-            "x": 1588,
-            "y": 891,
-            "w": 664,
-            "h": 997
+            "x": 1422,
+            "y": 1223,
+            "w": 996,
+            "h": 665
           },
-          "ratio_label": "664:997"
+          "ratio_label": "996:665"
         },
         {
           "id": "c5",
           "rect": {
-            "x": 2332,
-            "y": 891,
-            "w": 665,
-            "h": 997
+            "x": 2498,
+            "y": 1223,
+            "w": 997,
+            "h": 665
           },
-          "ratio_label": "665:997"
+          "ratio_label": "997:665"
         }
       ]
     },
@@ -9458,6 +9584,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -9496,52 +9623,52 @@
         {
           "id": "c1",
           "rect": {
-            "x": 771,
+            "x": 261,
             "y": 144,
-            "w": 1085,
-            "h": 723
+            "w": 1595,
+            "h": 1063
           },
-          "ratio_label": "1085:723"
+          "ratio_label": "1595:1063"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1984,
             "y": 144,
-            "w": 1085,
-            "h": 723
+            "w": 1595,
+            "h": 1063
           },
-          "ratio_label": "1085:723"
+          "ratio_label": "1595:1063"
         },
         {
           "id": "c3",
           "rect": {
-            "x": 771,
-            "y": 995,
-            "w": 681,
-            "h": 1021
+            "x": 261,
+            "y": 1335,
+            "w": 1021,
+            "h": 681
           },
-          "ratio_label": "681:1021"
+          "ratio_label": "1021:681"
         },
         {
           "id": "c4",
           "rect": {
-            "x": 1580,
-            "y": 995,
-            "w": 680,
-            "h": 1021
+            "x": 1410,
+            "y": 1335,
+            "w": 1020,
+            "h": 681
           },
-          "ratio_label": "680:1021"
+          "ratio_label": "340:227"
         },
         {
           "id": "c5",
           "rect": {
-            "x": 2388,
-            "y": 995,
-            "w": 681,
-            "h": 1021
+            "x": 2558,
+            "y": 1335,
+            "w": 1021,
+            "h": 681
           },
-          "ratio_label": "681:1021"
+          "ratio_label": "1021:681"
         }
       ]
     },
@@ -9562,6 +9689,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -9600,52 +9728,52 @@
         {
           "id": "c1",
           "rect": {
-            "x": 862,
+            "x": 398,
             "y": 144,
-            "w": 994,
-            "h": 662
+            "w": 1458,
+            "h": 972
           },
-          "ratio_label": "497:331"
+          "ratio_label": "3:2"
         },
         {
           "id": "c2",
           "rect": {
             "x": 1984,
             "y": 144,
-            "w": 994,
-            "h": 662
+            "w": 1458,
+            "h": 972
           },
-          "ratio_label": "497:331"
+          "ratio_label": "3:2"
         },
         {
           "id": "c3",
           "rect": {
-            "x": 862,
-            "y": 934,
-            "w": 620,
-            "h": 930
+            "x": 398,
+            "y": 1244,
+            "w": 929,
+            "h": 620
           },
-          "ratio_label": "2:3"
+          "ratio_label": "929:620"
         },
         {
           "id": "c4",
           "rect": {
-            "x": 1610,
-            "y": 934,
-            "w": 620,
-            "h": 930
+            "x": 1455,
+            "y": 1244,
+            "w": 930,
+            "h": 620
           },
-          "ratio_label": "2:3"
+          "ratio_label": "3:2"
         },
         {
           "id": "c5",
           "rect": {
-            "x": 2358,
-            "y": 934,
-            "w": 620,
-            "h": 930
+            "x": 2513,
+            "y": 1244,
+            "w": 929,
+            "h": 620
           },
-          "ratio_label": "2:3"
+          "ratio_label": "929:620"
         }
       ]
     },
@@ -9666,6 +9794,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -9781,6 +9910,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -9896,6 +10026,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -10014,6 +10145,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -10132,6 +10264,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -10247,6 +10380,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -10362,6 +10496,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -10480,6 +10615,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -10598,6 +10734,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -10657,6 +10794,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -10716,6 +10854,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -10775,6 +10914,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -10834,6 +10974,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -10907,6 +11048,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -10980,6 +11122,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -11053,6 +11196,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -11126,6 +11270,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -11199,6 +11344,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -11272,6 +11418,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -11345,6 +11492,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -11418,6 +11566,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -11505,6 +11654,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -11592,6 +11742,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -11679,6 +11830,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -11766,6 +11918,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -11853,6 +12006,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -11940,6 +12094,7 @@
             "y": 80
           },
           "format": "original",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -11985,6 +12140,7 @@
             "y": 80
           },
           "format": "original",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -12030,6 +12186,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -12075,6 +12232,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -12120,6 +12278,7 @@
             "y": 80
           },
           "format": "1:1",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -12165,6 +12324,7 @@
             "y": 80
           },
           "format": "1:1",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -12210,6 +12370,7 @@
             "y": 80
           },
           "format": "16:9",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -12255,6 +12416,7 @@
             "y": 80
           },
           "format": "16:9",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -12300,6 +12462,7 @@
             "y": 80
           },
           "format": "original",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -12342,6 +12505,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -12401,6 +12565,7 @@
             "y": 80
           },
           "format": "2:3",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -12458,6 +12623,210 @@
       ]
     },
     {
+      "name": "solve per-cell formats",
+      "fn": "composition_solve",
+      "input": {
+        "recipe": "three-one-over-two",
+        "composition": {
+          "recipe": "three-one-over-two",
+          "balance": null,
+          "outer": {
+            "x": 120,
+            "y": 120
+          },
+          "gutter": {
+            "x": 80,
+            "y": 80
+          },
+          "format": "3:2",
+          "cell_formats": [
+            null,
+            "1:1",
+            "1:1"
+          ],
+          "border": null,
+          "caption": {
+            "text": "",
+            "place": "none"
+          },
+          "detached": false
+        },
+        "photo_sizes": [
+          {
+            "w": 6000,
+            "h": 4000
+          },
+          {
+            "w": 3000,
+            "h": 4000
+          },
+          {
+            "w": 4000,
+            "h": 4000
+          }
+        ],
+        "caption_size": 48
+      },
+      "expected": [
+        {
+          "id": "c1",
+          "rect": {
+            "x": 1114,
+            "y": 120,
+            "w": 1612,
+            "h": 1074
+          },
+          "ratio_label": "806:537"
+        },
+        {
+          "id": "c2",
+          "rect": {
+            "x": 1114,
+            "y": 1274,
+            "w": 766,
+            "h": 766
+          },
+          "ratio_label": "1:1"
+        },
+        {
+          "id": "c3",
+          "rect": {
+            "x": 1960,
+            "y": 1274,
+            "w": 766,
+            "h": 766
+          },
+          "ratio_label": "1:1"
+        }
+      ]
+    },
+    {
+      "name": "solve per-cell original next to a ratio",
+      "fn": "composition_solve",
+      "input": {
+        "recipe": "two-side-by-side",
+        "composition": {
+          "recipe": "two-side-by-side",
+          "balance": null,
+          "outer": {
+            "x": 120,
+            "y": 120
+          },
+          "gutter": {
+            "x": 80,
+            "y": 80
+          },
+          "format": "3:2",
+          "cell_formats": [
+            null,
+            "original"
+          ],
+          "border": null,
+          "caption": {
+            "text": "",
+            "place": "none"
+          },
+          "detached": false
+        },
+        "photo_sizes": [
+          {
+            "w": 6000,
+            "h": 4000
+          },
+          {
+            "w": 3000,
+            "h": 4000
+          }
+        ],
+        "caption_size": 48
+      },
+      "expected": [
+        {
+          "id": "c1",
+          "rect": {
+            "x": 120,
+            "y": 298,
+            "w": 2347,
+            "h": 1564
+          },
+          "ratio_label": "2347:1564"
+        },
+        {
+          "id": "c2",
+          "rect": {
+            "x": 2547,
+            "y": 298,
+            "w": 1173,
+            "h": 1564
+          },
+          "ratio_label": "3:4"
+        }
+      ]
+    },
+    {
+      "name": "solve per-cell formats are inert under fill",
+      "fn": "composition_solve",
+      "input": {
+        "recipe": "two-side-by-side",
+        "composition": {
+          "recipe": "two-side-by-side",
+          "balance": null,
+          "outer": {
+            "x": 120,
+            "y": 120
+          },
+          "gutter": {
+            "x": 80,
+            "y": 80
+          },
+          "format": "fill",
+          "cell_formats": [
+            "1:1",
+            "16:9"
+          ],
+          "border": null,
+          "caption": {
+            "text": "",
+            "place": "none"
+          },
+          "detached": false
+        },
+        "photo_sizes": [
+          {
+            "w": 6000,
+            "h": 4000
+          },
+          {
+            "w": 3000,
+            "h": 4000
+          }
+        ],
+        "caption_size": 48
+      },
+      "expected": [
+        {
+          "id": "c1",
+          "rect": {
+            "x": 120,
+            "y": 120,
+            "w": 1760,
+            "h": 1920
+          },
+          "ratio_label": "11:12"
+        },
+        {
+          "id": "c2",
+          "rect": {
+            "x": 1960,
+            "y": 120,
+            "w": 1760,
+            "h": 1920
+          },
+          "ratio_label": "11:12"
+        }
+      ]
+    },
+    {
       "name": "solve zero margins",
       "fn": "composition_solve",
       "input": {
@@ -12474,6 +12843,7 @@
             "y": 0
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -12561,6 +12931,7 @@
             "y": 400
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 200,
             "color": "#FFFFFF"
@@ -12698,6 +13069,7 @@
               "y": 80
             },
             "format": "fill",
+            "cell_formats": [],
             "border": null,
             "caption": {
               "text": "",
@@ -12861,6 +13233,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -12997,6 +13370,7 @@
               "y": 80
             },
             "format": "fill",
+            "cell_formats": [],
             "border": null,
             "caption": {
               "text": "Kyoto - April 2026",
@@ -13160,6 +13534,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -13310,6 +13685,7 @@
               "y": 80
             },
             "format": "fill",
+            "cell_formats": [],
             "border": {
               "width": 24,
               "color": "#FFFFFF"
@@ -13476,6 +13852,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -13630,6 +14007,7 @@
               "y": 80
             },
             "format": "fill",
+            "cell_formats": [],
             "border": {
               "width": 24,
               "color": "#FFFFFF"
@@ -13796,6 +14174,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -13964,6 +14343,7 @@
               "y": 80
             },
             "format": "3:2",
+            "cell_formats": [],
             "border": null,
             "caption": {
               "text": "",
@@ -14127,6 +14507,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -14263,6 +14644,7 @@
               "y": 80
             },
             "format": "3:2",
+            "cell_formats": [],
             "border": null,
             "caption": {
               "text": "Kyoto - April 2026",
@@ -14426,6 +14808,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -14576,6 +14959,7 @@
               "y": 80
             },
             "format": "3:2",
+            "cell_formats": [],
             "border": {
               "width": 24,
               "color": "#FFFFFF"
@@ -14742,6 +15126,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -14896,6 +15281,7 @@
               "y": 80
             },
             "format": "3:2",
+            "cell_formats": [],
             "border": {
               "width": 24,
               "color": "#FFFFFF"
@@ -15062,6 +15448,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": {
             "width": 24,
             "color": "#FFFFFF"
@@ -15230,6 +15617,7 @@
               "y": 80
             },
             "format": "fill",
+            "cell_formats": [],
             "border": null,
             "caption": {
               "text": "",
@@ -15386,6 +15774,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -15515,6 +15904,7 @@
               "y": 80
             },
             "format": "fill",
+            "cell_formats": [],
             "border": null,
             "caption": {
               "text": "",
@@ -15639,6 +16029,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -15741,6 +16132,7 @@
               "y": 80
             },
             "format": "3:2",
+            "cell_formats": [],
             "border": null,
             "caption": {
               "text": "",
@@ -15865,6 +16257,7 @@
             "y": 80
           },
           "format": "3:2",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -15967,6 +16360,7 @@
               "y": 80
             },
             "format": "fill",
+            "cell_formats": [],
             "border": null,
             "caption": {
               "text": "Kyoto - April 2026",
@@ -16097,6 +16491,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -16213,6 +16608,7 @@
               "y": 80
             },
             "format": "fill",
+            "cell_formats": [],
             "border": null,
             "caption": {
               "text": "Kyoto - April 2026",
@@ -16351,6 +16747,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -16467,6 +16864,7 @@
               "y": 80
             },
             "format": "fill",
+            "cell_formats": [],
             "border": null,
             "caption": {
               "text": "  ",
@@ -16591,6 +16989,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "  ",
@@ -16693,6 +17092,7 @@
               "y": 80
             },
             "format": "original",
+            "cell_formats": [],
             "border": null,
             "caption": {
               "text": "",
@@ -16785,6 +17185,7 @@
             "y": 80
           },
           "format": "original",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -16860,6 +17261,7 @@
               "y": 80
             },
             "format": "fill",
+            "cell_formats": [],
             "border": null,
             "caption": {
               "text": "",
@@ -16984,6 +17386,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -17096,6 +17499,7 @@
               "y": 400
             },
             "format": "fill",
+            "cell_formats": [],
             "border": {
               "width": 200,
               "color": "#FFFFFF"
@@ -17351,6 +17755,7 @@
             "y": 400
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 200,
             "color": "#FFFFFF"
@@ -17575,6 +17980,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -17690,6 +18096,7 @@
             "y": 400
           },
           "format": "fill",
+          "cell_formats": [],
           "border": {
             "width": 200,
             "color": "#FFFFFF"
@@ -17807,6 +18214,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "",
@@ -17839,6 +18247,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -17871,6 +18280,7 @@
             "y": 80
           },
           "format": "fill",
+          "cell_formats": [],
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
@@ -18135,7 +18545,7 @@
       "input": {
         "composition_format": "2:3"
       },
-      "expected": 1.5
+      "expected": 0.6666666666666666
     },
     {
       "name": "format ratio 1:1",

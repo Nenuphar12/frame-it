@@ -1264,6 +1264,8 @@ export interface components {
             balance?: number | null;
             border?: components["schemas"]["CompositionBorder"] | null;
             caption?: components["schemas"]["CompositionCaption"];
+            /** Cell Formats */
+            cell_formats?: (string | null)[];
             /**
              * Detached
              * @default false
@@ -1333,6 +1335,8 @@ export interface components {
             balance?: number | null;
             border?: components["schemas"]["CompositionBorder"] | null;
             caption?: components["schemas"]["CompositionCaption"] | null;
+            /** Cell Formats */
+            cell_formats?: (string | null)[] | null;
             /** Format */
             format?: string | null;
             gutter?: components["schemas"]["CompositionGutter"] | null;

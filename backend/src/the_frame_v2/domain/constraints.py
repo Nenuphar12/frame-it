@@ -138,12 +138,35 @@ def pan_crop(state: SlotState, dx: int, dy: int, source: Size) -> Rect:
 
 
 def zoom_crop(state: SlotState, factor: float, source: Size, lock: QualityLock) -> SlotPlacement:
-    """Zoom the photo inside the slot: `factor > 1` shows more of it, `< 1` crops tighter."""
-    size = Size(
-        max(MIN_SIZE, round_half_even(state.crop.w * factor)),
-        max(MIN_SIZE, round_half_even(state.crop.h * factor)),
+    """Zoom the photo inside the slot: `factor > 1` shows more of it, `< 1` crops tighter.
+
+    The crop keeps the **rect's** aspect, whatever the factor: the width is scaled and the height
+    derived from it. Rounding the two sides on their own drifts, and so does re-deriving the aspect
+    from the rounded crop at every step — the rect is the one reference that does not move. A crop
+    whose aspect has drifted away from its rect's makes `resize_crop` resize the *slot* to match,
+    which is the "zoom out and the frame changes size" bug. The bound is `largest_crop`, the widest
+    crop of that aspect inside the photo, so zooming out lands exactly on the whole photo instead
+    of clamping each axis against an edge.
+
+    A zoom always moves by at least one pixel when it can: `round_half_even(8 * 1.06) == 8` left a
+    crop that had been zoomed in far enough stuck at its size for ever, with no way back out.
+    """
+    ratio = state.rect.w / state.rect.h
+    full = largest_crop(source, ratio)
+    width = max(MIN_SIZE, min(full.w, round_half_even(state.crop.w * factor)))
+    if width == state.crop.w and factor > 1:
+        width = min(full.w, width + 1)
+    elif width == state.crop.w and factor < 1:
+        width = max(MIN_SIZE, width - 1)
+    height = max(MIN_SIZE, min(full.h, round_half_even(width / ratio)))
+    center_x, center_y = crop_center(state.crop)
+    requested = Rect(
+        min(max(0, round_half_even(center_x - width / 2)), source.w - width),
+        min(max(0, round_half_even(center_y - height / 2)), source.h - height),
+        width,
+        height,
     )
-    return resize_crop(state, _crop_of_size(size, source, state.crop), source, lock)
+    return resize_crop(state, requested, source, lock)
 
 
 def apply_lock(state: SlotState, lock: QualityLock, source: Size) -> SlotPlacement:

@@ -78,7 +78,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `…/editor/canvas/` | `EditorStage.tsx` (Konva stage, one pointer pipeline for every gesture, overlays), `SlotNode.tsx` (bands, photo, shadows), `CaptionNode.tsx`, `SelectionOverlay.tsx` (outlines + transform handles), `hit.ts` (rotation-aware hit tests, handle maths), `texture.ts`, `fonts.ts`, `useOrientedImage.ts` |
 | `…/editor/panels/` | `SimplePanel` (the parametric editor, §6.2) + `RecipePicker` (schemas drawn by the solver), `SlotsPanel` (z-order, add/remove, photos), `PhotoPicker`, `ArrangePanel` (align/distribute), `CaptionsPanel`, `FramingPanel`, `StylePanel`, `ColorField` (picker + swatches + palette + presets), `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`, `Controls` |
 | `frontend/src/features/` | `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, viewer, create dialog), `devices/`, `auth/`, `mobile/`, `settings/`, `tags/`, `localsend/` (the editor lives in `src/editor/`, not here) |
-| `frontend/src/shared/` | UI primitives (`ui/`), `format.ts`, `cn.ts` |
+| `frontend/src/shared/` | UI primitives (`ui/`), `format.ts`, `cn.ts`, `dnd.ts` (the MIME types our own drags carry) |
 | `frontend/src/i18n/` | i18next setup; strings in `locales/en/common.json` |
 | `docs/` | Plan, specs, ADRs (`adr/`), research findings (`research/`), progress |
 
@@ -237,6 +237,21 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 - `POST /artworks` **without** `layout_id` is now parametric (a recipe, no `origin_layout_id`); an
   explicit `layout_id` keeps the Phase 6 path. `settings.artwork_defaults.layout_id` no longer
   decides anything for a new composition artwork (Phase 8 moves it to a recipe).
+- **A ratio format carries its orientation**: `4:3` and `3:4` are different formats and the cells
+  take the ratio as written. Only `auto` (the 1-cell recipe) turns the landscape form the photo's
+  way. The recipes' `landscape`/`portrait` cell kinds are inert as a result.
+- `composition.cell_formats` overrides the format cell by cell (`null` inherits, `original` = the
+  photo's own aspect, never `fill` — which has no per-cell aspect at all). `format: "original"`
+  itself works at **any** photo count: each cell takes its own photo's aspect.
+- `zoom_crop` derives the crop's height from its width and the **rect's** aspect. Scaling the two
+  sides on their own drifts, and so does re-reading the aspect off the rounded crop each step —
+  once it has drifted, `resize_crop` resizes the *slot* to match. That is the whole "zoom out and
+  the frame changes size" bug, and it needs both halves: the mirrored rule here, and the editor
+  routing the **wheel** through the same bounded 1×–8× scale as the slider, so a scroll can never
+  take the crop somewhere the slider cannot.
+- An in-app HTML drag must stamp itself (`shared/dnd.ts`): dragging a photo chip is dragging an
+  `<img>`, which Chrome also offers to the page as a *file*, so the window-wide upload overlay lit
+  up on every cell swap. `hasFiles` ignores a drag carrying one of our MIME types.
 - A recipe cell of kind `auto` means *the format turned the photo's way* (portrait photo + `3:2` → a 2:3
   cell), **not** the photo's own aspect — that is what the `original` format is for. Reading §3.5 the
   other way makes every ratio chip a no-op for a single photo.

@@ -4,31 +4,57 @@
 // geometry — the same solver the server runs on save, so what is drawn here is what gets stored.
 // The block is the source of truth while it is attached; a hand-built artwork shows the picker
 // alone until one is chosen (§6.1).
-import { ChevronDown, ChevronRight, RotateCcw } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { photoThumbUrl } from "@/api/client";
+import { photoThumbUrl, type FrameStyle } from "@/api/client";
 import * as actions from "@/editor/actions";
 import { SLIDER_LIMITS, sliderMax, valueOf, type SliderKey } from "@/editor/core/bounds.ts";
 import type { CaptionPlace, Recipe } from "@/editor/core/composition.ts";
 import type { EditorDocument } from "@/editor/core/document.ts";
-import { photoZoom, slotSource, MAX_ZOOM, MIN_ZOOM, type PhotoSizes } from "@/editor/operations";
+import {
+  nativeZoom,
+  photoZoom,
+  slotSource,
+  MAX_ZOOM,
+  MIN_ZOOM,
+  type PhotoSizes,
+} from "@/editor/operations";
 import { cn } from "@/shared/cn";
+import { SLOT_MIME, startInternalDrag } from "@/shared/dnd";
 import { Button } from "@/shared/ui/Button";
 import { Dialog } from "@/shared/ui/Dialog";
 import { ColorField } from "./ColorField";
-import { Field, NumberField, PanelSection, Slider } from "./Controls";
+import { Field, IconButton, NumberField, PanelSection, Slider } from "./Controls";
+import { SlotQualityBadge } from "./QualityBadge";
 import { RecipePicker, RecipeSchema } from "./RecipePicker";
 
-/** The ratio chips of §6.2, in the order they are shown. `original` is added for a single cell. */
-const FORMATS = ["fill", "1:1", "5:4", "4:3", "3:2", "16:9"] as const;
+/** The ratio chips of §6.2, in the order they are shown. `fill` and `original` are not ratios. */
+const RATIOS = ["1:1", "5:4", "4:3", "3:2", "16:9"] as const;
+
+const isRatio = (format: string | null): format is string =>
+  format !== null && format.includes(":");
+
+/** `3:2` ⇄ `2:3`. A format carries its orientation now, so the chips need a way to flip it. */
+function flipFormat(format: string): string {
+  const [w, h] = format.split(":");
+  return w && h ? `${h}:${w}` : format;
+}
+
+/** The landscape form of a ratio, which is what the chips are labelled with. */
+function uprightFormat(format: string): string {
+  const [w, h] = format.split(":");
+  return w && h && Number(w) < Number(h) ? `${h}:${w}` : format;
+}
 
 const DEFAULT_BORDER_COLOR = "#FFFFFF";
 
 interface SimplePanelProps {
   doc: EditorDocument;
   recipes: Recipe[];
+  /** The frame styles of `GET /frame-styles`: the artwork's whole look in one dropdown (§6.2). */
+  styles: FrameStyle[];
   sizes: PhotoSizes;
   selectedSlotId: string | null;
   onSelectSlot: (slotId: string) => void;
@@ -37,6 +63,7 @@ interface SimplePanelProps {
 export function SimplePanel({
   doc,
   recipes,
+  styles,
   sizes,
   selectedSlotId,
   onSelectSlot,
@@ -74,6 +101,7 @@ export function SimplePanel({
       block={block}
       recipe={recipe}
       choices={choices}
+      styles={styles}
       sizes={sizes}
       selectedSlotId={selectedSlotId}
       onSelectSlot={onSelectSlot}
@@ -87,6 +115,7 @@ function AttachedPanel({
   block,
   recipe,
   choices,
+  styles,
   sizes,
   selectedSlotId,
   onSelectSlot,
@@ -95,6 +124,7 @@ function AttachedPanel({
   block: NonNullable<EditorDocument["composition"]>;
   recipe: Recipe;
   choices: Recipe[];
+  styles: FrameStyle[];
   sizes: PhotoSizes;
   selectedSlotId: string | null;
   onSelectSlot: (slotId: string) => void;
@@ -120,12 +150,20 @@ function AttachedPanel({
     } satisfies Record<SliderKey, number>;
   }, [doc.slots, doc.captions, sizes, recipe, block]);
   const maxOf = (key: SliderKey) => maxes[key];
-  const ratioFormat = block.format !== "fill" && block.format !== "original";
   const balanced = recipe.balance != null && block.format === "fill";
   const balance = block.balance ?? recipe.balance?.default ?? 0.5;
 
   /** `outer` is a minimum: under a ratio the block is centred and the real inset is larger (§3.5). */
   const effective = { x: doc.margins.left, y: doc.margins.top };
+  const caption = doc.captions[0] ?? null;
+  // The document does not remember which style it was built from, and the colour is editable on
+  // its own — so the dropdown shows the style the mat currently *is*, and "Custom" otherwise.
+  const styleId =
+    styles.find(
+      (item) =>
+        item.document.mat?.color === doc.mat.color &&
+        (item.document.mat?.texture?.id ?? null) === (doc.mat.texture?.id ?? null),
+    )?.id ?? null;
 
   const marginSlider = (key: SliderKey, label: string) => {
     const max = maxOf(key);
@@ -180,56 +218,39 @@ function AttachedPanel({
 
   return (
     <>
-      <PanelSection title={t("editor.simple.layout")}>
-        <RecipePicker recipes={choices} selected={recipe.id} onSelect={actions.setRecipe} />
-        {balanced && (
-          <Field label={t("editor.simple.balance")}>
-            <Slider
-              value={balance}
-              min={recipe.balance?.min ?? 0}
-              max={recipe.balance?.max ?? 1}
-              step={0.01}
-              onChange={(value) =>
-                actions.setComposition({ balance: value }, "composition-balance")
-              }
-            />
-            <span className="w-9 shrink-0 text-right text-[11px] text-muted tabular-nums">
-              {Math.round(balance * 100)}%
-            </span>
-          </Field>
-        )}
-      </PanelSection>
+      {/* One photo has exactly one recipe and no balance: the whole section is furniture (#10). */}
+      {(choices.length > 1 || balanced) && (
+        <PanelSection title={t("editor.simple.layout")}>
+          {choices.length > 1 && (
+            <RecipePicker recipes={choices} selected={recipe.id} onSelect={actions.setRecipe} />
+          )}
+          {balanced && (
+            <Field label={t("editor.simple.balance")}>
+              <Slider
+                value={balance}
+                min={recipe.balance?.min ?? 0}
+                max={recipe.balance?.max ?? 1}
+                step={0.01}
+                onChange={(value) =>
+                  actions.setComposition({ balance: value }, "composition-balance")
+                }
+              />
+              <span className="w-9 shrink-0 text-right text-[11px] text-muted tabular-nums">
+                {Math.round(balance * 100)}%
+              </span>
+            </Field>
+          )}
+        </PanelSection>
+      )}
 
       <PanelSection title={t("editor.simple.format")}>
-        <div
-          className="flex flex-wrap gap-1"
-          role="radiogroup"
-          aria-label={t("editor.simple.format")}
-        >
-          {count === 1 && (
-            <FormatChip
-              label={t("editor.simple.formats.original")}
-              active={block.format === "original"}
-              onClick={() => actions.setComposition({ format: "original" })}
-            />
-          )}
-          {FORMATS.map((format) => (
-            <FormatChip
-              key={format}
-              label={format === "fill" ? t("editor.simple.formats.fill") : format}
-              active={block.format === format}
-              onClick={() => actions.setComposition({ format })}
-            />
-          ))}
-          <CustomFormat
-            value={
-              ratioFormat && !FORMATS.includes(block.format as (typeof FORMATS)[number])
-                ? block.format
-                : null
-            }
-            onChange={(format) => actions.setComposition({ format })}
-          />
-        </div>
+        <FormatChoice
+          label={t("editor.simple.format")}
+          value={block.format}
+          fill
+          custom
+          onChange={(format) => actions.setComposition({ format: format ?? "fill" })}
+        />
         {recipe.balance != null && !balanced && (
           <p className="text-[11px] text-muted">{t("editor.simple.balanceInert")}</p>
         )}
@@ -252,8 +273,8 @@ function AttachedPanel({
           <>
             {marginSlider("outer.x", t("editor.simple.outerX"))}
             {marginSlider("outer.y", t("editor.simple.outerY"))}
-            {marginSlider("gutter.x", t("editor.simple.gapX"))}
-            {marginSlider("gutter.y", t("editor.simple.gapY"))}
+            {count > 1 && marginSlider("gutter.x", t("editor.simple.gapX"))}
+            {count > 1 && marginSlider("gutter.y", t("editor.simple.gapY"))}
           </>
         ) : (
           <>
@@ -292,9 +313,35 @@ function AttachedPanel({
         onSelectSlot={onSelectSlot}
         dragging={dragging}
         setDragging={setDragging}
+        cellFormats={block.format === "fill" ? null : block.cell_formats}
+        onCellFormat={(index, format) => {
+          const next = [...block.cell_formats];
+          while (next.length <= index) next.push(null);
+          next[index] = format;
+          actions.setComposition({ cell_formats: next.slice(0, doc.slots.length) });
+        }}
       />
 
       <PanelSection title={t("editor.simple.background")}>
+        {styles.length > 0 && (
+          <Field label={t("editor.simple.style")}>
+            <select
+              className="h-7 min-w-0 flex-1 rounded border border-border bg-panel-2 px-1 text-xs"
+              value={styleId ?? ""}
+              onChange={(event) => {
+                const picked = styles.find((item) => item.id === event.target.value);
+                if (picked) actions.applyStyle(picked.document);
+              }}
+            >
+              {styleId === null && <option value="">{t("editor.simple.customStyle")}</option>}
+              {styles.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
         <Field label={t("editor.mat.color")}>
           <ColorField
             color={doc.mat.color}
@@ -367,6 +414,25 @@ function AttachedPanel({
             />
           ))}
         </div>
+        {/* The size moves the band the solver reserves (§3.3), so the block re-solves around it. */}
+        {caption && (
+          <Field label={t("editor.captions.size")}>
+            <Slider
+              value={caption.size}
+              min={16}
+              max={320}
+              step={2}
+              onChange={(value) => actions.setCaptionSize(value)}
+            />
+            <NumberField
+              value={caption.size}
+              min={4}
+              max={1000}
+              suffix="px"
+              onChange={(value) => actions.setCaptionSize(value)}
+            />
+          </Field>
+        )}
       </PanelSection>
     </>
   );
@@ -473,6 +539,8 @@ function PhotosSection({
   onSelectSlot,
   dragging,
   setDragging,
+  cellFormats,
+  onCellFormat,
 }: {
   doc: EditorDocument;
   sizes: PhotoSizes;
@@ -480,53 +548,104 @@ function PhotosSection({
   onSelectSlot: (slotId: string) => void;
   dragging: string | null;
   setDragging: (slotId: string | null) => void;
+  /** Per-cell format overrides, or `null` under `fill` where they mean nothing (§3.5). */
+  cellFormats: (string | null)[] | null;
+  onCellFormat: (index: number, format: string | null) => void;
 }) {
   const { t } = useTranslation();
   const selected = doc.slots.find((slot) => slot.id === selectedSlotId) ?? null;
+  const index = selected ? doc.slots.indexOf(selected) : -1;
   const zoom = selected ? photoZoom(selected, sizes) : null;
+  const native = selected ? nativeZoom(selected, sizes) : null;
+  // A single photo has nothing to be swapped with and no cell of its own to shape: the chips, the
+  // hint, the arrows and the per-cell format are all about *which* cell (remarks.md #10).
+  const several = doc.slots.length > 1;
   return (
     <PanelSection title={t("editor.simple.photos")}>
-      <ul className="flex flex-wrap gap-1.5">
-        {doc.slots.map((slot, index) => (
-          <li key={slot.id}>
-            <button
-              type="button"
-              draggable
-              onDragStart={() => setDragging(slot.id)}
-              onDragEnd={() => setDragging(null)}
-              onDragOver={(event) => event.preventDefault()}
-              onDrop={(event) => {
-                event.preventDefault();
-                if (dragging && dragging !== slot.id) actions.swapPhotos(dragging, slot.id);
-                setDragging(null);
-              }}
-              onClick={() => onSelectSlot(slot.id)}
-              aria-pressed={slot.id === selectedSlotId}
-              title={t("editor.simple.photoCell", { index: index + 1 })}
-              className={cn(
-                "relative h-12 w-12 overflow-hidden rounded border",
-                slot.id === selectedSlotId ? "border-accent" : "border-border",
-                dragging === slot.id && "opacity-50",
-              )}
-            >
-              {slot.photo_id ? (
-                <img
-                  src={photoThumbUrl(slot.photo_id, 256)}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span className="flex h-full w-full items-center justify-center text-[10px] text-muted">
-                  {t("editor.simple.empty")}
+      {several && (
+        <ul className="flex flex-wrap gap-1.5">
+          {doc.slots.map((slot, index) => (
+            <li key={slot.id}>
+              <button
+                type="button"
+                draggable
+                onDragStart={(event) => {
+                  startInternalDrag(event.dataTransfer, SLOT_MIME, slot.id);
+                  setDragging(slot.id);
+                }}
+                onDragEnd={() => setDragging(null)}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  if (dragging && dragging !== slot.id) actions.swapPhotos(dragging, slot.id);
+                  setDragging(null);
+                }}
+                onClick={() => onSelectSlot(slot.id)}
+                aria-pressed={slot.id === selectedSlotId}
+                title={t("editor.simple.photoCell", { index: index + 1 })}
+                className={cn(
+                  "relative h-12 w-12 overflow-hidden rounded border",
+                  slot.id === selectedSlotId ? "border-accent" : "border-border",
+                  dragging === slot.id && "opacity-50",
+                )}
+              >
+                {slot.photo_id ? (
+                  <img
+                    src={photoThumbUrl(slot.photo_id, 256)}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center text-[10px] text-muted">
+                    {t("editor.simple.empty")}
+                  </span>
+                )}
+                <span className="absolute bottom-0 left-0 bg-panel/80 px-1 text-[10px] tabular-nums">
+                  {index + 1}
                 </span>
-              )}
-              <span className="absolute bottom-0 left-0 bg-panel/80 px-1 text-[10px] tabular-nums">
-                {index + 1}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {several && <p className="text-[11px] text-muted">{t("editor.simple.swapHint")}</p>}
+      {selected && several && (
+        <>
+          {/* Swapping by drag is not discoverable on its own: the arrows do the same thing. */}
+          <Field label={t("editor.simple.position")}>
+            <span className="flex items-center gap-1">
+              <IconButton
+                title={t("editor.simple.moveEarlier")}
+                disabled={index <= 0}
+                onClick={() => actions.swapPhotos(selected.id, doc.slots[index - 1]?.id ?? "")}
+              >
+                <ChevronLeft size={14} />
+              </IconButton>
+              <IconButton
+                title={t("editor.simple.moveLater")}
+                disabled={index < 0 || index >= doc.slots.length - 1}
+                onClick={() => actions.swapPhotos(selected.id, doc.slots[index + 1]?.id ?? "")}
+              >
+                <ChevronRight size={14} />
+              </IconButton>
+              <span className="text-[11px] text-muted tabular-nums">
+                {t("editor.simple.cellOf", { index: index + 1, total: doc.slots.length })}
               </span>
-            </button>
-          </li>
-        ))}
-      </ul>
+            </span>
+          </Field>
+          {cellFormats && (
+            <>
+              <p className="text-[11px] text-muted">{t("editor.simple.cellFormat")}</p>
+              <FormatChoice
+                label={t("editor.simple.cellFormat")}
+                value={cellFormats[index] ?? null}
+                inherit={t("editor.simple.sameAsLayout")}
+                onChange={(format) => onCellFormat(index, format)}
+              />
+            </>
+          )}
+        </>
+      )}
       {selected && zoom !== null && slotSource(selected, sizes) && (
         <>
           <Field label={t("editor.zoom")}>
@@ -541,10 +660,109 @@ function PhotosSection({
               {zoom.toFixed(2)}×
             </span>
           </Field>
+          {/* The tier belongs next to the zoom: it is the number the zoom actually moves (§7.2). */}
+          <div className="flex items-center gap-2">
+            <SlotQualityBadge slot={selected} />
+            <button
+              type="button"
+              disabled={native === null}
+              onClick={() => actions.setNativeFraming()}
+              title={t("editor.simple.nativeHint")}
+              className="rounded border border-border px-1.5 py-0.5 text-[11px] text-muted hover:text-text disabled:opacity-40"
+            >
+              {t("editor.simple.native")}
+            </button>
+          </div>
           <p className="text-[11px] text-muted">{t("editor.simple.reframeHint")}</p>
         </>
       )}
     </PanelSection>
+  );
+}
+
+/**
+ * The format control of §6.2 — one row of chips plus a Landscape/Portrait toggle.
+ *
+ * The same control serves the artwork and a single cell (`inherit` adds the "same as the layout"
+ * chip): a dropdown for one and chips for the other made the two read as different kinds of
+ * setting when they are the same one at two scales (remarks.md #4).
+ */
+function FormatChoice({
+  label,
+  value,
+  inherit,
+  fill,
+  custom,
+  onChange,
+}: {
+  label: string;
+  /** The current format; `null` means "inherit", which only exists when `inherit` is given. */
+  value: string | null;
+  inherit?: string;
+  /** Offer `fill` — a property of the whole block, never of one cell (§3.5). */
+  fill?: boolean;
+  custom?: boolean;
+  onChange: (format: string | null) => void;
+}) {
+  const { t } = useTranslation();
+  const ratio = isRatio(value);
+  const [width, height] = ratio ? value.split(":") : [];
+  const portrait = ratio && Number(width) < Number(height);
+  // Picking a ratio keeps the orientation that is already showing: the toggle is the only thing
+  // that flips a format, so moving 3:2 → 4:3 must not quietly turn the block back to landscape.
+  const pick = (format: string) => onChange(portrait ? flipFormat(format) : format);
+  return (
+    <>
+      <div className="flex flex-wrap gap-1" role="radiogroup" aria-label={label}>
+        {inherit !== undefined && (
+          <FormatChip label={inherit} active={value === null} onClick={() => onChange(null)} />
+        )}
+        {fill && (
+          <FormatChip
+            label={t("editor.simple.formats.fill")}
+            active={value === "fill"}
+            onClick={() => onChange("fill")}
+          />
+        )}
+        <FormatChip
+          label={t("editor.simple.formats.original")}
+          active={value === "original"}
+          onClick={() => onChange("original")}
+        />
+        {RATIOS.map((item) => (
+          <FormatChip
+            key={item}
+            label={item}
+            active={ratio && uprightFormat(value) === item}
+            onClick={() => pick(item)}
+          />
+        ))}
+        {custom && (
+          <CustomFormat
+            value={
+              ratio && !RATIOS.includes(uprightFormat(value) as (typeof RATIOS)[number])
+                ? value
+                : null
+            }
+            onChange={onChange}
+          />
+        )}
+      </div>
+      {ratio && (
+        <div className="flex gap-1" role="radiogroup" aria-label={t("editor.simple.orientation")}>
+          <FormatChip
+            label={t("editor.simple.landscape")}
+            active={!portrait}
+            onClick={() => onChange(uprightFormat(value))}
+          />
+          <FormatChip
+            label={t("editor.simple.portrait")}
+            active={portrait}
+            onClick={() => onChange(flipFormat(uprightFormat(value)))}
+          />
+        </div>
+      )}
+    </>
   );
 }
 

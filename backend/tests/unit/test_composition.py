@@ -19,6 +19,7 @@ from the_frame_v2.domain.composition import (
     block_area,
     block_margins,
     caption_band,
+    cell_format,
     format_ratio,
     leaves,
     refit_crop,
@@ -137,7 +138,7 @@ def test_every_cell_hits_the_target_aspect_within_a_pixel(recipe_id: str, fmt: s
     ratio = format_ratio(fmt)
     assert ratio is not None
     for cell in cells_of(recipe_id, format=fmt):
-        # A cell is landscape, portrait or square: its aspect is r, 1/r or 1.
+        # Every cell takes the format as written; only `auto` (single) and `square` differ.
         best = min((ratio, 1 / ratio, 1.0), key=lambda a: abs(cell.rect.w - a * cell.rect.h))
         # Both edges of each side are rounded, so w and h are each within 1 px of the ideal
         # rect: |w − a·h| ≤ 1 + a. Anything larger means the affine relations are wrong.
@@ -158,10 +159,16 @@ def test_the_block_is_centred_in_the_available_area(recipe_id: str) -> None:
     assert abs(before_y - after_y) <= 1
 
 
-def test_a_ratio_and_its_inverse_are_the_same_format() -> None:
-    assert format_ratio("3:2") == format_ratio("2:3") == 1.5
+def test_a_ratio_carries_its_orientation() -> None:
+    """`4:3` and `3:4` are different formats (remarks.md, phase 7 feedback #3)."""
+    assert format_ratio("3:2") == 1.5
+    assert format_ratio("2:3") == pytest.approx(2 / 3)
     assert format_ratio("fill") is None and format_ratio("original") is None
-    assert cells_of("three-row", format="3:2") == cells_of("three-row", format="2:3")
+    landscape = cells_of("three-row", format="3:2")
+    portrait = cells_of("three-row", format="2:3")
+    assert landscape != portrait
+    assert all(cell.rect.w > cell.rect.h for cell in landscape)
+    assert all(cell.rect.h > cell.rect.w for cell in portrait)
 
 
 def test_original_follows_the_photo_and_only_a_single_cell_may_use_it() -> None:
@@ -346,9 +353,16 @@ def test_format_terms_are_bounded() -> None:
         ArtworkDocument.model_validate(_document(format="free"))
 
 
-def test_original_requires_a_single_slot() -> None:
-    with pytest.raises(ValueError, match="'original' requires exactly one slot"):
-        ArtworkDocument.model_validate(_document(format="original"))
+def test_original_is_a_format_like_any_other() -> None:
+    """Every cell takes its own photo's aspect — the solver has no trouble with several."""
+    ArtworkDocument.model_validate(_document(format="original"))
+    for recipe_id in ("three-hero-left", "four-grid"):
+        cells = cells_of(recipe_id, format="original")
+        wanted = [PHOTOS[i % len(PHOTOS)] for i in range(len(cells))]
+        for cell, photo in zip(cells, wanted, strict=True):
+            aspect = photo.w / photo.h
+            # Two rounded edges per side: §3.4's tolerance, not a single pixel.
+            assert abs(cell.rect.w - aspect * cell.rect.h) <= 1 + aspect
 
 
 def test_the_sliders_are_bounded() -> None:
@@ -554,3 +568,42 @@ def test_roomy_is_the_min_cell_rule() -> None:
     cell = Cell("c1", Rect(0, 0, MIN_CELL, MIN_CELL), "1:1")
     assert roomy([cell])
     assert not roomy([Cell("c1", Rect(0, 0, MIN_CELL - 1, MIN_CELL), "1:1")])
+
+
+# ---- per-cell formats (§3.5, remarks.md phase 7 feedback #4) ---------------------------------------
+def test_a_cell_format_overrides_the_block_s() -> None:
+    cells = cells_of("three-one-over-two", format="3:2", cell_formats=[None, "1:1", "1:1"])
+    assert abs(cells[0].rect.w / cells[0].rect.h - 1.5) < 0.01
+    assert all(abs(c.rect.w / c.rect.h - 1.0) < 0.01 for c in cells[1:])
+
+
+def test_a_cell_format_may_be_the_photo_s_own_aspect() -> None:
+    """`original` per cell is how one photo keeps its shape while the others take the format."""
+    cells = cells_of("two-side-by-side", format="3:2", cell_formats=[None, "original"])
+    assert abs(cells[0].rect.w / cells[0].rect.h - 1.5) < 0.01
+    # PHOTOS[1] is 3000×4000, so the second cell comes out portrait
+    assert abs(cells[1].rect.w / cells[1].rect.h - 3 / 4) < 0.01
+
+
+def test_cell_formats_are_inert_under_fill() -> None:
+    """`fill` tiles the area exactly: a per-cell aspect has nowhere to go (§3.4)."""
+    assert cells_of("two-side-by-side", cell_formats=["1:1", "16:9"]) == cells_of(
+        "two-side-by-side"
+    )
+    assert composition_format("two-side-by-side", 0, fill=True) == "fill"
+
+
+def composition_format(recipe: str, index: int, *, fill: bool) -> str:
+    block = composition(recipe, format="fill" if fill else "3:2", cell_formats=["1:1"])
+    return cell_format(block, index)
+
+
+def test_a_cell_format_list_longer_than_the_slots_is_rejected() -> None:
+    with pytest.raises(ValueError, match="more cell formats than slots"):
+        ArtworkDocument.model_validate(_document(cell_formats=["1:1", "1:1"]))
+
+
+def test_fill_is_not_a_cell_format() -> None:
+    """`fill` is a property of the whole block, never of one cell."""
+    with pytest.raises(ValueError, match="String should match"):
+        ArtworkDocument.model_validate(_document(cell_formats=["fill"]))

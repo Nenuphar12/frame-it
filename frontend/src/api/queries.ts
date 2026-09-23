@@ -272,8 +272,8 @@ export interface CreateArtworksInput {
   /** One artwork per group, photos in slot order. */
   groups: string[][];
   style_id: string;
-  layout_id: string;
-  placement: "fit_in_mat" | "fill" | null;
+  /** Parametric layout (docs/simple-editor.md §7); omitted ⇒ the recipe for the photo count. */
+  composition?: { recipe?: string; format?: string };
 }
 
 /** Creates artworks one request at a time (keeps render jobs and SQLite writes sequential). */
