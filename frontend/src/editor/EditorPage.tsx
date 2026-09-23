@@ -24,8 +24,10 @@ import {
   useArtworkActions,
   useArtworks,
   useFrameStyles,
+  useLayouts,
   usePhotosByIds,
   useRecipes,
+  type TemplateKind,
 } from "@/api/queries";
 import { useRegisterCommands, type Command } from "@/app/commands";
 import { cn } from "@/shared/cn";
@@ -42,6 +44,7 @@ import { FramingPanel } from "./panels/FramingPanel";
 import { InfoSheet } from "./panels/InfoSheet";
 import { Loupe } from "./panels/Loupe";
 import { DocumentQualityBadge } from "./panels/QualityBadge";
+import { SaveAsTemplateDialog } from "./panels/SaveAsTemplateDialog";
 import { SimplePanel } from "./panels/SimplePanel";
 import { SlotsPanel } from "./panels/SlotsPanel";
 import { PhotoPicker } from "./panels/PhotoPicker";
@@ -79,6 +82,8 @@ export function EditorPage() {
   const { validate } = useArtworkActions();
   const recipes = useRecipes();
   const styles = useFrameStyles();
+  const layouts = useLayouts();
+  const [savingTemplate, setSavingTemplate] = useState<TemplateKind | null>(null);
 
   const photoIds = useMemo(
     () => [
@@ -612,9 +617,11 @@ export function EditorPage() {
               doc={doc}
               recipes={catalogue}
               styles={styles.data ?? []}
+              layouts={layouts.data ?? []}
               sizes={storeSizes}
               selectedSlotId={slot?.id ?? null}
               onSelectSlot={(slotId) => select(slotId)}
+              onSaveAsTemplate={setSavingTemplate}
             />
           ) : tab === "design" ? (
             <>
@@ -681,6 +688,15 @@ export function EditorPage() {
           setPicking(false);
         }}
       />
+
+      {savingTemplate && (
+        <SaveAsTemplateDialog
+          kind={savingTemplate}
+          artworkId={artworkId}
+          suggestedName={artwork.data?.title || t("templates.newStyleName")}
+          onClose={() => setSavingTemplate(null)}
+        />
+      )}
 
       {tv && (
         <TvPreview

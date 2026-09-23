@@ -16,7 +16,6 @@ from the_frame_v2.domain.document import (
     CompositionCaption,
     CompositionFormat,
     CompositionGutter,
-    Placement,
 )
 from the_frame_v2.domain.templates import FrameStyleDocument, LayoutDocument
 
@@ -277,7 +276,11 @@ class ArtworkSummaryOut(ApiModel):
     photo_count: int
     is_incomplete: bool
     origin_style_id: str | None
+    origin_style_revision: int | None
     origin_layout_id: str | None
+    origin_layout_revision: int | None
+    """Revision of the template the artwork was made from: below the template's current one,
+    the artwork is *outdated* and a push update would change it (docs/templates.md §5)."""
     render_hash: str | None
     """Hash of the latest completed render (use it to bust image caches)."""
     rendered_at: datetime | None
@@ -321,11 +324,11 @@ class ArtworkCreateIn(BaseModel):
     """Photos in slot order."""
     style_id: str | None = None
     layout_id: str | None = None
-    """Phase 6 path: a hand-placed document with no `composition`, for the Advanced editor."""
+    """A saved layout: its recipe and parameters (docs/templates.md §4). Its cell count must
+    match the number of photos."""
     composition: CompositionIn | None = None
-    """Parametric layout; mutually exclusive with `layout_id`. Neither ⇒ the defaults of §7."""
-    placement: Placement | None = None
-    """Single-slot layouts only (default `fit_in_mat`); ignored on the composition path."""
+    """An explicit parametric layout; mutually exclusive with `layout_id`. Neither ⇒ the
+    Settings defaults, then the catalogue (docs/simple-editor.md §7)."""
     title: str | None = Field(default=None, max_length=256)
 
 
@@ -334,6 +337,13 @@ class ArtworkUpdateIn(BaseModel):
     favorite: bool | None = None
     status: ArtworkStatus | None = None
     tag_ids: list[str] | None = Field(default=None, max_length=200)
+    origin_style_id: str | None = None
+    origin_layout_id: str | None = None
+    """Record which template the artwork now wears (its revision is read from the template).
+
+    The editor applies a template to its working document itself — that is one undoable edit like
+    any other — and then says so here, which is what keeps a push update's reach honest.
+    """
 
 
 class SnapshotIn(BaseModel):
@@ -366,6 +376,7 @@ class FrameStyleOut(ApiModel):
     name: str
     revision: int
     builtin: bool
+    """Built-in templates are seeded from `assets/presets/` and cannot be edited or deleted."""
     document: FrameStyleDocument
 
 
@@ -375,7 +386,78 @@ class LayoutOut(ApiModel):
     revision: int
     builtin: bool
     slot_count: int
+    """The recipe's cell count: a layout only fits a selection of that many photos."""
     document: LayoutDocument
+
+
+class FrameStyleIn(BaseModel):
+    name: str = Field(min_length=1, max_length=128)
+    document: FrameStyleDocument
+
+
+class FrameStyleUpdateIn(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=128)
+    document: FrameStyleDocument | None = None
+
+
+class LayoutIn(BaseModel):
+    name: str = Field(min_length=1, max_length=128)
+    document: LayoutDocument
+
+
+class LayoutUpdateIn(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=128)
+    document: LayoutDocument | None = None
+
+
+class TemplateNameIn(BaseModel):
+    """Naming a copy, or the template "Save as …" is about to create."""
+
+    name: str | None = Field(default=None, min_length=1, max_length=128)
+
+
+class SaveAsTemplateIn(BaseModel):
+    artwork_id: str
+    name: str = Field(min_length=1, max_length=128)
+
+
+class TemplateFileOut(ApiModel):
+    """`.tfstyle.json` / `.tflayout.json` (docs/templates.md §6)."""
+
+    kind: Literal["tfstyle", "tflayout"]
+    version: int
+    name: str
+    document: dict[str, Any]
+
+
+class TemplateImportIn(BaseModel):
+    """The contents of a template file, as read by the browser."""
+
+    kind: str
+    version: int
+    name: str | None = Field(default=None, max_length=128)
+    document: dict[str, Any]
+
+
+class TemplateApplicationOut(ApiModel):
+    artwork_id: str
+    title: str
+    applied: bool
+    reason: Literal["slot_count", "detached"] | None
+    """Why the artwork was left alone: it holds another number of photos, or its slots were
+    placed by hand (a layout would throw that away)."""
+
+
+class PushUpdateOut(ApiModel):
+    dry_run: bool
+    applied: int
+    skipped: int
+    items: list[TemplateApplicationOut]
+
+
+class ApplyTemplateIn(BaseModel):
+    style_id: str | None = None
+    layout_id: str | None = None
 
 
 class RecipeOut(ApiModel):
@@ -390,12 +472,16 @@ class RecipeOut(ApiModel):
 
 class ArtworkDefaultsOut(ApiModel):
     style_id: str
-    layout_id: str
+    recipe_id: str | None
+    """`null` ⇒ the first catalogue entry for the number of photos selected."""
+    format: CompositionFormat | None
+    """`null` ⇒ `original` for a single photo, `fill` above (docs/simple-editor.md §7)."""
 
 
 class ArtworkDefaultsIn(BaseModel):
     style_id: str
-    layout_id: str
+    recipe_id: str | None = None
+    format: CompositionFormat | None = None
 
 
 # ---- colours ------------------------------------------------------------------------------------

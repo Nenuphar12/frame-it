@@ -8,7 +8,7 @@
 Self-hosted web app to prepare pictures for a 4K art-mode TV (Samsung The Frame, 3840×2160): phone uploads in
 full quality over the LAN, pixel-perfect framing/compositions, collections, export/import.
 
-- **Current state (2026-09-22): Phases 0–7 done** — foundations, device auth &
+- **Current state (2026-09-23): Phases 0–8 done** — foundations, device auth &
   pairing, resumable uploads, LocalSend receiver, ingest, Photos + Inbox UI, phone upload page; artwork
   document + geometry (Python/TS mirrored), pyvips renderer, built-in styles/layouts, artworks API;
   **editor** (Konva canvas, crop/placement/locks with the constraint solver, colour tools, alternatives,
@@ -18,14 +18,21 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
 - **Phase 7 (2026-09-21/22, `docs/simple-editor.md`)**: parametric compositions end to end — the
   optional `composition` block, the pure mirrored **solver**, the 17-entry recipe catalogue and
   `GET /recipes`; **server authority** (`composition.apply` writes §3.7's table, `PUT document`
-  re-solves on every save, `POST /artworks` takes a composition and is parametric by default); the
-  **Simple panel** (picker drawn by the solver, Balance, format chips, bounded Outer/Gap sliders,
-  reframe/zoom, swap, background, border, caption); and the **`[Simple] [Advanced ᴮᴱᵀᴬ]` switch**
-  with `detached` and a confirmed, undoable **Re-apply layout**.
-- **Next: Phase 8** (`docs/PLAN.md` §14): templates rebuilt around recipes — a saved layout becomes
-  recipe + parameters, and `settings.artwork_defaults` should name a style + recipe + format
-  instead of a style + layout. The create dialog still sends a `layout_id`, so artworks made from
-  the Photos page are hand-built until a layout is picked in the editor; that moves with it.
+  re-solves on every save); the **Simple panel** (picker drawn by the solver, Balance, format chips,
+  bounded Outer/Gap sliders, reframe/zoom, swap, background, border, caption); and the
+  **`[Simple] [Advanced ᴮᴱᵀᴬ]` switch** with `detached` and an undoable **Re-apply layout**.
+- **Phase 8 (2026-09-23, `docs/templates.md`)**: templates rebuilt around recipes — a **layout is
+  a recipe + parameters** (the composition block minus the caption text and `detached`), the
+  absolute-rect layout code is gone (migration `0004`); frame styles and layouts get full CRUD,
+  duplicate, "Save as style/layout" from an artwork, `.tfstyle.json` / `.tflayout.json` files, a
+  **Templates page** whose previews are drawn by the solver, `apply-template` + the origin/outdated
+  badge, and **push update** (server-side dry run, `pre_template_update` snapshot per artwork, a
+  layout skipping another photo count or a detached artwork). `settings.artwork_defaults` is now
+  **style + recipe + format**. `restyle` / `relayout` are pure and mirrored
+  (`domain/templates.py` ↔ `editor/core/templates.ts`, `conformance/geometry/templates.json`).
+- **Next: Phase 9** (`docs/PLAN.md` §14): organization — tags manager, favorites, nested
+  collections with DnD, the filter bar + FTS search, smart collections, trash (soft delete,
+  cascade, purge) and mobile read-only browsing.
 - Verified by the user on real hardware (2026-09-17): Android uploads (both pickers keep full quality but
   Android zeroes GPS → no place; see `docs/research/phone-uploads.md`), Docker image build/run/persistence.
 
@@ -56,10 +63,10 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `backend/src/the_frame_v2/app.py` | App factory: context, routers, SPA serving, lifespan (jobs, setup code) |
 | `…/config.py` | Settings (env `THE_FRAME_V2_*` > `<data_dir>/config.toml` > defaults), LAN IP, allowed hosts |
 | `…/context.py` | `AppContext` service container (`app.state.ctx`) |
-| `…/api/` | Thin routers + `schemas.py` (Pydantic API models = OpenAPI source) + `deps.py` (auth deps) |
+| `…/api/` | Thin routers + `schemas.py` (Pydantic API models = OpenAPI source) + `deps.py` (auth deps); `templates.py` = styles/layouts CRUD, usage, push update, template files |
 | `…/auth/` | `principal.py` (cookie/localhost → role), `middleware.py` (Host/CSRF/headers), `ratelimit.py` |
-| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos`, `tags`, `geocode`, `artworks` (create/save/snapshots), `render` (cache, jobs, region), `templates` (presets, artwork defaults), `recipes` (the bundled composition catalogue, no DB), `colors` (photo palette, swatches, curated presets) |
-| `…/domain/` | PURE: `document` (artwork document v1 + the `composition` block + reference checks), `geometry`, `quality` (tiers), `placement`, `constraints` (editor solver §7.3), `alternatives` (§7.6), `arrange` (align/distribute/new slot, §7.7), `composition` (recipe trees, the parametric solver and `apply` = what it writes into a document, `docs/simple-editor.md` §3), `templates` (style/layout docs, `build_document`) |
+| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos`, `tags`, `geocode`, `artworks` (create/save/snapshots), `render` (cache, jobs, region), `templates` (presets, CRUD, template files, artwork defaults; the artwork-writing half — apply/push update — is in `artworks`), `recipes` (the bundled composition catalogue, no DB), `colors` (photo palette, swatches, curated presets) |
+| `…/domain/` | PURE: `document` (artwork document v1 + the `composition` block + reference checks), `geometry`, `quality` (tiers), `placement`, `constraints` (editor solver §7.3), `alternatives` (§7.6), `arrange` (align/distribute/new slot, §7.7), `composition` (recipe trees, the parametric solver and `apply` = what it writes into a document, `docs/simple-editor.md` §3), `templates` (style/layout docs, `restyle`/`relayout`/save-as, `build_composition_document`) |
 | `…/imaging/` | `sniff` (magic bytes), `decode` (the only pixel access), `metadata` (EXIF/ICC), `fingerprint` (hash ignoring EXIF), `capabilities`, `render` (the renderer), `palette` (OKLab k-means), `assets` (fonts/textures catalog) |
 | `…/assets/` | `geonames/`, `fonts/` (OFL, `scripts/build_fonts.py`), `textures/` (CC0, `scripts/generate_textures.py`), `presets/` (built-in styles/layouts + `recipes.json`) |
 | `…/localsend/` | LocalSend v2 receiver: `app.py` (protocol routes, own TLS port), `discovery.py` (multicast), `identity.py` (cert/fingerprint), `client.py` (outgoing TLS), `runner.py` (lifespan); logic in `services/localsend.py`, admin API `api/localsend.py` |
@@ -73,11 +80,11 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `scripts/` | `build_geonames.py`, `build_fonts.py`, `generate_textures.py`, `bench_render.py`, `render_parity/` (S3 page) |
 | `frontend/src/api/` | `client.ts` (openapi-fetch + `ApiError`), `queries.ts` (TanStack Query hooks), `events.ts` (SSE), generated `schema.d.ts` |
 | `frontend/src/app/` | `router.tsx`, `AuthGate.tsx` (role routing), `Shell.tsx` (sidebar), `commands.ts` (shortcuts/palette registry), `theme.ts` |
-| `frontend/src/editor/core/` | PURE TS mirror of `domain/` (`geometry`, `quality`, `placement`, `constraints`, `alternatives`, `arrange`, `composition`) + `snapping.ts` and `bounds.ts` (client-only) and `document.ts` (the document with every optional field filled in); relative imports with `.ts` extension (run by Node in `scripts/conformance.ts`) |
+| `frontend/src/editor/core/` | PURE TS mirror of `domain/` (`geometry`, `quality`, `placement`, `constraints`, `alternatives`, `arrange`, `composition`, `templates`) + `snapping.ts` and `bounds.ts` (client-only) and `document.ts` (the document with every optional field filled in); relative imports with `.ts` extension (run by Node in `scripts/conformance.ts`) |
 | `frontend/src/editor/` | `EditorPage.tsx` (layout, shortcuts, review queue), `store.ts` (working document, undo/redo on Immer patches, autosave + conflicts), `operations.ts` (pure document mutations: how a change propagates), `actions.ts` (what the UI calls), `TvPreview.tsx` |
 | `…/editor/canvas/` | `EditorStage.tsx` (Konva stage, one pointer pipeline for every gesture, overlays), `SlotNode.tsx` (bands, photo, shadows), `CaptionNode.tsx`, `SelectionOverlay.tsx` (outlines + transform handles), `hit.ts` (rotation-aware hit tests, handle maths), `texture.ts`, `fonts.ts`, `useOrientedImage.ts` |
 | `…/editor/panels/` | `SimplePanel` (the parametric editor, §6.2) + `RecipePicker` (schemas drawn by the solver), `SlotsPanel` (z-order, add/remove, photos), `PhotoPicker`, `ArrangePanel` (align/distribute), `CaptionsPanel`, `FramingPanel`, `StylePanel`, `ColorField` (picker + swatches + palette + presets), `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`, `Controls` |
-| `frontend/src/features/` | `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, viewer, create dialog), `devices/`, `auth/`, `mobile/`, `settings/`, `tags/`, `localsend/` (the editor lives in `src/editor/`, not here) |
+| `frontend/src/features/` | `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, viewer, create dialog), `templates/` (page, editors, push update, `.tf*.json` files), `devices/`, `auth/`, `mobile/`, `settings/`, `tags/`, `localsend/` (the editor lives in `src/editor/`, not here) |
 | `frontend/src/shared/` | UI primitives (`ui/`), `format.ts`, `cn.ts`, `dnd.ts` (the MIME types our own drags carry) |
 | `frontend/src/i18n/` | i18next setup; strings in `locales/en/common.json` |
 | `docs/` | Plan, specs, ADRs (`adr/`), research findings (`research/`), progress |
@@ -150,7 +157,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 ## Where specs live
 
 `docs/PLAN.md` (scope, phases, DoD) · `docs/data-model.md` · `docs/localsend.md` · `docs/artwork-document.md` ·
-`docs/simple-editor.md` (Phase 7: compositions, recipes, the solver) ·
+`docs/simple-editor.md` (Phase 7: compositions, recipes, the solver) · `docs/templates.md` (Phase 8) ·
 `docs/geometry-and-quality.md` · `docs/rendering-spec.md` · `docs/security.md` · `docs/archive-format.md` ·
 `docs/schemas/` (generated) · `docs/adr/` · `docs/research/` · `NOTICE.md` (asset licenses)
 
@@ -234,9 +241,24 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
   the server calls it on every save, the editor will call it to preview. Change it in both languages
   and add a `composition_apply` conformance case — those fixtures compare whole documents, so a field
   the two sides disagree on shows up there rather than in the browser.
-- `POST /artworks` **without** `layout_id` is now parametric (a recipe, no `origin_layout_id`); an
-  explicit `layout_id` keeps the Phase 6 path. `settings.artwork_defaults.layout_id` no longer
-  decides anything for a new composition artwork (Phase 8 moves it to a recipe).
+- **Every new artwork is parametric** (Phase 8): a `layout_id` names a saved *recipe + parameters*
+  and is recorded as `origin_layout_id`; fewer photos than cells leaves placeholders, more is
+  `layout_slot_count`. The pre-Phase-7 hand-placed creation path (`build_document`,
+  `map_rect_to_area`) is gone — a document without a block now only comes from detaching.
+  `settings.artwork_defaults` is `{style_id, recipe_id, format}`, both of the last two nullable
+  ("follow the photos").
+- **A template is copied on apply**; only a push update changes an existing artwork, and it
+  snapshots each one (`pre_template_update`) first — that snapshot *is* the undo. `restyle` and
+  `relayout` are mirrored (`domain/templates.py` ↔ `editor/core/templates.ts`, conformance
+  `templates.json`): the editor applies a template to the working document and the server applies
+  the same one during a push update, so a drift shows up as a fixture diff, not as a surprise.
+- **The style's band and the layout's border are the same field** (`composition.border`, since the
+  block owns `bands`): applying both applies the *layout first*, so the style wins, and
+  `build_composition_document` lets the style's band fill in a border the composition does not name.
+  A layout whose `border` is `null` means *no border*, not *unspecified*.
+- **`restyle` never writes the style's `margins`**: under a block the margins are derived (§3.7) and
+  re-dressing must not move a photo the user placed. A style's margins only matter to a hand-built
+  document and to its own card preview.
 - **A ratio format carries its orientation**: `4:3` and `3:4` are different formats and the cells
   take the ratio as written. Only `auto` (the 1-cell recipe) turns the landscape form the photo's
   way. The recipes' `landscape`/`portrait` cell kinds are inert as a result.

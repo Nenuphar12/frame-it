@@ -13,7 +13,7 @@ export interface paths {
         };
         /**
          * Artwork Defaults
-         * @description Style and layout used when creating artworks without an explicit choice.
+         * @description Style, recipe and format used when creating artworks without an explicit choice.
          */
         get: operations["artwork_defaults_api_v1_artwork_defaults_get"];
         /** Set Artwork Defaults */
@@ -63,6 +63,29 @@ export interface paths {
         head?: never;
         /** Update Artwork */
         patch: operations["update_artwork_api_v1_artworks__artwork_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/artworks/{artwork_id}/apply-template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply Template
+         * @description Re-dress and/or re-lay out an artwork from a saved template (docs/templates.md §5).
+         *
+         *     Copy on apply: the template is read once and the artwork records it as its origin. A
+         *     `pre_template_update` snapshot is taken first, so the change is undoable from the history.
+         */
+        post: operations["apply_template_api_v1_artworks__artwork_id__apply_template_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/artworks/{artwork_id}/document": {
@@ -407,6 +430,156 @@ export interface paths {
         /** List Frame Styles */
         get: operations["list_frame_styles_api_v1_frame_styles_get"];
         put?: never;
+        /** Create Frame Style */
+        post: operations["create_frame_style_api_v1_frame_styles_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/frame-styles/from-artwork": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Frame Style From Artwork
+         * @description "Save as style": the artwork's mat, decorations and caption typography become a template.
+         */
+        post: operations["frame_style_from_artwork_api_v1_frame_styles_from_artwork_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/frame-styles/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import Frame Style */
+        post: operations["import_frame_style_api_v1_frame_styles_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/frame-styles/{style_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Frame Style */
+        delete: operations["delete_frame_style_api_v1_frame_styles__style_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Frame Style
+         * @description Rename or re-document a style. Artworks are untouched until a push update (§5).
+         */
+        patch: operations["update_frame_style_api_v1_frame_styles__style_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/frame-styles/{style_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Duplicate Frame Style */
+        post: operations["duplicate_frame_style_api_v1_frame_styles__style_id__duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/frame-styles/{style_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Frame Style */
+        get: operations["export_frame_style_api_v1_frame_styles__style_id__export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/frame-styles/{style_id}/push-update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Push Frame Style Update
+         * @description Re-dress every artwork made from this style, each snapshotted first (undoable, §5).
+         */
+        post: operations["push_frame_style_update_api_v1_frame_styles__style_id__push_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/frame-styles/{style_id}/push-update/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Frame Style Push */
+        post: operations["preview_frame_style_push_api_v1_frame_styles__style_id__push_update_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/frame-styles/{style_id}/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Frame Style Usage
+         * @description Artworks made from this style (compare `origin_style_revision` to spot outdated ones).
+         */
+        get: operations["frame_style_usage_api_v1_frame_styles__style_id__usage_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -457,6 +630,150 @@ export interface paths {
         };
         /** List Layouts */
         get: operations["list_layouts_api_v1_layouts_get"];
+        put?: never;
+        /** Create Layout */
+        post: operations["create_layout_api_v1_layouts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/layouts/from-artwork": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Layout From Artwork
+         * @description "Save as layout": the artwork's recipe and parameters, not its rects (§3).
+         */
+        post: operations["layout_from_artwork_api_v1_layouts_from_artwork_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/layouts/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import Layout */
+        post: operations["import_layout_api_v1_layouts_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/layouts/{layout_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Layout */
+        delete: operations["delete_layout_api_v1_layouts__layout_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Layout */
+        patch: operations["update_layout_api_v1_layouts__layout_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/layouts/{layout_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Duplicate Layout */
+        post: operations["duplicate_layout_api_v1_layouts__layout_id__duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/layouts/{layout_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Layout */
+        get: operations["export_layout_api_v1_layouts__layout_id__export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/layouts/{layout_id}/push-update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Push Layout Update
+         * @description Re-solve every artwork made from this layout that still holds its number of photos (§5).
+         */
+        post: operations["push_layout_update_api_v1_layouts__layout_id__push_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/layouts/{layout_id}/push-update/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Layout Push */
+        post: operations["preview_layout_push_api_v1_layouts__layout_id__push_update_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/layouts/{layout_id}/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Layout Usage */
+        get: operations["layout_usage_api_v1_layouts__layout_id__usage_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -946,6 +1263,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ApplyTemplateIn */
+        ApplyTemplateIn: {
+            /** Layout Id */
+            layout_id?: string | null;
+            /** Style Id */
+            style_id?: string | null;
+        };
         /** ArtworkCreateIn */
         ArtworkCreateIn: {
             composition?: components["schemas"]["CompositionIn"] | null;
@@ -953,8 +1277,6 @@ export interface components {
             layout_id?: string | null;
             /** Photo Ids */
             photo_ids: string[];
-            /** Placement */
-            placement?: ("fit_in_mat" | "fill" | "manual") | null;
             /** Style Id */
             style_id?: string | null;
             /** Title */
@@ -962,15 +1284,19 @@ export interface components {
         };
         /** ArtworkDefaultsIn */
         ArtworkDefaultsIn: {
-            /** Layout Id */
-            layout_id: string;
+            /** Format */
+            format?: string | null;
+            /** Recipe Id */
+            recipe_id?: string | null;
             /** Style Id */
             style_id: string;
         };
         /** ArtworkDefaultsOut */
         ArtworkDefaultsOut: {
-            /** Layout Id */
-            layout_id: string;
+            /** Format */
+            format: string | null;
+            /** Recipe Id */
+            recipe_id: string | null;
             /** Style Id */
             style_id: string;
         };
@@ -1019,8 +1345,12 @@ export interface components {
             min_scale: number | null;
             /** Origin Layout Id */
             origin_layout_id: string | null;
+            /** Origin Layout Revision */
+            origin_layout_revision: number | null;
             /** Origin Style Id */
             origin_style_id: string | null;
+            /** Origin Style Revision */
+            origin_style_revision: number | null;
             /** Photo Count */
             photo_count: number;
             /** Render Hash */
@@ -1072,8 +1402,12 @@ export interface components {
             min_scale: number | null;
             /** Origin Layout Id */
             origin_layout_id: string | null;
+            /** Origin Layout Revision */
+            origin_layout_revision: number | null;
             /** Origin Style Id */
             origin_style_id: string | null;
+            /** Origin Style Revision */
+            origin_style_revision: number | null;
             /** Photo Count */
             photo_count: number;
             /** Render Hash */
@@ -1101,6 +1435,10 @@ export interface components {
         ArtworkUpdateIn: {
             /** Favorite */
             favorite?: boolean | null;
+            /** Origin Layout Id */
+            origin_layout_id?: string | null;
+            /** Origin Style Id */
+            origin_style_id?: string | null;
             /** Status */
             status?: ("draft" | "ready") | null;
             /** Tag Ids */
@@ -1412,12 +1750,24 @@ export interface components {
             /** Weights */
             weights: number[];
         };
-        /** FrameStyleDocument */
+        /**
+         * FrameStyleDocument
+         * @description A *look*: the mat, what is drawn around each photo, the caption's typography.
+         *
+         *     `margins` are kept for a hand-built artwork; a composition derives its own (§3.7), which is
+         *     why `restyle` never writes them — re-dressing must not disturb a layout.
+         */
         FrameStyleDocument: {
             caption_defaults?: components["schemas"]["CaptionDefaults"];
             margins?: components["schemas"]["MarginsSpec"];
             mat?: components["schemas"]["Mat"];
             slot_defaults?: components["schemas"]["SlotDefaults"];
+        };
+        /** FrameStyleIn */
+        FrameStyleIn: {
+            document: components["schemas"]["FrameStyleDocument"];
+            /** Name */
+            name: string;
         };
         /** FrameStyleOut */
         FrameStyleOut: {
@@ -1430,6 +1780,12 @@ export interface components {
             name: string;
             /** Revision */
             revision: number;
+        };
+        /** FrameStyleUpdateIn */
+        FrameStyleUpdateIn: {
+            document?: components["schemas"]["FrameStyleDocument"] | null;
+            /** Name */
+            name?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1462,37 +1818,40 @@ export interface components {
             /** Upload Id */
             upload_id?: string | null;
         };
-        /** LayoutCaption */
-        LayoutCaption: {
+        /**
+         * LayoutDocument
+         * @description A saved layout: the `composition` block minus what belongs to one artwork.
+         *
+         *     The caption's *text* and `detached` are artwork state, so a layout carries only the side the
+         *     caption sits on. Everything else is exactly the block the Simple editor edits.
+         */
+        LayoutDocument: {
+            /** Balance */
+            balance?: number | null;
+            border?: components["schemas"]["CompositionBorder"] | null;
             /**
-             * Anchor
-             * @default middle
+             * Caption Place
+             * @default none
              * @enum {string}
              */
-            anchor: "start" | "middle" | "end";
-            /** Id */
-            id: string;
+            caption_place: "none" | "above" | "below";
+            /** Cell Formats */
+            cell_formats?: (string | null)[];
             /**
-             * Placeholder
-             * @default
+             * Format
+             * @default fill
              */
-            placeholder: string;
-            /**
-             * Rotation
-             * @default 0
-             */
-            rotation: number;
-            /** X */
-            x: number;
-            /** Y */
-            y: number;
+            format: string;
+            gutter?: components["schemas"]["CompositionGutter"];
+            outer?: components["schemas"]["CompositionAxis"];
+            /** Recipe */
+            recipe: string;
         };
-        /** LayoutDocument */
-        LayoutDocument: {
-            /** Captions */
-            captions?: components["schemas"]["LayoutCaption"][];
-            /** Slots */
-            slots: components["schemas"]["LayoutSlot"][];
+        /** LayoutIn */
+        LayoutIn: {
+            document: components["schemas"]["LayoutDocument"];
+            /** Name */
+            name: string;
         };
         /** LayoutOut */
         LayoutOut: {
@@ -1508,28 +1867,11 @@ export interface components {
             /** Slot Count */
             slot_count: number;
         };
-        /** LayoutSlot */
-        LayoutSlot: {
-            /**
-             * Fill Mode
-             * @default fill
-             * @enum {string}
-             */
-            fill_mode: "fill" | "fit";
-            /** Id */
-            id: string;
-            /**
-             * Quality Lock
-             * @default no_upscale
-             * @enum {string}
-             */
-            quality_lock: "native" | "no_upscale" | "free";
-            rect: components["schemas"]["RectSpec"];
-            /**
-             * Rotation
-             * @default 0
-             */
-            rotation: number;
+        /** LayoutUpdateIn */
+        LayoutUpdateIn: {
+            document?: components["schemas"]["LayoutDocument"] | null;
+            /** Name */
+            name?: string | null;
         };
         /** LibraryStats */
         LibraryStats: {
@@ -1804,6 +2146,17 @@ export interface components {
             /** Tag Ids */
             tag_ids?: string[] | null;
         };
+        /** PushUpdateOut */
+        PushUpdateOut: {
+            /** Applied */
+            applied: number;
+            /** Dry Run */
+            dry_run: boolean;
+            /** Items */
+            items: components["schemas"]["TemplateApplicationOut"][];
+            /** Skipped */
+            skipped: number;
+        };
         /**
          * RecipeCell
          * @description A leaf: one cell. `auto` takes the photo's own orientation (1-cell recipes).
@@ -1874,6 +2227,13 @@ export interface components {
                 [key: string]: unknown;
             };
             rect: components["schemas"]["RegionIn"];
+        };
+        /** SaveAsTemplateIn */
+        SaveAsTemplateIn: {
+            /** Artwork Id */
+            artwork_id: string;
+            /** Name */
+            name: string;
         };
         /** Shadow */
         Shadow: {
@@ -2047,6 +2407,60 @@ export interface components {
             name: string;
             /** Photo Count */
             photo_count: number;
+        };
+        /** TemplateApplicationOut */
+        TemplateApplicationOut: {
+            /** Applied */
+            applied: boolean;
+            /** Artwork Id */
+            artwork_id: string;
+            /** Reason */
+            reason: ("slot_count" | "detached") | null;
+            /** Title */
+            title: string;
+        };
+        /**
+         * TemplateFileOut
+         * @description `.tfstyle.json` / `.tflayout.json` (docs/templates.md §6).
+         */
+        TemplateFileOut: {
+            /** Document */
+            document: {
+                [key: string]: unknown;
+            };
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "tfstyle" | "tflayout";
+            /** Name */
+            name: string;
+            /** Version */
+            version: number;
+        };
+        /**
+         * TemplateImportIn
+         * @description The contents of a template file, as read by the browser.
+         */
+        TemplateImportIn: {
+            /** Document */
+            document: {
+                [key: string]: unknown;
+            };
+            /** Kind */
+            kind: string;
+            /** Name */
+            name?: string | null;
+            /** Version */
+            version: number;
+        };
+        /**
+         * TemplateNameIn
+         * @description Naming a copy, or the template "Save as …" is about to create.
+         */
+        TemplateNameIn: {
+            /** Name */
+            name?: string | null;
         };
         /** TextureOut */
         TextureOut: {
@@ -2329,6 +2743,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ArtworkUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtworkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_template_api_v1_artworks__artwork_id__apply_template_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                artwork_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplyTemplateIn"];
             };
         };
         responses: {
@@ -2955,6 +3404,328 @@ export interface operations {
             };
         };
     };
+    create_frame_style_api_v1_frame_styles_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FrameStyleIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FrameStyleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    frame_style_from_artwork_api_v1_frame_styles_from_artwork_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveAsTemplateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FrameStyleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_frame_style_api_v1_frame_styles_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateImportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FrameStyleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_frame_style_api_v1_frame_styles__style_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                style_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_frame_style_api_v1_frame_styles__style_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                style_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FrameStyleUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FrameStyleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicate_frame_style_api_v1_frame_styles__style_id__duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                style_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateNameIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FrameStyleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_frame_style_api_v1_frame_styles__style_id__export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                style_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateFileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    push_frame_style_update_api_v1_frame_styles__style_id__push_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                style_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushUpdateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_frame_style_push_api_v1_frame_styles__style_id__push_update_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                style_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushUpdateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    frame_style_usage_api_v1_frame_styles__style_id__usage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                style_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtworkSummaryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     dismiss_from_inbox_api_v1_inbox_dismiss_post: {
         parameters: {
             query?: never;
@@ -3037,6 +3808,328 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LayoutOut"][];
+                };
+            };
+        };
+    };
+    create_layout_api_v1_layouts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LayoutIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LayoutOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    layout_from_artwork_api_v1_layouts_from_artwork_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveAsTemplateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LayoutOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_layout_api_v1_layouts_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateImportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LayoutOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_layout_api_v1_layouts__layout_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                layout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_layout_api_v1_layouts__layout_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                layout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LayoutUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LayoutOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicate_layout_api_v1_layouts__layout_id__duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                layout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateNameIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LayoutOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_layout_api_v1_layouts__layout_id__export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                layout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateFileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    push_layout_update_api_v1_layouts__layout_id__push_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                layout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushUpdateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_layout_push_api_v1_layouts__layout_id__push_update_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                layout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushUpdateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    layout_usage_api_v1_layouts__layout_id__usage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                layout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtworkSummaryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

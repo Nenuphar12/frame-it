@@ -11,6 +11,7 @@ import * as constraints from "../src/editor/core/constraints.ts";
 import * as geometry from "../src/editor/core/geometry.ts";
 import * as placement from "../src/editor/core/placement.ts";
 import * as quality from "../src/editor/core/quality.ts";
+import * as coreTemplates from "../src/editor/core/templates.ts";
 
 type Args = Record<string, unknown>;
 type Fn = (args: Args) => unknown;
@@ -116,6 +117,25 @@ const FUNCTIONS: Record<string, Fn> = {
       a(x, "photo_sizes"),
       a(x, "caption"),
     ),
+  templates_restyle: (x) => {
+    const id = a<string | null>(x, "recipe");
+    return coreTemplates.restyle(
+      a(x, "doc"),
+      a(x, "style"),
+      id === null ? null : recipe(id),
+      a(x, "photo_sizes"),
+    );
+  },
+  templates_relayout: (x) =>
+    coreTemplates.relayout(
+      a(x, "doc"),
+      a(x, "layout"),
+      recipe(a(x, "recipe")),
+      a(x, "photo_sizes"),
+      a(x, "caption"),
+    ),
+  templates_style_of_document: (x) => coreTemplates.styleOfDocument(a(x, "doc")),
+  templates_layout_of_document: (x) => coreTemplates.layoutOfDocument(a(x, "doc")),
   composition_block_area: (x) => composition.blockArea(a(x, "composition"), a(x, "caption_size")),
   composition_block_margins: (x) => composition.blockMargins(a(x, "cells"), a(x, "border")),
   composition_refit_crop: (x) =>

@@ -9,6 +9,7 @@ import { MobileUploadPage } from "@/features/mobile/MobileUploadPage";
 import { PhotosPage } from "@/features/photos/PhotosPage";
 import { ComingSoon } from "@/features/placeholder/ComingSoon";
 import { SettingsPage } from "@/features/settings/SettingsPage";
+import { TemplatesPage } from "@/features/templates/TemplatesPage";
 import { AuthGate } from "./AuthGate";
 import { Shell } from "./Shell";
 
@@ -43,7 +44,7 @@ const routeTree = rootRoute.addChildren([
     }),
     page("/favorites", () => <ComingSoon titleKey="nav.favorites" phase={8} />),
     page("/collections", () => <ComingSoon titleKey="nav.collections" phase={8} />),
-    page("/templates", () => <ComingSoon titleKey="nav.templates" phase={7} />),
+    page("/templates", TemplatesPage),
     page("/trash", () => <ComingSoon titleKey="nav.trash" phase={8} />),
     page("/devices", DevicesPage),
     page("/settings", SettingsPage),

@@ -1,81 +1,137 @@
 {
-  "version": 1,
+  "version": 2,
   "layouts": [
     {
       "id": "builtin-layout-single",
       "name": "Single",
-      "document": { "slots": [{ "id": "s1", "rect": { "x": 0, "y": 0, "w": 3840, "h": 2160 }, "fill_mode": "fit" }] }
+      "document": {
+        "recipe": "single",
+        "outer": { "x": 300, "y": 280 },
+        "gutter": { "x": 0, "y": 0 },
+        "format": "original"
+      }
+    },
+    {
+      "id": "builtin-layout-full-bleed",
+      "name": "Full bleed",
+      "document": {
+        "recipe": "single",
+        "outer": { "x": 0, "y": 0 },
+        "gutter": { "x": 0, "y": 0 },
+        "format": "fill"
+      }
+    },
+    {
+      "id": "builtin-layout-single-square",
+      "name": "Single square",
+      "document": {
+        "recipe": "single",
+        "outer": { "x": 300, "y": 220 },
+        "gutter": { "x": 0, "y": 0 },
+        "format": "1:1"
+      }
     },
     {
       "id": "builtin-layout-two-side-by-side",
       "name": "2 side by side",
       "document": {
-        "slots": [
-          { "id": "s1", "rect": { "x": 80, "y": 80, "w": 1800, "h": 2000 } },
-          { "id": "s2", "rect": { "x": 1960, "y": 80, "w": 1800, "h": 2000 } }
-        ]
+        "recipe": "two-side-by-side",
+        "outer": { "x": 200, "y": 180 },
+        "gutter": { "x": 90, "y": 90 },
+        "format": "fill"
+      }
+    },
+    {
+      "id": "builtin-layout-two-stacked",
+      "name": "2 stacked",
+      "document": {
+        "recipe": "two-stacked",
+        "outer": { "x": 260, "y": 160 },
+        "gutter": { "x": 80, "y": 80 },
+        "format": "fill"
       }
     },
     {
       "id": "builtin-layout-one-plus-two",
       "name": "1 + 2",
       "document": {
-        "slots": [
-          { "id": "s1", "rect": { "x": 80, "y": 80, "w": 2280, "h": 2000 } },
-          { "id": "s2", "rect": { "x": 2440, "y": 80, "w": 1320, "h": 960 } },
-          { "id": "s3", "rect": { "x": 2440, "y": 1120, "w": 1320, "h": 960 } }
-        ]
+        "recipe": "three-hero-left",
+        "balance": 0.62,
+        "outer": { "x": 180, "y": 160 },
+        "gutter": { "x": 80, "y": 80 },
+        "format": "fill"
       }
     },
     {
       "id": "builtin-layout-three-in-a-row",
       "name": "3 in a row",
       "document": {
-        "slots": [
-          { "id": "s1", "rect": { "x": 80, "y": 80, "w": 1173, "h": 2000 } },
-          { "id": "s2", "rect": { "x": 1333, "y": 80, "w": 1174, "h": 2000 } },
-          { "id": "s3", "rect": { "x": 2587, "y": 80, "w": 1173, "h": 2000 } }
-        ]
+        "recipe": "three-row",
+        "outer": { "x": 180, "y": 200 },
+        "gutter": { "x": 80, "y": 80 },
+        "format": "fill"
+      }
+    },
+    {
+      "id": "builtin-layout-three-squares",
+      "name": "3 squares",
+      "document": {
+        "recipe": "three-row",
+        "outer": { "x": 180, "y": 200 },
+        "gutter": { "x": 80, "y": 80 },
+        "format": "1:1"
       }
     },
     {
       "id": "builtin-layout-grid-2x2",
       "name": "2 × 2",
       "document": {
-        "slots": [
-          { "id": "s1", "rect": { "x": 80, "y": 80, "w": 1800, "h": 960 } },
-          { "id": "s2", "rect": { "x": 1960, "y": 80, "w": 1800, "h": 960 } },
-          { "id": "s3", "rect": { "x": 80, "y": 1120, "w": 1800, "h": 960 } },
-          { "id": "s4", "rect": { "x": 1960, "y": 1120, "w": 1800, "h": 960 } }
-        ]
+        "recipe": "four-grid",
+        "outer": { "x": 200, "y": 160 },
+        "gutter": { "x": 80, "y": 80 },
+        "format": "fill"
       }
     },
     {
-      "id": "builtin-layout-grid-3x3",
-      "name": "3 × 3",
+      "id": "builtin-layout-four-in-a-row",
+      "name": "4 in a row",
       "document": {
-        "slots": [
-          { "id": "s1", "rect": { "x": 80, "y": 80, "w": 1173, "h": 613 } },
-          { "id": "s2", "rect": { "x": 1333, "y": 80, "w": 1174, "h": 613 } },
-          { "id": "s3", "rect": { "x": 2587, "y": 80, "w": 1173, "h": 613 } },
-          { "id": "s4", "rect": { "x": 80, "y": 773, "w": 1173, "h": 614 } },
-          { "id": "s5", "rect": { "x": 1333, "y": 773, "w": 1174, "h": 614 } },
-          { "id": "s6", "rect": { "x": 2587, "y": 773, "w": 1173, "h": 614 } },
-          { "id": "s7", "rect": { "x": 80, "y": 1467, "w": 1173, "h": 613 } },
-          { "id": "s8", "rect": { "x": 1333, "y": 1467, "w": 1174, "h": 613 } },
-          { "id": "s9", "rect": { "x": 2587, "y": 1467, "w": 1173, "h": 613 } }
-        ]
+        "recipe": "four-row",
+        "outer": { "x": 160, "y": 220 },
+        "gutter": { "x": 70, "y": 70 },
+        "format": "fill"
       }
     },
     {
-      "id": "builtin-layout-polaroid-pile",
-      "name": "Polaroid pile",
+      "id": "builtin-layout-five-two-over-three",
+      "name": "5 · 2 over 3",
       "document": {
-        "slots": [
-          { "id": "s1", "rect": { "x": 240, "y": 300, "w": 1900, "h": 1640 }, "rotation": -7, "fill_mode": "fit" },
-          { "id": "s2", "rect": { "x": 1700, "y": 180, "w": 1900, "h": 1640 }, "rotation": 5, "fill_mode": "fit" },
-          { "id": "s3", "rect": { "x": 970, "y": 420, "w": 1900, "h": 1640 }, "rotation": -2, "fill_mode": "fit" }
-        ]
+        "recipe": "five-two-over-three",
+        "outer": { "x": 160, "y": 150 },
+        "gutter": { "x": 70, "y": 70 },
+        "format": "fill"
+      }
+    },
+    {
+      "id": "builtin-layout-grid-3x2",
+      "name": "3 × 2",
+      "document": {
+        "recipe": "six-grid-3x2",
+        "outer": { "x": 160, "y": 150 },
+        "gutter": { "x": 70, "y": 70 },
+        "format": "fill"
+      }
+    },
+    {
+      "id": "builtin-layout-print-with-caption",
+      "name": "Print with caption",
+      "document": {
+        "recipe": "single",
+        "outer": { "x": 320, "y": 260 },
+        "gutter": { "x": 0, "y": 60 },
+        "format": "3:2",
+        "border": { "width": 18, "color": "#FFFFFF" },
+        "caption_place": "below"
       }
     }
   ]

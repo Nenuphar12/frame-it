@@ -7,7 +7,17 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-import { api, unwrap, type Artwork, type Photo } from "./client";
+import {
+  api,
+  unwrap,
+  type Artwork,
+  type ArtworkDefaults,
+  type FrameStyle,
+  type Layout,
+  type LayoutDocumentApi,
+  type Photo,
+  type StyleDocumentApi,
+} from "./client";
 
 export const queryKeys = {
   me: ["me"] as const,
@@ -32,6 +42,7 @@ export const queryKeys = {
   palette: (photoId: string) => ["colors", "palette", photoId] as const,
   swatches: ["colors", "swatches"] as const,
   snapshots: (artworkId: string) => ["artworks", "snapshots", artworkId] as const,
+  templateUsage: (kind: TemplateKind, id: string) => ["templates", "usage", kind, id] as const,
   artworkDefaults: ["templates", "defaults"] as const,
 };
 
@@ -272,6 +283,8 @@ export interface CreateArtworksInput {
   /** One artwork per group, photos in slot order. */
   groups: string[][];
   style_id: string;
+  /** A saved layout (docs/templates.md §4): its recipe and parameters, recorded as the origin. */
+  layout_id?: string;
   /** Parametric layout (docs/simple-editor.md §7); omitted ⇒ the recipe for the photo count. */
   composition?: { recipe?: string; format?: string };
 }
@@ -313,6 +326,8 @@ export function useArtworkActions() {
       title?: string;
       status?: "draft";
       tag_ids?: string[];
+      origin_style_id?: string;
+      origin_layout_id?: string;
     }) => unwrap(api.PATCH("/api/v1/artworks/{artwork_id}", { ...path(id), body })),
     onSuccess,
   });
@@ -426,6 +441,195 @@ export function useRestoreSnapshot() {
   });
 }
 
+// ---- templates (docs/templates.md) --------------------------------------------------------------
+export type TemplateKind = "frame_style" | "layout";
+
+/** A template row, whichever kind it is (the two lists share every management action). */
+export type Template = FrameStyle | Layout;
+
+/** Every template mutation invalidates both lists: a "save as" can come from either page. */
+function useTemplateMutation<TVariables>(
+  mutationFn: (variables: TVariables) => Promise<Template | undefined>,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["templates"] });
+    },
+  });
+}
+
+export interface StyleInput {
+  name: string;
+  document: StyleDocumentApi;
+}
+
+export interface LayoutInput {
+  name: string;
+  document: LayoutDocumentApi;
+}
+
+export function useCreateStyle() {
+  return useTemplateMutation((body: StyleInput) =>
+    unwrap(api.POST("/api/v1/frame-styles", { body })),
+  );
+}
+
+export function useCreateLayout() {
+  return useTemplateMutation((body: LayoutInput) => unwrap(api.POST("/api/v1/layouts", { body })));
+}
+
+export function useUpdateStyle() {
+  return useTemplateMutation(({ id, ...body }: { id: string } & Partial<StyleInput>) =>
+    unwrap(
+      api.PATCH("/api/v1/frame-styles/{style_id}", { params: { path: { style_id: id } }, body }),
+    ),
+  );
+}
+
+export function useUpdateLayout() {
+  return useTemplateMutation(({ id, ...body }: { id: string } & Partial<LayoutInput>) =>
+    unwrap(api.PATCH("/api/v1/layouts/{layout_id}", { params: { path: { layout_id: id } }, body })),
+  );
+}
+
+export function useDuplicateTemplate() {
+  return useTemplateMutation(
+    ({ kind, id }: { kind: TemplateKind; id: string }): Promise<Template> =>
+      kind === "frame_style"
+        ? unwrap(
+            api.POST("/api/v1/frame-styles/{style_id}/duplicate", {
+              params: { path: { style_id: id } },
+              body: { name: null },
+            }),
+          )
+        : unwrap(
+            api.POST("/api/v1/layouts/{layout_id}/duplicate", {
+              params: { path: { layout_id: id } },
+              body: { name: null },
+            }),
+          ),
+  );
+}
+
+export function useDeleteTemplate() {
+  return useTemplateMutation(({ kind, id }: { kind: TemplateKind; id: string }) =>
+    kind === "frame_style"
+      ? unwrap(
+          api.DELETE("/api/v1/frame-styles/{style_id}", { params: { path: { style_id: id } } }),
+        )
+      : unwrap(api.DELETE("/api/v1/layouts/{layout_id}", { params: { path: { layout_id: id } } })),
+  );
+}
+
+/** "Save as style" / "Save as layout" from an artwork (docs/templates.md §3). */
+export function useSaveAsTemplate() {
+  return useTemplateMutation(
+    ({
+      kind,
+      artworkId,
+      name,
+    }: {
+      kind: TemplateKind;
+      artworkId: string;
+      name: string;
+    }): Promise<Template> => {
+      const body = { artwork_id: artworkId, name };
+      return kind === "frame_style"
+        ? unwrap(api.POST("/api/v1/frame-styles/from-artwork", { body }))
+        : unwrap(api.POST("/api/v1/layouts/from-artwork", { body }));
+    },
+  );
+}
+
+/** Import a `.tfstyle.json` / `.tflayout.json` file the browser has read (§6). */
+export function useImportTemplate() {
+  return useTemplateMutation(
+    ({ kind, file }: { kind: TemplateKind; file: Record<string, unknown> }): Promise<Template> => {
+      const body = file as { kind: string; version: number; document: Record<string, unknown> };
+      return kind === "frame_style"
+        ? unwrap(api.POST("/api/v1/frame-styles/import", { body }))
+        : unwrap(api.POST("/api/v1/layouts/import", { body }));
+    },
+  );
+}
+
+export function useTemplateUsage(kind: TemplateKind, id: string | null) {
+  return useQuery({
+    queryKey: queryKeys.templateUsage(kind, id ?? ""),
+    queryFn: () =>
+      kind === "frame_style"
+        ? unwrap(
+            api.GET("/api/v1/frame-styles/{style_id}/usage", {
+              params: { path: { style_id: id! } },
+            }),
+          )
+        : unwrap(
+            api.GET("/api/v1/layouts/{layout_id}/usage", { params: { path: { layout_id: id! } } }),
+          ),
+    enabled: id !== null,
+  });
+}
+
+/** Preview (dry run) or apply a push update; applying re-renders every touched artwork. */
+export function usePushUpdate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ kind, id, dryRun }: { kind: TemplateKind; id: string; dryRun: boolean }) => {
+      const suffix = dryRun ? "/push-update/preview" : "/push-update";
+      return kind === "frame_style"
+        ? unwrap(
+            api.POST(
+              `/api/v1/frame-styles/{style_id}${suffix}` as "/api/v1/frame-styles/{style_id}/push-update",
+              {
+                params: { path: { style_id: id } },
+              },
+            ),
+          )
+        : unwrap(
+            api.POST(
+              `/api/v1/layouts/{layout_id}${suffix}` as "/api/v1/layouts/{layout_id}/push-update",
+              {
+                params: { path: { layout_id: id } },
+              },
+            ),
+          );
+    },
+    onSuccess: (_result, variables) => {
+      if (variables.dryRun) return;
+      void qc.invalidateQueries({ queryKey: ["artworks"] });
+      void qc.invalidateQueries({ queryKey: ["templates"] });
+    },
+  });
+}
+
+/** Apply a template to one artwork, server-side (copy + origin, snapshotted). */
+export function useApplyTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      artworkId,
+      styleId,
+      layoutId,
+    }: {
+      artworkId: string;
+      styleId?: string;
+      layoutId?: string;
+    }) =>
+      unwrap(
+        api.POST("/api/v1/artworks/{artwork_id}/apply-template", {
+          params: { path: { artwork_id: artworkId } },
+          body: { style_id: styleId ?? null, layout_id: layoutId ?? null },
+        }),
+      ),
+    onSuccess: (artwork) => {
+      qc.setQueryData(queryKeys.artwork(artwork.id), artwork);
+      void qc.invalidateQueries({ queryKey: ["artworks"] });
+    },
+  });
+}
+
 export function useArtworkDefaults() {
   return useQuery({
     queryKey: queryKeys.artworkDefaults,
@@ -437,8 +641,7 @@ export function useArtworkDefaults() {
 export function useSetArtworkDefaults() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: { style_id: string; layout_id: string }) =>
-      unwrap(api.PUT("/api/v1/artwork-defaults", { body })),
+    mutationFn: (body: ArtworkDefaults) => unwrap(api.PUT("/api/v1/artwork-defaults", { body })),
     onSuccess: (defaults) => qc.setQueryData(queryKeys.artworkDefaults, defaults),
   });
 }

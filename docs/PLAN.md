@@ -1,6 +1,6 @@
 # the_frame_v2 — Implementation Plan
 
-> Status: **Phases 0–7 implemented** (see `docs/progress.md`) ·
+> Status: **Phases 0–8 implemented** (see `docs/progress.md`) ·
 > Created 2026-09-16 · Placeholder name `the_frame_v2` (rename before open-sourcing)
 >
 > This plan is the single source of truth for scope and sequencing. Specs (§5–§9, §12) live in dedicated
@@ -73,7 +73,7 @@ with a desktop editor and a phone upload companion on the same LAN.
 | **Quality lock** | Per-slot constraint: `native` · `no_upscale` (default) · `free`. |
 | **Placement** | How a single-slot artwork is laid out: `fit_in_mat` (default) · `fill` · `manual`. |
 | **Frame style** | Reusable template: mat, margins, slot decorations, caption defaults. |
-| **Layout** | Reusable template: slot geometry, locks, caption positions. |
+| **Layout** | Reusable template: a recipe and its parameters (Phase 8, `docs/templates.md`). |
 | **Recipe** | A named split tree (rows/columns of cells) that a solver turns into slot rects — the parametric replacement for a layout's absolute rects (Phase 7, `docs/simple-editor.md`). |
 | **Composition** | The document block holding a recipe id plus its parameters (balance, outer margins, gutters, format, border, caption). Source of truth for the slots it derives. |
 | **Inbox** | Photos uploaded but not yet processed into artworks (or dismissed). |
@@ -296,14 +296,14 @@ the UI). Lists use keyset pagination (`?cursor=&limit=`). All payloads are Pydan
 | uploads | `POST /uploads/check` (sha256[] → known/trashed/new), `POST /uploads` (create/resume session), `HEAD /uploads/{id}` (offset), `PATCH /uploads/{id}` (chunk, `Upload-Offset`), `DELETE /uploads/{id}` | uploader+ |
 | photos | `GET /photos` (filters), `GET /photos/{id}`, `GET /photos/{id}/thumb/{size}`, `GET /photos/{id}/proxy`, `GET /photos/{id}/palette`, `PATCH /photos/{id}` (tags, inbox_state), `GET /photos/{id}/usage`, `POST /photos/import-local` (desktop folder import is client-side upload; this is for CLI) | read: uploader+, write: admin |
 | inbox | `GET /inbox`, `POST /inbox/batch-create` ({photo_ids, style_id, layout_id, placement}), `POST /inbox/dismiss` | admin |
-| artworks | `GET /artworks`, `POST /artworks` (from photos + style + layout), `GET /artworks/{id}`, `PUT /artworks/{id}/document` (`If-Match: version`), `PATCH /artworks/{id}` (title, favorite, tags, status), `POST /artworks/{id}/validate`, `POST /artworks/{id}/duplicate`, `GET/POST /artworks/{id}/snapshots`, `POST /artworks/{id}/snapshots/{sid}/restore`, `GET /artworks/{id}/render.{png,jpg}`, `GET /artworks/{id}/thumb/{size}` | read: uploader+, write: admin |
+| artworks | `GET /artworks`, `POST /artworks` (from photos + style + layout *or* composition), `GET /artworks/{id}`, `PUT /artworks/{id}/document` (`If-Match: version`), `PATCH /artworks/{id}` (title, favorite, tags, status), `POST /artworks/{id}/validate`, `POST /artworks/{id}/duplicate`, `GET/POST /artworks/{id}/snapshots`, `POST /artworks/{id}/snapshots/{sid}/restore`, `GET /artworks/{id}/render.{png,jpg}`, `GET /artworks/{id}/thumb/{size}` | read: uploader+, write: admin |
 | render | `POST /render/region` ({document, rect}) → PNG, `POST /render/alternatives-preview` | admin |
 | collections | CRUD, `POST /collections/{id}/move` (parent, position), `GET /collections/{id}/items?include_nested=`, `POST /collections/{id}/items` (add), `POST /collections/{id}/items/reorder`, `DELETE /collections/{id}/items/{artwork_id}` | read: uploader+, write: admin |
 | tags | `GET /tags?q=` (autocomplete), `POST /tags`, `PATCH /tags/{id}` (rename/color), `POST /tags/{id}/merge` | create: uploader+, else admin |
-| templates | `GET/POST/PATCH/DELETE /frame-styles`, `/layouts`; `POST /artworks/from-artwork-to-style`, `GET /frame-styles/{id}/usage`, `POST /frame-styles/{id}/push-update/preview`, `POST /frame-styles/{id}/push-update` (same for layouts); `GET /fonts`, `GET /textures`, `GET /presets/colors` | admin |
+| templates | `GET/POST /frame-styles`, `PATCH/DELETE /frame-styles/{id}`, `POST /frame-styles/{id}/duplicate`, `POST /frame-styles/from-artwork`, `GET/POST /frame-styles/{id}/export`, `/frame-styles/import`, `GET /frame-styles/{id}/usage`, `POST /frame-styles/{id}/push-update/preview`, `POST /frame-styles/{id}/push-update` (same for `/layouts`); `POST /artworks/{id}/apply-template`; `GET /recipes`, `GET /fonts`, `GET /textures`, `GET /presets/colors` | admin |
 | swatches | `GET/POST /swatches`, `PATCH/DELETE /swatches/{id}`, `POST /swatches/reorder` | admin |
 | colours | `GET /photos/{id}/palette` (OKLab k-means, cached), `GET /presets/colors` | admin |
-| defaults | `GET/PUT /artwork-defaults` ({style_id, layout_id}) | admin |
+| defaults | `GET/PUT /artwork-defaults` ({style_id, recipe_id, format}) | admin |
 | trash | `GET /trash`, `POST /trash/restore`, `POST /trash/purge`, `DELETE` flows use `?cascade=trash_artworks|empty_slots` | admin |
 | exports | `POST /exports` ({kind: full/partial/renders/template, selection, options}) → job; `GET /exports/{job_id}/download` (streaming) | admin |
 | imports | `POST /imports` (chunked upload reuse) → staging job; `GET /imports/{id}/report`; `POST /imports/{id}/apply` ({policies, per-item decisions}); `DELETE /imports/{id}` | admin |
@@ -337,7 +337,7 @@ CLI (`the_frame_v2`): `serve`, `doctor`, `setup-code`, `export`, `import`, `serv
 | Photos | Virtualized grid; detail drawer (EXIF, map-less place, usage list, tags). |
 | Editor (Simple, default) | Canvas center, right: one column — layout picker (schemas), Balance, format chips, Outer/Gap sliders, photos (swap, reframe, zoom), background & border, caption. Top: mode switch + quality summary + undo/redo + TV preview + loupe. `docs/simple-editor.md`. |
 | Editor (Advanced ᴮᴱᵀᴬ) | Same page behind the mode switch, with a warning strip: left slots list (z-order drag, add slot, photo picker), right properties (placement, margins, lock, crop ratio, orient, rotation, bands, shadow, mat color/texture, captions), bottom filmstrip. Free-form edits detach the artwork from its layout. Alternatives panel pops when a slot becomes upscaled. |
-| Templates | Tabs Frame styles / Layouts; cards with preview on a sample photo; edit, duplicate, delete, export/import JSON; usage + push update with before/after grid. |
+| Templates | Tabs Frame styles / Layouts; cards with a preview the page draws itself (the solver for a layout, a sample mat for a style); edit, duplicate, delete, export/import JSON; push update with per-artwork badges and skip reasons. `docs/templates.md`. |
 | Trash | Items with days remaining; restore (with batch), delete permanently, empty. |
 | Devices | Pair device (role, QR + URL), list, rename, role, revoke. |
 | Settings | Theme, language, default style/layout, JPEG quality, trash retention, public URL, about (licenses, GeoNames attribution). |
@@ -608,18 +608,35 @@ mode.
 
 ### Phase 8 — Templates
 
-1. Frame styles CRUD UI and API, "Save as style" from an artwork, cards with sample previews.
-2. "Save as layout" saves a **recipe + parameters** (Phase 7's composition), not absolute rects; the layout
-   half of the pre-Phase-7 template code is rewritten around it.
-3. Apply to artwork (copy + origin/revision), outdated indicator.
-4. Usage & push update: preview grid (before/after), `pre_template_update` snapshots, layout update only for
-   matching slot count (crops recomputed around previous centers).
-5. Batch create from inbox with style + layout (multi-slot layouts consume photos in selection order), then
-   review flow. `settings.artwork_defaults` becomes style + recipe + format.
-6. Template file export/import (`.tfstyle.json`, `.tflayout.json`).
+Full spec: `docs/templates.md`.
+
+1. ✅ **done (2026-09-23)** — frame styles CRUD (API + Templates page), "Save as style" from an
+   artwork, cards with previews the page draws itself (a layout by the solver, a style as a mat
+   with one framed photo).
+2. ✅ **done (2026-09-23)** — a layout is a **recipe + parameters** (Phase 7's composition minus the
+   caption text and `detached`); the absolute-rect layout code, `build_document` and
+   `map_rect_to_area` are gone, the presets rewritten, `0004_parametric_layouts` clears the old rows
+   and the stale `origin_layout_id`s.
+3. ✅ **done (2026-09-23)** — apply to an artwork: `restyle` / `relayout`, pure and **mirrored**
+   (`domain/templates.py` ↔ `editor/core/templates.ts`, 16 conformance cases), through
+   `POST /artworks/{id}/apply-template` outside the editor and as a normal undoable edit inside it;
+   origin + revision recorded, outdated = recorded revision below the template's.
+4. ✅ **done (2026-09-23)** — usage & push update: server-side dry run, `pre_template_update`
+   snapshot per artwork (so it is undoable), layouts skipping another photo count or a detached
+   artwork, and a dialog that shows each artwork with its badge or its skip reason.
+5. ✅ **done (2026-09-23)** — creating from a layout (`POST /artworks` with `layout_id`, fewer photos
+   than cells leaves placeholders), the create dialog offering the saved layouts that fit the
+   selection, and `settings.artwork_defaults` = style + recipe + format (`null` = follow the photos).
+6. ✅ **done (2026-09-23)** — `.tfstyle.json` / `.tflayout.json` export & import, validated
+   server-side like a hand-written document.
 
 **AC**: editing a style never alters artworks until push update; push update is undoable via snapshot; batch create
 of 40 photos produces 40 drafts in the review queue.
+
+**State (2026-09-23)**: done. The first two AC are pinned by `tests/api/test_templates.py`
+(editing a style leaves every artwork untouched until the push, and restoring the
+`pre_template_update` snapshot puts the old look back). Batch create is unchanged from Phase 7 —
+the dialog now also offers a saved layout — and was not re-measured at 40 photos.
 
 ### Phase 9 — Organization
 

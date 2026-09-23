@@ -1,16 +1,25 @@
 """Frame styles, layouts and building an artwork document from photos.
 
-Spec: docs/artwork-document.md (template documents) and docs/geometry-and-quality.md §7.4.
+Spec: docs/templates.md (Phase 8) · docs/simple-editor.md §3 (the composition a layout stores).
 Templates are copied on apply: the resulting document does not reference them.
+
+A **layout is a recipe and its parameters** since Phase 8 — never absolute rects. Building an
+artwork from a layout is therefore the same code path as the Simple editor's: the layout's block
+goes into the document and `composition.apply` writes the geometry.
+
+`restyle` and `relayout` are PURE and mirrored by `frontend/src/editor/core/templates.ts`
+(parity pinned by `conformance/geometry/templates*.json`): the editor applies a template to the
+working document and the server applies the same one during a push update, so the two must agree
+field by field.
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field
 
 from the_frame_v2.domain.composition import CaptionStyle, Recipe, apply, cell_id
 from the_frame_v2.domain.document import (
@@ -18,31 +27,30 @@ from the_frame_v2.domain.document import (
     ArtworkDocument,
     AssetId,
     Band,
+    Caption,
+    CellFormat,
     Composition,
+    CompositionAxis,
+    CompositionBorder,
+    CompositionCaption,
+    CompositionFormat,
+    CompositionGutter,
     CropSpec,
     DocModel,
     HexColor,
-    ItemId,
     MarginsSpec,
     Mat,
     OrientSpec,
-    Placement,
     QualityLock,
     RectSpec,
     Shadow,
     Slot,
     SourceSpec,
 )
-from the_frame_v2.domain.geometry import CANVAS, Margins, Rect, Size, round_half_even
-from the_frame_v2.domain.placement import (
-    SlotPlacement,
-    available_area,
-    fill,
-    fill_slot,
-    fit_in_mat,
-    fit_slot,
-    ratio_label,
-)
+from the_frame_v2.domain.geometry import CANVAS, Rect, Size
+from the_frame_v2.domain.placement import SlotPlacement, fit_slot
+
+CaptionPlace = Literal["none", "above", "below"]
 
 
 class SlotDefaults(DocModel):
@@ -60,39 +68,60 @@ class CaptionDefaults(DocModel):
 
 
 class FrameStyleDocument(DocModel):
+    """A *look*: the mat, what is drawn around each photo, the caption's typography.
+
+    `margins` are kept for a hand-built artwork; a composition derives its own (§3.7), which is
+    why `restyle` never writes them — re-dressing must not disturb a layout.
+    """
+
     mat: Mat = Field(default_factory=Mat)
     margins: MarginsSpec = Field(default_factory=MarginsSpec)
     slot_defaults: SlotDefaults = Field(default_factory=SlotDefaults)
     caption_defaults: CaptionDefaults = Field(default_factory=CaptionDefaults)
 
 
-class LayoutSlot(DocModel):
-    id: ItemId
-    rect: RectSpec
-    """Canvas px for a canvas without margins; mapped into the style's available area on apply."""
-    rotation: float = Field(default=0, ge=-180, le=180)
-    quality_lock: QualityLock = "no_upscale"
-    fill_mode: Literal["fill", "fit"] = "fill"
-
-
-class LayoutCaption(DocModel):
-    id: ItemId
-    placeholder: str = Field(default="", max_length=500)
-    x: int
-    y: int
-    anchor: Literal["start", "middle", "end"] = "middle"
-    rotation: float = Field(default=0, ge=-180, le=180)
-
-
 class LayoutDocument(DocModel):
-    slots: list[LayoutSlot] = Field(min_length=1, max_length=MAX_SLOTS)
-    captions: list[LayoutCaption] = Field(default_factory=list, max_length=32)
+    """A saved layout: the `composition` block minus what belongs to one artwork.
 
-    @model_validator(mode="after")
-    def _unique_ids(self) -> LayoutDocument:
-        if len({s.id for s in self.slots}) != len(self.slots):
-            raise ValueError("slot ids must be unique")
-        return self
+    The caption's *text* and `detached` are artwork state, so a layout carries only the side the
+    caption sits on. Everything else is exactly the block the Simple editor edits.
+    """
+
+    recipe: AssetId
+    balance: float | None = Field(default=None, ge=0, le=1)
+    outer: CompositionAxis = Field(default_factory=lambda: CompositionAxis(x=120, y=120))
+    gutter: CompositionGutter = Field(default_factory=lambda: CompositionGutter(x=80, y=80))
+    format: CompositionFormat = "fill"
+    cell_formats: list[CellFormat | None] = Field(default_factory=list, max_length=MAX_SLOTS)
+    border: CompositionBorder | None = None
+    caption_place: CaptionPlace = "none"
+
+    def block(self, text: str = "") -> Composition:
+        """The composition an artwork starts from, carrying its own caption text."""
+        return Composition(
+            recipe=self.recipe,
+            balance=self.balance,
+            outer=self.outer.model_copy(),
+            gutter=self.gutter.model_copy(),
+            format=self.format,
+            cell_formats=list(self.cell_formats),
+            border=self.border.model_copy() if self.border else None,
+            caption=CompositionCaption(text=text, place=self.caption_place),
+        )
+
+    @classmethod
+    def of(cls, block: Composition) -> LayoutDocument:
+        """ "Save as layout": the artwork's parameters, without its caption text (§2)."""
+        return cls(
+            recipe=block.recipe,
+            balance=block.balance,
+            outer=block.outer.model_copy(),
+            gutter=block.gutter.model_copy(),
+            format=block.format,
+            cell_formats=list(block.cell_formats),
+            border=block.border.model_copy() if block.border else None,
+            caption_place=block.caption.place,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -102,38 +131,19 @@ class PhotoInput:
     """EXIF-oriented size."""
 
 
-def map_rect_to_area(rect: Rect, area: Rect, canvas: Size = CANVAS) -> Rect:
-    """Scale a layout rect from the full canvas into `area` (edges mapped: gaps stay consistent)."""
-    sx, sy = area.w / canvas.w, area.h / canvas.h
-    left = area.x + round_half_even(rect.x * sx)
-    top = area.y + round_half_even(rect.y * sy)
-    right = area.x + round_half_even((rect.x + rect.w) * sx)
-    bottom = area.y + round_half_even((rect.y + rect.h) * sy)
-    return Rect(left, top, max(1, right - left), max(1, bottom - top))
-
-
-def _slot(
-    slot_id: str,
-    photo: PhotoInput | None,
-    placed: SlotPlacement,
-    crop_ratio: str,
-    rotation: float,
-    defaults: SlotDefaults,
-) -> Slot:
+def _slot(slot_id: str, photo: PhotoInput | None, placed: SlotPlacement, crop_ratio: str) -> Slot:
     rect, crop = placed.rect, placed.crop
     return Slot(
         id=slot_id,
         photo_id=photo.id if photo else None,
         rect=RectSpec(x=rect.x, y=rect.y, w=rect.w, h=rect.h),
-        rotation=rotation if placed.quality_lock != "native" else 0,
+        rotation=0,
         source=SourceSpec(
             orient=OrientSpec(),
             crop=CropSpec(x=crop.x, y=crop.y, w=crop.w, h=crop.h),
             crop_ratio=crop_ratio,
         ),
         quality_lock=placed.quality_lock,
-        bands=[b.model_copy() for b in defaults.bands],
-        shadow=defaults.shadow.model_copy() if defaults.shadow else None,
     )
 
 
@@ -149,6 +159,139 @@ def caption_style(style: FrameStyleDocument) -> CaptionStyle:
     )
 
 
+def _dressed_slot(slot: Slot, defaults: SlotDefaults, *, bands: bool) -> Slot:
+    """`slot` wearing the style's decorations. `bands` is false while a block owns them (§3.7)."""
+    copy = slot.model_copy(deep=True)
+    copy.shadow = defaults.shadow.model_copy() if defaults.shadow else None
+    if bands:
+        copy.bands = [band.model_copy() for band in defaults.bands]
+    return copy
+
+
+def _dressed_caption(caption: Caption, defaults: CaptionDefaults) -> Caption:
+    copy = caption.model_copy(deep=True)
+    copy.font = defaults.font
+    copy.weight = defaults.weight
+    copy.size = defaults.size
+    copy.color = defaults.color
+    copy.letter_spacing = defaults.letter_spacing
+    return copy
+
+
+def _with(
+    doc: ArtworkDocument,
+    *,
+    mat: Mat | None = None,
+    composition: Composition | None = None,
+    slots: Sequence[Slot] | None = None,
+    captions: Sequence[Caption] | None = None,
+) -> ArtworkDocument:
+    return ArtworkDocument(
+        schema_version=doc.schema_version,
+        canvas=doc.canvas.model_copy(),
+        mat=mat if mat is not None else doc.mat.model_copy(deep=True),
+        placement=doc.placement,
+        margins=doc.margins.model_copy(),
+        composition=composition if composition is not None else doc.composition,
+        slots=list(slots if slots is not None else doc.slots),
+        captions=list(captions if captions is not None else doc.captions),
+    )
+
+
+def restyle(
+    doc: ArtworkDocument,
+    style: FrameStyleDocument,
+    recipe: Recipe | None,
+    photo_sizes: Mapping[str, Size],
+) -> ArtworkDocument:
+    """Re-dress `doc` in `style` — mat, shadow, band, caption typography — keeping its layout.
+
+    The style's `margins` are deliberately left out: under a composition the block owns them
+    (§3.7), and re-dressing must never move a photo the user placed. The band becomes
+    `composition.border` while a block is attached, since that is who writes `bands` from then on;
+    a hand-built or detached document takes the bands directly.
+
+    A document that has no caption yet is solved with the style's typography, so a caption typed
+    afterwards is the style's; one that already has captions keeps nothing of its own but its
+    position (the block re-derives it).
+    """
+    block = doc.composition
+    attached = block is not None and not block.detached
+    defaults = style.slot_defaults
+    slots = [_dressed_slot(slot, defaults, bands=not attached) for slot in doc.slots]
+    captions = [_dressed_caption(caption, style.caption_defaults) for caption in doc.captions]
+    mat = style.mat.model_copy(deep=True)
+    if not attached or block is None:
+        return _with(doc, mat=mat, slots=slots, captions=captions)
+    band = defaults.bands[0] if defaults.bands else None
+    restyled = block.model_copy(deep=True)
+    restyled.border = (
+        CompositionBorder(width=max(1, band.width), color=band.color) if band else None
+    )
+    dressed = _with(doc, mat=mat, composition=restyled, slots=slots, captions=captions)
+    if recipe is None:
+        return dressed
+    return apply(dressed, recipe, photo_sizes, caption_style(style) if not captions else None)
+
+
+def relayout(
+    doc: ArtworkDocument,
+    layout: LayoutDocument,
+    recipe: Recipe,
+    photo_sizes: Mapping[str, Size],
+    caption: CaptionStyle | None = None,
+) -> ArtworkDocument:
+    """Give `doc` the layout's recipe and parameters, then re-solve (§3.7).
+
+    The artwork's caption text moves into the new block — a layout carries the side, never the
+    words — and a detached artwork is re-attached: applying a layout is exactly the "Re-apply
+    layout" of `docs/simple-editor.md` §5 with someone else's parameters.
+    """
+    block = doc.composition
+    text = block.caption.text if block else (doc.captions[0].text if doc.captions else "")
+    return apply(_with(doc, composition=layout.block(text)), recipe, photo_sizes, caption)
+
+
+def style_of_document(doc: ArtworkDocument) -> FrameStyleDocument:
+    """ "Save as style": the look of `doc`, without its geometry (docs/templates.md §3)."""
+    slot = doc.slots[0] if doc.slots else None
+    block = doc.composition
+    bands: list[Band] = []
+    if block is not None and not block.detached:
+        if block.border is not None:
+            bands = [Band(width=block.border.width, color=block.border.color)]
+    elif slot is not None:
+        bands = [band.model_copy() for band in slot.bands]
+    caption = doc.captions[0] if doc.captions else None
+    return FrameStyleDocument(
+        mat=doc.mat.model_copy(deep=True),
+        margins=doc.margins.model_copy(),
+        slot_defaults=SlotDefaults(
+            bands=bands,
+            shadow=slot.shadow.model_copy() if slot is not None and slot.shadow else None,
+        ),
+        caption_defaults=(
+            CaptionDefaults(
+                font=caption.font,
+                weight=caption.weight,
+                size=caption.size,
+                color=caption.color,
+                letter_spacing=caption.letter_spacing,
+            )
+            if caption
+            else CaptionDefaults()
+        ),
+    )
+
+
+def layout_of_document(doc: ArtworkDocument) -> LayoutDocument | None:
+    """ "Save as layout": the parameters of `doc`, or None when it has no attached block."""
+    block = doc.composition
+    if block is None or block.detached:
+        return None
+    return LayoutDocument.of(block)
+
+
 def build_composition_document(
     style: FrameStyleDocument,
     recipe: Recipe,
@@ -160,88 +303,30 @@ def build_composition_document(
     The slots start as whole photos fitted in the canvas — a valid document, and the framing
     `apply` preserves (§4.1): a full-photo crop keeps zoom 1, so every cell gets the centred cover
     crop a new artwork wants. `apply` then writes the real geometry, captions and margins (§3.7).
+
+    The style's band becomes the block's `border` unless the composition already names one: a
+    block owns `bands` (§3.7), so a style that draws a white edge around each photo has to say so
+    where the solver can see it — that is what keeps the gutter a gap between *printed* edges.
     """
-    defaults = style.slot_defaults
+    block = composition.model_copy(deep=True)
+    band = style.slot_defaults.bands[0] if style.slot_defaults.bands else None
+    if block.border is None and band is not None:
+        block.border = CompositionBorder(width=max(1, band.width), color=band.color)
     canvas = Rect(0, 0, CANVAS.w, CANVAS.h)
     slots: list[Slot] = []
     for index, photo in enumerate(photos):
         slot_id = cell_id(index)
         if photo is None:
             empty = SlotPlacement(canvas, Rect(0, 0, canvas.w, canvas.h), "free")
-            slots.append(_slot(slot_id, None, empty, "free", 0, defaults))
+            slots.append(_slot(slot_id, None, empty, "free"))
         else:
-            slots.append(
-                _slot(slot_id, photo, fit_slot(canvas, photo.size, "free"), "original", 0, defaults)
-            )
+            slots.append(_slot(slot_id, photo, fit_slot(canvas, photo.size, "free"), "original"))
     skeleton = ArtworkDocument(
         mat=style.mat.model_copy(deep=True),
         placement="manual",
         margins=style.margins.model_copy(),
-        composition=composition,
-        slots=slots,
+        composition=block,
+        slots=[_dressed_slot(slot, style.slot_defaults, bands=False) for slot in slots],
     )
     sizes = {photo.id: photo.size for photo in photos if photo is not None}
     return apply(skeleton, recipe, sizes, caption_style(style))
-
-
-def build_document(
-    style: FrameStyleDocument,
-    layout: LayoutDocument,
-    photos: Sequence[PhotoInput | None],
-    placement: Placement | None = None,
-) -> ArtworkDocument:
-    """New artwork document: style (mat, margins, decorations) + layout (slots) + photos in order.
-
-    - One-slot layouts use `placement` (default `fit_in_mat`): `fit_in_mat` shows the whole photo
-      inside the margins, `fill` covers the canvas. The style's quality lock applies.
-    - Multi-slot layouts are `manual`: layout rects are mapped into the style's available area,
-      `fill` slots crop the photo to the slot ratio, `fit` slots shrink to the photo ratio. The
-      layout slot's quality lock applies.
-    - A lock the photo cannot honour (e.g. `no_upscale` on a small photo in a `fill` slot) becomes
-      `free`: the artwork is created as-is and shows its upscaled tier.
-    - Missing photos (fewer photos than slots, or None) leave empty slots.
-    """
-    if len(photos) > len(layout.slots):
-        raise ValueError("more photos than layout slots")
-    defaults = style.slot_defaults
-    m = style.margins
-    margins = Margins(m.top, m.right, m.bottom, m.left)
-    padded: list[PhotoInput | None] = [*photos, *[None] * (len(layout.slots) - len(photos))]
-    mode: Placement = placement or "fit_in_mat"
-    if len(layout.slots) != 1:
-        mode = "manual"
-
-    slots: list[Slot] = []
-    area = available_area(margins)
-    for layout_slot, photo in zip(layout.slots, padded, strict=True):
-        target = map_rect_to_area(layout_slot.rect.geometry(), area) if mode == "manual" else area
-        if photo is None:
-            empty = SlotPlacement(target, Rect(0, 0, target.w, target.h), "free")
-            slots.append(_slot(layout_slot.id, None, empty, "free", layout_slot.rotation, defaults))
-            continue
-        full = Rect(0, 0, photo.size.w, photo.size.h)
-        if mode == "fit_in_mat":
-            placed = fit_in_mat(photo.size, full, "original", margins, defaults.quality_lock)
-            slots.append(_slot(layout_slot.id, photo, placed, "original", 0, defaults))
-        elif mode == "fill":
-            placed = fill(photo.size, defaults.quality_lock)
-            ratio = ratio_label(placed.rect.w, placed.rect.h)
-            slots.append(_slot(layout_slot.id, photo, placed, ratio, 0, defaults))
-        elif layout_slot.fill_mode == "fill":
-            placed = fill_slot(target, photo.size, layout_slot.quality_lock)
-            ratio = ratio_label(target.w, target.h)
-            slots.append(
-                _slot(layout_slot.id, photo, placed, ratio, layout_slot.rotation, defaults)
-            )
-        else:
-            placed = fit_slot(target, photo.size, layout_slot.quality_lock)
-            slots.append(
-                _slot(layout_slot.id, photo, placed, "original", layout_slot.rotation, defaults)
-            )
-
-    return ArtworkDocument(
-        mat=style.mat.model_copy(deep=True),
-        placement=mode,
-        margins=style.margins.model_copy(),
-        slots=slots,
-    )

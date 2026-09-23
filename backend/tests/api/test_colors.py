@@ -75,20 +75,30 @@ def test_artwork_defaults_roundtrip(local: TestClient) -> None:
     defaults = local.get(f"{API}/artwork-defaults").json()
     assert defaults == {
         "style_id": "builtin-style-gallery-recessed",
-        "layout_id": "builtin-layout-single",
+        "recipe_id": None,
+        "format": None,
     }
     updated = local.put(
         f"{API}/artwork-defaults",
-        json={"style_id": "builtin-style-linen", "layout_id": "builtin-layout-grid-2x2"},
+        json={"style_id": "builtin-style-linen", "recipe_id": "two-stacked", "format": "1:1"},
     )
     assert updated.status_code == 200, updated.text
-    assert local.get(f"{API}/artwork-defaults").json()["style_id"] == "builtin-style-linen"
+    assert local.get(f"{API}/artwork-defaults").json()["recipe_id"] == "two-stacked"
 
-    # The new default style is the one used when creating an artwork without an explicit choice.
+    # The defaults are what creating an artwork without an explicit choice starts from: the
+    # recipe when it fits the selection (docs/templates.md §5), the style and format always.
     artwork = local.post(f"{API}/artworks", json={"photo_ids": [photo(local)]}).json()
     assert artwork["origin_style_id"] == "builtin-style-linen"
+    assert artwork["document"]["composition"]["recipe"] == "single"  # one photo, not two
+    assert artwork["document"]["composition"]["format"] == "1:1"
+    pair_of_photos = [photo(local), photo(local)]
+    stacked = local.post(f"{API}/artworks", json={"photo_ids": pair_of_photos}).json()
+    assert stacked["document"]["composition"]["recipe"] == "two-stacked"
 
-    unknown = local.put(
-        f"{API}/artwork-defaults", json={"style_id": "nope", "layout_id": "builtin-layout-single"}
-    )
+    unknown = local.put(f"{API}/artwork-defaults", json={"style_id": "nope"})
     assert unknown.status_code == 422 and unknown.json()["code"] == "unknown_style"
+    bad_recipe = local.put(
+        f"{API}/artwork-defaults",
+        json={"style_id": "builtin-style-linen", "recipe_id": "nope"},
+    )
+    assert bad_recipe.status_code == 422 and bad_recipe.json()["code"] == "unknown_recipe"

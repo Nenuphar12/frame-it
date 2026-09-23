@@ -1,5 +1,6 @@
 // What the editor UI calls: a semantic action per control, bound to the store and the operations.
 // Components never touch the document directly, so every change is undoable and autosaved.
+import { api, unwrap } from "@/api/client";
 import type { Alternative } from "@/editor/core/alternatives.ts";
 import type { Composition, Recipe } from "@/editor/core/composition.ts";
 import {
@@ -95,9 +96,42 @@ export const setMatColor = (color: string, group: string | null = "mat-color") =
 export const setTexture = (id: string | null, strength: number, group: string | null = null) =>
   edit((doc) => ops.setTexture(doc, id, strength), group);
 
-/** Re-dress the artwork in a frame style: mat, shadow, border and caption typography. */
-export const applyStyle = (style: ops.StyleDocument) =>
+/**
+ * Re-dress the artwork in a frame style: mat, shadow, border and caption typography.
+ *
+ * The document change is a normal undoable edit; `templateId` (when the style came from the
+ * template list rather than from a hand-picked colour) is reported to the server so the artwork
+ * records which template it now wears — that is what a push update follows (docs/templates.md §5).
+ */
+export const applyStyle = (style: ops.StyleDocument, templateId?: string) => {
   edit((doc) => ops.applyStyle(doc, style, recipes(), sizes()));
+  if (templateId) void recordOrigin({ origin_style_id: templateId });
+};
+
+/** Apply a saved layout: its recipe and parameters become the block (docs/templates.md §5). */
+export const applyLayout = (layout: ops.LayoutApiDocument, templateId?: string) => {
+  edit((doc) => ops.applyLayout(doc, layout, recipes(), sizes()));
+  if (templateId) void recordOrigin({ origin_layout_id: templateId });
+};
+
+/** Tell the server which template the artwork now wears (no document change, no version bump). */
+async function recordOrigin(body: {
+  origin_style_id?: string;
+  origin_layout_id?: string;
+}): Promise<void> {
+  const artworkId = useEditor.getState().artworkId;
+  if (!artworkId) return;
+  try {
+    await unwrap(
+      api.PATCH("/api/v1/artworks/{artwork_id}", {
+        params: { path: { artwork_id: artworkId } },
+        body,
+      }),
+    );
+  } catch {
+    // The look is already in the document; the origin link is only used by push updates.
+  }
+}
 
 /**
  * Caption size (the Simple panel's slider). It is not a free-form edit: the band the solver

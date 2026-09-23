@@ -1,6 +1,34 @@
 {
   "components": {
     "schemas": {
+      "ApplyTemplateIn": {
+        "properties": {
+          "layout_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Layout Id"
+          },
+          "style_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Style Id"
+          }
+        },
+        "title": "ApplyTemplateIn",
+        "type": "object"
+      },
       "ArtworkCreateIn": {
         "properties": {
           "composition": {
@@ -32,22 +60,6 @@
             "minItems": 1,
             "title": "Photo Ids",
             "type": "array"
-          },
-          "placement": {
-            "anyOf": [
-              {
-                "enum": [
-                  "fit_in_mat",
-                  "fill",
-                  "manual"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Placement"
           },
           "style_id": {
             "anyOf": [
@@ -81,9 +93,28 @@
       },
       "ArtworkDefaultsIn": {
         "properties": {
-          "layout_id": {
-            "title": "Layout Id",
-            "type": "string"
+          "format": {
+            "anyOf": [
+              {
+                "pattern": "^(fill|original|[1-9][0-9]{0,3}:[1-9][0-9]{0,3})$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Format"
+          },
+          "recipe_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe Id"
           },
           "style_id": {
             "title": "Style Id",
@@ -91,17 +122,35 @@
           }
         },
         "required": [
-          "style_id",
-          "layout_id"
+          "style_id"
         ],
         "title": "ArtworkDefaultsIn",
         "type": "object"
       },
       "ArtworkDefaultsOut": {
         "properties": {
-          "layout_id": {
-            "title": "Layout Id",
-            "type": "string"
+          "format": {
+            "anyOf": [
+              {
+                "pattern": "^(fill|original|[1-9][0-9]{0,3}:[1-9][0-9]{0,3})$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Format"
+          },
+          "recipe_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe Id"
           },
           "style_id": {
             "title": "Style Id",
@@ -110,7 +159,8 @@
         },
         "required": [
           "style_id",
-          "layout_id"
+          "recipe_id",
+          "format"
         ],
         "title": "ArtworkDefaultsOut",
         "type": "object"
@@ -232,6 +282,17 @@
             ],
             "title": "Origin Layout Id"
           },
+          "origin_layout_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Layout Revision"
+          },
           "origin_style_id": {
             "anyOf": [
               {
@@ -242,6 +303,17 @@
               }
             ],
             "title": "Origin Style Id"
+          },
+          "origin_style_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Style Revision"
           },
           "photo_count": {
             "title": "Photo Count",
@@ -323,7 +395,9 @@
           "photo_count",
           "is_incomplete",
           "origin_style_id",
+          "origin_style_revision",
           "origin_layout_id",
+          "origin_layout_revision",
           "render_hash",
           "rendered_at",
           "created_at",
@@ -417,6 +491,17 @@
             ],
             "title": "Origin Layout Id"
           },
+          "origin_layout_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Layout Revision"
+          },
           "origin_style_id": {
             "anyOf": [
               {
@@ -427,6 +512,17 @@
               }
             ],
             "title": "Origin Style Id"
+          },
+          "origin_style_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Style Revision"
           },
           "photo_count": {
             "title": "Photo Count",
@@ -508,7 +604,9 @@
           "photo_count",
           "is_incomplete",
           "origin_style_id",
+          "origin_style_revision",
           "origin_layout_id",
+          "origin_layout_revision",
           "render_hash",
           "rendered_at",
           "created_at",
@@ -529,6 +627,28 @@
               }
             ],
             "title": "Favorite"
+          },
+          "origin_layout_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Layout Id"
+          },
+          "origin_style_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Style Id"
           },
           "status": {
             "anyOf": [
@@ -1360,6 +1480,7 @@
       },
       "FrameStyleDocument": {
         "additionalProperties": false,
+        "description": "A *look*: the mat, what is drawn around each photo, the caption's typography.\n\n`margins` are kept for a hand-built artwork; a composition derives its own (\u00a73.7), which is\nwhy `restyle` never writes them \u2014 re-dressing must not disturb a layout.",
         "properties": {
           "caption_defaults": {
             "$ref": "#/components/schemas/CaptionDefaults"
@@ -1375,6 +1496,25 @@
           }
         },
         "title": "FrameStyleDocument",
+        "type": "object"
+      },
+      "FrameStyleIn": {
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/FrameStyleDocument"
+          },
+          "name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "document"
+        ],
+        "title": "FrameStyleIn",
         "type": "object"
       },
       "FrameStyleOut": {
@@ -1407,6 +1547,35 @@
           "document"
         ],
         "title": "FrameStyleOut",
+        "type": "object"
+      },
+      "FrameStyleUpdateIn": {
+        "properties": {
+          "document": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FrameStyleDocument"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "FrameStyleUpdateIn",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -1511,79 +1680,100 @@
         "title": "HashStatusOut",
         "type": "object"
       },
-      "LayoutCaption": {
-        "additionalProperties": false,
-        "properties": {
-          "anchor": {
-            "default": "middle",
-            "enum": [
-              "start",
-              "middle",
-              "end"
-            ],
-            "title": "Anchor",
-            "type": "string"
-          },
-          "id": {
-            "pattern": "^[A-Za-z0-9_-]{1,64}$",
-            "title": "Id",
-            "type": "string"
-          },
-          "placeholder": {
-            "default": "",
-            "maxLength": 500,
-            "title": "Placeholder",
-            "type": "string"
-          },
-          "rotation": {
-            "default": 0,
-            "maximum": 180.0,
-            "minimum": -180.0,
-            "title": "Rotation",
-            "type": "number"
-          },
-          "x": {
-            "title": "X",
-            "type": "integer"
-          },
-          "y": {
-            "title": "Y",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "id",
-          "x",
-          "y"
-        ],
-        "title": "LayoutCaption",
-        "type": "object"
-      },
       "LayoutDocument": {
         "additionalProperties": false,
+        "description": "A saved layout: the `composition` block minus what belongs to one artwork.\n\nThe caption's *text* and `detached` are artwork state, so a layout carries only the side the\ncaption sits on. Everything else is exactly the block the Simple editor edits.",
         "properties": {
-          "captions": {
+          "balance": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance"
+          },
+          "border": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompositionBorder"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "caption_place": {
+            "default": "none",
+            "enum": [
+              "none",
+              "above",
+              "below"
+            ],
+            "title": "Caption Place",
+            "type": "string"
+          },
+          "cell_formats": {
             "items": {
-              "$ref": "#/components/schemas/LayoutCaption"
+              "anyOf": [
+                {
+                  "pattern": "^(original|[1-9][0-9]{0,3}:[1-9][0-9]{0,3})$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "maxItems": 32,
-            "title": "Captions",
+            "title": "Cell Formats",
             "type": "array"
           },
-          "slots": {
-            "items": {
-              "$ref": "#/components/schemas/LayoutSlot"
-            },
-            "maxItems": 32,
-            "minItems": 1,
-            "title": "Slots",
-            "type": "array"
+          "format": {
+            "default": "fill",
+            "pattern": "^(fill|original|[1-9][0-9]{0,3}:[1-9][0-9]{0,3})$",
+            "title": "Format",
+            "type": "string"
+          },
+          "gutter": {
+            "$ref": "#/components/schemas/CompositionGutter"
+          },
+          "outer": {
+            "$ref": "#/components/schemas/CompositionAxis"
+          },
+          "recipe": {
+            "pattern": "^[a-z0-9-]{1,64}$",
+            "title": "Recipe",
+            "type": "string"
           }
         },
         "required": [
-          "slots"
+          "recipe"
         ],
         "title": "LayoutDocument",
+        "type": "object"
+      },
+      "LayoutIn": {
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/LayoutDocument"
+          },
+          "name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "document"
+        ],
+        "title": "LayoutIn",
         "type": "object"
       },
       "LayoutOut": {
@@ -1623,49 +1813,33 @@
         "title": "LayoutOut",
         "type": "object"
       },
-      "LayoutSlot": {
-        "additionalProperties": false,
+      "LayoutUpdateIn": {
         "properties": {
-          "fill_mode": {
-            "default": "fill",
-            "enum": [
-              "fill",
-              "fit"
+          "document": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LayoutDocument"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "title": "Fill Mode",
-            "type": "string"
-          },
-          "id": {
-            "pattern": "^[A-Za-z0-9_-]{1,64}$",
-            "title": "Id",
-            "type": "string"
-          },
-          "quality_lock": {
-            "default": "no_upscale",
-            "enum": [
-              "native",
-              "no_upscale",
-              "free"
-            ],
-            "title": "Quality Lock",
-            "type": "string"
-          },
-          "rect": {
-            "$ref": "#/components/schemas/RectSpec"
-          },
-          "rotation": {
-            "default": 0,
-            "maximum": 180.0,
-            "minimum": -180.0,
-            "title": "Rotation",
-            "type": "number"
+            "title": "Name"
           }
         },
-        "required": [
-          "id",
-          "rect"
-        ],
-        "title": "LayoutSlot",
+        "title": "LayoutUpdateIn",
         "type": "object"
       },
       "LibraryStats": {
@@ -2449,6 +2623,37 @@
         "title": "PhotoUpdateIn",
         "type": "object"
       },
+      "PushUpdateOut": {
+        "properties": {
+          "applied": {
+            "title": "Applied",
+            "type": "integer"
+          },
+          "dry_run": {
+            "title": "Dry Run",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateApplicationOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "skipped": {
+            "title": "Skipped",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "dry_run",
+          "applied",
+          "skipped",
+          "items"
+        ],
+        "title": "PushUpdateOut",
+        "type": "object"
+      },
       "RecipeCell": {
         "additionalProperties": false,
         "description": "A leaf: one cell. `auto` takes the photo's own orientation (1-cell recipes).",
@@ -2654,6 +2859,26 @@
           "rect"
         ],
         "title": "RegionRenderIn",
+        "type": "object"
+      },
+      "SaveAsTemplateIn": {
+        "properties": {
+          "artwork_id": {
+            "title": "Artwork Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "artwork_id",
+          "name"
+        ],
+        "title": "SaveAsTemplateIn",
         "type": "object"
       },
       "Shadow": {
@@ -3084,6 +3309,136 @@
         "title": "TagWithCount",
         "type": "object"
       },
+      "TemplateApplicationOut": {
+        "properties": {
+          "applied": {
+            "title": "Applied",
+            "type": "boolean"
+          },
+          "artwork_id": {
+            "title": "Artwork Id",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "slot_count",
+                  "detached"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "artwork_id",
+          "title",
+          "applied",
+          "reason"
+        ],
+        "title": "TemplateApplicationOut",
+        "type": "object"
+      },
+      "TemplateFileOut": {
+        "description": "`.tfstyle.json` / `.tflayout.json` (docs/templates.md \u00a76).",
+        "properties": {
+          "document": {
+            "additionalProperties": true,
+            "title": "Document",
+            "type": "object"
+          },
+          "kind": {
+            "enum": [
+              "tfstyle",
+              "tflayout"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "version",
+          "name",
+          "document"
+        ],
+        "title": "TemplateFileOut",
+        "type": "object"
+      },
+      "TemplateImportIn": {
+        "description": "The contents of a template file, as read by the browser.",
+        "properties": {
+          "document": {
+            "additionalProperties": true,
+            "title": "Document",
+            "type": "object"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "version",
+          "document"
+        ],
+        "title": "TemplateImportIn",
+        "type": "object"
+      },
+      "TemplateNameIn": {
+        "description": "Naming a copy, or the template \"Save as \u2026\" is about to create.",
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "TemplateNameIn",
+        "type": "object"
+      },
       "TextureOut": {
         "properties": {
           "id": {
@@ -3317,7 +3672,7 @@
   "paths": {
     "/api/v1/artwork-defaults": {
       "get": {
-        "description": "Style and layout used when creating artworks without an explicit choice.",
+        "description": "Style, recipe and format used when creating artworks without an explicit choice.",
         "operationId": "artwork_defaults_api_v1_artwork_defaults_get",
         "responses": {
           "200": {
@@ -3649,6 +4004,59 @@
           }
         },
         "summary": "Update Artwork",
+        "tags": [
+          "artworks"
+        ]
+      }
+    },
+    "/api/v1/artworks/{artwork_id}/apply-template": {
+      "post": {
+        "description": "Re-dress and/or re-lay out an artwork from a saved template (docs/templates.md \u00a75).\n\nCopy on apply: the template is read once and the artwork records it as its origin. A\n`pre_template_update` snapshot is taken first, so the change is undoable from the history.",
+        "operationId": "apply_template_api_v1_artworks__artwork_id__apply_template_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artwork_id",
+            "required": true,
+            "schema": {
+              "title": "Artwork Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyTemplateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtworkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Apply Template",
         "tags": [
           "artworks"
         ]
@@ -4439,7 +4847,7 @@
         },
         "summary": "List Fonts",
         "tags": [
-          "templates"
+          "assets"
         ]
       }
     },
@@ -4485,7 +4893,7 @@
         },
         "summary": "Font File",
         "tags": [
-          "templates"
+          "assets"
         ]
       }
     },
@@ -4509,6 +4917,440 @@
           }
         },
         "summary": "List Frame Styles",
+        "tags": [
+          "templates"
+        ]
+      },
+      "post": {
+        "operationId": "create_frame_style_api_v1_frame_styles_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FrameStyleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrameStyleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Frame Style",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/frame-styles/from-artwork": {
+      "post": {
+        "description": "\"Save as style\": the artwork's mat, decorations and caption typography become a template.",
+        "operationId": "frame_style_from_artwork_api_v1_frame_styles_from_artwork_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveAsTemplateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrameStyleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Frame Style From Artwork",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/frame-styles/import": {
+      "post": {
+        "operationId": "import_frame_style_api_v1_frame_styles_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateImportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrameStyleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Frame Style",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/frame-styles/{style_id}": {
+      "delete": {
+        "operationId": "delete_frame_style_api_v1_frame_styles__style_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "style_id",
+            "required": true,
+            "schema": {
+              "title": "Style Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Frame Style",
+        "tags": [
+          "templates"
+        ]
+      },
+      "patch": {
+        "description": "Rename or re-document a style. Artworks are untouched until a push update (\u00a75).",
+        "operationId": "update_frame_style_api_v1_frame_styles__style_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "style_id",
+            "required": true,
+            "schema": {
+              "title": "Style Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FrameStyleUpdateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrameStyleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Frame Style",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/frame-styles/{style_id}/duplicate": {
+      "post": {
+        "operationId": "duplicate_frame_style_api_v1_frame_styles__style_id__duplicate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "style_id",
+            "required": true,
+            "schema": {
+              "title": "Style Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateNameIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrameStyleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Duplicate Frame Style",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/frame-styles/{style_id}/export": {
+      "get": {
+        "operationId": "export_frame_style_api_v1_frame_styles__style_id__export_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "style_id",
+            "required": true,
+            "schema": {
+              "title": "Style Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateFileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Frame Style",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/frame-styles/{style_id}/push-update": {
+      "post": {
+        "description": "Re-dress every artwork made from this style, each snapshotted first (undoable, \u00a75).",
+        "operationId": "push_frame_style_update_api_v1_frame_styles__style_id__push_update_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "style_id",
+            "required": true,
+            "schema": {
+              "title": "Style Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushUpdateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Push Frame Style Update",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/frame-styles/{style_id}/push-update/preview": {
+      "post": {
+        "operationId": "preview_frame_style_push_api_v1_frame_styles__style_id__push_update_preview_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "style_id",
+            "required": true,
+            "schema": {
+              "title": "Style Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushUpdateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Frame Style Push",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/frame-styles/{style_id}/usage": {
+      "get": {
+        "description": "Artworks made from this style (compare `origin_style_revision` to spot outdated ones).",
+        "operationId": "frame_style_usage_api_v1_frame_styles__style_id__usage_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "style_id",
+            "required": true,
+            "schema": {
+              "title": "Style Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ArtworkSummaryOut"
+                  },
+                  "title": "Response Frame Style Usage Api V1 Frame Styles  Style Id  Usage Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Frame Style Usage",
         "tags": [
           "templates"
         ]
@@ -4616,6 +5458,438 @@
           }
         },
         "summary": "List Layouts",
+        "tags": [
+          "templates"
+        ]
+      },
+      "post": {
+        "operationId": "create_layout_api_v1_layouts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LayoutIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LayoutOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Layout",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/layouts/from-artwork": {
+      "post": {
+        "description": "\"Save as layout\": the artwork's recipe and parameters, not its rects (\u00a73).",
+        "operationId": "layout_from_artwork_api_v1_layouts_from_artwork_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveAsTemplateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LayoutOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Layout From Artwork",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/layouts/import": {
+      "post": {
+        "operationId": "import_layout_api_v1_layouts_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateImportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LayoutOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Layout",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/layouts/{layout_id}": {
+      "delete": {
+        "operationId": "delete_layout_api_v1_layouts__layout_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "layout_id",
+            "required": true,
+            "schema": {
+              "title": "Layout Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Layout",
+        "tags": [
+          "templates"
+        ]
+      },
+      "patch": {
+        "operationId": "update_layout_api_v1_layouts__layout_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "layout_id",
+            "required": true,
+            "schema": {
+              "title": "Layout Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LayoutUpdateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LayoutOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Layout",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/layouts/{layout_id}/duplicate": {
+      "post": {
+        "operationId": "duplicate_layout_api_v1_layouts__layout_id__duplicate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "layout_id",
+            "required": true,
+            "schema": {
+              "title": "Layout Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateNameIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LayoutOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Duplicate Layout",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/layouts/{layout_id}/export": {
+      "get": {
+        "operationId": "export_layout_api_v1_layouts__layout_id__export_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "layout_id",
+            "required": true,
+            "schema": {
+              "title": "Layout Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateFileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Layout",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/layouts/{layout_id}/push-update": {
+      "post": {
+        "description": "Re-solve every artwork made from this layout that still holds its number of photos (\u00a75).",
+        "operationId": "push_layout_update_api_v1_layouts__layout_id__push_update_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "layout_id",
+            "required": true,
+            "schema": {
+              "title": "Layout Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushUpdateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Push Layout Update",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/layouts/{layout_id}/push-update/preview": {
+      "post": {
+        "operationId": "preview_layout_push_api_v1_layouts__layout_id__push_update_preview_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "layout_id",
+            "required": true,
+            "schema": {
+              "title": "Layout Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushUpdateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Layout Push",
+        "tags": [
+          "templates"
+        ]
+      }
+    },
+    "/api/v1/layouts/{layout_id}/usage": {
+      "get": {
+        "operationId": "layout_usage_api_v1_layouts__layout_id__usage_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "layout_id",
+            "required": true,
+            "schema": {
+              "title": "Layout Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ArtworkSummaryOut"
+                  },
+                  "title": "Response Layout Usage Api V1 Layouts  Layout Id  Usage Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Layout Usage",
         "tags": [
           "templates"
         ]
@@ -5300,7 +6574,7 @@
         },
         "summary": "Render Region",
         "tags": [
-          "templates"
+          "assets"
         ]
       }
     },
@@ -5668,7 +6942,7 @@
         },
         "summary": "List Textures",
         "tags": [
-          "templates"
+          "assets"
         ]
       }
     },
@@ -5705,7 +6979,7 @@
         },
         "summary": "Texture File",
         "tags": [
-          "templates"
+          "assets"
         ]
       }
     },

@@ -8,7 +8,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react"
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { photoThumbUrl, type FrameStyle } from "@/api/client";
+import { photoThumbUrl, type FrameStyle, type Layout } from "@/api/client";
 import * as actions from "@/editor/actions";
 import { SLIDER_LIMITS, sliderMax, valueOf, type SliderKey } from "@/editor/core/bounds.ts";
 import type { CaptionPlace, Recipe } from "@/editor/core/composition.ts";
@@ -55,18 +55,24 @@ interface SimplePanelProps {
   recipes: Recipe[];
   /** The frame styles of `GET /frame-styles`: the artwork's whole look in one dropdown (§6.2). */
   styles: FrameStyle[];
+  /** Saved layouts (`GET /layouts`): a recipe and its parameters, applied in one go. */
+  layouts: Layout[];
   sizes: PhotoSizes;
   selectedSlotId: string | null;
   onSelectSlot: (slotId: string) => void;
+  /** Open the "save this artwork as a template" dialog (docs/templates.md §3). */
+  onSaveAsTemplate: (kind: "frame_style" | "layout") => void;
 }
 
 export function SimplePanel({
   doc,
   recipes,
   styles,
+  layouts,
   sizes,
   selectedSlotId,
   onSelectSlot,
+  onSaveAsTemplate,
 }: SimplePanelProps) {
   const { t } = useTranslation();
   const block = doc.composition;
@@ -102,9 +108,11 @@ export function SimplePanel({
       recipe={recipe}
       choices={choices}
       styles={styles}
+      layouts={layouts.filter((layout) => layout.slot_count === count)}
       sizes={sizes}
       selectedSlotId={selectedSlotId}
       onSelectSlot={onSelectSlot}
+      onSaveAsTemplate={onSaveAsTemplate}
     />
   );
 }
@@ -116,18 +124,22 @@ function AttachedPanel({
   recipe,
   choices,
   styles,
+  layouts,
   sizes,
   selectedSlotId,
   onSelectSlot,
+  onSaveAsTemplate,
 }: {
   doc: EditorDocument;
   block: NonNullable<EditorDocument["composition"]>;
   recipe: Recipe;
   choices: Recipe[];
   styles: FrameStyle[];
+  layouts: Layout[];
   sizes: PhotoSizes;
   selectedSlotId: string | null;
   onSelectSlot: (slotId: string) => void;
+  onSaveAsTemplate: (kind: "frame_style" | "layout") => void;
 }) {
   const { t } = useTranslation();
   const [more, setMore] = useState(false);
@@ -219,10 +231,40 @@ function AttachedPanel({
   return (
     <>
       {/* One photo has exactly one recipe and no balance: the whole section is furniture (#10). */}
-      {(choices.length > 1 || balanced) && (
-        <PanelSection title={t("editor.simple.layout")}>
+      {(choices.length > 1 || balanced || layouts.length > 0) && (
+        <PanelSection
+          title={t("editor.simple.layout")}
+          action={
+            <button
+              type="button"
+              className="text-[11px] text-muted hover:text-text"
+              onClick={() => onSaveAsTemplate("layout")}
+            >
+              {t("templates.saveAsLayout")}
+            </button>
+          }
+        >
           {choices.length > 1 && (
             <RecipePicker recipes={choices} selected={recipe.id} onSelect={actions.setRecipe} />
+          )}
+          {layouts.length > 0 && (
+            <Field label={t("templates.savedLayouts")}>
+              <select
+                className="h-7 min-w-0 flex-1 rounded border border-border bg-panel-2 px-1 text-xs"
+                value=""
+                onChange={(event) => {
+                  const picked = layouts.find((item) => item.id === event.target.value);
+                  if (picked) actions.applyLayout(picked.document, picked.id);
+                }}
+              >
+                <option value="">{t("common.select")}</option>
+                {layouts.map((layout) => (
+                  <option key={layout.id} value={layout.id}>
+                    {layout.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
           )}
           {balanced && (
             <Field label={t("editor.simple.balance")}>
@@ -322,7 +364,18 @@ function AttachedPanel({
         }}
       />
 
-      <PanelSection title={t("editor.simple.background")}>
+      <PanelSection
+        title={t("editor.simple.background")}
+        action={
+          <button
+            type="button"
+            className="text-[11px] text-muted hover:text-text"
+            onClick={() => onSaveAsTemplate("frame_style")}
+          >
+            {t("templates.saveAsStyle")}
+          </button>
+        }
+      >
         {styles.length > 0 && (
           <Field label={t("editor.simple.style")}>
             <select
@@ -330,7 +383,7 @@ function AttachedPanel({
               value={styleId ?? ""}
               onChange={(event) => {
                 const picked = styles.find((item) => item.id === event.target.value);
-                if (picked) actions.applyStyle(picked.document);
+                if (picked) actions.applyStyle(picked.document, picked.id);
               }}
             >
               {styleId === null && <option value="">{t("editor.simple.customStyle")}</option>}

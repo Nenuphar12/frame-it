@@ -26,6 +26,7 @@ from the_frame_v2.domain import (
     geometry,
     placement,
     quality,
+    templates,
 )
 from the_frame_v2.domain.composition import Cell
 from the_frame_v2.domain.constraints import SlotState
@@ -104,6 +105,42 @@ def _apply(
 ) -> dict[str, Any]:
     """`composition.apply` on a raw document, back to raw — the fixture is JSON on both sides."""
     return composition.apply(parse_document(doc), recipe, photo_sizes, caption).canonical()
+
+
+def _restyle(
+    doc: dict[str, Any],
+    style: dict[str, Any],
+    recipe: composition.Recipe | None,
+    photo_sizes: dict[str, Size],
+) -> dict[str, Any]:
+    """`templates.restyle` on a raw document (docs/templates.md §3), back to raw."""
+    parsed = templates.FrameStyleDocument.model_validate(style)
+    return templates.restyle(parse_document(doc), parsed, recipe, photo_sizes).canonical()
+
+
+def _relayout(
+    doc: dict[str, Any],
+    layout: dict[str, Any],
+    recipe: composition.Recipe,
+    photo_sizes: dict[str, Size],
+    caption: composition.CaptionStyle | None,
+) -> dict[str, Any]:
+    """`templates.relayout` on a raw document, back to raw."""
+    parsed = templates.LayoutDocument.model_validate(layout)
+    return templates.relayout(parse_document(doc), parsed, recipe, photo_sizes, caption).canonical()
+
+
+def _style_of(doc: dict[str, Any]) -> dict[str, Any]:
+    return templates.style_of_document(parse_document(doc)).model_dump(mode="json")
+
+
+def _layout_of(doc: dict[str, Any]) -> dict[str, Any] | None:
+    layout = templates.layout_of_document(parse_document(doc))
+    return None if layout is None else layout.model_dump(mode="json")
+
+
+def _maybe_recipe(recipe_id: str | None) -> composition.Recipe | None:
+    return None if recipe_id is None else _recipe(recipe_id)
 
 
 # name → (function, {argument: converter})
@@ -228,6 +265,27 @@ FUNCTIONS: dict[str, tuple[Callable[..., Any], dict[str, Callable[[Any], Any]]]]
             "caption": _caption_style,
         },
     ),
+    "templates_restyle": (
+        _restyle,
+        {
+            "doc": lambda v: v,
+            "style": lambda v: v,
+            "recipe": _maybe_recipe,
+            "photo_sizes": _photo_sizes,
+        },
+    ),
+    "templates_relayout": (
+        _relayout,
+        {
+            "doc": lambda v: v,
+            "layout": lambda v: v,
+            "recipe": _recipe,
+            "photo_sizes": _photo_sizes,
+            "caption": _caption_style,
+        },
+    ),
+    "templates_style_of_document": (_style_of, {"doc": lambda v: v}),
+    "templates_layout_of_document": (_layout_of, {"doc": lambda v: v}),
     "composition_block_area": (
         composition.block_area,
         {"composition": _composition, "caption_size": int},
@@ -453,6 +511,113 @@ def _doc(
 
 
 SIZES_3 = {"p1": {"w": 6000, "h": 4000}, "p2": {"w": 3000, "h": 4000}, "p3": {"w": 4000, "h": 4000}}
+
+DOC_CAPTION = {
+    "id": "legacy",
+    "text": "Kyoto - April 2026",
+    "font": "inter",
+    "weight": 600,
+    "size": 31,
+    "color": "#101010",
+    "letter_spacing": -0.01,
+    "x": 10,
+    "y": 10,
+    "anchor": "start",
+    "rotation": 3.5,
+}
+
+
+def _style(
+    *,
+    color: str,
+    band: int | None,
+    shadow: bool,
+    size: int,
+) -> dict[str, Any]:
+    """A complete frame style document (fixtures carry every field: the TS mirror has none)."""
+    return {
+        "mat": {"color": color, "texture": {"id": "linen-01", "strength": 0.5}},
+        "margins": {
+            "top": 200,
+            "right": 200,
+            "bottom": 260,
+            "left": 200,
+            "linked": False,
+            "mirror_x": False,
+            "mirror_y": False,
+        },
+        "slot_defaults": {
+            "bands": [] if band is None else [{"width": band, "color": "#FFFFFF"}],
+            "shadow": (
+                {
+                    "type": "inner",
+                    "offset_x": 0,
+                    "offset_y": 6,
+                    "blur": 28,
+                    "color": "#000000",
+                    "opacity": 0.45,
+                }
+                if shadow
+                else None
+            ),
+            "quality_lock": "no_upscale",
+        },
+        "caption_defaults": {
+            "font": "inter",
+            "weight": 400,
+            "size": size,
+            "color": "#222222",
+            "letter_spacing": 0.05,
+        },
+    }
+
+
+STYLES = {
+    "banded": _style(color="#101010", band=18, shadow=True, size=72),
+    "plain": _style(color="#FFFFFF", band=None, shadow=False, size=40),
+}
+
+
+def _layout(
+    recipe: str,
+    fmt: str = "fill",
+    *,
+    border: int | None = None,
+    caption_place: str = "none",
+    outer: tuple[int, int] = (200, 180),
+    gutter: tuple[int, int] = (90, 90),
+    balance: float | None = None,
+) -> dict[str, Any]:
+    """A complete layout document — a recipe and its parameters (docs/templates.md §2)."""
+    return {
+        "recipe": recipe,
+        "balance": balance,
+        "outer": {"x": outer[0], "y": outer[1]},
+        "gutter": {"x": gutter[0], "y": gutter[1]},
+        "format": fmt,
+        "cell_formats": [],
+        "border": None if border is None else {"width": border, "color": "#FFFFFF"},
+        "caption_place": caption_place,
+    }
+
+
+LAYOUTS = {
+    "stacked": _layout("two-stacked", outer=(300, 120), gutter=(60, 60)),
+    "squares": _layout("two-side-by-side", "1:1", border=18, caption_place="below"),
+}
+
+SAVE_AS_DOCS = {
+    "attached": _doc(
+        _comp("two-side-by-side", "1:1", border=18, caption="below"),
+        [_doc_slot(0, "p1", shadow=True), _doc_slot(1, "p2")],
+        [DOC_CAPTION],
+    ),
+    "detached": _doc(
+        {**_comp("two-side-by-side"), "detached": True},
+        [_doc_slot(0, "p1", shadow=True), _doc_slot(1, "p2")],
+        [],
+    ),
+}
 
 
 CASES: dict[str, list[tuple[str, str, dict[str, Any]]]] = {
@@ -1531,6 +1696,99 @@ CASES: dict[str, list[tuple[str, str, dict[str, Any]]]] = {
         *[
             (f"format ratio {fmt}", "composition_format_ratio", {"composition_format": fmt})
             for fmt in ("fill", "original", "3:2", "2:3", "1:1", "16:9")
+        ],
+    ],
+    "templates.json": [
+        *[
+            (
+                f"restyle {style_name} attached={attached} caption={caption}",
+                "templates_restyle",
+                {
+                    "doc": _doc(
+                        {
+                            **_comp("three-hero-left", "3:2", border=24, caption=caption),
+                            "detached": not attached,
+                        },
+                        [
+                            _doc_slot(0, "p1", crop=(1200, 800, 3000, 2000)),
+                            _doc_slot(1, "p2", crop=(0, 0, 1500, 2000), shadow=True),
+                            _doc_slot(2, "p3", crop=(500, 500, 2000, 2000)),
+                        ],
+                        [DOC_CAPTION] if caption != "none" else [],
+                    ),
+                    "style": style,
+                    "recipe": "three-hero-left",
+                    "photo_sizes": SIZES_3,
+                },
+            )
+            for style_name, style in STYLES.items()
+            for attached in (True, False)
+            for caption in ("none", "below")
+        ],
+        (
+            "restyle without a recipe leaves the geometry alone",
+            "templates_restyle",
+            {
+                "doc": _doc(
+                    _comp("two-side-by-side", border=12),
+                    [_doc_slot(0, "p1"), _doc_slot(1, "p2")],
+                ),
+                "style": STYLES["banded"],
+                "recipe": None,
+                "photo_sizes": SIZES_3,
+            },
+        ),
+        *[
+            (
+                f"relayout to {layout_name}",
+                "templates_relayout",
+                {
+                    "doc": _doc(
+                        _comp("two-side-by-side", border=12, caption="below"),
+                        [
+                            _doc_slot(0, "p1", crop=(1200, 800, 3000, 2000)),
+                            _doc_slot(1, "p2", crop=(0, 0, 1500, 2000), shadow=True),
+                        ],
+                        [DOC_CAPTION],
+                    ),
+                    "layout": layout,
+                    "recipe": layout["recipe"],
+                    "photo_sizes": SIZES_3,
+                    "caption": None,
+                },
+            )
+            for layout_name, layout in LAYOUTS.items()
+        ],
+        (
+            "relayout re-attaches a detached artwork with the style's typography",
+            "templates_relayout",
+            {
+                "doc": _doc(
+                    {**_comp("two-side-by-side"), "detached": True},
+                    [_doc_slot(0, "p1"), _doc_slot(1, "p2")],
+                    [DOC_CAPTION],
+                ),
+                "layout": LAYOUTS["stacked"],
+                "recipe": "two-stacked",
+                "photo_sizes": SIZES_3,
+                "caption": CAPTION_STYLE,
+            },
+        ),
+        *[
+            (
+                f"style of a document ({name})",
+                "templates_style_of_document",
+                {"doc": doc},
+            )
+            for name, doc in SAVE_AS_DOCS.items()
+        ],
+        *[
+            (
+                f"layout of a document ({name})",
+                "templates_layout_of_document",
+                {"doc": doc},
+            )
+            for name, doc in SAVE_AS_DOCS.items()
         ],
     ],
 }

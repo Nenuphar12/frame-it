@@ -2,7 +2,13 @@ import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ApiError } from "@/api/client";
-import { useArtworkDefaults, useCreateArtworks, useFrameStyles, useRecipes } from "@/api/queries";
+import {
+  useArtworkDefaults,
+  useCreateArtworks,
+  useFrameStyles,
+  useLayouts,
+  useRecipes,
+} from "@/api/queries";
 import { RecipePicker } from "@/editor/panels/RecipePicker";
 import { Button } from "@/shared/ui/Button";
 import { Dialog } from "@/shared/ui/Dialog";
@@ -39,6 +45,7 @@ export function CreateArtworksDialog({
   const { t } = useTranslation();
   const styles = useFrameStyles();
   const recipes = useRecipes();
+  const layouts = useLayouts();
   const create = useCreateArtworks();
   const defaults = useArtworkDefaults();
   // The user's pick wins; until they pick, the dialog follows the defaults from Settings (they
@@ -46,6 +53,7 @@ export function CreateArtworksDialog({
   const [pickedStyle, setPickedStyle] = useState<string | null>(null);
   const [pickedGrouping, setPickedGrouping] = useState<Grouping | null>(null);
   const [pickedRecipe, setPickedRecipe] = useState<string | null>(null);
+  const [pickedLayout, setPickedLayout] = useState<string | null>(null);
   const [placement, setPlacement] = useState<"fit_in_mat" | "fill">("fit_in_mat");
   const styleId = pickedStyle ?? defaults.data?.style_id ?? DEFAULT_STYLE;
   // `Enter` must create the artworks: without this Radix focuses the close cross instead (§11.5).
@@ -63,18 +71,26 @@ export function CreateArtworksDialog({
     () => (together ? [photoIds] : photoIds.map((id) => [id])),
     [together, photoIds],
   );
+  // A saved layout only fits a selection holding exactly its cells (docs/templates.md §4).
+  const savedLayouts = useMemo(
+    () => (layouts.data ?? []).filter((layout) => layout.slot_count === groups[0]?.length),
+    [layouts.data, groups],
+  );
+  const layoutId = savedLayouts.some((layout) => layout.id === pickedLayout) ? pickedLayout : null;
 
   const submit = () =>
     create.mutate(
-      {
-        groups,
-        style_id: styleId,
-        composition: {
-          ...(recipeId ? { recipe: recipeId } : {}),
-          // A one-photo artwork keeps the old choice: the whole photo in the mat, or edge to edge.
-          ...(together ? {} : { format: placement === "fill" ? "fill" : "original" }),
-        },
-      },
+      layoutId
+        ? { groups, style_id: styleId, layout_id: layoutId }
+        : {
+            groups,
+            style_id: styleId,
+            composition: {
+              ...(recipeId ? { recipe: recipeId } : {}),
+              // A one-photo artwork keeps the old choice: the whole photo in the mat, or edge to edge.
+              ...(together ? {} : { format: placement === "fill" ? "fill" : "original" }),
+            },
+          },
       {
         onSuccess: (created) => {
           onOpenChange(false);
@@ -138,7 +154,24 @@ export function CreateArtworksDialog({
             ))}
           </select>
         </label>
-        {together && (
+        {savedLayouts.length > 0 && (
+          <label className="flex flex-col gap-1 text-sm">
+            {t("templates.savedLayouts")}
+            <select
+              className={selectClass}
+              value={layoutId ?? ""}
+              onChange={(event) => setPickedLayout(event.target.value || null)}
+            >
+              <option value="">{t("artworks.create.noLayout")}</option>
+              {savedLayouts.map((layout) => (
+                <option key={layout.id} value={layout.id}>
+                  {layout.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {together && !layoutId && (
           <div className="flex flex-col gap-1 text-sm">
             {t("artworks.create.layout")}
             <RecipePicker
@@ -148,7 +181,7 @@ export function CreateArtworksDialog({
             />
           </div>
         )}
-        {!together && (
+        {!together && !layoutId && (
           <fieldset className="flex gap-4 text-sm">
             <legend className="mb-1">{t("artworks.create.placement")}</legend>
             {(["fit_in_mat", "fill"] as const).map((value) => (

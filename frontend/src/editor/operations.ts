@@ -6,7 +6,7 @@
 // components means the store can replay them for undo/redo and the rules stay testable.
 import { current } from "immer";
 
-import type { FrameStyle } from "@/api/client";
+import type { FrameStyle, Layout } from "@/api/client";
 import {
   CENTER,
   applyCropRatio,
@@ -19,7 +19,18 @@ import {
   type SlotState,
 } from "@/editor/core/constraints.ts";
 import type { Alternative } from "@/editor/core/alternatives.ts";
-import { applyComposition, type Composition, type Recipe } from "@/editor/core/composition.ts";
+import {
+  applyComposition,
+  captionStyleOf,
+  type Composition,
+  type Recipe,
+} from "@/editor/core/composition.ts";
+import {
+  relayout,
+  restyle,
+  type LayoutDocument as CoreLayout,
+  type StyleDocument as CoreStyle,
+} from "@/editor/core/templates.ts";
 import {
   align,
   distribute,
@@ -168,8 +179,10 @@ export function setPlacement(doc: EditorDocument, placement: Placement, sizes: P
   replace(doc, sizes);
 }
 
-/** A frame style's document, as `GET /frame-styles` sends it. */
+/** A frame style's document, as `GET /frame-styles` sends it (every field optional in OpenAPI). */
 export type StyleDocument = FrameStyle["document"];
+/** A layout's document: a recipe and its parameters (`GET /layouts`, docs/templates.md §2). */
+export type LayoutApiDocument = Layout["document"];
 
 export function setMatColor(doc: EditorDocument, color: string): void {
   doc.mat.color = color;
@@ -179,14 +192,62 @@ export function setTexture(doc: EditorDocument, id: string | null, strength: num
   doc.mat.texture = id === null ? null : { id, strength };
 }
 
+/** Fill in a style document's optional fields, falling back to the artwork's own look. */
+function normalizeStyle(style: StyleDocument, doc: EditorDocument): CoreStyle {
+  const mat = style.mat;
+  const defaults = style.slot_defaults;
+  const typography = style.caption_defaults;
+  const caption = captionStyleOf(doc);
+  return {
+    mat: {
+      color: mat?.color ?? doc.mat.color,
+      texture: mat?.texture ? { ...mat.texture } : null,
+    },
+    margins: style.margins ?? doc.margins,
+    slot_defaults: {
+      bands: (defaults?.bands ?? []).map((band) => ({ ...band })),
+      shadow: defaults?.shadow ? { ...defaults.shadow } : null,
+      quality_lock: defaults?.quality_lock ?? "no_upscale",
+    },
+    caption_defaults: {
+      font: typography?.font ?? caption.font,
+      weight: typography?.weight ?? caption.weight,
+      size: typography?.size ?? caption.size,
+      color: typography?.color ?? caption.color,
+      letter_spacing: typography?.letter_spacing ?? caption.letter_spacing,
+    },
+  };
+}
+
+/** Fill in a layout document's optional fields (same reason as `normalizeStyle`). */
+function normalizeLayout(layout: LayoutApiDocument): CoreLayout {
+  return {
+    recipe: layout.recipe,
+    balance: layout.balance ?? null,
+    outer: { x: layout.outer?.x ?? 120, y: layout.outer?.y ?? 120 },
+    gutter: { x: layout.gutter?.x ?? 80, y: layout.gutter?.y ?? 80 },
+    format: layout.format ?? "fill",
+    cell_formats: [...(layout.cell_formats ?? [])],
+    border: layout.border ? { ...layout.border } : null,
+    caption_place: layout.caption_place ?? "none",
+  };
+}
+
+/** Write a whole document back into the draft (the template helpers are pure functions). */
+function replaceDocument(doc: EditorDocument, next: EditorDocument): void {
+  doc.mat = next.mat;
+  doc.placement = next.placement;
+  doc.margins = next.margins;
+  doc.composition = next.composition;
+  doc.slots = next.slots;
+  doc.captions = next.captions;
+}
+
 /**
  * Re-dress the artwork in a frame style (Gallery recessed, Linen, …) without touching its layout.
  *
- * A style is a *look*: the mat, the shadow under each photo, the band around it and the caption's
- * typography. Its `margins` are deliberately left out — under a composition the block owns them
- * (§3.7), and the whole point of changing the style in the editor is to keep the geometry the user
- * arranged. The band becomes `composition.border` while a block is attached, since that is who
- * writes `bands` from then on; a hand-built document takes the bands directly.
+ * The rule lives in `editor/core/templates.ts`, mirrored by `domain/templates.py`: the editor and
+ * a server-side push update must dress an artwork identically (docs/templates.md §5).
  */
 export function applyStyle(
   doc: EditorDocument,
@@ -194,33 +255,28 @@ export function applyStyle(
   recipes: readonly Recipe[],
   sizes: PhotoSizes,
 ): void {
-  // Every field of a style document is optional in the API schema (they all have defaults), so
-  // each one falls back to what the document already has rather than to a made-up value.
-  const mat = style.mat;
-  if (mat) doc.mat = { color: mat.color, texture: mat.texture ? { ...mat.texture } : null };
-  const defaults = style.slot_defaults;
-  const bands = defaults?.bands ?? [];
-  const block = doc.composition;
-  const attached = block !== null && !block.detached;
-  for (const slot of doc.slots) {
-    slot.shadow = defaults?.shadow ? { ...defaults.shadow } : null;
-    if (!attached) setBands(slot, bands);
-  }
-  const typography = style.caption_defaults;
-  if (typography) {
-    for (const caption of doc.captions) {
-      caption.font = typography.font ?? caption.font;
-      caption.weight = typography.weight ?? caption.weight;
-      caption.size = typography.size ?? caption.size;
-      caption.color = typography.color ?? caption.color;
-      caption.letter_spacing = typography.letter_spacing ?? caption.letter_spacing;
-    }
-  }
-  if (block && attached) {
-    const band = bands[0];
-    block.border = band ? { width: Math.max(1, Math.round(band.width)), color: band.color } : null;
-    resolveComposition(doc, recipes, sizes);
-  }
+  const snapshot = current(doc);
+  replaceDocument(
+    doc,
+    restyle(snapshot, normalizeStyle(style, snapshot), attachedRecipe(doc, recipes), sizes),
+  );
+}
+
+/**
+ * Apply a saved layout: its recipe and parameters become the artwork's block, then it re-solves.
+ *
+ * A detached artwork is re-attached — picking a layout is an explicit "lay this out for me", the
+ * same move as §5's Re-apply layout with someone else's parameters.
+ */
+export function applyLayout(
+  doc: EditorDocument,
+  layout: LayoutApiDocument,
+  recipes: readonly Recipe[],
+  sizes: PhotoSizes,
+): void {
+  const recipe = recipes.find((entry) => entry.id === layout.recipe);
+  if (!recipe) return;
+  replaceDocument(doc, relayout(current(doc), normalizeLayout(layout), recipe, sizes));
 }
 
 // ---- slot edits --------------------------------------------------------------------------------

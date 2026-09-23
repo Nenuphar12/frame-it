@@ -26,11 +26,14 @@ from the_frame_v2.db.models import (
     ArtworkTag,
     Collection,
     CollectionItem,
+    FrameStyle,
+    Layout,
     Photo,
     PhotoPendingMeta,
     Tag,
 )
 from the_frame_v2.domain import composition as composition_solver
+from the_frame_v2.domain import templates as template_docs
 from the_frame_v2.domain.composition import Recipe
 from the_frame_v2.domain.document import (
     ArtworkDocument,
@@ -40,11 +43,7 @@ from the_frame_v2.domain.document import (
     validate_references,
 )
 from the_frame_v2.domain.geometry import Size
-from the_frame_v2.domain.templates import (
-    PhotoInput,
-    build_composition_document,
-    build_document,
-)
+from the_frame_v2.domain.templates import PhotoInput, build_composition_document
 from the_frame_v2.errors import ProblemError, not_found
 from the_frame_v2.ids import new_id, utcnow
 from the_frame_v2.imaging.assets import catalog
@@ -179,6 +178,17 @@ def tags_for(session: Session, artwork_ids: Sequence[str]) -> dict[str, list[Tag
     return result
 
 
+def _check_slot_count(recipe: Recipe, photo_count: int, name: str) -> None:
+    """A layout holds exactly its recipe's cells; fewer photos leave placeholders, more is a 422."""
+    if recipe.count < photo_count:
+        raise ProblemError(
+            422,
+            "layout_slot_count",
+            "Wrong number of photos for this layout",
+            f"{name} holds {recipe.count} photo(s), {photo_count} given",
+        )
+
+
 # ---- create -------------------------------------------------------------------------------------
 def _default_title(photo: Photo) -> str:
     if photo.place_name:
@@ -187,15 +197,24 @@ def _default_title(photo: Photo) -> str:
 
 
 def _composition_for(
-    photo_count: int, requested: Mapping[str, Any] | None
+    photo_count: int,
+    requested: Mapping[str, Any] | None,
+    defaults: templates.ArtworkDefaults | None = None,
 ) -> tuple[Recipe, Composition]:
     """The recipe and the block a new parametric artwork starts from (§7).
 
-    Nothing requested ⇒ the first catalogue entry for that many photos, `original` for a single
+    Nothing requested ⇒ the Settings defaults when they fit the selection (a recipe holding that
+    many photos), else the first catalogue entry for that many photos, `original` for a single
     photo (the whole photo in the mat, today's `fit_in_mat`) and `fill` above.
     """
     params = dict(requested or {})
+    fallback = defaults or templates.ArtworkDefaults(style_id=templates.DEFAULT_STYLE_ID)
+    preferred = recipes.find(fallback.recipe_id) if fallback.recipe_id else None
     recipe_id = params.pop("recipe", None)
+    if recipe_id is None and preferred is not None and preferred.count == photo_count:
+        recipe_id = preferred.id
+    if params.get("format") is None and fallback.format is not None:
+        params["format"] = fallback.format
     recipe = recipes.find(recipe_id) if recipe_id else recipes.for_count(photo_count)
     if recipe is None and recipe_id:
         raise ProblemError(422, "unknown_recipe", "Unknown composition", str(recipe_id))
@@ -230,15 +249,15 @@ def create_artwork(
     *,
     style_id: str | None = None,
     layout_id: str | None = None,
-    placement: str | None = None,
     title: str | None = None,
     composition: Mapping[str, Any] | None = None,
 ) -> Artwork:
     """New draft from photos (in slot order), a frame style and a composition or a layout.
 
-    Parametric by default (docs/simple-editor.md §7): without a `layout_id` the photos are laid
-    out by a recipe, which is what the Simple editor then edits. An explicit `layout_id` keeps the
-    Phase 6 path — a hand-placed document with no `composition` block, for the Advanced editor.
+    Every new artwork is parametric (docs/templates.md §4): a `layout_id` names a saved recipe +
+    parameters and is recorded as the artwork's origin layout, while a bare `composition` (or
+    nothing at all) starts from the catalogue and the Settings defaults. Hand-built documents are
+    still reachable — the Advanced editor detaches the block (docs/simple-editor.md §5).
 
     Photos leave the inbox; their pending upload metadata (favorite, collections) is applied once.
     """
@@ -255,23 +274,21 @@ def create_artwork(
     missing = [i for i in photo_ids if i not in photos]
     if missing:
         raise ProblemError(422, "unknown_photo", "Unknown photo", missing[0])
-    default_style, _ = templates.defaults(session)
-    style_row, style = templates.get_style(session, style_id or default_style)
+    defaults = templates.defaults(session)
+    style_row, style = templates.get_style(session, style_id or defaults.style_id)
     inputs = [PhotoInput(i, Size(photos[i].width, photos[i].height)) for i in photo_ids]
     layout_row = None
+    cells: list[PhotoInput | None] = list(inputs)
     if layout_id is None:
-        recipe, block = _composition_for(len(photo_ids), composition)
-        doc = build_composition_document(style, recipe, block, inputs)
+        recipe, block = _composition_for(len(photo_ids), composition, defaults)
     else:
         layout_row, layout = templates.get_layout(session, layout_id)
-        if len(photo_ids) > len(layout.slots):
-            raise ProblemError(
-                422,
-                "too_many_photos",
-                "Too many photos for this layout",
-                f"{layout_row.name} has {len(layout.slots)} slot(s)",
-            )
-        doc = build_document(style, layout, inputs, placement)  # type: ignore[arg-type]
+        recipe = templates.layout_recipe(layout)
+        _check_slot_count(recipe, len(photo_ids), layout_row.name)
+        block = layout.block()
+        # fewer photos than cells is allowed: the empty ones are placeholders to fill later
+        cells += [None] * (recipe.count - len(inputs))
+    doc = build_composition_document(style, recipe, block, cells)
     check_references(session, doc)
 
     first = photos[photo_ids[0]] if photo_ids else None
@@ -343,6 +360,130 @@ def save_document(
     return artwork
 
 
+# ---- templates ----------------------------------------------------------------------------------
+def _recipe_of(doc: ArtworkDocument) -> Recipe | None:
+    """The catalogue entry the document's block names, while it is attached."""
+    block = doc.composition
+    if block is None or block.detached:
+        return None
+    return recipes.find(block.recipe)
+
+
+@dataclass(frozen=True, slots=True)
+class TemplateApplication:
+    """One artwork in a push update: what would happen, or what did (docs/templates.md §5)."""
+
+    artwork_id: str
+    title: str
+    applied: bool
+    reason: str | None = None
+    """Why it was skipped: `slot_count` (the layout holds another number of photos) or
+    `detached` (hand-placed slots a layout would overwrite)."""
+
+
+def _apply_template_to(
+    session: Session,
+    artwork: Artwork,
+    *,
+    style: tuple[FrameStyle, template_docs.FrameStyleDocument] | None,
+    layout: tuple[Layout, template_docs.LayoutDocument] | None,
+    snapshot: bool,
+) -> None:
+    """Re-dress and/or re-lay out one artwork, in place, as a new document version."""
+    doc = document_of(artwork)
+    sizes = photo_sizes(session, doc.photo_ids())
+    # Layout first, then the look: both own `composition.border` (the block writes `bands`, §3.7),
+    # and when the user asks for a style *and* a layout the style is what they see.
+    if layout is not None:
+        layout_row, layout_doc = layout
+        recipe = templates.layout_recipe(layout_doc)
+        _check_slot_count(recipe, len(doc.slots), layout_row.name)
+        caption = template_docs.caption_style(style[1]) if style is not None else None
+        doc = template_docs.relayout(doc, layout_doc, recipe, sizes, caption)
+    if style is not None:
+        doc = template_docs.restyle(doc, style[1], _recipe_of(doc), sizes)
+    if snapshot:
+        create_snapshot(session, artwork.id, "pre_template_update")
+    _check_references(doc, sizes)
+    _store_document(session, artwork, resolved(doc, sizes))
+    artwork.document_version += 1
+    artwork.updated_at = utcnow()
+    if style is not None:
+        artwork.origin_style_id, artwork.origin_style_revision = style[0].id, style[0].revision
+    if layout is not None:
+        artwork.origin_layout_id, artwork.origin_layout_revision = layout[0].id, layout[0].revision
+
+
+def apply_template(
+    session: Session, artwork_id: str, *, style_id: str | None, layout_id: str | None
+) -> Artwork:
+    """Apply a style and/or a layout to one artwork (copy on apply + origin, §5).
+
+    Snapshotted as `pre_template_update`, so the artwork's history carries a way back.
+    """
+    if style_id is None and layout_id is None:
+        raise ProblemError(422, "nothing_to_apply", "Pass a style, a layout, or both")
+    artwork = get_artwork(session, artwork_id)
+    _apply_template_to(
+        session,
+        artwork,
+        style=templates.get_style(session, style_id) if style_id else None,
+        layout=templates.get_layout(session, layout_id) if layout_id else None,
+        snapshot=True,
+    )
+    return artwork
+
+
+def push_template_update(
+    session: Session, kind: templates.TemplateKind, template_id: str, *, dry_run: bool
+) -> list[TemplateApplication]:
+    """Push a changed template onto every artwork that came from it (§5).
+
+    A layout only reaches artworks with the same number of photos, and never a detached one: its
+    slots were placed by hand and re-solving would throw that away. Every touched artwork is
+    snapshotted first (`pre_template_update`), which is what makes the whole operation undoable.
+    """
+    style = templates.get_style(session, template_id) if kind == "frame_style" else None
+    layout = templates.get_layout(session, template_id) if kind == "layout" else None
+    recipe = templates.layout_recipe(layout[1]) if layout else None
+    results: list[TemplateApplication] = []
+    for artwork in templates.users_of(session, kind, template_id):
+        doc = document_of(artwork)
+        block = doc.composition
+        reason: str | None = None
+        if recipe is not None and recipe.count != len(doc.slots):
+            reason = "slot_count"
+        elif layout is not None and (block is None or block.detached):
+            reason = "detached"
+        results.append(
+            TemplateApplication(artwork.id, artwork.title, applied=reason is None, reason=reason)
+        )
+        if reason is None and not dry_run:
+            _apply_template_to(session, artwork, style=style, layout=layout, snapshot=True)
+    return results
+
+
+def style_from_artwork(session: Session, artwork_id: str, name: str) -> FrameStyle:
+    """ "Save as style": the artwork's look becomes a reusable template (§3)."""
+    doc = document_of(get_artwork(session, artwork_id))
+    document = template_docs.style_of_document(doc).model_dump(mode="json")
+    return templates.create_style(session, name, document)
+
+
+def layout_from_artwork(session: Session, artwork_id: str, name: str) -> Layout:
+    """ "Save as layout": the artwork's recipe and parameters become a template (§3)."""
+    doc = document_of(get_artwork(session, artwork_id))
+    layout = template_docs.layout_of_document(doc)
+    if layout is None:
+        raise ProblemError(
+            422,
+            "artwork_detached",
+            "This artwork has no layout to save",
+            "Its slots were placed by hand; re-apply a layout first",
+        )
+    return templates.create_layout(session, name, layout.model_dump(mode="json"))
+
+
 def update_artwork(
     session: Session,
     artwork_id: str,
@@ -351,8 +492,16 @@ def update_artwork(
     favorite: bool | None = None,
     status: str | None = None,
     tag_ids: Sequence[str] | None = None,
+    origin_style_id: str | None = None,
+    origin_layout_id: str | None = None,
 ) -> Artwork:
     artwork = get_artwork(session, artwork_id)
+    if origin_style_id is not None:
+        style, _ = templates.get_style(session, origin_style_id)
+        artwork.origin_style_id, artwork.origin_style_revision = style.id, style.revision
+    if origin_layout_id is not None:
+        layout, _ = templates.get_layout(session, origin_layout_id)
+        artwork.origin_layout_id, artwork.origin_layout_revision = layout.id, layout.revision
     if title is not None:
         artwork.title = title.strip()[:256]
     if favorite is not None:

@@ -11,6 +11,7 @@ from starlette.concurrency import run_in_threadpool
 
 from the_frame_v2.api.deps import Admin, Ctx, DbSession, Uploader
 from the_frame_v2.api.schemas import (
+    ApplyTemplateIn,
     ArtworkCreateIn,
     ArtworkOut,
     ArtworkPageOut,
@@ -104,7 +105,6 @@ def create_artwork(body: ArtworkCreateIn, _: Admin, ctx: Ctx, session: DbSession
         body.photo_ids,
         style_id=body.style_id,
         layout_id=body.layout_id,
-        placement=body.placement,
         title=body.title,
         composition=(body.composition.model_dump(exclude_none=True) if body.composition else None),
     )
@@ -149,8 +149,32 @@ def update_artwork(
         favorite=body.favorite,
         status=body.status,
         tag_ids=body.tag_ids,
+        origin_style_id=body.origin_style_id,
+        origin_layout_id=body.origin_layout_id,
     )
     _changed(ctx, session, artwork.id, rerender=False)
+    return _full(session, artwork)
+
+
+@router.post("/{artwork_id}/apply-template")
+def apply_template(
+    artwork_id: str,
+    body: ApplyTemplateIn,
+    _: Admin,
+    ctx: Ctx,
+    session: DbSession,
+    response: Response,
+) -> ArtworkOut:
+    """Re-dress and/or re-lay out an artwork from a saved template (docs/templates.md §5).
+
+    Copy on apply: the template is read once and the artwork records it as its origin. A
+    `pre_template_update` snapshot is taken first, so the change is undoable from the history.
+    """
+    artwork = artworks.apply_template(
+        session, artwork_id, style_id=body.style_id, layout_id=body.layout_id
+    )
+    _changed(ctx, session, artwork.id, rerender=True)
+    response.headers.update(_etag(artwork))
     return _full(session, artwork)
 
 

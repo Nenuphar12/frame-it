@@ -1,5 +1,57 @@
 # Progress log
 
+## 2026-09-23 — Phase 8 (templates)
+
+Spec: `docs/templates.md`. Templates rebuilt around Phase 7's recipes.
+
+**A layout is a recipe and its parameters.** `LayoutDocument` is now the `composition` block minus
+what belongs to one artwork (the caption's text, `detached`), so applying a layout, saving one and
+creating from one are all the same code path as the Simple editor's. The absolute-rect layout code
+is gone — `build_document`, `map_rect_to_area`, `LayoutSlot`, `LayoutCaption` and the `placement`
+field of `POST /artworks` with it — and `assets/presets/layouts.json` was rewritten as 13
+parametric built-ins. Migration `0004_parametric_layouts` deletes the old rows (all built-in: there
+was no layout CRUD before), clears the artworks' `origin_layout_id` so nothing shows a bogus
+*outdated* badge, and drops `artwork_defaults`, which became `{style_id, recipe_id, format}`.
+
+**`restyle` / `relayout`, mirrored.** The editor applies a template to its working document and the
+server applies the same one during a push update, so both live in `domain/templates.py` ↔
+`editor/core/templates.ts` with 16 whole-document conformance cases (`templates.json`). Two rules
+the fixtures pin: a style's `margins` are never applied (under a block the margins are derived, and
+re-dressing must not move a photo), and the style's band **is** `composition.border` — applying a
+style and a layout together applies the layout first so the style wins.
+
+**Management.** Full CRUD for both kinds (built-ins read-only), duplicate, "Save as style/layout"
+from an artwork, `.tfstyle.json` / `.tflayout.json` export/import, usage, `apply-template` (snapshot
++ origin) and **push update** with a server-side dry run. A layout skips an artwork holding another
+number of photos or one whose slots were placed by hand. Every touched artwork is snapshotted
+`pre_template_update` first — that snapshot is the undo the AC asks for.
+
+**UI.** A Templates page (tabs, cards whose previews are drawn by the solver itself, editors for
+both kinds, push-update dialog with per-artwork badges), *Save as style/layout* and a saved-layout
+picker in the Simple panel, saved layouts in the create dialog, and the new defaults in Settings.
+
+**Verified**: `make check` green — 863 backend tests, 362 conformance cases (both languages), mypy
+strict, ESLint, tsc, i18n. Driven in a real browser (headless Chromium over CDP against the
+production build on trusted localhost), each result read back from the **API**, not off the screen:
+
+- Templates page: 6 style cards and 13 layout cards, tab switch, a built-in's *Edit* disabled,
+  *Duplicate* creating "2 × 2 copy", editing that copy's gap to 220 px (stored `gutter 220/220`,
+  `revision` 2), and the push-update dialog showing the dry run ("0 artwork(s) will change").
+- Editor: the Simple panel offers only the saved layouts that fit the photo count (3 of 13 on a
+  3-photo artwork); applying "1 + 2" stored `recipe: three-hero-left` with the hero at
+  2108×1840 and recorded `origin_layout_id`; *Save as style…* created a style from the artwork.
+- Push update end to end: picking that style in the editor's Background dropdown recorded
+  `origin_style_id`, patching the style then pushing changed the artwork's mat and turned the
+  style's 24 px band into the block's border **without** moving a rect or changing the recipe, and
+  left a `pre_template_update` snapshot that restores.
+- Settings: style, layout and format dropdowns, the last two defaulting to "Follow the photos".
+
+**Not verified**: the batch-create AC at 40 photos (the dialog is Phase 7's, plus a saved-layout
+choice), template file *import* through the file picker (a `<input type=file>` cannot be driven over
+CDP without a real file dialog — the endpoint is covered by an API test), and the Templates page on
+a narrow window.
+
+
 ## 2026-09-16 — Phases 0–3
 
 **Phase 0 (spikes)**: S1 decoding matrix done (`research/decoding.md`); S2 protocol + heuristics done, real

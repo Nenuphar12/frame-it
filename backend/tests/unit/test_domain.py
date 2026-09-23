@@ -12,14 +12,18 @@ from the_frame_v2.domain.document import (
     parse_document,
     validate_references,
 )
-from the_frame_v2.domain.geometry import Rect, Size
+from the_frame_v2.domain.geometry import Size
 from the_frame_v2.domain.templates import (
     FrameStyleDocument,
     LayoutDocument,
     PhotoInput,
-    build_document,
-    map_rect_to_area,
+    build_composition_document,
+    layout_of_document,
+    relayout,
+    restyle,
+    style_of_document,
 )
+from the_frame_v2.services import recipes
 from the_frame_v2.services.templates import PRESETS_DIR
 
 
@@ -189,48 +193,121 @@ def test_migrate_rejects_unknown_schema() -> None:
         migrate({"schema": 2})
 
 
-def test_build_single_fit_in_mat_by_hand() -> None:
-    style = FrameStyleDocument.model_validate(
-        {
-            "margins": {"top": 200, "right": 200, "bottom": 260, "left": 200},
-            "slot_defaults": {"bands": [{"width": 12, "color": "#FFFFFF"}]},
-        }
-    )
-    layout = LayoutDocument.model_validate(
-        {"slots": [{"id": "s1", "rect": {"x": 0, "y": 0, "w": 3840, "h": 2160}}]}
-    )
-    built = build_document(style, layout, [PhotoInput("p1", Size(6000, 4000))])
-    s = built.slots[0]
-    # area 3440×1700 at (200, 200); scale min(3440/6000, 1700/4000) = 0.425 → 2550×1700, x = 200 + 445
-    assert (s.rect.x, s.rect.y, s.rect.w, s.rect.h) == (645, 200, 2550, 1700)
-    assert s.bands[0].width == 12
-    assert built.placement == "fit_in_mat"
-    small = build_document(style, layout, [PhotoInput("p1", Size(1000, 800))], "fill")
-    assert small.slots[0].quality_lock == "free"  # no_upscale cannot be honoured when filling
-    assert small.quality().worst_tier == "upscaled"
+STYLE = FrameStyleDocument.model_validate(
+    {
+        "mat": {"color": "#101010", "texture": None},
+        "margins": {"top": 200, "right": 200, "bottom": 260, "left": 200},
+        "slot_defaults": {
+            "bands": [{"width": 12, "color": "#FFFFFF"}],
+            "shadow": {"type": "drop", "blur": 20, "opacity": 0.3},
+        },
+        "caption_defaults": {"font": "inter", "weight": 400, "size": 60, "color": "#222222"},
+    }
+)
+LAYOUT = LayoutDocument.model_validate(
+    {
+        "recipe": "two-side-by-side",
+        "outer": {"x": 200, "y": 180},
+        "gutter": {"x": 100, "y": 100},
+        "format": "1:1",
+        "caption_place": "below",
+    }
+)
 
 
-def test_build_multi_slot_maps_into_margins_and_leaves_empty_slots() -> None:
-    style = FrameStyleDocument.model_validate(
-        {"margins": {"top": 216, "right": 384, "bottom": 216, "left": 384}}
+def built(photos: list[PhotoInput | None], layout: LayoutDocument = LAYOUT) -> ArtworkDocument:
+    recipe = recipes.find(layout.recipe)
+    assert recipe is not None
+    return build_composition_document(STYLE, recipe, layout.block(), photos)
+
+
+def test_build_from_a_layout_is_the_solver_dressed_by_the_style() -> None:
+    doc = built([PhotoInput("p1", Size(6000, 4000)), PhotoInput("p2", Size(3000, 4000))])
+    first, second = doc.slots
+    # two 1:1 footprints side by side, 100 px apart — the gap between the *printed* edges, so
+    # the photo rects sit gutter + 2 × border apart (§3.2)
+    assert first.rect.w == first.rect.h == second.rect.w == second.rect.h
+    assert second.rect.x - (first.rect.x + first.rect.w) == 100 + 2 * 12
+    assert first.rect.y == second.rect.y
+    assert doc.placement == "manual"  # a composition is always manual (§3.7)
+    assert doc.mat.color == "#101010"
+    assert [slot.shadow.type for slot in doc.slots] == ["drop", "drop"]  # type: ignore[union-attr]
+    assert doc.composition is not None and doc.composition.format == "1:1"
+    # the style's band became the block's border: the solver owns the bands from then on (§3.2)
+    assert doc.composition.border is not None and doc.composition.border.width == 12
+    assert [band.width for band in first.bands] == [12]
+    # margins are the insets of the footprint bbox, so they sit a border outside the photo rect
+    assert doc.margins.top == first.rect.y - 12 and doc.margins.left == first.rect.x - 12
+
+
+def test_build_leaves_an_empty_slot_a_placeholder() -> None:
+    doc = built([PhotoInput("p1", Size(6000, 4000)), None])
+    empty = doc.slots[1]
+    assert empty.photo_id is None and empty.quality_lock == "free"
+    assert (empty.source.crop.w, empty.source.crop.h) == (empty.rect.w, empty.rect.h)
+    assert doc.quality().is_incomplete
+
+
+def test_restyle_redresses_without_moving_a_photo() -> None:
+    doc = built([PhotoInput("p1", Size(6000, 4000)), PhotoInput("p2", Size(3000, 4000))])
+    rects = [(s.rect.x, s.rect.y, s.rect.w, s.rect.h) for s in doc.slots]
+    plain = FrameStyleDocument.model_validate(
+        {"mat": {"color": "#FFFFFF"}, "slot_defaults": {"bands": [], "shadow": None}}
     )
-    layout = LayoutDocument.model_validate(
-        {
-            "slots": [
-                {"id": "a", "rect": {"x": 0, "y": 0, "w": 1920, "h": 2160}},
-                {"id": "b", "rect": {"x": 1920, "y": 0, "w": 1920, "h": 2160}, "rotation": 4},
-            ]
-        }
+    recipe = recipes.find(LAYOUT.recipe)
+    assert recipe is not None
+    sizes = {"p1": Size(6000, 4000), "p2": Size(3000, 4000)}
+    redressed = restyle(doc, plain, recipe, sizes)
+    assert redressed.mat.color == "#FFFFFF"
+    assert [s.shadow for s in redressed.slots] == [None, None]
+    assert redressed.composition is not None and redressed.composition.border is None
+    # dropping the border grows the photo rects into the freed space but keeps the layout
+    assert [(s.rect.x, s.rect.y, s.rect.w, s.rect.h) for s in redressed.slots] != rects
+    assert redressed.slots[0].rect.w == redressed.slots[0].rect.h
+    assert redressed.margins.top == redressed.slots[0].rect.y  # no border left to inset
+
+
+def test_relayout_keeps_the_photos_and_the_caption_text() -> None:
+    doc = built([PhotoInput("p1", Size(6000, 4000)), PhotoInput("p2", Size(3000, 4000))])
+    assert doc.composition is not None
+    doc.composition.caption.text = "Kyoto"
+    stacked = LayoutDocument.model_validate(
+        {"recipe": "two-stacked", "outer": {"x": 300, "y": 120}, "gutter": {"x": 60, "y": 60}}
     )
-    built = build_document(style, layout, [PhotoInput("p1", Size(3000, 4000))])
-    assert built.placement == "manual"
-    first, second = built.slots
-    # area = 3072×1728 at (384, 216): each half is 1536 wide
-    assert (first.rect.x, first.rect.y, first.rect.w, first.rect.h) == (384, 216, 1536, 1728)
-    assert second.photo_id is None and second.rotation == 4
-    assert built.quality().is_incomplete
-    area = Rect(384, 216, 3072, 1728)
-    assert map_rect_to_area(layout.slots[1].rect.geometry(), area) == Rect(1920, 216, 1536, 1728)
+    recipe = recipes.find("two-stacked")
+    assert recipe is not None
+    moved = relayout(doc, stacked, recipe, {"p1": Size(6000, 4000), "p2": Size(3000, 4000)})
+    assert moved.composition is not None
+    assert moved.composition.recipe == "two-stacked"
+    assert moved.composition.caption.text == "Kyoto"  # the text is the artwork's, not the layout's
+    assert moved.composition.caption.place == "none"  # the side is the layout's
+    assert [s.photo_id for s in moved.slots] == ["p1", "p2"]
+    top, bottom = moved.slots
+    assert top.rect.x == bottom.rect.x and bottom.rect.y > top.rect.y
+
+
+def test_save_as_style_and_layout_read_the_document_back() -> None:
+    doc = built([PhotoInput("p1", Size(6000, 4000)), PhotoInput("p2", Size(3000, 4000))])
+    assert doc.composition is not None
+    doc.composition.border = doc.composition.border or None
+    style = style_of_document(doc)
+    assert style.mat.color == "#101010"
+    assert style.slot_defaults.shadow is not None and style.slot_defaults.shadow.type == "drop"
+    layout = layout_of_document(doc)
+    assert layout is not None
+    assert (layout.recipe, layout.format, layout.caption_place) == (
+        "two-side-by-side",
+        "1:1",
+        "below",
+    )
+    assert layout.outer.x == 200 and layout.gutter.x == 100
+
+
+def test_save_as_layout_needs_an_attached_composition() -> None:
+    doc = built([PhotoInput("p1", Size(6000, 4000)), PhotoInput("p2", Size(3000, 4000))])
+    assert doc.composition is not None
+    doc.composition.detached = True
+    assert layout_of_document(doc) is None
 
 
 @pytest.mark.parametrize("name", ["frame_styles.json", "layouts.json"])

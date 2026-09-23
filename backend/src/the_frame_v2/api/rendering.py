@@ -1,4 +1,4 @@
-"""Templates and composition recipes (read-only; editing UI in Phase 8), assets, region renders."""
+"""Editor assets (fonts, textures) and region renders. Templates live in `api/templates.py`."""
 
 from __future__ import annotations
 
@@ -8,15 +8,10 @@ from fastapi import APIRouter, Path
 from fastapi.responses import FileResponse, Response
 from starlette.concurrency import run_in_threadpool
 
-from the_frame_v2.api.deps import Admin, Ctx, DbSession
+from the_frame_v2.api.deps import Admin, Ctx
 from the_frame_v2.api.schemas import (
-    ArtworkDefaultsIn,
-    ArtworkDefaultsOut,
     FontMetricsOut,
     FontOut,
-    FrameStyleOut,
-    LayoutOut,
-    RecipeOut,
     RegionRenderIn,
     TextureOut,
 )
@@ -24,41 +19,10 @@ from the_frame_v2.db.session import Database
 from the_frame_v2.domain.geometry import Rect
 from the_frame_v2.errors import not_found
 from the_frame_v2.imaging.assets import catalog
-from the_frame_v2.services import recipes, render, templates
+from the_frame_v2.services import render
 
-router = APIRouter(tags=["templates"])
+router = APIRouter(tags=["assets"])
 _ASSET_CACHE = {"Cache-Control": "private, max-age=86400"}
-
-
-@router.get("/frame-styles")
-def list_frame_styles(_: Admin, session: DbSession) -> list[FrameStyleOut]:
-    return [FrameStyleOut.model_validate(s) for s in templates.list_styles(session)]
-
-
-@router.get("/layouts")
-def list_layouts(_: Admin, session: DbSession) -> list[LayoutOut]:
-    return [LayoutOut.model_validate(layout) for layout in templates.list_layouts(session)]
-
-
-@router.get("/recipes")
-def list_recipes(_: Admin) -> list[RecipeOut]:
-    """Bundled composition recipes (docs/simple-editor.md §6.4). Static: not user-editable."""
-    return [RecipeOut.model_validate(r, from_attributes=True) for r in recipes.all_recipes()]
-
-
-@router.get("/artwork-defaults")
-def artwork_defaults(_: Admin, session: DbSession) -> ArtworkDefaultsOut:
-    """Style and layout used when creating artworks without an explicit choice."""
-    style_id, layout_id = templates.defaults(session)
-    return ArtworkDefaultsOut(style_id=style_id, layout_id=layout_id)
-
-
-@router.put("/artwork-defaults")
-def set_artwork_defaults(
-    body: ArtworkDefaultsIn, _: Admin, session: DbSession
-) -> ArtworkDefaultsOut:
-    style_id, layout_id = templates.set_defaults(session, body.style_id, body.layout_id)
-    return ArtworkDefaultsOut(style_id=style_id, layout_id=layout_id)
 
 
 @router.get("/fonts")

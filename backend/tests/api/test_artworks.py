@@ -50,12 +50,15 @@ def test_builtin_templates_and_assets(local: TestClient) -> None:
     }
     assert {layout["name"] for layout in layouts} >= {
         "Single",
+        "Full bleed",
         "2 × 2",
-        "3 × 3",
-        "Polaroid pile",
+        "3 × 2",
         "1 + 2",
     }
     assert all(s["builtin"] for s in styles)
+    # a layout is a recipe and its parameters since Phase 8 (docs/templates.md §2)
+    single = next(layout for layout in layouts if layout["name"] == "Single")
+    assert single["slot_count"] == 1 and single["document"]["recipe"] == "single"
     fonts = local.get(f"{API}/fonts").json()
     inter = next(f for f in fonts if f["id"] == "inter")
     font = local.get(f"{API}/fonts/inter/{inter['weights'][0]}.ttf")
@@ -95,18 +98,24 @@ def test_create_collage_and_errors(local: TestClient) -> None:
     )
     assert collage["document"]["placement"] == "manual"
     assert [s["photo_id"] for s in collage["document"]["slots"]] == ids
+    # a layout carries a recipe: the artwork is parametric and remembers where it came from
+    assert collage["document"]["composition"]["recipe"] == "three-hero-left"
+    assert collage["origin_layout_id"] == "builtin-layout-one-plus-two"
+    assert collage["origin_layout_revision"] == 1
     float_slot = collage["document"]["slots"][0]
     assert float_slot["bands"] == [] and float_slot["shadow"]["type"] == "drop"
     auto = create(local, ids[:2])  # no layout and no composition → the first 2-photo recipe
     assert auto["origin_layout_id"] is None
     assert auto["document"]["composition"]["recipe"] == "two-side-by-side"
+    # fewer photos than cells is allowed: the rest are placeholders to fill in the editor
     partial = create(local, ids[:1], layout_id="builtin-layout-grid-2x2")
     assert partial["is_incomplete"] and partial["photo_count"] == 1
+    assert len(partial["document"]["slots"]) == 4
 
-    too_many = local.post(
+    wrong_count = local.post(
         f"{API}/artworks", json={"photo_ids": ids, "layout_id": "builtin-layout-single"}
     )
-    assert too_many.status_code == 422 and too_many.json()["code"] == "too_many_photos"
+    assert wrong_count.status_code == 422 and wrong_count.json()["code"] == "layout_slot_count"
     unknown = local.post(f"{API}/artworks", json={"photo_ids": ["nope"]})
     assert unknown.json()["code"] == "unknown_photo"
     bad_style = local.post(f"{API}/artworks", json={"photo_ids": ids[:1], "style_id": "nope"})
@@ -323,7 +332,9 @@ def test_recipe_catalogue(local: TestClient) -> None:
 def test_document_accepts_a_composition_block(local: TestClient) -> None:
     artwork = create(local, [photo(local, 2000, 1500)], layout_id="builtin-layout-single")
     doc = artwork["document"]
-    assert doc["composition"] is None  # built from a layout: legacy shape, still valid
+    # the layout *is* a composition (Phase 8): the artwork starts from its parameters
+    assert doc["composition"]["recipe"] == "single"
+    assert doc["composition"]["outer"] == {"x": 300, "y": 280}
 
     doc["composition"] = {
         "recipe": "single",

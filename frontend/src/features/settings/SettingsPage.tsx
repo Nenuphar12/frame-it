@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import {
   useArtworkDefaults,
   useFrameStyles,
-  useLayouts,
+  useRecipes,
   useSetArtworkDefaults,
   useSystemInfo,
 } from "@/api/queries";
@@ -11,13 +11,16 @@ import { useTheme, type ThemePreference } from "@/app/theme";
 import { SUPPORTED_LANGUAGES, setLanguage } from "@/i18n";
 import { PageHeader } from "@/shared/ui/Misc";
 
+/** The formats offered as a default; the editor has the full chip row (docs/simple-editor.md §6.2). */
+const DEFAULT_FORMATS = ["fill", "original", "1:1", "5:4", "4:3", "3:2", "16:9"] as const;
+
 export function SettingsPage() {
   const { t, i18n } = useTranslation();
   const { preference, setPreference } = useTheme();
   const info = useSystemInfo();
   const defaults = useArtworkDefaults();
   const styles = useFrameStyles();
-  const layouts = useLayouts();
+  const recipes = useRecipes();
   const setDefaults = useSetArtworkDefaults();
   const current = defaults.data;
 
@@ -65,8 +68,7 @@ export function SettingsPage() {
               value={current?.style_id ?? ""}
               disabled={!current}
               onChange={(event) =>
-                current &&
-                setDefaults.mutate({ ...current, style_id: event.target.value })
+                current && setDefaults.mutate({ ...current, style_id: event.target.value })
               }
               className="rounded-md border border-border bg-bg px-2 py-1"
             >
@@ -78,26 +80,42 @@ export function SettingsPage() {
             </select>
           </label>
           <label className="flex items-center justify-between gap-4 text-sm">
-            {t("artworks.create.layout")}
+            {t("settings.defaultRecipe")}
             <select
-              value={current?.layout_id ?? ""}
+              value={current?.recipe_id ?? ""}
               disabled={!current}
               onChange={(event) =>
-                current &&
-                setDefaults.mutate({ ...current, layout_id: event.target.value })
+                current && setDefaults.mutate({ ...current, recipe_id: event.target.value || null })
               }
               className="rounded-md border border-border bg-bg px-2 py-1"
             >
-              {(layouts.data ?? []).map((layout) => (
-                <option key={layout.id} value={layout.id}>
-                  {t("artworks.create.layoutOption", {
-                    name: layout.name,
-                    count: layout.slot_count,
-                  })}
+              <option value="">{t("settings.automatic")}</option>
+              {(recipes.data ?? []).map((recipe) => (
+                <option key={recipe.id} value={recipe.id}>
+                  {t(recipe.name_key, { defaultValue: recipe.id })} ({recipe.count})
                 </option>
               ))}
             </select>
           </label>
+          <label className="flex items-center justify-between gap-4 text-sm">
+            {t("settings.defaultFormat")}
+            <select
+              value={current?.format ?? ""}
+              disabled={!current}
+              onChange={(event) =>
+                current && setDefaults.mutate({ ...current, format: event.target.value || null })
+              }
+              className="rounded-md border border-border bg-bg px-2 py-1"
+            >
+              <option value="">{t("settings.automatic")}</option>
+              {DEFAULT_FORMATS.map((value) => (
+                <option key={value} value={value}>
+                  {t(`editor.simple.formats.${value}`, { defaultValue: value })}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="text-xs text-muted">{t("settings.defaultRecipeHint")}</p>
         </section>
         <section className="space-y-2 rounded-lg border border-border bg-panel p-4 text-sm">
           <h2 className="font-semibold">{t("settings.about")}</h2>

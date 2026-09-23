@@ -26,6 +26,7 @@ from the_frame_v2.api import (
     system,
     uploads,
 )
+from the_frame_v2.api import templates as templates_router
 from the_frame_v2.auth.middleware import GuardMiddleware
 from the_frame_v2.auth.ratelimit import RateLimiter
 from the_frame_v2.config import Settings
@@ -150,6 +151,7 @@ def create_app(settings: Settings, *, start_workers: bool = True) -> FastAPI:
         photos,
         library,
         artworks,
+        templates_router,
         rendering,
         colors,
         events,

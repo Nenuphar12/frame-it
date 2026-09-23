@@ -6,7 +6,13 @@
     "done": "Done",
     "expand": "Expand",
     "collapse": "Collapse",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "on": "On",
+    "off": "Off",
+    "select": "Apply a saved layout…"
   },
   "nav": {
     "label": "Main navigation",
@@ -222,7 +228,11 @@
     "publicUrl": "Address for phones",
     "attribution": "Place names: GeoNames (CC BY 4.0).",
     "artworkDefaults": "New artworks",
-    "artworkDefaultsHint": "Frame style and layout used when creating artworks without choosing one."
+    "artworkDefaultsHint": "Frame style, layout and format used when creating artworks without choosing one.",
+    "defaultRecipe": "Layout",
+    "defaultFormat": "Format",
+    "automatic": "Follow the photos",
+    "defaultRecipeHint": "“Follow the photos” picks the layout for the number of photos selected, and shows a single photo whole."
   },
   "comingSoon": {
     "title": "Coming soon",
@@ -359,7 +369,8 @@
         "together": "One artwork with the {{count}} photos",
         "separate": "One artwork per photo"
       },
-      "noRecipe": "No built-in layout holds {{count}} photos, so they go one per artwork."
+      "noRecipe": "No built-in layout holds {{count}} photos, so they go one per artwork.",
+      "noLayout": "Pick a layout below"
     }
   },
   "editor": {
@@ -685,5 +696,54 @@
     "four-one-over-three": "One over three",
     "five-two-over-three": "Two over three",
     "six-grid-3x2": "Grid of six"
+  },
+  "templates": {
+    "subtitle": "Reusable looks and layouts. Artworks keep a copy: changing a template never changes them until you update them.",
+    "tabs": {
+      "frame_style": "Frame styles",
+      "layout": "Layouts"
+    },
+    "builtin": "Built-in",
+    "builtinHint": "Built-in templates cannot be edited — duplicate one first.",
+    "new": "New template",
+    "newStyleName": "My style",
+    "newLayoutName": "My layout",
+    "name": "Name",
+    "editStyle": "Frame style",
+    "editLayout": "Layout",
+    "duplicate": "Duplicate",
+    "export": "Export",
+    "import": "Import",
+    "confirmDelete": "Confirm",
+    "matColor": "Background",
+    "border": "Border",
+    "borderWidth": "Width",
+    "borderColor": "Colour",
+    "shadow": "Shadow",
+    "shadowInner": "Inner",
+    "shadowDrop": "Drop",
+    "shadowOpacity": "Opacity",
+    "captionSize": "Caption size",
+    "captionColor": "Caption colour",
+    "empty": "No template yet",
+    "emptyHint": "Save a style or a layout from an artwork, or import a template file.",
+    "pushUpdate": "Update artworks",
+    "pushUpdateHint": "Apply the current “{{name}}” to every artwork made from it. Each one is snapshotted first, so it can be restored from its history.",
+    "pushSummary": "{{applied}} artwork(s) will change, {{skipped}} left alone.",
+    "pushDone": "{{count}} artwork(s) updated.",
+    "applyToAll": "Update {{count}} artwork(s)",
+    "noUsage": "No artwork was made from this template yet.",
+    "outdated": "Outdated",
+    "upToDate": "Up to date",
+    "skipped": {
+      "slot_count": "Another number of photos",
+      "detached": "Placed by hand"
+    },
+    "saveAsStyle": "Save as style…",
+    "saveAsLayout": "Save as layout…",
+    "saveAsStyleTitle": "Save this look as a frame style",
+    "saveAsLayoutTitle": "Save this layout",
+    "saved": "Saved",
+    "savedLayouts": "Saved layouts"
   }
 }

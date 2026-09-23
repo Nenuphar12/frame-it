@@ -1,160 +1,151 @@
 {
   "$defs": {
-    "LayoutCaption": {
+    "CompositionAxis": {
       "additionalProperties": false,
+      "description": "A per-axis length in canvas px (`x` = horizontal, `y` = vertical).",
       "properties": {
-        "anchor": {
-          "default": "middle",
-          "enum": [
-            "start",
-            "middle",
-            "end"
-          ],
-          "title": "Anchor",
-          "type": "string"
-        },
-        "id": {
-          "pattern": "^[A-Za-z0-9_-]{1,64}$",
-          "title": "Id",
-          "type": "string"
-        },
-        "placeholder": {
-          "default": "",
-          "maxLength": 500,
-          "title": "Placeholder",
-          "type": "string"
-        },
-        "rotation": {
-          "default": 0,
-          "maximum": 180,
-          "minimum": -180,
-          "title": "Rotation",
-          "type": "number"
-        },
         "x": {
+          "maximum": 800,
+          "minimum": 0,
           "title": "X",
           "type": "integer"
         },
         "y": {
+          "maximum": 450,
+          "minimum": 0,
           "title": "Y",
           "type": "integer"
         }
       },
       "required": [
-        "id",
         "x",
         "y"
       ],
-      "title": "LayoutCaption",
+      "title": "CompositionAxis",
       "type": "object"
     },
-    "LayoutSlot": {
+    "CompositionBorder": {
       "additionalProperties": false,
       "properties": {
-        "fill_mode": {
-          "default": "fill",
-          "enum": [
-            "fill",
-            "fit"
-          ],
-          "title": "Fill Mode",
+        "color": {
+          "default": "#FFFFFF",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Color",
           "type": "string"
         },
-        "id": {
-          "pattern": "^[A-Za-z0-9_-]{1,64}$",
-          "title": "Id",
-          "type": "string"
-        },
-        "quality_lock": {
-          "default": "no_upscale",
-          "enum": [
-            "native",
-            "no_upscale",
-            "free"
-          ],
-          "title": "Quality Lock",
-          "type": "string"
-        },
-        "rect": {
-          "$ref": "#/$defs/RectSpec"
-        },
-        "rotation": {
-          "default": 0,
-          "maximum": 180,
-          "minimum": -180,
-          "title": "Rotation",
-          "type": "number"
+        "width": {
+          "maximum": 200,
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
         }
       },
       "required": [
-        "id",
-        "rect"
+        "width"
       ],
-      "title": "LayoutSlot",
+      "title": "CompositionBorder",
       "type": "object"
     },
-    "RectSpec": {
+    "CompositionGutter": {
       "additionalProperties": false,
       "properties": {
-        "h": {
-          "maximum": 20000,
-          "minimum": 1,
-          "title": "H",
-          "type": "integer"
-        },
-        "w": {
-          "maximum": 20000,
-          "minimum": 1,
-          "title": "W",
-          "type": "integer"
-        },
         "x": {
-          "maximum": 20000,
-          "minimum": -20000,
+          "maximum": 400,
+          "minimum": 0,
           "title": "X",
           "type": "integer"
         },
         "y": {
-          "maximum": 20000,
-          "minimum": -20000,
+          "maximum": 400,
+          "minimum": 0,
           "title": "Y",
           "type": "integer"
         }
       },
       "required": [
         "x",
-        "y",
-        "w",
-        "h"
+        "y"
       ],
-      "title": "RectSpec",
+      "title": "CompositionGutter",
       "type": "object"
     }
   },
   "$id": "https://the-frame-v2/schemas/layout.v1.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
+  "description": "A saved layout: the `composition` block minus what belongs to one artwork.\n\nThe caption's *text* and `detached` are artwork state, so a layout carries only the side the\ncaption sits on. Everything else is exactly the block the Simple editor edits.",
   "properties": {
-    "captions": {
+    "balance": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Balance"
+    },
+    "border": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CompositionBorder"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "caption_place": {
+      "default": "none",
+      "enum": [
+        "none",
+        "above",
+        "below"
+      ],
+      "title": "Caption Place",
+      "type": "string"
+    },
+    "cell_formats": {
       "items": {
-        "$ref": "#/$defs/LayoutCaption"
+        "anyOf": [
+          {
+            "pattern": "^(original|[1-9][0-9]{0,3}:[1-9][0-9]{0,3})$",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
       },
       "maxItems": 32,
-      "title": "Captions",
+      "title": "Cell Formats",
       "type": "array"
     },
-    "slots": {
-      "items": {
-        "$ref": "#/$defs/LayoutSlot"
-      },
-      "maxItems": 32,
-      "minItems": 1,
-      "title": "Slots",
-      "type": "array"
+    "format": {
+      "default": "fill",
+      "pattern": "^(fill|original|[1-9][0-9]{0,3}:[1-9][0-9]{0,3})$",
+      "title": "Format",
+      "type": "string"
+    },
+    "gutter": {
+      "$ref": "#/$defs/CompositionGutter"
+    },
+    "outer": {
+      "$ref": "#/$defs/CompositionAxis"
+    },
+    "recipe": {
+      "pattern": "^[a-z0-9-]{1,64}$",
+      "title": "Recipe",
+      "type": "string"
     }
   },
   "required": [
-    "slots"
+    "recipe"
   ],
   "title": "Layout document v1",
   "type": "object"
