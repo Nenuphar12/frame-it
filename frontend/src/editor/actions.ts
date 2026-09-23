@@ -205,6 +205,19 @@ export const setBands = (bands: DocSlot["bands"]) =>
 export const setShadow = (shadow: DocSlot["shadow"], group: string | null = "shadow") =>
   onSlots((_doc, slot) => ops.setShadow(slot, shadow), group);
 
+/**
+ * The Simple editor's shadow: every photo, not the selection.
+ *
+ * There the shadow is part of the artwork's *look* — the same thing a frame style carries — and
+ * nothing in that panel is per-cell except the format and the framing. Selecting a cell to give it
+ * its own shadow stays an Advanced move (`setShadow`). The block never writes `shadow` (§3.7), so
+ * this is one of the edits that neither detaches nor re-solves.
+ */
+export const setShadowEverywhere = (shadow: DocSlot["shadow"], group: string | null = "shadow") =>
+  edit((doc) => {
+    for (const slot of doc.slots) ops.setShadow(slot, shadow);
+  }, group);
+
 export const applyAlternative = (alternative: Alternative) =>
   onSlot((doc, slot) => {
     ops.applyAlternative(doc, slot, alternative);

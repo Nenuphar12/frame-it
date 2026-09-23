@@ -46,6 +46,34 @@ production build on trusted localhost), each result read back from the **API**, 
   left a `pre_template_update` snapshot that restores.
 - Settings: style, layout and format dropdowns, the last two defaulting to "Follow the photos".
 
+**Follow-up the same day**: the template editors were too small to judge a preview in, so both moved
+into a full-window dialog (`Dialog` gained `size="full"`) with the controls in a column and the
+preview filling the rest — measured over CDP at 1552×952 for the dialog and 1110×790 for the
+preview pane in a 1600×1000 window (it was ~256×144), no overflow, Save always reachable, and the
+two columns stacking below `lg`.
+
+**Second follow-up (same day, remarks.md #1 and #2)**: the template editors put their settings on
+the **right**, like the artwork editor (measured over CDP: preview at x = 45 w = 1142, settings at
+x = 1203 w = 352 in a 1552×831 dialog, no horizontal overflow), and the **shadow** stopped being a
+setting you could see but not judge:
+
+- The style card drew its shadow as a hard rect peeking out from behind the photo — a 6 px offset
+  under a 12 px band is invisible, and recessed and raised looked identical. It is now the
+  renderer's own algorithm in SVG filters (`σ = blur / 2`, cast by photo + band, the recessed one
+  the blurred complement of the layer clipped back inside it). Screenshots of the same style at
+  *None* / *Recessed* / *Raised*: 2.3 %, 2.6 % and 4.8 % of the preview's pixels differ by more
+  than 2/255, up to 54/255 — the shadow reads at a glance now, and the two kinds read apart.
+- The frame-style editor offered only the type and the opacity; it now offers the same six fields
+  as the editor (`ShadowFields`, shared by the Simple panel, the Advanced Style panel and this
+  dialog). Verified end to end: setting *Raised*, blur 96, opacity 70 % and offset 24 saved
+  `{"type": "drop", "offset_x": 24, "blur": 96, "opacity": 0.7}` and took the style to revision 2.
+- The Simple panel had no shadow control at all — the setting looked dropped rather than
+  Advanced-only. It has a **Shadow** section now (sections read `Layout, Format, Margins, Photos,
+  Background, Border, Shadow, Caption`), and it dresses **every** photo: clicking *Raised* and
+  pulling blur to 120 on a 3-photo artwork wrote `drop / 120` into all three slots, `detached`
+  stayed `false`, and the recipe and all three rects were untouched (version 77 → 78) — the block
+  never writes `shadow` (§3.7), so it neither detaches nor re-solves.
+
 **Not verified**: the batch-create AC at 40 photos (the dialog is Phase 7's, plus a saved-layout
 choice), template file *import* through the file picker (a `<input type=file>` cannot be driven over
 CDP without a real file dialog — the endpoint is covered by an API test), and the Templates page on

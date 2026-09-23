@@ -127,6 +127,22 @@ the model rejects `invalid_template`.
   `simple-editor.md` §6.3, so a card cannot drift), a style is a mat with one framed photo on it.
   Per card: edit, duplicate, export, *Update artworks* and (for user templates) delete. Built-ins are
   read-only — duplicate one to get an editable copy.
+- **Editing is a full-window dialog** (`Dialog size="full"`): the preview on the left, the settings
+  in a 22 rem column on the **right** — the artwork editor's arrangement, so the two editors read
+  the same way (remarks.md #1) — and the preview takes everything else (~1110×790 in a 1600×1000
+  window, against ~256×144 before). The preview *is* the editor here: at dialog size you cannot tell
+  a 12 px border from an 18 px one or see where a caption band lands. The markup keeps the controls
+  first and flips the row (`lg:flex-row-reverse`), so the tab order still reaches them first and
+  they stay on top when the dialog is too narrow for two columns.
+- **A style says everything about a shadow that an artwork can** — type, blur, opacity, offsets and
+  colour, through the same `ShadowFields` the editor's panels use. It offered only type and opacity
+  before, which read as a limit of templates rather than of the dialog (remarks.md #2). The card
+  draws the shadow with the renderer's own algorithm (`TemplatePreview`, §8.1 of the rendering
+  spec): a real Gaussian at `σ = blur / 2`, cast by the *layer* (photo + band), recessed as the
+  blurred complement of the layer clipped back inside it. The old hard rect peeking out from behind
+  the photo showed nothing — a 6 px offset under a 12 px band is invisible, and recessed and raised
+  looked identical. Its filter and gradient ids come from `useId`: they are document-wide, and the
+  page draws one card per style.
 - **Push update dialog**: the artworks the template made, each with *Outdated* / *Up to date* or the
   reason it will be skipped, the dry run's counts, and one button that applies it.
 - **Editor**: the Simple panel's Layout section lists the saved layouts that fit the photo count and

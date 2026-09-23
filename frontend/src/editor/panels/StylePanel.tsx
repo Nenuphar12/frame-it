@@ -4,20 +4,12 @@ import { useTranslation } from "react-i18next";
 
 import { useTextures } from "@/api/queries";
 import * as actions from "@/editor/actions";
-import type { DocSlot, EditorDocument, Shadow } from "@/editor/core/document.ts";
+import type { DocSlot, EditorDocument } from "@/editor/core/document.ts";
 import { ColorField } from "./ColorField";
-import { Field, NumberField, PanelSection, Segmented, Slider } from "./Controls";
+import { Field, NumberField, PanelSection, Slider } from "./Controls";
+import { ShadowFields } from "./ShadowFields";
 
 const MAX_BANDS = 3;
-
-const DEFAULT_SHADOW: Shadow = {
-  type: "inner",
-  offset_x: 0,
-  offset_y: 6,
-  blur: 28,
-  color: "#000000",
-  opacity: 0.45,
-};
 
 export function StylePanel({ doc, slot }: { doc: EditorDocument; slot: DocSlot | null }) {
   const { t } = useTranslation();
@@ -77,9 +69,7 @@ export function StylePanel({ doc, slot }: { doc: EditorDocument; slot: DocSlot |
               <button
                 type="button"
                 className="inline-flex items-center gap-1 text-[11px] text-muted hover:text-text"
-                onClick={() =>
-                  actions.setBands([...slot.bands, { width: 12, color: "#FFFFFF" }])
-                }
+                onClick={() => actions.setBands([...slot.bands, { width: 12, color: "#FFFFFF" }])}
               >
                 <Plus size={12} /> {t("editor.bands.add")}
               </button>
@@ -123,77 +113,11 @@ export function StylePanel({ doc, slot }: { doc: EditorDocument; slot: DocSlot |
 
       {slot && (
         <PanelSection title={t("editor.sections.shadow")}>
-          <Segmented
-            label={t("editor.shadow.label")}
-            value={shadow?.type ?? "none"}
-            onChange={(value) =>
-              actions.setShadow(
-                value === "none"
-                  ? null
-                  : { ...(shadow ?? DEFAULT_SHADOW), type: value as Shadow["type"] },
-                null,
-              )
-            }
-            options={[
-              { value: "none", label: t("editor.shadow.none") },
-              { value: "inner", label: t("editor.shadow.inner") },
-              { value: "drop", label: t("editor.shadow.drop") },
-            ]}
+          <ShadowFields
+            shadow={shadow}
+            photoId={photoId}
+            onChange={(next, group) => actions.setShadow(next, group)}
           />
-          {shadow && (
-            <>
-              <Field label={t("editor.shadow.blur")}>
-                <Slider
-                  value={shadow.blur}
-                  min={0}
-                  max={200}
-                  onChange={(blur) => actions.setShadow({ ...shadow, blur })}
-                />
-                <NumberField
-                  value={shadow.blur}
-                  min={0}
-                  max={200}
-                  onChange={(blur) => actions.setShadow({ ...shadow, blur })}
-                />
-              </Field>
-              <Field label={t("editor.shadow.opacity")}>
-                <Slider
-                  value={shadow.opacity}
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  onChange={(opacity) => actions.setShadow({ ...shadow, opacity })}
-                />
-                <span className="w-8 text-right text-[11px] text-muted tabular-nums">
-                  {Math.round(shadow.opacity * 100)}
-                </span>
-              </Field>
-              <Field label={t("editor.shadow.offset")}>
-                <NumberField
-                  value={shadow.offset_x}
-                  min={-500}
-                  max={500}
-                  onChange={(offset_x) => actions.setShadow({ ...shadow, offset_x })}
-                  suffix="x"
-                />
-                <NumberField
-                  value={shadow.offset_y}
-                  min={-500}
-                  max={500}
-                  onChange={(offset_y) => actions.setShadow({ ...shadow, offset_y })}
-                  suffix="y"
-                />
-              </Field>
-              <Field label={t("editor.shadow.color")}>
-                <ColorField
-                  color={shadow.color}
-                  label={t("editor.shadow.color")}
-                  photoId={photoId}
-                  onChange={(color) => actions.setShadow({ ...shadow, color })}
-                />
-              </Field>
-            </>
-          )}
         </PanelSection>
       )}
     </>

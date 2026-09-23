@@ -83,7 +83,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `frontend/src/editor/core/` | PURE TS mirror of `domain/` (`geometry`, `quality`, `placement`, `constraints`, `alternatives`, `arrange`, `composition`, `templates`) + `snapping.ts` and `bounds.ts` (client-only) and `document.ts` (the document with every optional field filled in); relative imports with `.ts` extension (run by Node in `scripts/conformance.ts`) |
 | `frontend/src/editor/` | `EditorPage.tsx` (layout, shortcuts, review queue), `store.ts` (working document, undo/redo on Immer patches, autosave + conflicts), `operations.ts` (pure document mutations: how a change propagates), `actions.ts` (what the UI calls), `TvPreview.tsx` |
 | `…/editor/canvas/` | `EditorStage.tsx` (Konva stage, one pointer pipeline for every gesture, overlays), `SlotNode.tsx` (bands, photo, shadows), `CaptionNode.tsx`, `SelectionOverlay.tsx` (outlines + transform handles), `hit.ts` (rotation-aware hit tests, handle maths), `texture.ts`, `fonts.ts`, `useOrientedImage.ts` |
-| `…/editor/panels/` | `SimplePanel` (the parametric editor, §6.2) + `RecipePicker` (schemas drawn by the solver), `SlotsPanel` (z-order, add/remove, photos), `PhotoPicker`, `ArrangePanel` (align/distribute), `CaptionsPanel`, `FramingPanel`, `StylePanel`, `ColorField` (picker + swatches + palette + presets), `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`, `Controls` |
+| `…/editor/panels/` | `SimplePanel` (the parametric editor, §6.2) + `RecipePicker` (schemas drawn by the solver), `SlotsPanel` (z-order, add/remove, photos), `PhotoPicker`, `ArrangePanel` (align/distribute), `CaptionsPanel`, `FramingPanel`, `StylePanel`, `ColorField` (picker + swatches + palette + presets), `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`, `ShadowFields` (shared with the template editor), `Controls` |
 | `frontend/src/features/` | `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, viewer, create dialog), `templates/` (page, editors, push update, `.tf*.json` files), `devices/`, `auth/`, `mobile/`, `settings/`, `tags/`, `localsend/` (the editor lives in `src/editor/`, not here) |
 | `frontend/src/shared/` | UI primitives (`ui/`), `format.ts`, `cn.ts`, `dnd.ts` (the MIME types our own drags carry) |
 | `frontend/src/i18n/` | i18next setup; strings in `locales/en/common.json` |
@@ -304,6 +304,13 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
   takes `no_upscale` back, or an emptied slot would silently allow upscaling afterwards.
 - "Same size" fits each slot *inside* the reference box: the solver's `resize_slot` has **cover** semantics
   (§7.3), so asking for the reference size directly makes the other slots bigger than it.
+- A **shadow** is edited in three places (Simple panel, Advanced Style panel, frame-style editor)
+  through one `ShadowFields`, and in Simple it dresses **every** slot (`setShadowEverywhere`): it
+  is part of the look there, and the block never writes `shadow` (§3.7), so it neither detaches nor
+  re-solves. Drawing one in a preview takes a real filter — an offset rect behind the photo is
+  invisible under the band, and inner/drop then look identical (`TemplatePreview` mirrors §8.1).
+  SVG `filter`/gradient ids are document-wide: prefix them with `useId`, or the second card on the
+  Templates page wears the first one's shadow.
 - Dev over the Vite proxy is **not** trusted as localhost (`xfwd` adds `X-Forwarded-For`, invariant 5): the
   first load asks for the setup code printed in the server log. Point Vite at another backend with
   `THE_FRAME_V2_BACKEND=http://127.0.0.1:<port>`.

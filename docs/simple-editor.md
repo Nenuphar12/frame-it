@@ -318,6 +318,7 @@ Photos      [1][2][3]                      drag to swap, click to select (or cli
               Downscaled 63%  [Native 100%]   drag on the canvas to pan
 Background  Style [Gallery recessed ▾] · [swatch][swatch][swatch]  #F2EFE8
 Border      ──●──────  24 px  [■]
+Shadow      ( ) none  (●) recessed  ( ) raised   blur ──●── · opacity ──●── · offset · colour
 Caption     [ Kyoto — April 2026        ]  ( ) none  (●) below  ( ) above
             Size  ────●────  48 px
 ```
@@ -330,6 +331,12 @@ Caption     [ Kyoto — April 2026        ]  ( ) none  (●) below  ( ) above
 - **Style** re-dresses the artwork — mat, shadow, border and caption typography — without touching the
   layout: the style's own `margins` are ignored, because under a block the margins are derived (§3.7). The
   dropdown shows the style the mat currently *is*, or `Custom` once the colour has been edited on its own.
+- **Shadow** is here too, and it dresses *every* photo (`setShadowEverywhere`). A style carries a
+  shadow and the Style dropdown applies it, so leaving the control in the Advanced panel alone made
+  Simple look as though it had dropped the setting (remarks.md #2). In this panel the shadow is part
+  of the look, not of one cell — giving one cell a shadow of its own stays an Advanced move. It is
+  the same `ShadowFields` the Advanced panel and the frame-style editor use, and it is one of the
+  edits that neither detaches nor re-solves: the block never writes `shadow` (§3.7).
 - **Caption size** is a slider, not a hidden Advanced field. It is not a free-form edit: the band the solver
   reserves is a function of the size (§3.3), so the block re-solves around it and the typography round-trips
   (`apply` reads it back off the document, §3.7).

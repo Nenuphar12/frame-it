@@ -29,6 +29,7 @@ import { ColorField } from "./ColorField";
 import { Field, IconButton, NumberField, PanelSection, Slider } from "./Controls";
 import { SlotQualityBadge } from "./QualityBadge";
 import { RecipePicker, RecipeSchema } from "./RecipePicker";
+import { ShadowFields } from "./ShadowFields";
 
 /** The ratio chips of §6.2, in the order they are shown. `fill` and `original` are not ratios. */
 const RATIOS = ["1:1", "5:4", "4:3", "3:2", "16:9"] as const;
@@ -437,6 +438,19 @@ function AttachedPanel({
             />
           </Field>
         )}
+      </PanelSection>
+
+      {/*
+        A style carries a shadow and the mat dropdown applies it, so leaving the control in the
+        Advanced panel alone made it look as though Simple had dropped the setting (remarks.md #2).
+        It dresses every photo: in this panel the shadow is part of the look, not of one cell.
+      */}
+      <PanelSection title={t("editor.sections.shadow")}>
+        <ShadowFields
+          shadow={doc.slots[0]?.shadow ?? null}
+          photoId={doc.slots.find((slot) => slot.photo_id)?.photo_id ?? null}
+          onChange={(next, group) => actions.setShadowEverywhere(next, group)}
+        />
       </PanelSection>
 
       <PanelSection title={t("editor.simple.caption")}>
