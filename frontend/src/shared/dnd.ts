@@ -7,8 +7,12 @@
 // and `hasFiles` ignores a drag that is stamped.
 export const PHOTO_MIME = "text/x-the-frame-photo";
 export const SLOT_MIME = "text/x-the-frame-slot";
+/** An artwork dragged from a grid onto a collection (Phase 9); the value is a comma-joined list. */
+export const ARTWORK_MIME = "text/x-the-frame-artwork";
+/** A collection dragged in the tree to be re-parented or reordered. */
+export const COLLECTION_MIME = "text/x-the-frame-collection";
 
-const INTERNAL = [PHOTO_MIME, SLOT_MIME];
+const INTERNAL = [PHOTO_MIME, SLOT_MIME, ARTWORK_MIME, COLLECTION_MIME];
 
 /** Mark a drag as ours. Call it in `onDragStart`, with the payload the drop target needs. */
 export function startInternalDrag(

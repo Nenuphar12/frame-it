@@ -1,6 +1,35 @@
 {
   "components": {
     "schemas": {
+      "AffectedArtworkOut": {
+        "description": "One artwork in the cascade dialog: what deleting these photos would do to it.",
+        "properties": {
+          "artwork_id": {
+            "title": "Artwork Id",
+            "type": "string"
+          },
+          "photo_count": {
+            "title": "Photo Count",
+            "type": "integer"
+          },
+          "slot_count": {
+            "title": "Slot Count",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "artwork_id",
+          "title",
+          "slot_count",
+          "photo_count"
+        ],
+        "title": "AffectedArtworkOut",
+        "type": "object"
+      },
       "ApplyTemplateIn": {
         "properties": {
           "layout_id": {
@@ -225,6 +254,13 @@
       },
       "ArtworkOut": {
         "properties": {
+          "collection_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Collection Ids",
+            "type": "array"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -342,6 +378,13 @@
             ],
             "title": "Rendered At"
           },
+          "smart_collection_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Smart Collection Ids",
+            "type": "array"
+          },
           "status": {
             "enum": [
               "draft",
@@ -433,6 +476,120 @@
           "next_cursor"
         ],
         "title": "ArtworkPageOut",
+        "type": "object"
+      },
+      "ArtworkQueryIn": {
+        "description": "The filter bar as a POST body: an AST is too big and too nested for a query string.",
+        "properties": {
+          "collection_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection Id"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor"
+          },
+          "favorite": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Favorite"
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter"
+          },
+          "include_nested": {
+            "default": false,
+            "title": "Include Nested",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 100,
+            "maximum": 500.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "photo_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Id"
+          },
+          "q": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Q"
+          },
+          "sort": {
+            "default": "created_desc",
+            "enum": [
+              "created_desc",
+              "created_asc",
+              "updated_desc",
+              "title_asc",
+              "manual"
+            ],
+            "title": "Sort",
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "draft",
+                  "ready"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "title": "ArtworkQueryIn",
         "type": "object"
       },
       "ArtworkSummaryOut": {
@@ -942,11 +1099,170 @@
         "title": "CodeRedeemIn",
         "type": "object"
       },
+      "CollectionCreateIn": {
+        "properties": {
+          "description": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Description",
+            "type": "string"
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter"
+          },
+          "kind": {
+            "default": "manual",
+            "enum": [
+              "manual",
+              "smart"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CollectionCreateIn",
+        "type": "object"
+      },
+      "CollectionItemsIn": {
+        "properties": {
+          "artwork_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Artwork Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "artwork_ids"
+        ],
+        "title": "CollectionItemsIn",
+        "type": "object"
+      },
+      "CollectionMoveIn": {
+        "description": "Drag and drop: a new parent (`null` = top level) and the sibling to land before.",
+        "properties": {
+          "before_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before Id"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          }
+        },
+        "title": "CollectionMoveIn",
+        "type": "object"
+      },
       "CollectionOut": {
         "properties": {
+          "cover_artwork_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Artwork Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "date_end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date End"
+          },
+          "date_start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Start"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter"
+          },
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "item_count": {
+            "default": 0,
+            "title": "Item Count",
+            "type": "integer"
           },
           "kind": {
             "enum": [
@@ -959,6 +1275,11 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "nested_count": {
+            "default": 0,
+            "title": "Nested Count",
+            "type": "integer"
           },
           "parent_id": {
             "anyOf": [
@@ -974,16 +1295,130 @@
           "position": {
             "title": "Position",
             "type": "number"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
           }
         },
         "required": [
           "id",
           "parent_id",
           "name",
+          "description",
           "kind",
-          "position"
+          "position",
+          "date_start",
+          "date_end",
+          "cover_artwork_id",
+          "filter",
+          "created_at",
+          "updated_at"
         ],
         "title": "CollectionOut",
+        "type": "object"
+      },
+      "CollectionReorderIn": {
+        "properties": {
+          "artwork_id": {
+            "title": "Artwork Id",
+            "type": "string"
+          },
+          "before_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before Id"
+          }
+        },
+        "required": [
+          "artwork_id"
+        ],
+        "title": "CollectionReorderIn",
+        "type": "object"
+      },
+      "CollectionUpdateIn": {
+        "properties": {
+          "cover_artwork_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Artwork Id"
+          },
+          "date_end": {
+            "anyOf": [
+              {
+                "maxLength": 10,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date End"
+          },
+          "date_start": {
+            "anyOf": [
+              {
+                "maxLength": 10,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Start"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "CollectionUpdateIn",
         "type": "object"
       },
       "ColorPresetOut": {
@@ -1409,6 +1844,55 @@
           }
         },
         "title": "DeviceUpdateIn",
+        "type": "object"
+      },
+      "FilterValidateIn": {
+        "properties": {
+          "filter": {
+            "additionalProperties": true,
+            "title": "Filter",
+            "type": "object"
+          }
+        },
+        "required": [
+          "filter"
+        ],
+        "title": "FilterValidateIn",
+        "type": "object"
+      },
+      "FilterValidateOut": {
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "match_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Match Count"
+          },
+          "valid": {
+            "title": "Valid",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "valid"
+        ],
+        "title": "FilterValidateOut",
         "type": "object"
       },
       "FontMetricsOut": {
@@ -2623,6 +3107,40 @@
         "title": "PhotoUpdateIn",
         "type": "object"
       },
+      "PurgeIn": {
+        "properties": {
+          "all": {
+            "default": false,
+            "title": "All",
+            "type": "boolean"
+          }
+        },
+        "title": "PurgeIn",
+        "type": "object"
+      },
+      "PurgeOut": {
+        "properties": {
+          "artworks": {
+            "title": "Artworks",
+            "type": "integer"
+          },
+          "bytes_freed": {
+            "title": "Bytes Freed",
+            "type": "integer"
+          },
+          "photos": {
+            "title": "Photos",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "photos",
+          "artworks",
+          "bytes_freed"
+        ],
+        "title": "PurgeOut",
+        "type": "object"
+      },
       "PushUpdateOut": {
         "properties": {
           "applied": {
@@ -2859,6 +3377,36 @@
           "rect"
         ],
         "title": "RegionRenderIn",
+        "type": "object"
+      },
+      "RestoreIn": {
+        "properties": {
+          "artwork_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "title": "Artwork Ids",
+            "type": "array"
+          },
+          "batch_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Batch Ids",
+            "type": "array"
+          },
+          "photo_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "title": "Photo Ids",
+            "type": "array"
+          }
+        },
+        "title": "RestoreIn",
         "type": "object"
       },
       "SaveAsTemplateIn": {
@@ -3244,6 +3792,25 @@
         "title": "TagCreateIn",
         "type": "object"
       },
+      "TagMergeIn": {
+        "description": "Move every use of `source_ids` onto this tag; the sources disappear.",
+        "properties": {
+          "source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Source Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "source_ids"
+        ],
+        "title": "TagMergeIn",
+        "type": "object"
+      },
       "TagOut": {
         "properties": {
           "color": {
@@ -3274,8 +3841,44 @@
         "title": "TagOut",
         "type": "object"
       },
+      "TagUpdateIn": {
+        "properties": {
+          "color": {
+            "anyOf": [
+              {
+                "maxLength": 9,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "TagUpdateIn",
+        "type": "object"
+      },
       "TagWithCount": {
         "properties": {
+          "artwork_count": {
+            "default": 0,
+            "title": "Artwork Count",
+            "type": "integer"
+          },
           "color": {
             "anyOf": [
               {
@@ -3482,6 +4085,252 @@
           "strength"
         ],
         "title": "TextureRef",
+        "type": "object"
+      },
+      "TrashArtworksIn": {
+        "properties": {
+          "artwork_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Artwork Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "artwork_ids"
+        ],
+        "title": "TrashArtworksIn",
+        "type": "object"
+      },
+      "TrashOut": {
+        "properties": {
+          "artwork_total": {
+            "title": "Artwork Total",
+            "type": "integer"
+          },
+          "artworks": {
+            "items": {
+              "$ref": "#/components/schemas/TrashedArtworkOut"
+            },
+            "title": "Artworks",
+            "type": "array"
+          },
+          "photo_total": {
+            "title": "Photo Total",
+            "type": "integer"
+          },
+          "photos": {
+            "items": {
+              "$ref": "#/components/schemas/TrashedPhotoOut"
+            },
+            "title": "Photos",
+            "type": "array"
+          },
+          "retention_days": {
+            "title": "Retention Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "photos",
+          "artworks",
+          "photo_total",
+          "artwork_total",
+          "retention_days"
+        ],
+        "title": "TrashOut",
+        "type": "object"
+      },
+      "TrashPhotosIn": {
+        "properties": {
+          "cascade": {
+            "default": "trash_artworks",
+            "enum": [
+              "trash_artworks",
+              "empty_slots"
+            ],
+            "title": "Cascade",
+            "type": "string"
+          },
+          "photo_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Photo Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "photo_ids"
+        ],
+        "title": "TrashPhotosIn",
+        "type": "object"
+      },
+      "TrashPreviewOut": {
+        "properties": {
+          "artworks": {
+            "items": {
+              "$ref": "#/components/schemas/AffectedArtworkOut"
+            },
+            "title": "Artworks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "artworks"
+        ],
+        "title": "TrashPreviewOut",
+        "type": "object"
+      },
+      "TrashResultOut": {
+        "properties": {
+          "artworks": {
+            "title": "Artworks",
+            "type": "integer"
+          },
+          "batch_id": {
+            "title": "Batch Id",
+            "type": "string"
+          },
+          "emptied": {
+            "title": "Emptied",
+            "type": "integer"
+          },
+          "photos": {
+            "title": "Photos",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "batch_id",
+          "photos",
+          "artworks",
+          "emptied"
+        ],
+        "title": "TrashResultOut",
+        "type": "object"
+      },
+      "TrashedArtworkOut": {
+        "properties": {
+          "deleted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "photo_count": {
+            "title": "Photo Count",
+            "type": "integer"
+          },
+          "render_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Render Hash"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "trash_batch_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trash Batch Id"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "photo_count",
+          "render_hash",
+          "deleted_at",
+          "trash_batch_id"
+        ],
+        "title": "TrashedArtworkOut",
+        "type": "object"
+      },
+      "TrashedPhotoOut": {
+        "properties": {
+          "deleted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted At"
+          },
+          "file_size": {
+            "title": "File Size",
+            "type": "integer"
+          },
+          "height": {
+            "title": "Height",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "original_filename": {
+            "title": "Original Filename",
+            "type": "string"
+          },
+          "trash_batch_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trash Batch Id"
+          },
+          "width": {
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "original_filename",
+          "width",
+          "height",
+          "file_size",
+          "deleted_at",
+          "trash_batch_id"
+        ],
+        "title": "TrashedPhotoOut",
         "type": "object"
       },
       "UploadCreateIn": {
@@ -3733,6 +4582,7 @@
     },
     "/api/v1/artworks": {
       "get": {
+        "description": "The simple cases as query parameters; a full filter AST goes to `POST /artworks/query`.",
         "operationId": "list_artworks_api_v1_artworks_get",
         "parameters": [
           {
@@ -3785,6 +4635,66 @@
                 }
               ],
               "title": "Photo Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "collection_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Collection Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_nested",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Nested",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "created_desc",
+              "enum": [
+                "created_desc",
+                "created_asc",
+                "updated_desc",
+                "title_asc",
+                "manual"
+              ],
+              "title": "Sort",
+              "type": "string"
             }
           },
           {
@@ -3883,9 +4793,51 @@
         ]
       }
     },
+    "/api/v1/artworks/query": {
+      "post": {
+        "description": "The filter bar and smart collections: one AST (docs/data-model.md \u00a75.2), one page back.",
+        "operationId": "query_artworks_api_v1_artworks_query_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArtworkQueryIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtworkPageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Query Artworks",
+        "tags": [
+          "artworks"
+        ]
+      }
+    },
     "/api/v1/artworks/{artwork_id}": {
       "delete": {
-        "description": "Move to trash (restore/purge: Phase 8).",
+        "description": "Move to trash (restore and purge: `/trash`, docs/organization.md \u00a75).",
         "operationId": "trash_artwork_api_v1_artworks__artwork_id__delete",
         "parameters": [
           {
@@ -4637,6 +5589,7 @@
     },
     "/api/v1/collections": {
       "get": {
+        "description": "The whole tree, ordered by `position` among siblings (the client nests it by `parent_id`).",
         "operationId": "list_collections_api_v1_collections_get",
         "responses": {
           "200": {
@@ -4655,6 +5608,374 @@
           }
         },
         "summary": "List Collections",
+        "tags": [
+          "library"
+        ]
+      },
+      "post": {
+        "operationId": "create_collection_api_v1_collections_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Collection",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/api/v1/collections/{collection_id}": {
+      "delete": {
+        "description": "Deletes the collection **and its subtree**. The artworks are untouched (not a trash op).",
+        "operationId": "delete_collection_api_v1_collections__collection_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "title": "Collection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Collection",
+        "tags": [
+          "library"
+        ]
+      },
+      "get": {
+        "operationId": "get_collection_api_v1_collections__collection_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "title": "Collection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Collection",
+        "tags": [
+          "library"
+        ]
+      },
+      "patch": {
+        "operationId": "update_collection_api_v1_collections__collection_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "title": "Collection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionUpdateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Collection",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/api/v1/collections/{collection_id}/items": {
+      "post": {
+        "operationId": "add_collection_items_api_v1_collections__collection_id__items_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "title": "Collection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionItemsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Collection Items",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/api/v1/collections/{collection_id}/items/remove": {
+      "post": {
+        "operationId": "remove_collection_items_api_v1_collections__collection_id__items_remove_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "title": "Collection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionItemsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove Collection Items",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/api/v1/collections/{collection_id}/move": {
+      "post": {
+        "description": "Re-parent and/or reorder. 422 `collection_cycle` when it would land inside itself.",
+        "operationId": "move_collection_api_v1_collections__collection_id__move_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "title": "Collection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionMoveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Move Collection",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/api/v1/collections/{collection_id}/reorder": {
+      "post": {
+        "description": "Manual order inside a collection: put an artwork right before another (or last).",
+        "operationId": "reorder_collection_item_api_v1_collections__collection_id__reorder_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "title": "Collection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionReorderIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reorder Collection Item",
         "tags": [
           "library"
         ]
@@ -4823,6 +6144,48 @@
         "summary": "Events",
         "tags": [
           "events"
+        ]
+      }
+    },
+    "/api/v1/filters/validate": {
+      "post": {
+        "description": "Check a filter AST and say how many artworks it matches (the smart-collection editor).",
+        "operationId": "validate_filter_api_v1_filters_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FilterValidateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FilterValidateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Validate Filter",
+        "tags": [
+          "library"
         ]
       }
     },
@@ -6921,6 +8284,145 @@
         ]
       }
     },
+    "/api/v1/tags/{tag_id}": {
+      "delete": {
+        "operationId": "delete_tag_api_v1_tags__tag_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tag_id",
+            "required": true,
+            "schema": {
+              "title": "Tag Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Tag",
+        "tags": [
+          "library"
+        ]
+      },
+      "patch": {
+        "description": "Rename or recolour. 409 `tag_exists` when the name is taken (merge instead).",
+        "operationId": "update_tag_api_v1_tags__tag_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tag_id",
+            "required": true,
+            "schema": {
+              "title": "Tag Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagUpdateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Tag",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/api/v1/tags/{tag_id}/merge": {
+      "post": {
+        "description": "Move every use of `source_ids` onto this tag and delete the sources.",
+        "operationId": "merge_tags_api_v1_tags__tag_id__merge_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tag_id",
+            "required": true,
+            "schema": {
+              "title": "Tag Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagMergeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Merge Tags",
+        "tags": [
+          "library"
+        ]
+      }
+    },
     "/api/v1/textures": {
       "get": {
         "operationId": "list_textures_api_v1_textures_get",
@@ -6980,6 +8482,236 @@
         "summary": "Texture File",
         "tags": [
           "assets"
+        ]
+      }
+    },
+    "/api/v1/trash": {
+      "get": {
+        "operationId": "list_trash_api_v1_trash_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrashOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Trash",
+        "tags": [
+          "trash"
+        ]
+      }
+    },
+    "/api/v1/trash/artworks": {
+      "post": {
+        "operationId": "trash_artworks_api_v1_trash_artworks_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrashArtworksIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrashResultOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Trash Artworks",
+        "tags": [
+          "trash"
+        ]
+      }
+    },
+    "/api/v1/trash/photos": {
+      "post": {
+        "description": "Soft-delete photos. `cascade` decides what happens to the artworks using them.",
+        "operationId": "trash_photos_api_v1_trash_photos_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrashPhotosIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrashResultOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Trash Photos",
+        "tags": [
+          "trash"
+        ]
+      }
+    },
+    "/api/v1/trash/preview": {
+      "post": {
+        "description": "Which artworks use these photos \u2014 the cascade dialog asks before anything is written.",
+        "operationId": "preview_api_v1_trash_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhotoIdsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrashPreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview",
+        "tags": [
+          "trash"
+        ]
+      }
+    },
+    "/api/v1/trash/purge": {
+      "post": {
+        "description": "Delete for good, files included. `all` empties the trash; otherwise only what expired.",
+        "operationId": "purge_api_v1_trash_purge_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurgeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurgeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Purge",
+        "tags": [
+          "trash"
+        ]
+      }
+    },
+    "/api/v1/trash/restore": {
+      "post": {
+        "description": "Bring items back; a `batch_id` restores everything deleted by the same gesture.",
+        "operationId": "restore_api_v1_trash_restore_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrashResultOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Restore",
+        "tags": [
+          "trash"
         ]
       }
     },

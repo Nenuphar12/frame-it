@@ -6,7 +6,11 @@ import {
   Copy,
   Download,
   Heart,
+  Layers,
   Pencil,
+  Plus,
+  Sparkles,
+  Tag as TagIcon,
   Trash2,
   Undo2,
   X,
@@ -15,10 +19,18 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ApiError, artworkRenderUrl, artworkThumbUrl } from "@/api/client";
-import { useArtwork, useArtworkActions, useFrameStyles, useLayouts } from "@/api/queries";
+import {
+  useArtwork,
+  useArtworkActions,
+  useCollections,
+  useFrameStyles,
+  useLayouts,
+} from "@/api/queries";
 import { useRegisterCommands, type Command } from "@/app/commands";
+import { AddToCollectionMenu } from "@/features/collections/AddToCollectionMenu";
+import { TagPicker } from "@/features/tags/TagPicker";
+import { Badge, Kbd, Spinner } from "@/shared/ui/Misc";
 import { Button } from "@/shared/ui/Button";
-import { Kbd, Spinner } from "@/shared/ui/Misc";
 
 import { ArtworkBadges } from "./ArtworkBadges";
 
@@ -32,17 +44,14 @@ interface ArtworkViewerProps {
 }
 
 /** Full-screen review of the server render (authoritative pixels) with the Phase 4 actions. */
-export function ArtworkViewer({
-  artworkId,
-  ids,
-  onNavigate,
-  onEdit,
-  onClose,
-}: ArtworkViewerProps) {
+export function ArtworkViewer({ artworkId, ids, onNavigate, onEdit, onClose }: ArtworkViewerProps) {
   const { t } = useTranslation();
   const artwork = useArtwork(artworkId);
   const styles = useFrameStyles();
   const layouts = useLayouts();
+  const collections = useCollections();
+  const [collectionMenuOpen, setCollectionMenuOpen] = useState(false);
+  const [editingTags, setEditingTags] = useState(false);
   const { update, validate, duplicate, trash } = useArtworkActions();
   const [confirmTrash, setConfirmTrash] = useState<string | null>(null);
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
@@ -128,6 +137,13 @@ export function ArtworkViewer({
         shortcut: "Delete",
         run: actions.trash,
       },
+      {
+        id: "artwork.addToCollection",
+        label: "collections.addTo",
+        group: "commands.groups.artworks",
+        shortcut: "c",
+        run: () => setCollectionMenuOpen(true),
+      },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `go` only depends on ids/index
     [actions, data, ids, index, onEdit],
@@ -136,6 +152,14 @@ export function ArtworkViewer({
 
   const styleName = styles.data?.find((s) => s.id === data?.origin_style_id)?.name;
   const layoutName = layouts.data?.find((l) => l.id === data?.origin_layout_id)?.name;
+  /** Where this artwork lives. Manual membership is a row it can leave; smart membership is a
+   *  filter that happens to match it, so it is shown but never offered for removal. */
+  const memberOf = data?.collection_ids ?? [];
+  const matchedBy = data?.smart_collection_ids ?? [];
+  const artworkTags = data?.tags ?? [];
+  const all = collections.data ?? [];
+  const inCollections = all.filter((c) => memberOf.includes(c.id));
+  const inSmart = all.filter((c) => matchedBy.includes(c.id));
   const full = data ? artworkRenderUrl(data, "jpg") : null;
 
   return (
@@ -204,72 +228,147 @@ export function ArtworkViewer({
             </button>
           </div>
           {data && (
-            <div className="flex flex-wrap items-center gap-2 border-t border-white/10 bg-panel px-4 py-2.5">
-              <div className="mr-auto flex min-w-0 flex-wrap items-center gap-2">
-                <span className="truncate text-sm font-medium">
-                  {data.title || t("artworks.untitled")}
-                </span>
-                <ArtworkBadges artwork={data} />
-                <span className="text-xs text-muted">
-                  {[styleName, layoutName].filter(Boolean).join(" · ")}
-                  {data.min_scale !== null &&
-                    ` · ${t("artworks.scale", {
-                      min: Math.round(data.min_scale * 100),
-                      max: Math.round((data.max_scale ?? data.min_scale) * 100),
-                    })}`}
-                </span>
-                {error && (
-                  <span className="text-xs text-danger">
-                    {error instanceof ApiError
-                      ? t(`errors.${error.code}`, { defaultValue: error.message })
-                      : t("errors.unknown")}
+            <div className="flex flex-col gap-2 border-t border-white/10 bg-panel px-4 py-2.5">
+              {/* Row 1: what it is, and what you can do to it. Row 2: where it is filed. */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="mr-auto flex min-w-0 flex-wrap items-center gap-2">
+                  <span className="truncate text-sm font-medium">
+                    {data.title || t("artworks.untitled")}
                   </span>
+                  <ArtworkBadges artwork={data} />
+                  <span className="text-xs text-muted">
+                    {[styleName, layoutName].filter(Boolean).join(" · ")}
+                    {data.min_scale !== null &&
+                      ` · ${t("artworks.scale", {
+                        min: Math.round(data.min_scale * 100),
+                        max: Math.round((data.max_scale ?? data.min_scale) * 100),
+                      })}`}
+                  </span>
+                  {error && (
+                    <span className="text-xs text-danger">
+                      {error instanceof ApiError
+                        ? t(`errors.${error.code}`, { defaultValue: error.message })
+                        : t("errors.unknown")}
+                    </span>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={actions.favorite}
+                  aria-pressed={data.favorite}
+                >
+                  <Heart size={14} fill={data.favorite ? "currentColor" : "none"} />{" "}
+                  {t("artworks.favorite")} <Kbd>F</Kbd>
+                </Button>
+                <Button
+                  size="sm"
+                  variant={data.status === "ready" ? "ghost" : "primary"}
+                  onClick={actions.toggleReady}
+                >
+                  {data.status === "ready" ? <Undo2 size={14} /> : <CheckCircle2 size={14} />}
+                  {data.status === "ready"
+                    ? t("artworks.backToDraft")
+                    : t("artworks.markReady")}{" "}
+                  <Kbd>↵</Kbd>
+                </Button>
+                <Button size="sm" variant="secondary" onClick={() => onEdit(data.id)}>
+                  <Pencil size={14} /> {t("editor.open")} <Kbd>E</Kbd>
+                </Button>
+                <Button size="sm" variant="ghost" onClick={actions.duplicate}>
+                  <Copy size={14} /> {t("artworks.duplicate")}
+                </Button>
+                <Button size="sm" variant="ghost" asChild>
+                  <a href={artworkRenderUrl(data, "png")} download>
+                    <Download size={14} /> PNG
+                  </a>
+                </Button>
+                <Button size="sm" variant="ghost" asChild>
+                  <a href={artworkRenderUrl(data, "jpg")} download>
+                    <Download size={14} /> JPEG
+                  </a>
+                </Button>
+                <Button size="sm" variant="danger" onClick={actions.trash}>
+                  <Trash2 size={14} />{" "}
+                  {confirmTrash === data.id ? t("artworks.confirmTrash") : t("artworks.trash")}
+                </Button>
+                <RadixDialog.Close
+                  className="rounded p-1.5 text-muted hover:bg-panel-2 hover:text-text"
+                  aria-label={t("common.close")}
+                >
+                  <X size={16} />
+                </RadixDialog.Close>
+              </div>
+              {/* Its own row under the actions: where the artwork is filed and how it is labelled,
+                  both editable here (remarks.md #3, #5). Sharing the actions' row pushed the
+                  buttons onto a third line, left-aligned and cramped. */}
+              <div className="flex flex-wrap items-center gap-1.5 border-t border-border pt-2 text-xs">
+                <Layers size={13} className="text-muted" />
+                {inCollections.length + inSmart.length === 0 ? (
+                  <span className="text-muted">{t("collections.none")}</span>
+                ) : (
+                  <>
+                    {inCollections.map((collection) => (
+                      <Badge key={collection.id} tone="neutral">
+                        {collection.name}
+                      </Badge>
+                    ))}
+                    {inSmart.map((collection) => (
+                      <Badge key={collection.id} tone="accent" title={t("collections.smartMember")}>
+                        <Sparkles size={10} />
+                        {collection.name}
+                      </Badge>
+                    ))}
+                  </>
+                )}
+                <AddToCollectionMenu
+                  artworkIds={[data.id]}
+                  memberOf={memberOf}
+                  open={collectionMenuOpen}
+                  onOpenChange={setCollectionMenuOpen}
+                  trigger={
+                    <button
+                      type="button"
+                      aria-label={t("collections.addTo")}
+                      className="rounded px-1 text-muted hover:bg-panel-2 hover:text-text"
+                    >
+                      <Plus size={13} />
+                    </button>
+                  }
+                />
+                <span className="mx-1 h-3 w-px bg-border" />
+                <TagIcon size={13} className="text-muted" />
+                {editingTags ? (
+                  <span className="min-w-56 flex-1">
+                    <TagPicker
+                      value={artworkTags}
+                      onChange={(tags) =>
+                        update.mutate({ id: data.id, tag_ids: tags.map((tag) => tag.id) })
+                      }
+                    />
+                  </span>
+                ) : (
+                  <>
+                    {artworkTags.length === 0 ? (
+                      <span className="text-muted">{t("tags.none")}</span>
+                    ) : (
+                      artworkTags.map((tag) => (
+                        <Badge key={tag.id} tone="neutral">
+                          {tag.name}
+                        </Badge>
+                      ))
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setEditingTags(true)}
+                      aria-label={t("tags.edit")}
+                      className="rounded px-1 text-muted hover:bg-panel-2 hover:text-text"
+                    >
+                      <Plus size={13} />
+                    </button>
+                  </>
                 )}
               </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={actions.favorite}
-                aria-pressed={data.favorite}
-              >
-                <Heart size={14} fill={data.favorite ? "currentColor" : "none"} />{" "}
-                {t("artworks.favorite")} <Kbd>F</Kbd>
-              </Button>
-              <Button
-                size="sm"
-                variant={data.status === "ready" ? "ghost" : "primary"}
-                onClick={actions.toggleReady}
-              >
-                {data.status === "ready" ? <Undo2 size={14} /> : <CheckCircle2 size={14} />}
-                {data.status === "ready" ? t("artworks.backToDraft") : t("artworks.markReady")}{" "}
-                <Kbd>↵</Kbd>
-              </Button>
-              <Button size="sm" variant="secondary" onClick={() => onEdit(data.id)}>
-                <Pencil size={14} /> {t("editor.open")} <Kbd>E</Kbd>
-              </Button>
-              <Button size="sm" variant="ghost" onClick={actions.duplicate}>
-                <Copy size={14} /> {t("artworks.duplicate")}
-              </Button>
-              <Button size="sm" variant="ghost" asChild>
-                <a href={artworkRenderUrl(data, "png")} download>
-                  <Download size={14} /> PNG
-                </a>
-              </Button>
-              <Button size="sm" variant="ghost" asChild>
-                <a href={artworkRenderUrl(data, "jpg")} download>
-                  <Download size={14} /> JPEG
-                </a>
-              </Button>
-              <Button size="sm" variant="danger" onClick={actions.trash}>
-                <Trash2 size={14} />{" "}
-                {confirmTrash === data.id ? t("artworks.confirmTrash") : t("artworks.trash")}
-              </Button>
-              <RadixDialog.Close
-                className="rounded p-1.5 text-muted hover:bg-panel-2 hover:text-text"
-                aria-label={t("common.close")}
-              >
-                <X size={16} />
-              </RadixDialog.Close>
             </div>
           )}
         </RadixDialog.Content>

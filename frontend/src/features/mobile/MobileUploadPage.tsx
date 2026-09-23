@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { FolderOpen, Heart, ImagePlus, Monitor, Sun } from "lucide-react";
+import { FolderOpen, Heart, ImagePlus, Images, Monitor, Sun } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -22,6 +22,8 @@ export function MobileUploadPage() {
   const { t } = useTranslation();
   const me = useMe();
   const collections = useCollections();
+  // A smart collection has no items of its own: only manual ones can be picked at upload.
+  const manualCollections = (collections.data ?? []).filter((c) => c.kind === "manual");
   const items = useUploads((s) => s.items);
   const add = useUploads((s) => s.add);
   const clearFinished = useUploads((s) => s.clearFinished);
@@ -60,6 +62,13 @@ export function MobileUploadPage() {
           >
             <Sun size={18} />
           </button>
+          <Link
+            to="/m/browse"
+            className="rounded-md p-2 text-muted hover:text-text"
+            aria-label={t("mobile.browse")}
+          >
+            <Images size={18} />
+          </Link>
           {me.data?.role === "admin" && (
             <Link
               to="/inbox"
@@ -96,9 +105,9 @@ export function MobileUploadPage() {
         <h2 className="text-sm font-semibold">{t("mobile.metaTitle")}</h2>
         <p className="text-xs text-muted">{t("mobile.metaHint")}</p>
         <TagPicker value={tags} onChange={setTags} />
-        {(collections.data?.length ?? 0) > 0 ? (
+        {manualCollections.length > 0 ? (
           <div className="flex flex-wrap gap-2">
-            {collections.data!.map((collection) => {
+            {manualCollections.map((collection) => {
               const checked = collectionIds.includes(collection.id);
               return (
                 <button

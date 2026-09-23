@@ -38,6 +38,39 @@ export const useCommands = create<CommandState>((set) => ({
   toggleCheatSheet: () => set((state) => ({ cheatSheetOpen: !state.cheatSheetOpen })),
 }));
 
+/**
+ * Chord guard. `g c` (go to collections) and a bare `c` (add to collection) are two bindings in
+ * two `tinykeys` instances, and tinykeys matches each one on its own: pressing `g` then `c` used
+ * to run *both*. One capture-phase listener remembers whether the previous key started a chord,
+ * and bare single-key bindings stand down for the keystroke that follows one.
+ */
+const CHORD_WINDOW_MS = 1000;
+const chordPrefixes = new Set<string>();
+let armedAt = 0;
+let suppressBare = false;
+let watching = false;
+
+function watchChords() {
+  if (watching || typeof window === "undefined") return;
+  watching = true;
+  window.addEventListener(
+    "keydown",
+    (event) => {
+      const bare = !event.ctrlKey && !event.metaKey && !event.altKey;
+      const armed = armedAt !== 0 && Date.now() - armedAt < CHORD_WINDOW_MS;
+      const isPrefix = bare && chordPrefixes.has(event.key);
+      suppressBare = armed && !isPrefix;
+      armedAt = isPrefix ? Date.now() : 0;
+    },
+    true,
+  );
+}
+
+/** A shortcut that is one key with no modifier — the kind a chord's second key collides with. */
+function isBareKey(shortcut: string): boolean {
+  return !shortcut.includes(" ") && !shortcut.includes("+");
+}
+
 function isTyping(event: KeyboardEvent): boolean {
   const target = event.target as HTMLElement | null;
   if (!target) return false;
@@ -58,6 +91,11 @@ export function useRegisterCommands(commands: Command[]) {
     .join(";");
 
   useEffect(() => {
+    watchChords();
+    for (const command of latest.current) {
+      const [prefix, ...rest] = (command.shortcut ?? "").split(" ");
+      if (prefix && rest.length > 0) chordPrefixes.add(prefix);
+    }
     const invoke = (id: string) => latest.current.find((c) => c.id === id)?.run();
     const stable: Command[] = latest.current.map((command) => ({
       ...command,
@@ -70,8 +108,10 @@ export function useRegisterCommands(commands: Command[]) {
     const bindings: Record<string, (event: KeyboardEvent) => void> = {};
     for (const command of stable) {
       if (!command.shortcut) continue;
+      const bare = isBareKey(command.shortcut);
       bindings[command.shortcut] = (event) => {
         if (!command.allowInInputs && isTyping(event)) return;
+        if (bare && suppressBare) return; // the second key of a chord, not a shortcut of its own
         event.preventDefault();
         command.run();
       };

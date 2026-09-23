@@ -1,5 +1,188 @@
 # Progress log
 
+## 2026-09-23 — Phase 9 feedback, second round (remarks.md, 6 items)
+
+**A smart sub-collection contributed nothing to include-nested (#3).** Real bug: the listing scoped
+a subtree with `collection_items IN (ids)` — manual membership only — while a smart collection's
+artworks are *matches*, not rows. The filter AST already had a helper that unions the two
+(`_in_collections`), so the listing, the `collection` clause and `nested_count` now all go through
+it: one path for both kinds. A manual parent with a smart child went 3 cards → 7 on toggling, and
+the tree's `nested_count` reads 7 to match. `counts()` resolves each smart descendant's filter once
+and reuses it across the subtrees that contain it.
+
+**Smart membership is derived, so it is reported apart (#5a).** An artwork carries `collection_ids`
+(manual — rows it can leave) and `smart_collection_ids` (filters that happen to match it). The
+viewer shows the latter in accent with a sparkle and never offers removal: an artwork leaves a
+smart collection by ceasing to match it.
+
+**The viewer footer (#5b).** The metadata line added last round was a full-width child of the
+actions row, so the six buttons wrapped onto a third line, left-aligned and cramped. Two explicit
+rows now: title, badges and all six actions right-aligned on one line (measured: 6 buttons, 1 row,
+x 848 → 1556), collections and tags underneath.
+
+**A transparent `<select>` gets a light popup (#4).** Chrome paints a select's native popup from the
+*control's* colours, so the tag filter — the one select in the app using `bg-transparent` — had
+`optionBg: rgba(0, 0, 0, 0)` and near-white option text, readable only under the hover highlight.
+The closed control screenshotted fine in both themes, which is why measuring the *options* mattered.
+`styles.css` now gives `select`/`option` an element-level colour and background (class utilities
+still win, so nothing else moved), and the filter is a plain bordered select like the sort one.
+After: 236,236,238 on 18,18,19 in dark, 27,27,29 on 244,243,241 in light.
+
+**Deep links (#1).** The open collection lives in the URL (`/collections?id=…`), so a sidebar row
+opens *that* collection, a reload keeps it, and the link is shareable.
+
+**Smart collections say why they are read-only (#2).** Expected behaviour — there is no row to hold
+an order — but the UI stayed silent. A line under the header explains it, and *Add artworks*, the
+reorder grips, the *Manual order* option and the remove action are absent rather than inert.
+
+**`Backspace` removes from a collection (#6).** `Delete` still trashes; taking an artwork out of a
+collection is a far gentler act and deserves its own key. While adding it the grid keyboard moved
+into one `useArtworkGridCommands` hook, so Artworks, Favorites and a collection's page share the
+same set (`c f e Delete / Ctrl+A Esc`) and cannot drift; only the collection page passes the
+`Backspace` handler. Measured: 4 items → 3 in the collection, library count unchanged at 30, and a
+no-op on a smart collection.
+
+**Verified**: `make check` green — 906 backend tests (2 new: include-nested reaching a smart child,
+an artwork's smart memberships). All six driven in a real browser over CDP against the production
+build, read back through the API, plus two screenshots where the question was about pixels (the
+select in both themes, the footer layout).
+
+## 2026-09-23 — Phase 9 feedback round (remarks.md, 8 items)
+
+Three of the eight were bug reports, and all three reproduced.
+
+**Reordering only worked one way (#6).** Dropping a card always meant "insert before the target",
+so dragging a card *forward* asked for the place it already had and nothing moved — exactly the
+"only to bring the second artwork first" symptom. The drop now reads the direction: backwards
+lands before the target, forwards lands after it. Measured on a labelled A B C D: `ABCD` + drag A
+onto C → `BCAD`; `BCAD` + drag D onto B → `BDCA`; one step forward swaps. The card under the
+pointer highlights now, so a drop has a visible target.
+
+**Include-nested did nothing (#5).** Real bug in the listing: `manual` sort joins
+`collection_items` on the collection you are looking at, so every artwork living only in a *child*
+was dropped and the "nested" list came back identical to the flat one. `position` cannot order a
+subtree — an artwork has one per collection — so the server refuses the combination
+(422 `manual_sort_nested`) rather than quietly answering something else. The page gained a sort
+picker that drops *Manual order* while include-nested is on, and the toggle only appears when the
+collection actually has children. 3 cards → 6 on toggling, measured. While in there,
+`nested_count` summed the children's counts, so an artwork filed in two sub-collections of one
+parent counted twice; it counts distinct artworks now.
+
+**Collections could only ever go deeper (#4).** Creation passed the *selected* collection as the
+parent with no way to say otherwise, and the tree only accepted drops *on* a row — which is always
+another parent. The dialog now has an **Inside** picker defaulting to *Top level* (the collection's
+own subtree excluded from the options), and the tree has a drop zone that re-parents to the top
+level. `parent_id: null` was always accepted by the server; nothing offered it.
+
+**The rest.** `c` adds the selection to a collection from any artwork grid and from the viewer
+(#1); the menu ends with a name field that creates the collection and files the selection into it
+(#2); the viewer's footer lists the collections and tags of the artwork and edits both in place
+(#3, `collection_ids` on the single-artwork response only); the Photos page filters by tag (#7 —
+`tag_id` had been in the API since Phase 2, nothing offered it); and *Add artworks* opens a
+searchable picker over the library from inside a collection (#8).
+
+**A conflict the audit uncovered.** Asked for "any other obvious missing shortcut", I added `f`
+(favourite the selection), `e` (edit), `Delete` (trash) and `/` (search) — and found that a bare
+letter and a chord starting with the same letter are two `tinykeys` instances that each match on
+their own. `g c` opened the add-to-collection menu *and* failed to navigate. `app/commands.ts` now
+keeps one capture-phase listener that remembers whether the previous key started a chord, and
+single-key bindings stand down for the key after one. Measured before/after: `g c` → `/artworks`
+with the menu open, then `/collections` with it closed; `g f` no longer flips a favourite on the
+way to Favorites; and in the editor `g s` reaches Settings without also skipping the review queue —
+a conflict that predated this round. The viewer, being modal, also takes `f`/`e`/`c`/`Delete` away
+from the grid underneath it while it is open.
+
+**Verified**: `make check` green — 903 backend tests (3 new: manual+nested refusal, an artwork's
+collections, distinct nested counts, moving back to the top level). Every item driven in a real
+browser (headless Chromium over CDP against the production build) and read back through the API:
+the eight remarks, the three chord cases, and the bare keys still firing on their own. One thing
+worth writing down about the harness rather than the app: dispatching a synthetic key on both
+`document.body` **and** `window` makes tinykeys see every key twice, which breaks every chord —
+dispatch once, on the focused element.
+
+## 2026-09-23 — Phase 9 (organization)
+
+Spec: `docs/organization.md`. Tags, collections, filters, search and the trash.
+
+**One filter, three consumers.** `domain/filters.py` is a pure, validated AST and
+`services/library.py` is the only thing that knows how it reaches the schema. The chips in the
+filter bar, a smart collection's stored definition and what `POST /artworks/query` compiles are
+the *same object*, so "save this view as a smart collection" is a copy rather than a translation.
+Two clauses deliberately leave the `artworks` table — `taken_at` and `place` hold when **a photo
+the artwork uses** matches, compiled as an EXISTS over `artwork_photos`, which is the only reading
+a multi-photo artwork can support. Bounds are structural (64 clauses, 4 levels, 200 values), and
+an empty group matches everything.
+
+**Collections** are a tree with REAL `position` among siblings and among a manual collection's
+items, so a drag-and-drop move or reorder writes one row (midpoint, renumbering only when the
+doubles run out at `1e-9`). A recursive CTE answers `include_nested` for both counts and listings.
+Three refusals the server owns: a cycle (`collection_cycle`), more than 8 levels, and a smart
+collection referencing itself or a smart collection that references it back (`filter_cycle`).
+Deleting a collection takes its subtree and leaves the artworks alone — it is not a trash
+operation.
+
+**Search** (`services/search.py`) fills the FTS5 table 0001 already created: an artwork's title,
+its tags' names and the file names and places of its photos; a photo's name, place, camera and
+tags; a collection's name and description. Writers update it inside the transaction that changed
+the row, so it never outlives what it describes, and it stays disposable — `reindex_all` rebuilds
+it and the app does that at startup when the table is empty. User text becomes a token-only prefix
+query, so nothing a user types can be read as an FTS5 operator.
+
+**Trash.** `deleted_at` + a shared `trash_batch_id`: what was deleted together is restored
+together. Deleting photos an artwork uses is a *decision*, so `POST /trash/preview` lists the
+affected artworks first and the cascade then picks between `trash_artworks` (they follow into the
+same batch) and `empty_slots` (they stay, the photo leaves their slots, the artwork goes back to
+draft and a `pre_trash` snapshot makes it undoable). The emptied document goes back through
+`artworks.validated`, so an attached composition re-solves exactly as it would for a new artwork
+with a missing photo. Purge is what frees disk — originals, thumbs, proxies, palettes and render
+caches — and it runs daily through a new `JobQueue.schedule_every` (coalesced) as well as on
+demand.
+
+**UI.** The collection tree in the sidebar (artworks dropped on a row are filed), a chip filter
+bar + search + sort + bulk actions on Artworks and Favorites, a Collections page with DnD and
+manual ordering, a Tags manager, a Trash page, the cascade dialog on the Photos page (`Delete`),
+`f` for the artwork's favourite in the editor, and read-only phone browsing at `/m/browse`.
+
+Migration `0005` adds the indexes those queries lean on. `scripts/seed_library.py` fills a
+10k-item library (a few dozen real originals, artworks cloned from them) for the AC.
+
+**Verified**: `make check` green — 900 backend tests (37 new: `tests/unit/test_filters.py`,
+`tests/api/test_organization.py`), mypy strict, ESLint, tsc, i18n, conformance unchanged. Driven
+in a real browser (headless Chromium over CDP against the production build on trusted localhost),
+every result read back from the **API**, never off the screen:
+
+- **Filter bar**: adding a *Favorite* chip on a 300-artwork seeded library cut the grid to 28,
+  and `POST /artworks/query` with the same AST returned the same 28.
+- **Collections**: 7 rows in the tree; a manual collection showed 20 cards with reorder grips and
+  the include-nested toggle, the smart one 18 cards with neither; creating "Driven by CDP" from
+  the sidebar button filed it under the selected collection (`parent_id` set); a reorder moved the
+  third item to the front and the manual sort returned the new order.
+- **Smart collections**: the dialog's live count came from `POST /filters/validate` (298 with no
+  clause, 0 for *Quality = upscaled*, 224 after switching to *Downscaled*); saving persisted the
+  AST, re-opening it rebuilt the chips from what was stored, and the page then listed 224.
+- **Tags**: rename `sea` → `ocean` and a colour click both landed in the DB (`#ef4444`); merging
+  `ocean` into `winter` took it from 57 to 84 artworks and deleted the source.
+- **Trash**: selecting a photo and pressing the bin listed *75 artworks use them* with both
+  cascades; `empty_slots` left 75 incomplete drafts whose slot carried `photo_id: null` and
+  `quality_lock: free`, each with a `pre_trash` snapshot; `trash_artworks` on another photo put
+  1 photo + 75 artworks in one batch and restoring that batch brought all 76 back; emptying the
+  trash from the page reported *Freed 2.3 MB* and the data dir actually shrank (3140 → 2920 KiB).
+- **Favorites / mobile**: the Favorites view listed only hearted artworks and un-hearting one
+  removed it live; `/m/browse` showed the tabs (Artworks, Favorites, each collection), 200 cards,
+  27 favourites, and no mutating control at all.
+
+Two things the harness, not the app, got wrong and that are worth remembering: each open tab holds
+an SSE connection, so **six tabs exhaust the per-origin connection pool** and the seventh renders
+an empty page (close tabs between runs); and openapi-fetch binds `globalThis.fetch` at
+`createClient` time, so patching `window.fetch` afterwards intercepts nothing — read the result
+through the API instead. The HTML5 drag-and-drop gestures themselves (dropping an artwork on a
+collection row, dragging a collection onto another) were **not** synthesized: the endpoints behind
+them were driven directly and the UI state they produce was checked, but the drag itself has not
+been exercised in a browser.
+
+One real bug the browser found: the merge dialog's description showed a raw `{{name}}` (the
+interpolation argument was missing). Fixed.
+
 ## 2026-09-23 — Phase 8 (templates)
 
 Spec: `docs/templates.md`. Templates rebuilt around Phase 7's recipes.

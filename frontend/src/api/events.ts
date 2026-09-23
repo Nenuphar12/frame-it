@@ -55,7 +55,10 @@ export interface ServerEvents {
   "job.failed": { job_id: string; error: string | null };
   "photo.updated": { photo_ids: string[] };
   "artwork.rendered": { artwork_id: string; render_hash: string };
+  /** `entity`: `artwork` | `collection` | `tag` — what a page has to refetch. */
   "entity.changed": { entity: string; id: string };
+  "trash.purged": { photos: number; artworks: number; bytes: number };
+  "trash.changed": { batch_id: string };
 }
 
 type EventName = keyof ServerEvents;
@@ -94,6 +97,8 @@ export function useServerEvents(enabled: boolean) {
       "photo.updated",
       "artwork.rendered",
       "entity.changed",
+      "trash.changed",
+      "trash.purged",
     ];
     const handlers = names.map((name) => {
       const handler = (message: MessageEvent<string>) => {
@@ -102,8 +107,20 @@ export function useServerEvents(enabled: boolean) {
         if (name === "artwork.rendered" || name === "entity.changed") {
           void qc.invalidateQueries({ queryKey: ["artworks"] });
         }
+        if (name === "entity.changed") {
+          const entity = (data as ServerEvents["entity.changed"]).entity;
+          if (entity === "collection") void qc.invalidateQueries({ queryKey: ["collections"] });
+          if (entity === "tag") void qc.invalidateQueries({ queryKey: ["tags"] });
+        }
         if (name === "photo.ingested" || name === "photo.updated") {
           void qc.invalidateQueries({ queryKey: ["photos"] });
+        }
+        if (name.startsWith("trash.")) {
+          // A purge or a restore moves rows between the library and the trash: refetch both.
+          void qc.invalidateQueries({ queryKey: ["trash"] });
+          void qc.invalidateQueries({ queryKey: ["photos"] });
+          void qc.invalidateQueries({ queryKey: ["artworks"] });
+          void qc.invalidateQueries({ queryKey: ["collections"] });
         }
         if (name.startsWith("localsend.")) {
           void qc.invalidateQueries({ queryKey: ["localsend"] });

@@ -33,6 +33,7 @@ from the_frame_v2.db.models import Photo, PhotoHashAlias
 from the_frame_v2.imaging.decode import ProbeResult
 from the_frame_v2.imaging.fingerprint import content_fingerprint
 from the_frame_v2.jobs.queue import JobContext
+from the_frame_v2.services import search
 from the_frame_v2.services.geocode import Place
 
 log = logging.getLogger(__name__)
@@ -121,6 +122,8 @@ def merge_copy(ctx: AppContext, photo_id: str, copy: IncomingCopy) -> list[str]:
         if is_generated_name(photo.original_filename) and not is_generated_name(copy.filename):
             photo.original_filename = copy.filename
             merged.append("filename")
+        s.flush()
+        search.index_photo(s, photo)
     if replaced is not None:
         _retire_original(ctx, *replaced, new_sha=copy.sha256)
     log.info("merged copy %s into photo %s: %s", copy.sha256[:12], photo_id, merged or "alias")

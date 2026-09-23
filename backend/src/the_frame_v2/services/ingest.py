@@ -23,7 +23,7 @@ from the_frame_v2.imaging import decode
 from the_frame_v2.imaging.decode import DecodeError, ProbeResult
 from the_frame_v2.imaging.fingerprint import content_fingerprint
 from the_frame_v2.jobs.queue import JobContext, PermanentJobError
-from the_frame_v2.services import photo_copies
+from the_frame_v2.services import photo_copies, search
 
 log = logging.getLogger(__name__)
 
@@ -191,6 +191,7 @@ def ingest_upload(ctx: AppContext, upload_id: str, *, _retry: bool = True) -> st
             row = s.get(UploadSession, upload.id)
             if row is not None:
                 s.delete(row)
+            search.index_photo(s, photo)
             photo_id = photo.id
     except IntegrityError:
         if not _retry:

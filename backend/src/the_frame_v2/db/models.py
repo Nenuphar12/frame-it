@@ -93,6 +93,7 @@ class Photo(Base):
         Index("ix_photos_inbox", "inbox_state", "imported_at"),
         Index("ix_photos_taken", "taken_at"),
         Index("ux_photos_content_fingerprint", "content_fingerprint", unique=True),
+        Index("ix_photos_deleted", "deleted_at"),
     )
 
 
@@ -164,7 +165,12 @@ class Artwork(Base):
     deleted_at: Mapped[datetime | None]
     trash_batch_id: Mapped[str | None] = mapped_column(String(36))
 
-    __table_args__ = (Index("ix_artworks_created", "created_at", "id"),)
+    __table_args__ = (
+        Index("ix_artworks_created", "created_at", "id"),
+        Index("ix_artworks_updated", "updated_at", "id"),
+        Index("ix_artworks_deleted", "deleted_at"),
+        Index("ix_artworks_title", "title", "id"),
+    )
 
 
 class ArtworkPhoto(Base):
@@ -233,6 +239,8 @@ class CollectionItem(Base):
         ForeignKey("artworks.id", ondelete="CASCADE"), primary_key=True, index=True
     )
     position: Mapped[float] = mapped_column(Float, default=0.0)
+
+    __table_args__ = (Index("ix_collection_items_order", "collection_id", "position"),)
 
 
 # ---- Templates & swatches ---------------------------------------------------------------------

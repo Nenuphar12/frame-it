@@ -1,68 +1,136 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Frame } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Frame, Heart, Search, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { artworkThumbUrl } from "@/api/client";
-import { useArtworks, type ArtworkFilter } from "@/api/queries";
-import { cn } from "@/shared/cn";
+import type { ArtworkSort } from "@/api/client";
+import { useArtworks, useTrashActions, type ArtworkFilter } from "@/api/queries";
+import { AddToCollectionMenu } from "@/features/collections/AddToCollectionMenu";
+import { FilterBar } from "@/features/library/FilterBar";
+import type { ChipFilter } from "@/features/library/filters";
+import { useSelection } from "@/features/photos/useSelection";
+import { Button } from "@/shared/ui/Button";
 import { EmptyState, PageHeader, Spinner } from "@/shared/ui/Misc";
 
-import { ArtworkBadges } from "./ArtworkBadges";
+import { ArtworkGrid } from "./ArtworkGrid";
 import { ArtworkViewer } from "./ArtworkViewer";
+import { useArtworkGridCommands } from "./useArtworkGridCommands";
 
-const FILTERS: { key: string; filter: ArtworkFilter }[] = [
-  { key: "all", filter: {} },
-  { key: "draft", filter: { status: "draft" } },
-  { key: "ready", filter: { status: "ready" } },
-];
+const SORTS: ArtworkSort[] = ["created_desc", "created_asc", "updated_desc", "title_asc"];
 
-export function ArtworksPage() {
+interface ArtworksPageProps {
+  /** The Favorites view is this page with one clause pinned on (docs/PLAN.md §14, Phase 9). */
+  favoritesOnly?: boolean;
+}
+
+export function ArtworksPage({ favoritesOnly = false }: ArtworksPageProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [filterKey, setFilterKey] = useState("all");
-  const filter = FILTERS.find((f) => f.key === filterKey)!.filter;
+  const [chips, setChips] = useState<ChipFilter>([]);
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<ArtworkSort>("created_desc");
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  const filter = useMemo<ArtworkFilter>(
+    () => ({
+      chips,
+      sort,
+      ...(search.trim() ? { q: search.trim() } : {}),
+      ...(favoritesOnly ? { favorite: true } : {}),
+    }),
+    [chips, favoritesOnly, search, sort],
+  );
   const artworks = useArtworks(filter);
   const items = useMemo(() => artworks.data?.pages.flatMap((p) => p.items) ?? [], [artworks.data]);
-  const [openId, setOpenId] = useState<string | null>(null);
-  const sentinel = useRef<HTMLDivElement>(null);
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = artworks;
+  const ids = useMemo(() => items.map((a) => a.id), [items]);
+  const selection = useSelection(ids);
+  const { selected, clear, selectAll, prune } = selection;
+  useEffect(() => prune(new Set(ids)), [ids, prune]);
 
-  useEffect(() => {
-    const element = sentinel.current;
-    if (!element) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) void fetchNextPage();
-    });
-    observer.observe(element);
-    return () => observer.disconnect();
+  const { artworks: trashArtworks } = useTrashActions();
+  const searchRef = useRef<HTMLInputElement>(null);
+  const [collectionMenuOpen, setCollectionMenuOpen] = useState(false);
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = artworks;
+  const loadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const openEditor = useCallback(
+    (id: string) => void navigate({ to: "/editor/$artworkId", params: { artworkId: id } }),
+    [navigate],
+  );
+
+  const { selectedInOrder } = useArtworkGridCommands({
+    items,
+    selected,
+    selectAll,
+    clear,
+    openEditor,
+    openCollectionMenu: () => setCollectionMenuOpen(true),
+    focusSearch: () => searchRef.current?.focus(),
+    suspended: openId !== null,
+  });
 
   return (
     <div className="flex h-full flex-col">
       <PageHeader
-        title={t("nav.artworks")}
-        subtitle={artworks.data ? t("artworks.count", { count: items.length }) : undefined}
+        title={t(favoritesOnly ? "nav.favorites" : "nav.artworks")}
+        subtitle={
+          selected.size > 0
+            ? t("artworks.selected", { count: selected.size })
+            : artworks.data
+              ? t("artworks.count", { count: items.length })
+              : undefined
+        }
         actions={
-          <div className="flex rounded-md border border-border p-0.5" role="tablist">
-            {FILTERS.map(({ key }) => (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                aria-selected={filterKey === key}
-                onClick={() => setFilterKey(key)}
-                className={cn(
-                  "rounded px-2.5 py-1 text-xs text-muted",
-                  filterKey === key && "bg-panel-2 text-text",
-                )}
-              >
-                {t(`artworks.filters.${key}`)}
-              </button>
-            ))}
-          </div>
+          <>
+            <label className="flex items-center gap-2 rounded-md border border-border bg-bg px-2.5 py-1.5">
+              <Search size={14} className="text-muted" />
+              <input
+                ref={searchRef}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder={t("artworks.searchPlaceholder")}
+                className="w-52 bg-transparent text-sm outline-none placeholder:text-muted"
+              />
+            </label>
+            {selected.size > 0 && (
+              <>
+                <AddToCollectionMenu
+                  artworkIds={selectedInOrder}
+                  open={collectionMenuOpen}
+                  onOpenChange={setCollectionMenuOpen}
+                  onDone={clear}
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    trashArtworks.mutate(selectedInOrder);
+                    clear();
+                  }}
+                >
+                  <Trash2 size={14} /> {t("trash.moveToTrash")}
+                </Button>
+              </>
+            )}
+          </>
         }
       />
+      <FilterBar chips={chips} onChange={setChips}>
+        <select
+          value={sort}
+          onChange={(event) => setSort(event.target.value as ArtworkSort)}
+          aria-label={t("artworks.sort")}
+          className="h-7 rounded border border-border bg-bg px-1.5 text-xs outline-none"
+        >
+          {SORTS.map((option) => (
+            <option key={option} value={option}>
+              {t(`artworks.sorts.${option}`)}
+            </option>
+          ))}
+        </select>
+      </FilterBar>
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
         {artworks.isLoading ? (
           <div className="flex h-full items-center justify-center">
@@ -70,55 +138,28 @@ export function ArtworksPage() {
           </div>
         ) : items.length === 0 ? (
           <EmptyState
-            icon={<Frame size={40} />}
-            title={t("artworks.emptyTitle")}
-            description={t("artworks.emptyDescription")}
+            icon={favoritesOnly ? <Heart size={40} /> : <Frame size={40} />}
+            title={t(favoritesOnly ? "artworks.noFavoritesTitle" : "artworks.emptyTitle")}
+            description={t(
+              favoritesOnly ? "artworks.noFavoritesDescription" : "artworks.emptyDescription",
+            )}
           />
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-3">
-            {items.map((artwork) => (
-              <button
-                key={artwork.id}
-                type="button"
-                onClick={() => setOpenId(artwork.id)}
-                onDoubleClick={() =>
-                  void navigate({
-                    to: "/editor/$artworkId",
-                    params: { artworkId: artwork.id },
-                  })
-                }
-                title={t("editor.open")}
-                className="group overflow-hidden rounded-md border border-border bg-panel text-left outline-offset-2 hover:border-muted"
-              >
-                <div className="relative aspect-video bg-panel-2">
-                  <img
-                    src={artworkThumbUrl(artwork, window.devicePixelRatio > 1 ? 768 : 256)}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-2">
-                  <span className="min-w-0 flex-1 truncate text-sm">
-                    {artwork.title || t("artworks.untitled")}
-                  </span>
-                  <ArtworkBadges artwork={artwork} />
-                </div>
-              </button>
-            ))}
-          </div>
+          <ArtworkGrid
+            items={items}
+            selected={selected}
+            onTileClick={(artwork, index, event) => selection.click(artwork.id, index, event)}
+            onOpen={setOpenId}
+            onEndReached={loadMore}
+          />
         )}
-        <div ref={sentinel} className="h-4" />
       </div>
       {openId && (
         <ArtworkViewer
           artworkId={openId}
-          ids={items.map((a) => a.id)}
+          ids={ids}
           onNavigate={setOpenId}
-          onEdit={(id) =>
-            void navigate({ to: "/editor/$artworkId", params: { artworkId: id } })
-          }
+          onEdit={openEditor}
           onClose={() => setOpenId(null)}
         />
       )}

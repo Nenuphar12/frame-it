@@ -12,7 +12,10 @@
     "save": "Save",
     "on": "On",
     "off": "Off",
-    "select": "Apply a saved layout…"
+    "select": "Apply a saved layout…",
+    "yes": "Yes",
+    "no": "No",
+    "loadMore": "Load more"
   },
   "nav": {
     "label": "Main navigation",
@@ -26,7 +29,8 @@
     "devices": "Devices",
     "settings": "Settings",
     "manage": "Manage",
-    "mobile": "Phone upload view"
+    "mobile": "Phone upload view",
+    "tags": "Tags"
   },
   "palette": {
     "title": "Command palette",
@@ -54,7 +58,11 @@
     "goArtworks": "Go to Artworks",
     "goDevices": "Go to Devices",
     "goSettings": "Go to Settings",
-    "goMobile": "Open phone upload view"
+    "goMobile": "Open phone upload view",
+    "goCollections": "Go to collections",
+    "goFavorites": "Go to favorites",
+    "goTags": "Go to tags",
+    "goTrash": "Go to trash"
   },
   "upload": {
     "addPhotos": "Add photos",
@@ -144,12 +152,31 @@
       "below_tv_resolution": "Smaller than 3840×2160: it cannot fill the TV pixel-perfectly.",
       "high_bit_depth_reduced": "16-bit image: it is converted to 8-bit for display."
     },
-    "loadMore": "Load more"
+    "loadMore": "Load more",
+    "filterByTag": "Filter by tag",
+    "allTags": "All tags"
   },
   "tags": {
     "placeholder": "Add tags…",
     "create": "Create “{{name}}”",
-    "remove": "Remove tag {{name}}"
+    "remove": "Remove tag {{name}}",
+    "count_one": "{{count}} tag",
+    "count_other": "{{count}} tags",
+    "search": "Search tags…",
+    "newPlaceholder": "New tag…",
+    "add": "Add",
+    "name": "Name",
+    "color": "Colour",
+    "merge": "Merge",
+    "mergeTitle": "Merge “{{name}}” into…",
+    "mergeHint": "Every photo and artwork tagged “{{name}}” moves to the tag you pick; this one disappears.",
+    "mergePick": "Pick a tag…",
+    "deleteTitle": "Delete “{{name}}”?",
+    "deleteHint": "It is removed from {{photos}} photo(s) and {{artworks}} artwork(s). Nothing else is deleted.",
+    "emptyTitle": "No tags yet",
+    "emptyDescription": "Tags are created from the photo drawer, the editor or the phone upload page.",
+    "none": "No tag",
+    "edit": "Edit tags"
   },
   "devices": {
     "subtitle": "Browsers allowed to use this library",
@@ -209,7 +236,8 @@
     "metaHint": "Tags, collections and favorite are applied to the artworks you create from these photos.",
     "noCollections": "Collections will appear here once created on the desktop.",
     "favorite": "Favorite",
-    "keepScreenOn": "Keep this screen on until the upload finishes."
+    "keepScreenOn": "Keep this screen on until the upload finishes.",
+    "browse": "Browse the library"
   },
   "settings": {
     "appearance": "Appearance",
@@ -233,10 +261,6 @@
     "defaultFormat": "Format",
     "automatic": "Follow the photos",
     "defaultRecipeHint": "“Follow the photos” picks the layout for the number of photos selected, and shows a single photo whole."
-  },
-  "comingSoon": {
-    "title": "Coming soon",
-    "description": "This section is planned for Phase {{phase}} of the implementation plan."
   },
   "errors": {
     "unknown": "Something went wrong.",
@@ -276,7 +300,26 @@
     "not_found": "Not found.",
     "empty_file": "The file is empty.",
     "transfer_interrupted": "The transfer was interrupted. Send it again from the phone.",
-    "localsend_cancelled": "Cancelled on the sending device."
+    "localsend_cancelled": "Cancelled on the sending device.",
+    "collection_cycle": "A collection cannot be moved inside itself.",
+    "collection_too_deep": "Collections cannot be nested that deep.",
+    "smart_collection": "A smart collection's items come from its filter.",
+    "smart_parent": "A smart collection holds no sub-collections.",
+    "manual_collection": "A manual collection has no filter.",
+    "filter_cycle": "A smart collection cannot reference itself.",
+    "filter_required": "A smart collection needs a filter.",
+    "invalid_filter": "This filter is not valid.",
+    "invalid_collection_name": "The collection needs a name.",
+    "invalid_collection_kind": "Unknown kind of collection.",
+    "tag_exists": "A tag with that name already exists — merge them instead.",
+    "invalid_tag_name": "That tag name is not valid.",
+    "nothing_to_merge": "Pick at least one other tag.",
+    "unknown_collection": "Unknown collection.",
+    "unknown_sibling": "Unknown item to insert before.",
+    "invalid_cascade": "Unknown cascade option.",
+    "manual_sort": "Manual order needs a collection.",
+    "invalid_date": "That date is not valid.",
+    "manual_sort_nested": "Manual order cannot span sub-collections — sort by date instead."
   },
   "localsend": {
     "title": "LocalSend",
@@ -371,7 +414,23 @@
       },
       "noRecipe": "No built-in layout holds {{count}} photos, so they go one per artwork.",
       "noLayout": "Pick a layout below"
-    }
+    },
+    "selected_one": "{{count}} selected",
+    "selected_other": "{{count}} selected",
+    "selectAll": "Select all artworks",
+    "searchPlaceholder": "Search artworks…",
+    "sort": "Sort",
+    "sorts": {
+      "created_desc": "Newest first",
+      "created_asc": "Oldest first",
+      "updated_desc": "Recently edited",
+      "title_asc": "Title A→Z",
+      "manual": "Manual order"
+    },
+    "noFavoritesTitle": "No favorites yet",
+    "noFavoritesDescription": "Click the heart on an artwork to keep it here.",
+    "focusSearch": "Search artworks",
+    "openHint": "Click to select · double-click to open · E to edit"
   },
   "editor": {
     "tabs": {
@@ -741,5 +800,115 @@
     "saveAsLayoutTitle": "Save this layout",
     "saved": "Saved",
     "savedLayouts": "Saved layouts"
+  },
+  "filters": {
+    "add": "Add filter",
+    "clear": "Clear",
+    "remove": "Remove filter",
+    "pick": "Pick…",
+    "value": "Value",
+    "fields": {
+      "tag": "Tag",
+      "favorite": "Favorite",
+      "collection": "Collection",
+      "taken_at": "Taken",
+      "created_at": "Created",
+      "place": "Place",
+      "title": "Title",
+      "worst_tier": "Quality",
+      "status": "Status",
+      "photo_count": "Photos",
+      "is_incomplete": "Incomplete",
+      "text": "Text"
+    },
+    "ops": {
+      "eq": "is",
+      "in": "in",
+      "not_in": "not in",
+      "has_any": "any of",
+      "has_all": "all of",
+      "none": "none of",
+      "between": "between",
+      "before": "before",
+      "after": "after",
+      "contains": "contains",
+      "match": "matches",
+      "gte": "at least",
+      "lte": "at most"
+    }
+  },
+  "collections": {
+    "new": "New collection",
+    "newSmart": "New smart collection",
+    "edit": "Edit collection",
+    "name": "Name",
+    "description": "Description",
+    "dateStart": "From",
+    "dateEnd": "To",
+    "filter": "Filter",
+    "smartHint": "A smart collection is a saved filter: its artworks are found, not added.",
+    "matches_one": "Matches {{count}} artwork",
+    "matches_other": "Matches {{count}} artworks",
+    "count_one": "{{count}} artwork",
+    "count_other": "{{count}} artworks",
+    "includeNested": "Include sub-collections",
+    "addTo": "Add to collection",
+    "removeItems_one": "Remove {{count}} from collection",
+    "removeItems_other": "Remove {{count}} from collection",
+    "dragToReorder": "Drag to reorder",
+    "dropHint": "Drag artworks here, or use “Add to collection” from the Artworks page.",
+    "noMatches": "No artwork matches this filter yet.",
+    "noItemsTitle": "Nothing here yet",
+    "emptyTree": "No collections yet.",
+    "emptyTitle": "No collection selected",
+    "emptyDescription": "Collections group artworks; nest them freely and drag to reorganize.",
+    "deleteTitle": "Delete “{{name}}”?",
+    "deleteHint": "The collection and its sub-collections go away. The artworks are untouched.",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "parent": "Inside",
+    "topLevel": "Top level",
+    "dropToTopLevel": "Drop here to move to the top level",
+    "newPlaceholder": "New collection…",
+    "createAndAdd": "Create",
+    "none": "No collection",
+    "addArtworks": "Add artworks",
+    "addArtworksTitle": "Add artworks to “{{name}}”",
+    "addArtworksHint": "Pick the artworks to file here; the ones already in are ticked.",
+    "picked_one": "{{count}} picked",
+    "picked_other": "{{count}} picked",
+    "includeNestedHint": "Also show the artworks of this collection's sub-collections.",
+    "removeFromCollection": "Remove from this collection",
+    "removeHint": "Takes them out of this collection (Backspace). The artworks are not deleted.",
+    "smartReadOnly": "Smart collection: its artworks come from its filter, so they cannot be reordered or removed by hand.",
+    "smartMember": "Matched by this smart collection's filter"
+  },
+  "trash": {
+    "summary": "{{photos}} photo(s), {{artworks}} artwork(s) · purged after {{days}} days",
+    "emptyTitle": "The trash is empty",
+    "emptyDescription": "Deleted photos and artworks wait {{days}} days here before being purged.",
+    "restore": "Restore",
+    "restoreSelected_one": "Restore {{count}}",
+    "restoreSelected_other": "Restore {{count}}",
+    "purgeExpired": "Purge expired",
+    "purgeExpiredHint": "Delete for good what has been in the trash for more than {{days}} days.",
+    "empty": "Empty trash",
+    "emptyConfirmTitle": "Empty the trash?",
+    "emptyConfirmHint": "Everything in the trash is deleted for good, files included. This cannot be undone.",
+    "freed": "Freed {{size}}.",
+    "moveToTrash": "Move to trash",
+    "deletePhotos_one": "Delete {{count}} photo?",
+    "deletePhotos_other": "Delete {{count}} photos?",
+    "deletePhotosHint": "Photos stay in the trash until it is purged.",
+    "noArtworksAffected": "No artwork uses these photos.",
+    "affected_one": "{{count}} artwork uses them:",
+    "affected_other": "{{count}} artworks use them:",
+    "slotsUsed": "{{used}} of {{total}} photo(s)",
+    "cascade": {
+      "trash_artworks": "Delete those artworks too",
+      "trashHint": "They go to the trash in the same batch, so restoring brings everything back at once.",
+      "empty_slots": "Keep them, empty the slots",
+      "emptyHint": "The artworks go back to draft with an empty slot; the change is snapshotted."
+    }
   }
 }

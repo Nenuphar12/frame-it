@@ -24,6 +24,7 @@ from the_frame_v2.api import (
     photos,
     rendering,
     system,
+    trash,
     uploads,
 )
 from the_frame_v2.api import templates as templates_router
@@ -40,7 +41,8 @@ from the_frame_v2.jobs.gate import RenderGate
 from the_frame_v2.jobs.queue import JobQueue
 from the_frame_v2.localsend.runner import LocalSendRunner
 from the_frame_v2.services import devices as devices_service
-from the_frame_v2.services import ingest, photo_copies, render, templates
+from the_frame_v2.services import ingest, photo_copies, render, search, templates
+from the_frame_v2.services import trash as trash_service
 from the_frame_v2.services import uploads as uploads_service
 from the_frame_v2.services.geocode import Geocoder
 from the_frame_v2.services.localsend import LocalSendHub
@@ -74,8 +76,15 @@ def build_context(settings: Settings) -> AppContext:
     jobs.register("ingest", ingest.ingest_job(ctx), lane="ingest")
     jobs.register(photo_copies.BACKFILL_JOB, photo_copies.backfill_job(ctx), lane="ingest")
     jobs.register(render.RENDER_JOB, render.render_job(ctx), lane="render", max_attempts=2)
+    jobs.register(trash_service.PURGE_JOB, trash_service.purge_job(ctx), lane="ingest")
+    jobs.schedule_every(trash_service.PURGE_JOB, trash_service.PURGE_INTERVAL_SECONDS, {})
     with db.session() as s:
         templates.seed_builtins(s)
+        if search.is_empty(s):
+            # The FTS index is disposable (docs/data-model.md): rebuild it when it is missing.
+            count = search.reindex_all(s)
+            if count:
+                log.info("search index rebuilt (%d entries)", count)
     return ctx
 
 
@@ -151,6 +160,7 @@ def create_app(settings: Settings, *, start_workers: bool = True) -> FastAPI:
         photos,
         library,
         artworks,
+        trash,
         templates_router,
         rendering,
         colors,

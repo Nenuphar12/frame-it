@@ -8,31 +8,34 @@
 Self-hosted web app to prepare pictures for a 4K art-mode TV (Samsung The Frame, 3840×2160): phone uploads in
 full quality over the LAN, pixel-perfect framing/compositions, collections, export/import.
 
-- **Current state (2026-09-23): Phases 0–8 done** — foundations, device auth &
+- **Current state (2026-09-23): Phases 0–9 done** — foundations, device auth &
   pairing, resumable uploads, LocalSend receiver, ingest, Photos + Inbox UI, phone upload page; artwork
   document + geometry (Python/TS mirrored), pyvips renderer, built-in styles/layouts, artworks API;
   **editor** (Konva canvas, crop/placement/locks with the constraint solver, colour tools, alternatives,
   loupe, TV preview, undo/autosave, review queue) and **multi-photo compositions** (slots panel with
   z-order, photo picker, free-form move/resize/rotate with smart guides, multi-selection +
   align/distribute, caption editing).
-- **Phase 7 (2026-09-21/22, `docs/simple-editor.md`)**: parametric compositions end to end — the
-  optional `composition` block, the pure mirrored **solver**, the 17-entry recipe catalogue and
-  `GET /recipes`; **server authority** (`composition.apply` writes §3.7's table, `PUT document`
-  re-solves on every save); the **Simple panel** (picker drawn by the solver, Balance, format chips,
-  bounded Outer/Gap sliders, reframe/zoom, swap, background, border, caption); and the
-  **`[Simple] [Advanced ᴮᴱᵀᴬ]` switch** with `detached` and an undoable **Re-apply layout**.
-- **Phase 8 (2026-09-23, `docs/templates.md`)**: templates rebuilt around recipes — a **layout is
-  a recipe + parameters** (the composition block minus the caption text and `detached`), the
-  absolute-rect layout code is gone (migration `0004`); frame styles and layouts get full CRUD,
-  duplicate, "Save as style/layout" from an artwork, `.tfstyle.json` / `.tflayout.json` files, a
-  **Templates page** whose previews are drawn by the solver, `apply-template` + the origin/outdated
-  badge, and **push update** (server-side dry run, `pre_template_update` snapshot per artwork, a
-  layout skipping another photo count or a detached artwork). `settings.artwork_defaults` is now
-  **style + recipe + format**. `restyle` / `relayout` are pure and mirrored
-  (`domain/templates.py` ↔ `editor/core/templates.ts`, `conformance/geometry/templates.json`).
-- **Next: Phase 9** (`docs/PLAN.md` §14): organization — tags manager, favorites, nested
-  collections with DnD, the filter bar + FTS search, smart collections, trash (soft delete,
-  cascade, purge) and mobile read-only browsing.
+- **Phase 7 (`docs/simple-editor.md`)**: parametric compositions — the optional `composition`
+  block, the pure mirrored **solver**, the 17-entry recipe catalogue (`GET /recipes`), **server
+  authority** (`composition.apply` writes §3.7's table, `PUT document` re-solves on every save),
+  the **Simple panel**, and the `[Simple] [Advanced ᴮᴱᵀᴬ]` switch with `detached`.
+- **Phase 8 (`docs/templates.md`)**: templates rebuilt around recipes — **a layout is a recipe +
+  parameters** (migration `0004` dropped the absolute-rect code); full CRUD for both kinds,
+  "Save as" from an artwork, `.tf*.json` files, a Templates page, `apply-template` with the
+  origin/outdated badge, and **push update** (dry run + `pre_template_update` snapshots).
+  `restyle`/`relayout` are pure and mirrored (`conformance/geometry/templates.json`).
+- **Phase 9 (2026-09-23, `docs/organization.md`)**: organization — the **filter AST**
+  (`domain/filters.py` validates, `services/library.py` compiles) shared by the filter bar,
+  `POST /artworks/query` and smart collections; **collections** as a tree (REAL `position`,
+  recursive-CTE subtree, cycle + depth checks, manual item order, DnD everywhere); the **tag
+  manager** (rename/recolour/merge/delete with per-kind counts); **FTS search** kept in sync by
+  `services/search.py` and rebuilt when empty; the **trash** (batch soft delete, a cascade dialog
+  choosing between trashing the artworks and emptying their slots, restore by batch, daily +
+  manual purge that frees originals and render caches); Favorites view, the heart in the grid and
+  the editor (`f`), and read-only mobile browsing at `/m/browse`. Migration `0005` adds the
+  indexes those queries lean on; `scripts/seed_library.py` fills a 10k-item library.
+- **Next: Phase 10** (`docs/PLAN.md` §14): export / import — archive writer and reader, dry-run
+  report with conflict policies, rendered-image export, published JSON Schemas.
 - Verified by the user on real hardware (2026-09-17): Android uploads (both pickers keep full quality but
   Android zeroes GPS → no place; see `docs/research/phone-uploads.md`), Docker image build/run/persistence.
 
@@ -46,6 +49,7 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
 | Geometry fixtures | `make conformance` (TS); regenerate from Python: `cd backend && CONFORMANCE_UPDATE=1 uv run pytest tests/unit/test_conformance.py` |
 | Golden images | `make golden-update` after an intended pixel change (review PNGs, bump `RENDERER_VERSION`) |
 | Render budgets | `cd backend && uv run python ../scripts/bench_render.py` |
+| Seed a big library (Phase 9 AC) | `cd backend && uv run python ../scripts/seed_library.py --data-dir /tmp/seed --artworks 10000` |
 | Editor E2E against a copy of the library | `cp -r .dev-data /tmp/e2e && cd backend && THE_FRAME_V2_DATA_DIR=/tmp/e2e THE_FRAME_V2_PORT=8799 uv run the_frame_v2 serve`, then `cd frontend && THE_FRAME_V2_BACKEND=http://127.0.0.1:8799 pnpm dev --port 5199` |
 | Backend tests only | `cd backend && uv run pytest` (add `-k name`) |
 | Regenerate API types + `docs/schemas/` (after any API/document schema change) | `make gen-api` |
@@ -63,10 +67,10 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `backend/src/the_frame_v2/app.py` | App factory: context, routers, SPA serving, lifespan (jobs, setup code) |
 | `…/config.py` | Settings (env `THE_FRAME_V2_*` > `<data_dir>/config.toml` > defaults), LAN IP, allowed hosts |
 | `…/context.py` | `AppContext` service container (`app.state.ctx`) |
-| `…/api/` | Thin routers + `schemas.py` (Pydantic API models = OpenAPI source) + `deps.py` (auth deps); `templates.py` = styles/layouts CRUD, usage, push update, template files |
+| `…/api/` | Thin routers + `schemas.py` (Pydantic API models = OpenAPI source) + `deps.py` (auth deps); `templates.py` = styles/layouts CRUD, usage, push update, template files; `library.py` = tags + collections + `POST /filters/validate`; `trash.py` = preview/trash/restore/purge |
 | `…/auth/` | `principal.py` (cookie/localhost → role), `middleware.py` (Host/CSRF/headers), `ratelimit.py` |
-| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos`, `tags`, `geocode`, `artworks` (create/save/snapshots), `render` (cache, jobs, region), `templates` (presets, CRUD, template files, artwork defaults; the artwork-writing half — apply/push update — is in `artworks`), `recipes` (the bundled composition catalogue, no DB), `colors` (photo palette, swatches, curated presets) |
-| `…/domain/` | PURE: `document` (artwork document v1 + the `composition` block + reference checks), `geometry`, `quality` (tiers), `placement`, `constraints` (editor solver §7.3), `alternatives` (§7.6), `arrange` (align/distribute/new slot, §7.7), `composition` (recipe trees, the parametric solver and `apply` = what it writes into a document, `docs/simple-editor.md` §3), `templates` (style/layout docs, `restyle`/`relayout`/save-as, `build_composition_document`) |
+| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos`, `tags`, `geocode`, `artworks` (create/save/snapshots), `render` (cache, jobs, region), `templates` (presets, CRUD, template files, artwork defaults; the artwork-writing half — apply/push update — is in `artworks`), `recipes` (the bundled composition catalogue, no DB), `colors` (photo palette, swatches, curated presets), `library` (the filter compiler + the artwork listing), `collections` (tree, items, smart filters), `tags` (rename/merge/delete), `search` (FTS index), `trash` (soft delete, cascade, restore, purge) |
+| `…/domain/` | PURE: `document` (artwork document v1 + the `composition` block + reference checks), `geometry`, `quality` (tiers), `placement`, `constraints` (editor solver §7.3), `alternatives` (§7.6), `arrange` (align/distribute/new slot, §7.7), `composition` (recipe trees, the parametric solver and `apply` = what it writes into a document, `docs/simple-editor.md` §3), `templates` (style/layout docs, `restyle`/`relayout`/save-as, `build_composition_document`), `filters` (the library filter AST, `docs/data-model.md` §5.2) |
 | `…/imaging/` | `sniff` (magic bytes), `decode` (the only pixel access), `metadata` (EXIF/ICC), `fingerprint` (hash ignoring EXIF), `capabilities`, `render` (the renderer), `palette` (OKLab k-means), `assets` (fonts/textures catalog) |
 | `…/assets/` | `geonames/`, `fonts/` (OFL, `scripts/build_fonts.py`), `textures/` (CC0, `scripts/generate_textures.py`), `presets/` (built-in styles/layouts + `recipes.json`) |
 | `…/localsend/` | LocalSend v2 receiver: `app.py` (protocol routes, own TLS port), `discovery.py` (multicast), `identity.py` (cert/fingerprint), `client.py` (outgoing TLS), `runner.py` (lifespan); logic in `services/localsend.py`, admin API `api/localsend.py` |
@@ -84,7 +88,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `frontend/src/editor/` | `EditorPage.tsx` (layout, shortcuts, review queue), `store.ts` (working document, undo/redo on Immer patches, autosave + conflicts), `operations.ts` (pure document mutations: how a change propagates), `actions.ts` (what the UI calls), `TvPreview.tsx` |
 | `…/editor/canvas/` | `EditorStage.tsx` (Konva stage, one pointer pipeline for every gesture, overlays), `SlotNode.tsx` (bands, photo, shadows), `CaptionNode.tsx`, `SelectionOverlay.tsx` (outlines + transform handles), `hit.ts` (rotation-aware hit tests, handle maths), `texture.ts`, `fonts.ts`, `useOrientedImage.ts` |
 | `…/editor/panels/` | `SimplePanel` (the parametric editor, §6.2) + `RecipePicker` (schemas drawn by the solver), `SlotsPanel` (z-order, add/remove, photos), `PhotoPicker`, `ArrangePanel` (align/distribute), `CaptionsPanel`, `FramingPanel`, `StylePanel`, `ColorField` (picker + swatches + palette + presets), `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`, `ShadowFields` (shared with the template editor), `Controls` |
-| `frontend/src/features/` | `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, viewer, create dialog), `templates/` (page, editors, push update, `.tf*.json` files), `devices/`, `auth/`, `mobile/`, `settings/`, `tags/`, `localsend/` (the editor lives in `src/editor/`, not here) |
+| `frontend/src/features/` | `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, grid, viewer, create dialog), `templates/` (page, editors, push update, `.tf*.json` files), `library/` (the filter AST + chip bar), `collections/` (page, tree, create/edit dialog), `trash/` (page + the cascade dialog), `tags/` (picker + manager page), `devices/`, `auth/`, `mobile/` (upload + read-only browse), `settings/`, `localsend/` (the editor lives in `src/editor/`, not here) |
 | `frontend/src/shared/` | UI primitives (`ui/`), `format.ts`, `cn.ts`, `dnd.ts` (the MIME types our own drags carry) |
 | `frontend/src/i18n/` | i18next setup; strings in `locales/en/common.json` |
 | `docs/` | Plan, specs, ADRs (`adr/`), research findings (`research/`), progress |
@@ -158,6 +162,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 
 `docs/PLAN.md` (scope, phases, DoD) · `docs/data-model.md` · `docs/localsend.md` · `docs/artwork-document.md` ·
 `docs/simple-editor.md` (Phase 7: compositions, recipes, the solver) · `docs/templates.md` (Phase 8) ·
+`docs/organization.md` (Phase 9: tags, collections, filters, search, trash) ·
 `docs/geometry-and-quality.md` · `docs/rendering-spec.md` · `docs/security.md` · `docs/archive-format.md` ·
 `docs/schemas/` (generated) · `docs/adr/` · `docs/research/` · `NOTICE.md` (asset licenses)
 
@@ -169,12 +174,12 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
   on ids/shortcuts and calls the latest `run` via a ref — keep it that way.
 - Resuming an upload without `meta` must keep the metadata of the original session (regression-tested).
 - `Settings.allowed_hosts` must include the test host (`testserver`) in tests; production adds LAN IP/hostname.
-- Android (any browser picker) zeroes GPS bytes in place: never expect `gps_lat` from phone web uploads; the
-  photo picker also renames files to MediaStore ids (`1000125423.jpg`). A later copy with GPS/name (USB,
-  LocalSend, desktop drop) is merged into the existing photo by content fingerprint (`docs/data-model.md`).
-- LocalSend app: files without a token are hidden from its transfer list, and a `prepare-upload` accepting no
-  file at all (204) shows nothing — no transfer screen, straight back to its home screen; 403/409/429 show fixed texts and other statuses an "Error ⓘ" (we avoid all of them for
-  already-sent photos: the transfer must look normal — `docs/localsend.md` "Already-sent photos").
+- Android (any browser picker) zeroes GPS bytes in place, and the photo picker renames files to MediaStore
+  ids (`1000125423.jpg`): never expect `gps_lat` from a phone web upload. A later copy with GPS/name is
+  merged into the existing photo by content fingerprint (`docs/data-model.md`).
+- LocalSend app: files without a token are hidden from its transfer list, and a `prepare-upload` accepting
+  no file (204) shows nothing at all; 403/409/429 show fixed texts, other statuses an "Error ⓘ" — we avoid
+  all of them for already-sent photos (`docs/localsend.md` "Already-sent photos").
 - The LocalSend certificate (`<data_dir>/localsend/`) is pinned by phones: never regenerate it casually.
   Tests never bind 53317 (`start_workers=False`; runner tests use a free port and `localsend_discovery=False`).
 - Alembic autogenerate proposes dropping the FTS5 `search_index*` tables: delete those lines by hand.
@@ -193,32 +198,27 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
   loupe's pointer all batch into `requestAnimationFrame` in `EditorStage`; keep any new gesture that way.
 - Canvas shadows allocate a surface covering the shape **and** its shadow: never draw the inner-shadow ring far
   away (S3's trick froze the tab). It is drawn around the layer and clipped — `docs/rendering-spec.md` §8.2.
-- Radix layers (dialog, popover) see `Escape` in the **capture** phase on the document while the command
-  registry (tinykeys) listens on `window` (bubble): a layer must `stopPropagation` in `onEscapeKeyDown`, or
-  `Escape` closes the popover *and* runs the page's own `Escape` command (it used to leave the editor).
+- Radix layers see `Escape` in the **capture** phase on the document while tinykeys listens on `window`
+  (bubble): a layer must `stopPropagation` in `onEscapeKeyDown`, or `Escape` closes the popover *and* runs
+  the page's own `Escape` command.
 - Konva does not put a `Text` node's `y` on the line top (it translates by `(ascent − descent) / 2 +
-  lineHeight / 2` and draws `alphabetic`), and its font shorthand includes the weight: caption placement and
-  measurement go through `editor/canvas/fonts.ts`, which replicates both — the renderer's baseline rule does
-  **not** apply on the canvas (`docs/research/render-parity.md`).
+  lineHeight / 2`, draws `alphabetic`, and its font shorthand includes the weight): caption placement goes
+  through `editor/canvas/fonts.ts`, which replicates both (`docs/research/render-parity.md`).
 - **Verifying in a browser is expected but never blocking** (`docs/PLAN.md` §13.6): the Chrome-extension
-  harness can no longer drive this app (the SSE stream keeps the page from ever going idle, so `executeScript`,
-  screenshots and `--dump-dom` all time out). CDP works: headless `chromium --remote-debugging-port` +
-  `Runtime.evaluate` against the production build served by the backend on trusted localhost. Check the saved
-  document through the API rather than screenshots — a Konva canvas can capture **black** although its pixels
-  are correct. No harness ⇒ verify what you can (`make check`, conformance, API, render endpoints) and say in
-  `docs/progress.md` what was not driven in a browser.
-- The composition solver rounds **edges**, never sizes: a 3:2 cell can come out 2387×1592 rather than
-  ×1591, and a cell's aspect is only exact to `1 + r` px of width (two rounded edges per side). Assert
-  `|w − a·h| ≤ 1 + a`, not `≤ 1`.
-- The solver's over-constrained recovery is a **fixed ladder** (gutters ×10/10…0/10, then `outer`), not a
-  bisection: the two solvers have to agree bit for bit, and `i/10` gives the same doubles in both
-  languages. Keep it that way — and keep the recipe catalogue the *one* source both read
-  (`conformance.ts` loads `backend/…/presets/recipes.json` straight off disk).
-- **An edit detaches a composition exactly when `apply` would overwrite it** (§3.7's table): slot
-  geometry, bands, lock, crop ratio, margins, placement and a caption's position do; the shadow,
-  the mat and a caption's typography do not. Orienting a photo, re-ordering slots and changing the
-  photo count **re-solve** instead. Put any new editor action on one of those three lists, or it
-  will either eat the user's edit on the next save or drop the layout link for nothing.
+  harness cannot drive this app (the SSE stream keeps the page from ever going idle, so `executeScript`,
+  screenshots and `--dump-dom` time out). CDP works: headless `chromium --remote-debugging-port` +
+  `Runtime.evaluate` against the production build on trusted localhost. Read results back through the
+  **API**, not off the screen — a Konva canvas can capture black although its pixels are correct. No
+  harness ⇒ verify what you can and write in `docs/progress.md` what was not driven in a browser.
+- The composition solver rounds **edges**, never sizes: a 3:2 cell can come out 2387×1592, and a cell's
+  aspect is only exact to `1 + r` px of width. Assert `|w − a·h| ≤ 1 + a`, not `≤ 1`.
+- The solver's over-constrained recovery is a **fixed ladder** (gutters ×10/10…0/10, then `outer`), not
+  a bisection: both languages must agree bit for bit, and `i/10` gives the same doubles. Keep the recipe
+  catalogue the *one* source both read (`conformance.ts` loads `presets/recipes.json` off disk).
+- **An edit detaches a composition exactly when `apply` would overwrite it** (§3.7's table): slot geometry,
+  bands, lock, crop ratio, margins, placement and a caption's position do; the shadow, the mat and a
+  caption's typography do not. Orienting a photo, re-ordering slots and changing the photo count
+  **re-solve**. Put any new editor action on one of those three lists.
 - A caption's text belongs to the block: an edit on the canvas writes `composition.caption.text`,
   not just the caption, or the next solve takes it back.
 - The Simple panel's sliders bisect on **`solve_strict`**, never on `solve`: the relaxation ladder
@@ -233,25 +233,20 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 - Adding or removing a slot while a block is attached must re-pick the recipe
   (`recipeFollowsPhotoCount`) or the save fails with `recipe_slot_count`: the count comes from the
   photos, and past 6 photos the block detaches.
-- A crop whose width **and** height are rounded independently can fall just outside
-  `aspect_consistent` — the tolerance is exactly the budget of two roundings. `refit_crop` derives
-  the height from the width and the target ratio for that reason: the server must never re-solve a
-  document into one it would itself reject (invariant 11).
+- A crop with width **and** height rounded independently can fall just outside `aspect_consistent`
+  (the tolerance is exactly two roundings' budget). `refit_crop` derives the height from the width and
+  the target ratio: the server must never re-solve a document into one it would reject (invariant 11).
 - `composition.apply` (↔ `applyComposition`) is the **only** writer of `docs/simple-editor.md` §3.7:
   the server calls it on every save, the editor will call it to preview. Change it in both languages
   and add a `composition_apply` conformance case — those fixtures compare whole documents, so a field
   the two sides disagree on shows up there rather than in the browser.
-- **Every new artwork is parametric** (Phase 8): a `layout_id` names a saved *recipe + parameters*
-  and is recorded as `origin_layout_id`; fewer photos than cells leaves placeholders, more is
-  `layout_slot_count`. The pre-Phase-7 hand-placed creation path (`build_document`,
-  `map_rect_to_area`) is gone — a document without a block now only comes from detaching.
-  `settings.artwork_defaults` is `{style_id, recipe_id, format}`, both of the last two nullable
-  ("follow the photos").
-- **A template is copied on apply**; only a push update changes an existing artwork, and it
-  snapshots each one (`pre_template_update`) first — that snapshot *is* the undo. `restyle` and
-  `relayout` are mirrored (`domain/templates.py` ↔ `editor/core/templates.ts`, conformance
-  `templates.json`): the editor applies a template to the working document and the server applies
-  the same one during a push update, so a drift shows up as a fixture diff, not as a surprise.
+- **Every new artwork is parametric** (Phase 8): a `layout_id` names a saved *recipe + parameters* and is
+  recorded as `origin_layout_id`; fewer photos than cells leaves placeholders, more is `layout_slot_count`.
+  The hand-placed creation path is gone — a document without a block only comes from detaching.
+  `settings.artwork_defaults` is `{style_id, recipe_id, format}` (the last two nullable).
+- **A template is copied on apply**; only a push update changes an existing artwork, snapshotting each
+  one (`pre_template_update`) first — that snapshot *is* the undo. `restyle`/`relayout` are mirrored, so
+  editor and server apply the same template and a drift shows up as a fixture diff.
 - **The style's band and the layout's border are the same field** (`composition.border`, since the
   block owns `bands`): applying both applies the *layout first*, so the style wins, and
   `build_composition_document` lets the style's band fill in a border the composition does not name.
@@ -262,15 +257,12 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 - **A ratio format carries its orientation**: `4:3` and `3:4` are different formats and the cells
   take the ratio as written. Only `auto` (the 1-cell recipe) turns the landscape form the photo's
   way. The recipes' `landscape`/`portrait` cell kinds are inert as a result.
-- `composition.cell_formats` overrides the format cell by cell (`null` inherits, `original` = the
-  photo's own aspect, never `fill` — which has no per-cell aspect at all). `format: "original"`
-  itself works at **any** photo count: each cell takes its own photo's aspect.
-- `zoom_crop` derives the crop's height from its width and the **rect's** aspect. Scaling the two
-  sides on their own drifts, and so does re-reading the aspect off the rounded crop each step —
-  once it has drifted, `resize_crop` resizes the *slot* to match. That is the whole "zoom out and
-  the frame changes size" bug, and it needs both halves: the mirrored rule here, and the editor
-  routing the **wheel** through the same bounded 1×–8× scale as the slider, so a scroll can never
-  take the crop somewhere the slider cannot.
+- `composition.cell_formats` overrides the format cell by cell (`null` inherits, `original` = the photo's
+  own aspect, never `fill`). `format: "original"` works at **any** photo count.
+- `zoom_crop` derives the crop's height from its width and the **rect's** aspect: scaling the sides on
+  their own drifts, and a drifted crop makes `resize_crop` resize the *slot* ("zoom out and the frame
+  changes size"). Both halves matter — the mirrored rule, and the editor routing the **wheel** through
+  the same bounded 1×–8× scale as the slider.
 - An in-app HTML drag must stamp itself (`shared/dnd.ts`): dragging a photo chip is dragging an
   `<img>`, which Chrome also offers to the page as a *file*, so the window-wide upload overlay lit
   up on every cell swap. `hasFiles` ignores a drag carrying one of our MIME types.
@@ -280,37 +272,71 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 - `make format` runs prettier over the whole frontend, but `make lint` only runs ESLint: a lot of editor
   files have never been prettier-formatted, so `make format` rewrites ~20 files you did not touch. Format
   your own files, then `git checkout --` the rest.
-- Under `fit_in_mat` + `native` the margins **are** the crop: `fit_in_mat` re-derives the crop from the
-  available area on every margin edit (both directions), and a crop edit re-derives the margins. Deriving it
-  only when the crop overflowed made margins one-way (the photo never grew back — `docs/geometry-and-quality.md`
-  §7.4).
-- Editor number fields keep the typed text while focused (`panels/Controls.tsx`) and never snap it: the §7.5
-  tolerance is 8 *screen* px, so a typed margin was swallowed by the nearest stop. Sliders still snap.
+- Under `fit_in_mat` + `native` the margins **are** the crop, in both directions: deriving the crop only
+  when it overflowed made margins one-way, the photo never growing back (`docs/geometry-and-quality.md` §7.4).
+- Editor number fields keep the typed text while focused (`panels/Controls.tsx`) and never snap it — the §7.5
+  tolerance is 8 *screen* px, which swallowed typed margins. Sliders still snap.
 - Radix focuses the first tabbable element of a dialog, which is the close cross: a dialog whose `Enter`
   should confirm passes `onOpenAutoFocus` and focuses its submit button (`CreateArtworksDialog`).
-- Query results are new objects on every render: never feed them straight into a store (`openArtwork` only
-  writes `sizes` when a photo id is actually new, or the editor re-renders in a loop).
+- Query results are new objects on every render: never feed them straight into a store (`openArtwork` writes
+  `sizes` only when a photo id is actually new, or the editor re-renders in a loop).
 - The React Compiler lint forbids `setState` in an effect body: derive the value during render instead (the
   stage view falls back to `fit()`, image/texture hooks read a module cache and only `setState` in the async
   callback).
-- The editor's canvas gestures all go through **one** pointer pipeline in `EditorStage` (mode in a ref, flushed
-  per animation frame): panning, cropping, moving/resizing/rotating a slot, moving a caption. Handles are drawn
-  by `SelectionOverlay` but hit-tested in `hit.ts` — they are not listening Konva nodes.
-- Konva binds its mouse listeners **below** the container div, so a synthetic event must be dispatched on the
-  `<canvas>` (or Konva's content div), never on the outer `[data-tool]` element — and tinykeys drops any
+- The editor's canvas gestures all go through **one** pointer pipeline in `EditorStage` (mode in a ref,
+  flushed per animation frame). Handles are drawn by `SelectionOverlay` but hit-tested in `hit.ts` — they
+  are not listening Konva nodes.
+- Konva binds its mouse listeners **below** the container div, so a synthetic event must go to the
+  `<canvas>` (or Konva's content div), never the outer `[data-tool]` element — and tinykeys drops a
   `KeyboardEvent` without a `code`, so synthetic shortcuts need `{ key, code }`. Both cost an E2E session.
-  The dev server is not the place for this: over the Vite proxy the app is not trusted as localhost (below).
-- A slot without a photo is a placeholder: `quality_lock = free` and a crop the size of its rect. Filling it
-  takes `no_upscale` back, or an emptied slot would silently allow upscaling afterwards.
+- A slot without a photo is a placeholder: `quality_lock = free`, crop = its rect. Filling it takes
+  `no_upscale` back, or an emptied slot would silently allow upscaling.
 - "Same size" fits each slot *inside* the reference box: the solver's `resize_slot` has **cover** semantics
   (§7.3), so asking for the reference size directly makes the other slots bigger than it.
-- A **shadow** is edited in three places (Simple panel, Advanced Style panel, frame-style editor)
-  through one `ShadowFields`, and in Simple it dresses **every** slot (`setShadowEverywhere`): it
-  is part of the look there, and the block never writes `shadow` (§3.7), so it neither detaches nor
-  re-solves. Drawing one in a preview takes a real filter — an offset rect behind the photo is
-  invisible under the band, and inner/drop then look identical (`TemplatePreview` mirrors §8.1).
-  SVG `filter`/gradient ids are document-wide: prefix them with `useId`, or the second card on the
-  Templates page wears the first one's shadow.
+- A **shadow** is edited in three places through one `ShadowFields`, and in Simple it dresses **every**
+  slot (`setShadowEverywhere`): the block never writes `shadow` (§3.7), so it neither detaches nor
+  re-solves. A preview needs a real filter (an offset rect hides under the band, and inner/drop then
+  look identical); SVG `filter`/gradient ids are document-wide, so prefix them with `useId`.
+- **A filter is a value**: the chip bar, a smart collection's stored AST and `POST /artworks/query`
+  carry the same object. `domain/filters.py` says what a filter may *mean*, `services/library.py`
+  is the only place that knows how it reaches the schema — add a field to both, never to one.
+  `taken_at` and `place` are the only clauses that leave the `artworks` table (EXISTS over
+  `artwork_photos`): an artwork is "from Kyoto" when one of its photos is.
+- The FTS index is written **inside the transaction that changed the row** (`services/search.py`):
+  any new writer of a title, a tag link, a place or a collection name calls `index_*`, or search
+  goes quietly stale. It stays disposable — `reindex_all` rebuilds it and startup does that when
+  the table is empty. User text never reaches FTS5 raw: `match_query` keeps tokens only.
+- **What is deleted together is restored together**: one `trash_batch_id` per gesture. Trashing a
+  photo takes a cascade — `trash_artworks` (same batch) or `empty_slots`, which re-saves each
+  document through `artworks.validated` so an attached composition re-solves, snapshots it
+  `pre_trash`, and leaves the placeholder a new artwork would have (`quality_lock = free`).
+- A collection's `position` is a REAL among its siblings (and a manual item's among the
+  collection's items): insert at the midpoint, renumber the whole list only when the gap falls
+  under `1e-9`. Cycles, depth (8) and self-referencing smart filters are refused by the *server* —
+  the tree never tries to guess.
+- A **bare letter and a chord starting with it** (`c` vs `g c`) are two `tinykeys` instances that
+  each match on their own, so both used to fire. `app/commands.ts` keeps one capture-phase listener
+  that arms on a chord prefix; single-key bindings stand down for the next keystroke. Register any
+  new single-key shortcut through the registry and it is covered. A **modal** also has to take the
+  page's keys away while it is open (the viewer passes `undefined` shortcuts, `ArtworksPage.key()`).
+- Manual order (`position`) belongs to **one** collection: `manual` sort + `include_nested` is a
+  422 (`manual_sort_nested`), never a silent fallback, and `nested_count` counts *distinct*
+  artworks. A drop in the grid inserts before the target going backwards and **after** it going
+  forwards, or dragging a card right asks for the place it already has.
+- A collection is scoped through **`_in_collections`** — manual membership unioned with the filters
+  of the smart collections among the ids — never a bare `collection_items IN (…)`, or a smart
+  *sub*-collection contributes nothing (its artworks are matches, not rows). Smart membership is
+  derived and read-only: `smart_collection_ids` is reported apart from `collection_ids`.
+- Every grid of artworks takes its keyboard from **`useArtworkGridCommands`** so the three pages
+  cannot drift; a page adds a key by passing a handler (the collection page's `Backspace`).
+- A `<select>` left transparent gets a native popup Chrome paints from the *control's* colours —
+  light popup, near-white options, visible only on hover. `styles.css` sets `select`/`option`
+  colours at element level as the floor; utilities on a specific select still win.
+- Driving this app over CDP: each open tab holds an SSE connection, so **six tabs exhaust the
+  per-origin pool** and the next one renders an empty page — close tabs between runs;
+  openapi-fetch binds `globalThis.fetch` at `createClient` time, so patching `window.fetch` later
+  intercepts nothing (read results back through the API); and dispatch a synthetic key **once**, on
+  the focused element — dispatching on `body` *and* `window` makes tinykeys see every key twice.
 - Dev over the Vite proxy is **not** trusted as localhost (`xfwd` adds `X-Forwarded-For`, invariant 5): the
   first load asks for the setup code printed in the server log. Point Vite at another backend with
   `THE_FRAME_V2_BACKEND=http://127.0.0.1:<port>`.

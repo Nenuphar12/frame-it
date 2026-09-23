@@ -32,11 +32,34 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Artworks */
+        /**
+         * List Artworks
+         * @description The simple cases as query parameters; a full filter AST goes to `POST /artworks/query`.
+         */
         get: operations["list_artworks_api_v1_artworks_get"];
         put?: never;
         /** Create Artwork */
         post: operations["create_artwork_api_v1_artworks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/artworks/query": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Query Artworks
+         * @description The filter bar and smart collections: one AST (docs/data-model.md §5.2), one page back.
+         */
+        post: operations["query_artworks_api_v1_artworks_query_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -56,7 +79,7 @@ export interface paths {
         post?: never;
         /**
          * Trash Artwork
-         * @description Move to trash (restore/purge: Phase 8).
+         * @description Move to trash (restore and purge: `/trash`, docs/organization.md §5).
          */
         delete: operations["trash_artwork_api_v1_artworks__artwork_id__delete"];
         options?: never;
@@ -301,10 +324,110 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Collections */
+        /**
+         * List Collections
+         * @description The whole tree, ordered by `position` among siblings (the client nests it by `parent_id`).
+         */
         get: operations["list_collections_api_v1_collections_get"];
         put?: never;
+        /** Create Collection */
+        post: operations["create_collection_api_v1_collections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/collections/{collection_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Collection */
+        get: operations["get_collection_api_v1_collections__collection_id__get"];
+        put?: never;
         post?: never;
+        /**
+         * Delete Collection
+         * @description Deletes the collection **and its subtree**. The artworks are untouched (not a trash op).
+         */
+        delete: operations["delete_collection_api_v1_collections__collection_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Collection */
+        patch: operations["update_collection_api_v1_collections__collection_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/collections/{collection_id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Collection Items */
+        post: operations["add_collection_items_api_v1_collections__collection_id__items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/collections/{collection_id}/items/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Remove Collection Items */
+        post: operations["remove_collection_items_api_v1_collections__collection_id__items_remove_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/collections/{collection_id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move Collection
+         * @description Re-parent and/or reorder. 422 `collection_cycle` when it would land inside itself.
+         */
+        post: operations["move_collection_api_v1_collections__collection_id__move_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/collections/{collection_id}/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reorder Collection Item
+         * @description Manual order inside a collection: put an artwork right before another (or last).
+         */
+        post: operations["reorder_collection_item_api_v1_collections__collection_id__reorder_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -377,6 +500,26 @@ export interface paths {
         get: operations["events_api_v1_events_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/filters/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Validate Filter
+         * @description Check a filter AST and say how many artworks it matches (the smart-collection editor).
+         */
+        post: operations["validate_filter_api_v1_filters_validate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1159,6 +1302,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tags/{tag_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Tag */
+        delete: operations["delete_tag_api_v1_tags__tag_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Tag
+         * @description Rename or recolour. 409 `tag_exists` when the name is taken (merge instead).
+         */
+        patch: operations["update_tag_api_v1_tags__tag_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/tags/{tag_id}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Merge Tags
+         * @description Move every use of `source_ids` onto this tag and delete the sources.
+         */
+        post: operations["merge_tags_api_v1_tags__tag_id__merge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/textures": {
         parameters: {
             query?: never;
@@ -1190,6 +1374,120 @@ export interface paths {
         get: operations["texture_file_api_v1_textures__texture_id__png_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Trash */
+        get: operations["list_trash_api_v1_trash_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trash/artworks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Trash Artworks */
+        post: operations["trash_artworks_api_v1_trash_artworks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trash/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Trash Photos
+         * @description Soft-delete photos. `cascade` decides what happens to the artworks using them.
+         */
+        post: operations["trash_photos_api_v1_trash_photos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trash/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview
+         * @description Which artworks use these photos — the cascade dialog asks before anything is written.
+         */
+        post: operations["preview_api_v1_trash_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trash/purge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Purge
+         * @description Delete for good, files included. `all` empties the trash; otherwise only what expired.
+         */
+        post: operations["purge_api_v1_trash_purge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trash/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore
+         * @description Bring items back; a `batch_id` restores everything deleted by the same gesture.
+         */
+        post: operations["restore_api_v1_trash_restore_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1263,6 +1561,20 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AffectedArtworkOut
+         * @description One artwork in the cascade dialog: what deleting these photos would do to it.
+         */
+        AffectedArtworkOut: {
+            /** Artwork Id */
+            artwork_id: string;
+            /** Photo Count */
+            photo_count: number;
+            /** Slot Count */
+            slot_count: number;
+            /** Title */
+            title: string;
+        };
         /** ApplyTemplateIn */
         ApplyTemplateIn: {
             /** Layout Id */
@@ -1325,6 +1637,8 @@ export interface components {
         };
         /** ArtworkOut */
         ArtworkOut: {
+            /** Collection Ids */
+            collection_ids?: string[];
             /**
              * Created At
              * Format: date-time
@@ -1357,6 +1671,8 @@ export interface components {
             render_hash: string | null;
             /** Rendered At */
             rendered_at: string | null;
+            /** Smart Collection Ids */
+            smart_collection_ids?: string[];
             /**
              * Status
              * @enum {string}
@@ -1380,6 +1696,44 @@ export interface components {
             items: components["schemas"]["ArtworkSummaryOut"][];
             /** Next Cursor */
             next_cursor: string | null;
+        };
+        /**
+         * ArtworkQueryIn
+         * @description The filter bar as a POST body: an AST is too big and too nested for a query string.
+         */
+        ArtworkQueryIn: {
+            /** Collection Id */
+            collection_id?: string | null;
+            /** Cursor */
+            cursor?: string | null;
+            /** Favorite */
+            favorite?: boolean | null;
+            /** Filter */
+            filter?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Include Nested
+             * @default false
+             */
+            include_nested: boolean;
+            /**
+             * Limit
+             * @default 100
+             */
+            limit: number;
+            /** Photo Id */
+            photo_id?: string | null;
+            /** Q */
+            q?: string | null;
+            /**
+             * Sort
+             * @default created_desc
+             * @enum {string}
+             */
+            sort: "created_desc" | "created_asc" | "updated_desc" | "title_asc" | "manual";
+            /** Status */
+            status?: ("draft" | "ready") | null;
         };
         /** ArtworkSummaryOut */
         ArtworkSummaryOut: {
@@ -1567,10 +1921,69 @@ export interface components {
              */
             device_name: string;
         };
+        /** CollectionCreateIn */
+        CollectionCreateIn: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Filter */
+            filter?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Kind
+             * @default manual
+             * @enum {string}
+             */
+            kind: "manual" | "smart";
+            /** Name */
+            name: string;
+            /** Parent Id */
+            parent_id?: string | null;
+        };
+        /** CollectionItemsIn */
+        CollectionItemsIn: {
+            /** Artwork Ids */
+            artwork_ids: string[];
+        };
+        /**
+         * CollectionMoveIn
+         * @description Drag and drop: a new parent (`null` = top level) and the sibling to land before.
+         */
+        CollectionMoveIn: {
+            /** Before Id */
+            before_id?: string | null;
+            /** Parent Id */
+            parent_id?: string | null;
+        };
         /** CollectionOut */
         CollectionOut: {
+            /** Cover Artwork Id */
+            cover_artwork_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Date End */
+            date_end: string | null;
+            /** Date Start */
+            date_start: string | null;
+            /** Description */
+            description: string;
+            /** Filter */
+            filter: {
+                [key: string]: unknown;
+            } | null;
             /** Id */
             id: string;
+            /**
+             * Item Count
+             * @default 0
+             */
+            item_count: number;
             /**
              * Kind
              * @enum {string}
@@ -1578,10 +1991,44 @@ export interface components {
             kind: "manual" | "smart";
             /** Name */
             name: string;
+            /**
+             * Nested Count
+             * @default 0
+             */
+            nested_count: number;
             /** Parent Id */
             parent_id: string | null;
             /** Position */
             position: number;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** CollectionReorderIn */
+        CollectionReorderIn: {
+            /** Artwork Id */
+            artwork_id: string;
+            /** Before Id */
+            before_id?: string | null;
+        };
+        /** CollectionUpdateIn */
+        CollectionUpdateIn: {
+            /** Cover Artwork Id */
+            cover_artwork_id?: string | null;
+            /** Date End */
+            date_end?: string | null;
+            /** Date Start */
+            date_start?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Filter */
+            filter?: {
+                [key: string]: unknown;
+            } | null;
+            /** Name */
+            name?: string | null;
         };
         /** ColorPresetOut */
         ColorPresetOut: {
@@ -1725,6 +2172,22 @@ export interface components {
             name?: string | null;
             /** Role */
             role?: ("admin" | "uploader") | null;
+        };
+        /** FilterValidateIn */
+        FilterValidateIn: {
+            /** Filter */
+            filter: {
+                [key: string]: unknown;
+            };
+        };
+        /** FilterValidateOut */
+        FilterValidateOut: {
+            /** Error */
+            error?: string | null;
+            /** Match Count */
+            match_count?: number | null;
+            /** Valid */
+            valid: boolean;
         };
         /** FontMetricsOut */
         FontMetricsOut: {
@@ -2146,6 +2609,23 @@ export interface components {
             /** Tag Ids */
             tag_ids?: string[] | null;
         };
+        /** PurgeIn */
+        PurgeIn: {
+            /**
+             * All
+             * @default false
+             */
+            all: boolean;
+        };
+        /** PurgeOut */
+        PurgeOut: {
+            /** Artworks */
+            artworks: number;
+            /** Bytes Freed */
+            bytes_freed: number;
+            /** Photos */
+            photos: number;
+        };
         /** PushUpdateOut */
         PushUpdateOut: {
             /** Applied */
@@ -2227,6 +2707,15 @@ export interface components {
                 [key: string]: unknown;
             };
             rect: components["schemas"]["RegionIn"];
+        };
+        /** RestoreIn */
+        RestoreIn: {
+            /** Artwork Ids */
+            artwork_ids?: string[];
+            /** Batch Ids */
+            batch_ids?: string[];
+            /** Photo Ids */
+            photo_ids?: string[];
         };
         /** SaveAsTemplateIn */
         SaveAsTemplateIn: {
@@ -2388,6 +2877,14 @@ export interface components {
             /** Name */
             name: string;
         };
+        /**
+         * TagMergeIn
+         * @description Move every use of `source_ids` onto this tag; the sources disappear.
+         */
+        TagMergeIn: {
+            /** Source Ids */
+            source_ids: string[];
+        };
         /** TagOut */
         TagOut: {
             /** Color */
@@ -2397,8 +2894,20 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** TagUpdateIn */
+        TagUpdateIn: {
+            /** Color */
+            color?: string | null;
+            /** Name */
+            name?: string | null;
+        };
         /** TagWithCount */
         TagWithCount: {
+            /**
+             * Artwork Count
+             * @default 0
+             */
+            artwork_count: number;
             /** Color */
             color: string | null;
             /** Id */
@@ -2477,6 +2986,83 @@ export interface components {
             id: string;
             /** Strength */
             strength: number;
+        };
+        /** TrashArtworksIn */
+        TrashArtworksIn: {
+            /** Artwork Ids */
+            artwork_ids: string[];
+        };
+        /** TrashOut */
+        TrashOut: {
+            /** Artwork Total */
+            artwork_total: number;
+            /** Artworks */
+            artworks: components["schemas"]["TrashedArtworkOut"][];
+            /** Photo Total */
+            photo_total: number;
+            /** Photos */
+            photos: components["schemas"]["TrashedPhotoOut"][];
+            /** Retention Days */
+            retention_days: number;
+        };
+        /** TrashPhotosIn */
+        TrashPhotosIn: {
+            /**
+             * Cascade
+             * @default trash_artworks
+             * @enum {string}
+             */
+            cascade: "trash_artworks" | "empty_slots";
+            /** Photo Ids */
+            photo_ids: string[];
+        };
+        /** TrashPreviewOut */
+        TrashPreviewOut: {
+            /** Artworks */
+            artworks: components["schemas"]["AffectedArtworkOut"][];
+        };
+        /** TrashResultOut */
+        TrashResultOut: {
+            /** Artworks */
+            artworks: number;
+            /** Batch Id */
+            batch_id: string;
+            /** Emptied */
+            emptied: number;
+            /** Photos */
+            photos: number;
+        };
+        /** TrashedArtworkOut */
+        TrashedArtworkOut: {
+            /** Deleted At */
+            deleted_at: string | null;
+            /** Id */
+            id: string;
+            /** Photo Count */
+            photo_count: number;
+            /** Render Hash */
+            render_hash: string | null;
+            /** Title */
+            title: string;
+            /** Trash Batch Id */
+            trash_batch_id: string | null;
+        };
+        /** TrashedPhotoOut */
+        TrashedPhotoOut: {
+            /** Deleted At */
+            deleted_at: string | null;
+            /** File Size */
+            file_size: number;
+            /** Height */
+            height: number;
+            /** Id */
+            id: string;
+            /** Original Filename */
+            original_filename: string;
+            /** Trash Batch Id */
+            trash_batch_id: string | null;
+            /** Width */
+            width: number;
         };
         /** UploadCreateIn */
         UploadCreateIn: {
@@ -2609,6 +3195,10 @@ export interface operations {
                 status?: ("draft" | "ready") | null;
                 favorite?: boolean | null;
                 photo_id?: string | null;
+                collection_id?: string | null;
+                include_nested?: boolean;
+                q?: string | null;
+                sort?: "created_desc" | "created_asc" | "updated_desc" | "title_asc" | "manual";
                 cursor?: string | null;
                 limit?: number;
             };
@@ -2658,6 +3248,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ArtworkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    query_artworks_api_v1_artworks_query_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtworkQueryIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtworkPageOut"];
                 };
             };
             /** @description Validation Error */
@@ -3199,6 +3822,272 @@ export interface operations {
             };
         };
     };
+    create_collection_api_v1_collections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionCreateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_collection_api_v1_collections__collection_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_collection_api_v1_collections__collection_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_collection_api_v1_collections__collection_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_collection_items_api_v1_collections__collection_id__items_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionItemsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_collection_items_api_v1_collections__collection_id__items_remove_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionItemsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    move_collection_api_v1_collections__collection_id__move_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionMoveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reorder_collection_item_api_v1_collections__collection_id__reorder_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionReorderIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_devices_api_v1_devices_get: {
         parameters: {
             query?: never;
@@ -3331,6 +4220,39 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    validate_filter_api_v1_filters_validate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FilterValidateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FilterValidateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
@@ -4859,6 +5781,105 @@ export interface operations {
             };
         };
     };
+    delete_tag_api_v1_tags__tag_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tag_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_tag_api_v1_tags__tag_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tag_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    merge_tags_api_v1_tags__tag_id__merge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tag_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagMergeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_textures_api_v1_textures_get: {
         parameters: {
             query?: never;
@@ -4896,6 +5917,191 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_trash_api_v1_trash_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrashOut"];
+                };
+            };
+        };
+    };
+    trash_artworks_api_v1_trash_artworks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrashArtworksIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrashResultOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trash_photos_api_v1_trash_photos_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrashPhotosIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrashResultOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_api_v1_trash_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhotoIdsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrashPreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    purge_api_v1_trash_purge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurgeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurgeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_api_v1_trash_restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestoreIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrashResultOut"];
+                };
             };
             /** @description Validation Error */
             422: {

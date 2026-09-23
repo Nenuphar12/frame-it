@@ -14,6 +14,7 @@ const DYNAMIC_PREFIXES = [
   "settings.themes",
   "settings.languages",
   "artworks.filters",
+  "artworks.sorts",
   "artworks.statuses",
   "artworks.tiers",
   "artworks.tierHints",
@@ -28,6 +29,9 @@ const DYNAMIC_PREFIXES = [
   "editor.history.reasons",
   "editor.arrange.align",
   "editor.captions.anchors",
+  "filters.fields",
+  "filters.ops",
+  "trash.cascade",
 ];
 
 const has = (key) => {

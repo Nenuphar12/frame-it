@@ -3,6 +3,8 @@
 Jobs live in the `jobs` table and are executed by worker threads grouped in *lanes* (e.g. `ingest`,
 `render`) so heavy work is bounded per lane. Jobs left `running` by a crash are re-queued at start.
 A job with a `coalesce_key` replaces any still-queued job with the same key (only the latest runs).
+`schedule_every` adds a recurring job (the trash purge): a single timer thread enqueues it once at
+start and then every interval — coalescing keeps it from piling up when the lane is busy.
 """
 
 from __future__ import annotations
@@ -46,6 +48,15 @@ JobHandler = Callable[[JobContext], None]
 
 
 @dataclass(frozen=True, slots=True)
+class Schedule:
+    """A job enqueued at start and every `interval` seconds after that."""
+
+    kind: str
+    payload: dict[str, Any]
+    interval: float
+
+
+@dataclass(frozen=True, slots=True)
 class HandlerSpec:
     handler: JobHandler
     lane: str
@@ -61,6 +72,7 @@ class JobQueue:
         self._claim_lock = threading.Lock()
         self._conditions = {lane: threading.Condition() for lane in lanes}
         self._threads: list[threading.Thread] = []
+        self._schedules: list[Schedule] = []
         self._stopping = threading.Event()
 
     # ---- registration & lifecycle ----------------------------------------------------------------
@@ -68,6 +80,11 @@ class JobQueue:
         if lane not in self._lanes:
             raise ValueError(f"unknown lane {lane}")
         self._handlers[kind] = HandlerSpec(handler, lane, max_attempts)
+
+    def schedule_every(self, kind: str, interval_seconds: float, payload: dict[str, Any]) -> None:
+        if kind not in self._handlers:
+            raise ValueError(f"no handler for job kind {kind}")
+        self._schedules.append(Schedule(kind, payload, max(60.0, interval_seconds)))
 
     def start(self) -> None:
         with self._db.session() as s:
@@ -79,6 +96,10 @@ class JobQueue:
                 t.daemon = True
                 t.start()
                 self._threads.append(t)
+        if self._schedules:
+            timer = threading.Thread(target=self._tick, name="job-scheduler", daemon=True)
+            timer.start()
+            self._threads.append(timer)
 
     def stop(self, timeout: float = 10.0) -> None:
         self._stopping.set()
@@ -130,6 +151,23 @@ class JobQueue:
             count += 1
 
     # ---- internals ---------------------------------------------------------------------------
+    def _tick(self) -> None:
+        """Recurring jobs: enqueue each one at start, then once per interval until we stop."""
+        due = dict.fromkeys(range(len(self._schedules)), 0.0)
+        elapsed = 0.0
+        while not self._stopping.is_set():
+            for index, schedule in enumerate(self._schedules):
+                if elapsed < due[index]:
+                    continue
+                due[index] = elapsed + schedule.interval
+                try:
+                    self.enqueue(schedule.kind, dict(schedule.payload), coalesce_key=schedule.kind)
+                except Exception:  # a recurring job must never kill the timer
+                    log.exception("could not enqueue scheduled job %s", schedule.kind)
+            if self._stopping.wait(timeout=30.0):
+                return
+            elapsed += 30.0
+
     def _run(self, lane: str) -> None:
         cond = self._conditions[lane]
         while not self._stopping.is_set():

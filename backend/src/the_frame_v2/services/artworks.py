@@ -8,15 +8,13 @@ derived columns and the `artwork_photos` index; callers enqueue a render after c
 
 from __future__ import annotations
 
-import base64
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import PurePath
 from typing import Any
 
 from pydantic import ValidationError
-from sqlalchemy import and_, delete, func, or_, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from the_frame_v2.db.models import (
@@ -45,14 +43,21 @@ from the_frame_v2.domain.document import (
 from the_frame_v2.domain.geometry import Size
 from the_frame_v2.domain.templates import PhotoInput, build_composition_document
 from the_frame_v2.errors import ProblemError, not_found
-from the_frame_v2.ids import new_id, utcnow
+from the_frame_v2.ids import utcnow
 from the_frame_v2.imaging.assets import catalog
-from the_frame_v2.services import recipes, templates
+from the_frame_v2.services import recipes, search, templates
 
 MAX_SNAPSHOTS = 20
 MAX_LIMIT = 500
 STATUSES = ("draft", "ready")
-SNAPSHOT_REASONS = ("opened", "manual", "pre_restore", "pre_template_update", "pre_import")
+SNAPSHOT_REASONS = (
+    "opened",
+    "manual",
+    "pre_restore",
+    "pre_template_update",
+    "pre_import",
+    "pre_trash",
+)
 
 
 # ---- validation ---------------------------------------------------------------------------------
@@ -130,8 +135,8 @@ def validated(session: Session, raw: Mapping[str, Any]) -> ArtworkDocument:
 
 
 # ---- persistence helpers ------------------------------------------------------------------------
-def _store_document(session: Session, artwork: Artwork, doc: ArtworkDocument) -> None:
-    """Write the document and everything derived from it."""
+def store_document(session: Session, artwork: Artwork, doc: ArtworkDocument) -> None:
+    """Write the document and everything derived from it (columns, photo index, search index)."""
     quality = doc.quality()
     artwork.document = doc.canonical()
     artwork.schema_version = doc.schema_version
@@ -149,6 +154,7 @@ def _store_document(session: Session, artwork: Artwork, doc: ArtworkDocument) ->
         for slot in doc.slots
         if slot.photo_id is not None
     )
+    search.index_artwork(session, artwork)
 
 
 def get_artwork(session: Session, artwork_id: str) -> Artwork:
@@ -301,7 +307,7 @@ def create_artwork(
     )
     session.add(artwork)
     session.flush()
-    _store_document(session, artwork, doc)
+    store_document(session, artwork, doc)
     _apply_pending_meta(session, artwork, list(photos))
     for photo in photos.values():
         if photo.inbox_state == "inbox":
@@ -354,7 +360,7 @@ def save_document(
             extra={"current_version": artwork.document_version},
         )
     doc = validated(session, raw)
-    _store_document(session, artwork, doc)
+    store_document(session, artwork, doc)
     artwork.document_version += 1
     artwork.updated_at = utcnow()
     return artwork
@@ -405,7 +411,7 @@ def _apply_template_to(
     if snapshot:
         create_snapshot(session, artwork.id, "pre_template_update")
     _check_references(doc, sizes)
-    _store_document(session, artwork, resolved(doc, sizes))
+    store_document(session, artwork, resolved(doc, sizes))
     artwork.document_version += 1
     artwork.updated_at = utcnow()
     if style is not None:
@@ -520,6 +526,8 @@ def update_artwork(
         session.execute(delete(ArtworkTag).where(ArtworkTag.artwork_id == artwork.id))
         session.add_all(ArtworkTag(artwork_id=artwork.id, tag_id=t) for t in unique)
     artwork.updated_at = utcnow()
+    session.flush()
+    search.index_artwork(session, artwork)
     return artwork
 
 
@@ -547,17 +555,18 @@ def duplicate_artwork(session: Session, artwork_id: str) -> Artwork:
     )
     session.add(copy)
     session.flush()
-    _store_document(session, copy, document_of(source))
+    store_document(session, copy, document_of(source))
     tag_ids = session.scalars(select(ArtworkTag.tag_id).where(ArtworkTag.artwork_id == source.id))
     session.add_all(ArtworkTag(artwork_id=copy.id, tag_id=t) for t in tag_ids)
     return copy
 
 
 def trash_artwork(session: Session, artwork_id: str) -> Artwork:
-    """Soft delete (restore and purge: Phase 8 trash)."""
+    """Soft delete: `services/trash.py` restores it (same batch) or purges it after 30 days."""
+    from the_frame_v2.services import trash
+
     artwork = get_artwork(session, artwork_id)
-    artwork.deleted_at = utcnow()
-    artwork.trash_batch_id = new_id()
+    trash.trash_artworks(session, [artwork.id])
     return artwork
 
 
@@ -608,58 +617,5 @@ def restore_snapshot(session: Session, artwork_id: str, snapshot_id: str) -> Art
 
 
 # ---- listing ------------------------------------------------------------------------------------
-@dataclass(frozen=True, slots=True)
-class ArtworkPage:
-    items: list[Artwork]
-    tags: dict[str, list[Tag]]
-    next_cursor: str | None
-
-
-def _encode_cursor(artwork: Artwork) -> str:
-    raw = f"{artwork.created_at.isoformat()}|{artwork.id}"
-    return base64.urlsafe_b64encode(raw.encode()).decode()
-
-
-def _decode_cursor(cursor: str) -> tuple[datetime, str]:
-    try:
-        stamp, artwork_id = base64.urlsafe_b64decode(cursor.encode()).decode().split("|", 1)
-        return datetime.fromisoformat(stamp), artwork_id
-    except (ValueError, UnicodeDecodeError) as exc:
-        raise ProblemError(400, "invalid_cursor", "Invalid cursor") from exc
-
-
-def list_artworks(
-    session: Session,
-    *,
-    status: str | None = None,
-    favorite: bool | None = None,
-    photo_id: str | None = None,
-    cursor: str | None = None,
-    limit: int = 100,
-) -> ArtworkPage:
-    limit = max(1, min(limit, MAX_LIMIT))
-    stmt = select(Artwork).where(Artwork.deleted_at.is_(None))
-    if status is not None:
-        stmt = stmt.where(Artwork.status == status)
-    if favorite is not None:
-        stmt = stmt.where(Artwork.favorite.is_(favorite))
-    if photo_id is not None:
-        stmt = stmt.where(
-            Artwork.id.in_(select(ArtworkPhoto.artwork_id).where(ArtworkPhoto.photo_id == photo_id))
-        )
-    if cursor:
-        stamp, artwork_id = _decode_cursor(cursor)
-        stmt = stmt.where(
-            or_(
-                Artwork.created_at < stamp,
-                and_(Artwork.created_at == stamp, Artwork.id < artwork_id),
-            )
-        )
-    rows = list(
-        session.scalars(
-            stmt.order_by(Artwork.created_at.desc(), Artwork.id.desc()).limit(limit + 1)
-        )
-    )
-    next_cursor = _encode_cursor(rows[limit - 1]) if len(rows) > limit else None
-    items = rows[:limit]
-    return ArtworkPage(items, tags_for(session, [a.id for a in items]), next_cursor)
+# Listing lives in `services/library.py`: it is one filter AST away from smart collections, and
+# only that module knows how a filter reaches the schema (docs/organization.md §4).

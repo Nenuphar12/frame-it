@@ -15,6 +15,8 @@ from the_frame_v2.api.schemas import (
     ArtworkCreateIn,
     ArtworkOut,
     ArtworkPageOut,
+    ArtworkQueryIn,
+    ArtworkSort,
     ArtworkStatus,
     ArtworkSummaryOut,
     ArtworkUpdateIn,
@@ -28,7 +30,7 @@ from the_frame_v2.domain.document import ArtworkDocument
 from the_frame_v2.errors import ProblemError
 from the_frame_v2.events import Event
 from the_frame_v2.imaging.render import RenderError
-from the_frame_v2.services import artworks, render
+from the_frame_v2.services import artworks, collections, library, render
 
 router = APIRouter(prefix="/artworks", tags=["artworks"])
 _IMMUTABLE = {"Cache-Control": "private, max-age=31536000, immutable"}
@@ -48,6 +50,8 @@ def _full(session: Session, artwork: Artwork) -> ArtworkOut:
         {
             **_summary(session, artwork).model_dump(),
             "document": artworks.document_of(artwork),
+            "collection_ids": collections.collections_of(session, artwork.id),
+            "smart_collection_ids": library.smart_collections_of(session, artwork.id),
         }
     )
 
@@ -77,6 +81,15 @@ def _expected_version(if_match: str | None) -> int:
         raise ProblemError(400, "invalid_if_match", "Invalid If-Match header") from exc
 
 
+def _page_out(page: library.ArtworkPage) -> ArtworkPageOut:
+    items = []
+    for artwork in page.items:
+        out = ArtworkSummaryOut.model_validate(artwork)
+        out.tags = [TagOut.model_validate(t) for t in page.tags[artwork.id]]
+        items.append(out)
+    return ArtworkPageOut(items=items, next_cursor=page.next_cursor)
+
+
 @router.get("")
 def list_artworks(
     _: Uploader,
@@ -84,18 +97,40 @@ def list_artworks(
     status: ArtworkStatus | None = None,
     favorite: bool | None = None,
     photo_id: str | None = None,
+    collection_id: str | None = None,
+    include_nested: bool = False,
+    q: str | None = Query(default=None, max_length=200),
+    sort: ArtworkSort = "created_desc",
     cursor: str | None = None,
     limit: int = Query(default=100, ge=1, le=500),
 ) -> ArtworkPageOut:
-    page = artworks.list_artworks(
-        session, status=status, favorite=favorite, photo_id=photo_id, cursor=cursor, limit=limit
+    """The simple cases as query parameters; a full filter AST goes to `POST /artworks/query`."""
+    query = library.ArtworkQuery(
+        status=status,
+        favorite=favorite,
+        photo_id=photo_id,
+        collection_id=collection_id,
+        include_nested=include_nested,
+        q=q,
+        sort=sort,
     )
-    items = []
-    for artwork in page.items:
-        out = ArtworkSummaryOut.model_validate(artwork)
-        out.tags = [TagOut.model_validate(t) for t in page.tags[artwork.id]]
-        items.append(out)
-    return ArtworkPageOut(items=items, next_cursor=page.next_cursor)
+    return _page_out(library.list_artworks(session, query, cursor, limit))
+
+
+@router.post("/query")
+def query_artworks(body: ArtworkQueryIn, _: Uploader, session: DbSession) -> ArtworkPageOut:
+    """The filter bar and smart collections: one AST (docs/data-model.md §5.2), one page back."""
+    query = library.ArtworkQuery(
+        filter=library.parse_query_filter(body.filter),
+        collection_id=body.collection_id,
+        include_nested=body.include_nested,
+        status=body.status,
+        favorite=body.favorite,
+        photo_id=body.photo_id,
+        q=body.q,
+        sort=body.sort,
+    )
+    return _page_out(library.list_artworks(session, query, body.cursor, body.limit))
 
 
 @router.post("", status_code=201)
@@ -195,7 +230,7 @@ def duplicate_artwork(artwork_id: str, _: Admin, ctx: Ctx, session: DbSession) -
 
 @router.delete("/{artwork_id}", status_code=204)
 def trash_artwork(artwork_id: str, _: Admin, ctx: Ctx, session: DbSession) -> None:
-    """Move to trash (restore/purge: Phase 8)."""
+    """Move to trash (restore and purge: `/trash`, docs/organization.md §5)."""
     artworks.trash_artwork(session, artwork_id)
     _changed(ctx, session, artwork_id, rerender=False)
 

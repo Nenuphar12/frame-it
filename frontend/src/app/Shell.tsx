@@ -11,13 +11,15 @@ import {
   Search,
   Settings,
   Smartphone,
+  TagsIcon,
   Trash2,
   Upload,
 } from "lucide-react";
 import { useEffect, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import { useLibraryStats } from "@/api/queries";
+import { useCollectionItems, useCollections, useLibraryStats } from "@/api/queries";
+import { CollectionTree } from "@/features/collections/CollectionTree";
 import { GlobalDropZone } from "@/features/upload/DropZone";
 import { useFilePickers } from "@/features/upload/useFilePickers";
 import { LocalSendRequestDialog } from "@/features/localsend/LocalSendRequestDialog";
@@ -52,6 +54,26 @@ function NavLink({ item }: { item: NavItem }) {
         </span>
       )}
     </Link>
+  );
+}
+
+/** The collection tree, right under the library links: dropping artworks on a row files them. */
+function SidebarCollections() {
+  const navigate = useNavigate();
+  const collections = useCollections();
+  const items = useCollectionItems();
+  const rows = collections.data ?? [];
+  if (rows.length === 0) return null;
+  return (
+    <div className="pt-1 pl-1.5">
+      {/* A row opens *that* collection, not the page: the id travels in the URL (remarks.md #1). */}
+      <CollectionTree
+        rows={rows}
+        selectedId={null}
+        onSelect={(id) => void navigate({ to: "/collections", search: { id } })}
+        onDropArtworks={(id, artworkIds) => items.add.mutate({ id, artwork_ids: artworkIds })}
+      />
+    </div>
   );
 }
 
@@ -142,6 +164,33 @@ export function Shell() {
         run: go("/settings"),
       },
       {
+        id: "go.collections",
+        label: "commands.goCollections",
+        group: "commands.groups.navigation",
+        shortcut: "g c",
+        run: go("/collections"),
+      },
+      {
+        id: "go.favorites",
+        label: "commands.goFavorites",
+        group: "commands.groups.navigation",
+        shortcut: "g f",
+        run: go("/favorites"),
+      },
+      {
+        id: "go.tags",
+        label: "commands.goTags",
+        group: "commands.groups.navigation",
+        shortcut: "g t",
+        run: go("/tags"),
+      },
+      {
+        id: "go.trash",
+        label: "commands.goTrash",
+        group: "commands.groups.navigation",
+        run: go("/trash"),
+      },
+      {
         id: "go.mobile",
         label: "commands.goMobile",
         group: "commands.groups.navigation",
@@ -159,6 +208,7 @@ export function Shell() {
     { to: "/collections", label: t("nav.collections"), icon: <Layers size={16} /> },
   ];
   const manage: NavItem[] = [
+    { to: "/tags", label: t("nav.tags"), icon: <TagsIcon size={16} /> },
     { to: "/templates", label: t("nav.templates"), icon: <LayoutTemplate size={16} /> },
     { to: "/trash", label: t("nav.trash"), icon: <Trash2 size={16} /> },
     { to: "/devices", label: t("nav.devices"), icon: <MonitorSmartphone size={16} /> },
@@ -185,10 +235,11 @@ export function Shell() {
         <Button variant="primary" onClick={openFiles} className="w-full">
           <Upload size={16} /> {t("upload.addPhotos")}
         </Button>
-        <div className="space-y-0.5">
+        <div className="min-h-0 space-y-0.5 overflow-y-auto">
           {library.map((item) => (
             <NavLink key={item.to} item={item} />
           ))}
+          <SidebarCollections />
         </div>
         <div className="space-y-0.5">
           <div className="px-2.5 pb-1 text-[11px] text-muted uppercase">{t("nav.manage")}</div>

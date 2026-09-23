@@ -7,6 +7,7 @@ import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import {
   Check,
   Crop,
+  Heart,
   Loader2,
   Maximize2,
   MousePointer2,
@@ -79,7 +80,7 @@ export function EditorPage() {
   const search = useSearch({ from: "/shell/editor/$artworkId" });
   const navigate = useNavigate();
   const artwork = useArtwork(artworkId);
-  const { validate } = useArtworkActions();
+  const { validate, update } = useArtworkActions();
   const recipes = useRecipes();
   const styles = useFrameStyles();
   const layouts = useLayouts();
@@ -168,6 +169,12 @@ export function EditorPage() {
     },
     [queue, index, goTo],
   );
+
+  /** The heart is an artwork property, not a document one: it never touches the working copy. */
+  const toggleFavorite = useCallback(() => {
+    const current = artwork.data;
+    if (current) update.mutate({ id: current.id, favorite: !current.favorite });
+  }, [artwork.data, update]);
 
   const validateAndNext = useCallback(() => {
     const current = artwork.data;
@@ -311,6 +318,13 @@ export function EditorPage() {
         run: validateAndNext,
       },
       {
+        id: "editor.favorite",
+        label: "artworks.toggleFavorite",
+        group,
+        shortcut: "f",
+        run: () => toggleFavorite(),
+      },
+      {
         id: "editor.skip",
         label: "editor.commands.skip",
         group,
@@ -440,7 +454,7 @@ export function EditorPage() {
         run: nudge(0, 10),
       },
     ];
-  }, [navigate, step, t, validateAndNext]);
+  }, [navigate, step, t, toggleFavorite, validateAndNext]);
   useRegisterCommands(commands);
 
   if (artwork.error) {
@@ -472,6 +486,17 @@ export function EditorPage() {
           {artwork.data.title || t("artworks.untitled")}
         </span>
         <DocumentQualityBadge doc={doc} />
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={toggleFavorite}
+          aria-label={t("artworks.toggleFavorite")}
+          aria-pressed={artwork.data.favorite}
+          title={t("artworks.toggleFavorite")}
+          className={artwork.data.favorite ? "text-danger" : undefined}
+        >
+          <Heart size={14} fill={artwork.data.favorite ? "currentColor" : "none"} />
+        </Button>
         <div
           className="mx-2 flex rounded-md border border-border p-0.5"
           role="radiogroup"

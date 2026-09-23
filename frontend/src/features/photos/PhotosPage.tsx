@@ -1,12 +1,13 @@
-import { Images, Info, Search, Wand2 } from "lucide-react";
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { Images, Info, Search, Trash2, Wand2, X } from "lucide-react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useNavigate } from "@tanstack/react-router";
 
-import { usePhotos } from "@/api/queries";
+import { usePhotos, useTags } from "@/api/queries";
 import { useRegisterCommands, type Command } from "@/app/commands";
 import { CreateArtworksDialog } from "@/features/artworks/CreateArtworksDialog";
+import { TrashPhotosDialog } from "@/features/trash/TrashPhotosDialog";
 import { useFilePickers } from "@/features/upload/useFilePickers";
 import { Button } from "@/shared/ui/Button";
 import { EmptyState, PageHeader, Spinner } from "@/shared/ui/Misc";
@@ -19,7 +20,15 @@ export function PhotosPage() {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query.trim());
-  const photos = usePhotos(deferredQuery ? { q: deferredQuery } : {});
+  const [tagId, setTagId] = useState<string>("");
+  const tags = useTags("");
+  const searchRef = useRef<HTMLInputElement>(null);
+  const photos = usePhotos(
+    useMemo(
+      () => ({ ...(deferredQuery ? { q: deferredQuery } : {}), ...(tagId ? { tag_id: tagId } : {}) }),
+      [deferredQuery, tagId],
+    ),
+  );
   const items = useMemo(() => photos.data?.pages.flatMap((p) => p.items) ?? [], [photos.data]);
   const ids = useMemo(() => items.map((p) => p.id), [items]);
   const selection = useSelection(ids);
@@ -28,6 +37,8 @@ export function PhotosPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   /** Photos given to the create dialog (the selection, or the photo shown in the drawer). */
   const [creatingIds, setCreatingIds] = useState<string[] | null>(null);
+  /** Photos about to be deleted: the dialog asks what happens to the artworks using them. */
+  const [deletingIds, setDeletingIds] = useState<string[] | null>(null);
   const navigate = useNavigate();
   const { openFiles } = useFilePickers();
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = photos;
@@ -39,6 +50,10 @@ export function PhotosPage() {
 
   const createFromSelection = useCallback(() => {
     if (selectedInOrder.length > 0) setCreatingIds(selectedInOrder);
+  }, [selectedInOrder]);
+
+  const trashSelection = useCallback(() => {
+    if (selectedInOrder.length > 0) setDeletingIds(selectedInOrder);
   }, [selectedInOrder]);
 
   const commands = useMemo<Command[]>(
@@ -65,6 +80,20 @@ export function PhotosPage() {
         run: createFromSelection,
       },
       {
+        id: "photos.trash",
+        label: "trash.moveToTrash",
+        group: "commands.groups.library",
+        shortcut: "Delete",
+        run: trashSelection,
+      },
+      {
+        id: "photos.search",
+        label: "artworks.focusSearch",
+        group: "commands.groups.library",
+        shortcut: "/",
+        run: () => searchRef.current?.focus(),
+      },
+      {
         id: "photos.details",
         label: "photos.toggleDetails",
         group: "commands.groups.library",
@@ -72,7 +101,7 @@ export function PhotosPage() {
         run: () => setOpenId((current) => (current ? null : (selectedInOrder[0] ?? null))),
       },
     ],
-    [clear, createFromSelection, selectAll, selectedInOrder],
+    [clear, createFromSelection, selectAll, selectedInOrder, trashSelection],
   );
   useRegisterCommands(commands);
 
@@ -93,12 +122,40 @@ export function PhotosPage() {
               <label className="flex items-center gap-2 rounded-md border border-border bg-bg px-2.5 py-1.5">
                 <Search size={14} className="text-muted" />
                 <input
+                  ref={searchRef}
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder={t("photos.searchPlaceholder")}
                   className="w-56 bg-transparent text-sm outline-none placeholder:text-muted"
                 />
               </label>
+              {/* Tags reach photos as well as artworks, so the photo grid filters by one too
+                  (remarks.md #7). `tag_id` has always been in the API; nothing offered it. */}
+              <div className="flex items-center gap-1.5">
+                <select
+                  value={tagId}
+                  onChange={(event) => setTagId(event.target.value)}
+                  aria-label={t("photos.filterByTag")}
+                  className="h-9 rounded-md border border-border bg-bg px-2 text-sm text-text outline-none"
+                >
+                  <option value="">{t("photos.allTags")}</option>
+                  {(tags.data ?? []).map((tag) => (
+                    <option key={tag.id} value={tag.id}>
+                      {tag.name} ({tag.photo_count})
+                    </option>
+                  ))}
+                </select>
+                {tagId && (
+                  <button
+                    type="button"
+                    onClick={() => setTagId("")}
+                    aria-label={t("filters.clear")}
+                    className="rounded p-1 text-muted hover:bg-panel-2 hover:text-text"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
               <Button
                 variant="primary"
                 disabled={selected.size === 0}
@@ -106,6 +163,15 @@ export function PhotosPage() {
                 onClick={createFromSelection}
               >
                 <Wand2 size={16} /> {t("photos.createArtworks")}
+              </Button>
+              <Button
+                variant="ghost"
+                disabled={selected.size === 0}
+                onClick={trashSelection}
+                aria-label={t("trash.moveToTrash")}
+                title={t("trash.moveToTrash")}
+              >
+                <Trash2 size={16} />
               </Button>
               <Button
                 variant="ghost"
@@ -126,10 +192,11 @@ export function PhotosPage() {
           ) : items.length === 0 ? (
             <EmptyState
               icon={<Images size={40} />}
-              title={deferredQuery ? t("photos.noResults") : t("photos.emptyTitle")}
-              description={deferredQuery ? undefined : t("photos.emptyDescription")}
+              title={deferredQuery || tagId ? t("photos.noResults") : t("photos.emptyTitle")}
+              description={deferredQuery || tagId ? undefined : t("photos.emptyDescription")}
               action={
-                !deferredQuery && (
+                !deferredQuery &&
+                !tagId && (
                   <Button variant="primary" onClick={openFiles}>
                     {t("upload.addPhotos")}
                   </Button>
@@ -158,6 +225,15 @@ export function PhotosPage() {
           onCreateArtwork={(id) => setCreatingIds([id])}
         />
       )}
+      <TrashPhotosDialog
+        photoIds={deletingIds ?? []}
+        open={deletingIds !== null}
+        onOpenChange={(open) => !open && setDeletingIds(null)}
+        onDone={() => {
+          clear();
+          setOpenId(null);
+        }}
+      />
       <CreateArtworksDialog
         photoIds={creatingIds ?? []}
         open={creatingIds !== null}

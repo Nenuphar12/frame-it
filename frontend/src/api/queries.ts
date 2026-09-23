@@ -7,16 +7,22 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
+import type { ChipFilter, FilterGroup } from "@/features/library/filters";
+import { asJson, toGroup } from "@/features/library/filters";
+
 import {
   api,
   unwrap,
   type Artwork,
   type ArtworkDefaults,
+  type ArtworkSort,
+  type CollectionKind,
   type FrameStyle,
   type Layout,
   type LayoutDocumentApi,
   type Photo,
   type StyleDocumentApi,
+  type TrashCascade,
 } from "./client";
 
 export const queryKeys = {
@@ -28,6 +34,8 @@ export const queryKeys = {
   devices: ["devices"] as const,
   tags: (q: string) => ["tags", q] as const,
   collections: ["collections"] as const,
+  collection: (id: string) => ["collections", "detail", id] as const,
+  trash: ["trash"] as const,
   localsendStatus: ["localsend", "status"] as const,
   localsendRequests: ["localsend", "requests"] as const,
   localsendDevices: ["localsend", "devices"] as const,
@@ -49,6 +57,13 @@ export const queryKeys = {
 export interface ArtworkFilter {
   status?: "draft" | "ready";
   favorite?: boolean;
+  collection_id?: string;
+  include_nested?: boolean;
+  photo_id?: string;
+  q?: string;
+  sort?: ArtworkSort;
+  /** The filter bar's chips (docs/data-model.md §5.2); sent as an AST to `POST /artworks/query`. */
+  chips?: ChipFilter;
 }
 
 export interface PhotoFilter {
@@ -169,6 +184,234 @@ export function useCollections() {
   });
 }
 
+/** Every collection mutation refreshes the tree *and* the lists a collection can filter. */
+function useCollectionMutation<TVariables, TResult>(
+  mutationFn: (variables: TVariables) => Promise<TResult>,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["collections"] });
+      void qc.invalidateQueries({ queryKey: ["artworks", "list"] });
+    },
+  });
+}
+
+export interface CollectionInput {
+  name: string;
+  parent_id?: string | null;
+  kind?: CollectionKind;
+  description?: string;
+  filter?: FilterGroup | null;
+}
+
+export function useCreateCollection() {
+  return useCollectionMutation((body: CollectionInput) =>
+    unwrap(
+      api.POST("/api/v1/collections", {
+        body: {
+          name: body.name,
+          parent_id: body.parent_id ?? null,
+          kind: body.kind ?? "manual",
+          description: body.description ?? "",
+          filter: asJson(body.filter) ?? null,
+        },
+      }),
+    ),
+  );
+}
+
+export interface CollectionPatch {
+  id: string;
+  name?: string;
+  description?: string;
+  date_start?: string;
+  date_end?: string;
+  /** An artwork id, or `""` to clear the cover. */
+  cover_artwork_id?: string;
+  filter?: FilterGroup;
+}
+
+export function useUpdateCollection() {
+  return useCollectionMutation(({ id, filter, ...rest }: CollectionPatch) =>
+    unwrap(
+      api.PATCH("/api/v1/collections/{collection_id}", {
+        params: { path: { collection_id: id } },
+        body: { ...rest, filter: asJson(filter) ?? null },
+      }),
+    ),
+  );
+}
+
+/** Drag and drop in the tree: a new parent and the sibling to land before (cycles are a 422). */
+export function useMoveCollection() {
+  return useCollectionMutation(
+    (vars: { id: string; parent_id: string | null; before_id?: string | null }) =>
+      unwrap(
+        api.POST("/api/v1/collections/{collection_id}/move", {
+          params: { path: { collection_id: vars.id } },
+          body: { parent_id: vars.parent_id, before_id: vars.before_id ?? null },
+        }),
+      ),
+  );
+}
+
+export function useDeleteCollection() {
+  return useCollectionMutation((id: string) =>
+    unwrap(
+      api.DELETE("/api/v1/collections/{collection_id}", {
+        params: { path: { collection_id: id } },
+      }),
+    ),
+  );
+}
+
+export function useCollectionItems() {
+  const add = useCollectionMutation((vars: { id: string; artwork_ids: string[] }) =>
+    unwrap(
+      api.POST("/api/v1/collections/{collection_id}/items", {
+        params: { path: { collection_id: vars.id } },
+        body: { artwork_ids: vars.artwork_ids },
+      }),
+    ),
+  );
+  const remove = useCollectionMutation((vars: { id: string; artwork_ids: string[] }) =>
+    unwrap(
+      api.POST("/api/v1/collections/{collection_id}/items/remove", {
+        params: { path: { collection_id: vars.id } },
+        body: { artwork_ids: vars.artwork_ids },
+      }),
+    ),
+  );
+  const reorder = useCollectionMutation(
+    (vars: { id: string; artwork_id: string; before_id: string | null }) =>
+      unwrap(
+        api.POST("/api/v1/collections/{collection_id}/reorder", {
+          params: { path: { collection_id: vars.id } },
+          body: { artwork_id: vars.artwork_id, before_id: vars.before_id },
+        }),
+      ),
+  );
+  return { add, remove, reorder };
+}
+
+/** Live count for the smart-collection editor: "matches 12 artworks", or why it does not. */
+export function useValidateFilter(filter: FilterGroup | undefined) {
+  return useQuery({
+    queryKey: ["filters", "validate", filter],
+    queryFn: () =>
+      unwrap(
+        api.POST("/api/v1/filters/validate", {
+          body: { filter: asJson(filter) ?? { op: "and", clauses: [] } },
+        }),
+      ),
+    enabled: filter !== undefined,
+    placeholderData: keepPreviousData,
+  });
+}
+
+// ---- tag manager (docs/organization.md §1) ------------------------------------------------------
+
+function useTagMutation<TVariables, TResult>(
+  mutationFn: (variables: TVariables) => Promise<TResult>,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["tags"] });
+      void qc.invalidateQueries({ queryKey: ["photos"] });
+      void qc.invalidateQueries({ queryKey: ["artworks"] });
+    },
+  });
+}
+
+export function useUpdateTag() {
+  return useTagMutation(({ id, ...body }: { id: string; name?: string; color?: string }) =>
+    unwrap(
+      api.PATCH("/api/v1/tags/{tag_id}", { params: { path: { tag_id: id } }, body }),
+    ),
+  );
+}
+
+/** Move every use of `source_ids` onto `id`; the sources disappear, duplicate links collapse. */
+export function useMergeTags() {
+  return useTagMutation((vars: { id: string; source_ids: string[] }) =>
+    unwrap(
+      api.POST("/api/v1/tags/{tag_id}/merge", {
+        params: { path: { tag_id: vars.id } },
+        body: { source_ids: vars.source_ids },
+      }),
+    ),
+  );
+}
+
+export function useDeleteTag() {
+  return useTagMutation((id: string) =>
+    unwrap(api.DELETE("/api/v1/tags/{tag_id}", { params: { path: { tag_id: id } } })),
+  );
+}
+
+// ---- trash (docs/organization.md §5) ------------------------------------------------------------
+
+export function useTrash(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.trash,
+    queryFn: () => unwrap(api.GET("/api/v1/trash")),
+    enabled,
+  });
+}
+
+function useTrashMutation<TVariables, TResult>(
+  mutationFn: (variables: TVariables) => Promise<TResult>,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["trash"] });
+      void qc.invalidateQueries({ queryKey: ["photos"] });
+      void qc.invalidateQueries({ queryKey: ["artworks"] });
+      void qc.invalidateQueries({ queryKey: ["collections"] });
+    },
+  });
+}
+
+/** What deleting these photos would do to the artworks using them (the cascade dialog). */
+export function useTrashPreview(photoIds: string[]) {
+  return useQuery({
+    queryKey: ["trash", "preview", photoIds],
+    queryFn: () => unwrap(api.POST("/api/v1/trash/preview", { body: { photo_ids: photoIds } })),
+    enabled: photoIds.length > 0,
+  });
+}
+
+export function useTrashActions() {
+  const photos = useTrashMutation((vars: { photo_ids: string[]; cascade: TrashCascade }) =>
+    unwrap(api.POST("/api/v1/trash/photos", { body: vars })),
+  );
+  const artworks = useTrashMutation((artwork_ids: string[]) =>
+    unwrap(api.POST("/api/v1/trash/artworks", { body: { artwork_ids } })),
+  );
+  const restore = useTrashMutation(
+    (vars: { photo_ids?: string[]; artwork_ids?: string[]; batch_ids?: string[] }) =>
+      unwrap(
+        api.POST("/api/v1/trash/restore", {
+          body: {
+            photo_ids: vars.photo_ids ?? [],
+            artwork_ids: vars.artwork_ids ?? [],
+            batch_ids: vars.batch_ids ?? [],
+          },
+        }),
+      ),
+  );
+  const purge = useTrashMutation((all: boolean) =>
+    unwrap(api.POST("/api/v1/trash/purge", { body: { all } })),
+  );
+  return { photos, artworks, restore, purge };
+}
+
 export function useLocalSendStatus() {
   return useQuery({
     queryKey: queryKeys.localsendStatus,
@@ -230,13 +473,24 @@ export function useLocalSendDeviceActions() {
   return { setStatus, forget };
 }
 
+/**
+ * One page of artworks. Everything goes through `POST /artworks/query`: the filter bar sends an
+ * AST, and a smart collection *is* one, so both take the same path as a plain list.
+ */
 export function useArtworks(filter: ArtworkFilter) {
+  const { chips, ...rest } = filter;
+  const body = {
+    ...rest,
+    include_nested: filter.include_nested ?? false,
+    sort: filter.sort ?? "created_desc",
+    filter: asJson(toGroup(chips ?? [])),
+  };
   return useInfiniteQuery({
     queryKey: queryKeys.artworks(filter),
     queryFn: ({ pageParam }) =>
       unwrap(
-        api.GET("/api/v1/artworks", {
-          params: { query: { ...filter, limit: PAGE_SIZE, cursor: pageParam ?? undefined } },
+        api.POST("/api/v1/artworks/query", {
+          body: { ...body, limit: PAGE_SIZE, cursor: pageParam ?? undefined },
         }),
       ),
     initialPageParam: null as string | null,

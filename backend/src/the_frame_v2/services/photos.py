@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from the_frame_v2.db.models import Photo, PhotoTag, Tag
 from the_frame_v2.errors import ProblemError, not_found
+from the_frame_v2.services import search
 
 INBOX_STATES = ("inbox", "processed", "dismissed")
 MAX_LIMIT = 500
@@ -22,6 +23,7 @@ class PhotoFilter:
     inbox_state: str | None = None
     q: str | None = None
     tag_id: str | None = None
+    trashed: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,16 +46,20 @@ def _decode_cursor(cursor: str) -> tuple[datetime, str]:
         raise ProblemError(400, "invalid_cursor", "Invalid cursor") from exc
 
 
-def _apply_filter(stmt: Select[tuple[Photo]], flt: PhotoFilter) -> Select[tuple[Photo]]:
-    stmt = stmt.where(Photo.deleted_at.is_(None))
+def _apply_filter(
+    session: Session, stmt: Select[tuple[Photo]], flt: PhotoFilter
+) -> Select[tuple[Photo]]:
+    stmt = stmt.where(Photo.deleted_at.is_not(None) if flt.trashed else Photo.deleted_at.is_(None))
     if flt.inbox_state:
         if flt.inbox_state not in INBOX_STATES:
             raise ProblemError(422, "invalid_inbox_state", "Invalid inbox state")
         stmt = stmt.where(Photo.inbox_state == flt.inbox_state)
     if flt.q:
+        # FTS first (it reaches the tags too), then LIKE so a mid-word fragment still finds a file.
         like = f"%{flt.q.strip()}%"
         stmt = stmt.where(
             or_(
+                Photo.id.in_(search.search_ids(session, "photo", flt.q)),
                 Photo.original_filename.ilike(like),
                 Photo.place_name.ilike(like),
                 Photo.place_admin1.ilike(like),
@@ -85,7 +91,7 @@ def tags_for(session: Session, photo_ids: list[str]) -> dict[str, list[Tag]]:
 
 def list_photos(session: Session, flt: PhotoFilter, cursor: str | None, limit: int) -> PhotoPage:
     limit = max(1, min(limit, MAX_LIMIT))
-    stmt = _apply_filter(select(Photo), flt)
+    stmt = _apply_filter(session, select(Photo), flt)
     if cursor:
         stamp, photo_id = _decode_cursor(cursor)
         stmt = stmt.where(
@@ -99,7 +105,7 @@ def list_photos(session: Session, flt: PhotoFilter, cursor: str | None, limit: i
 
 
 def count_photos(session: Session, flt: PhotoFilter) -> int:
-    stmt = _apply_filter(select(Photo), flt).with_only_columns(func.count(Photo.id))
+    stmt = _apply_filter(session, select(Photo), flt).with_only_columns(func.count(Photo.id))
     return int(session.scalar(stmt) or 0)
 
 
@@ -125,6 +131,8 @@ def update_photo(
             raise ProblemError(422, "unknown_tag", "Unknown tag")
         session.execute(delete(PhotoTag).where(PhotoTag.photo_id == photo.id))
         session.add_all(PhotoTag(photo_id=photo.id, tag_id=t) for t in unique)
+        session.flush()
+        search.index_photo(session, photo)
     return photo
 
 

@@ -100,18 +100,93 @@ class TagOut(ApiModel):
 
 class TagWithCount(TagOut):
     photo_count: int
+    artwork_count: int = 0
 
 
 class TagCreateIn(BaseModel):
     name: str = Field(min_length=1, max_length=64)
 
 
+class TagUpdateIn(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=64)
+    color: str | None = Field(default=None, max_length=9)
+    """`#rrggbb`, `#rrggbbaa`, or `""` to clear it."""
+
+
+class TagMergeIn(BaseModel):
+    """Move every use of `source_ids` onto this tag; the sources disappear."""
+
+    source_ids: list[str] = Field(min_length=1, max_length=100)
+
+
+CollectionKind = Literal["manual", "smart"]
+
+
 class CollectionOut(ApiModel):
     id: str
     parent_id: str | None
     name: str
-    kind: Literal["manual", "smart"]
+    description: str
+    kind: CollectionKind
     position: float
+    date_start: str | None
+    date_end: str | None
+    cover_artwork_id: str | None
+    filter: dict[str, Any] | None
+    """The saved AST of a smart collection (docs/data-model.md §5.2); `null` for a manual one."""
+    item_count: int = 0
+    """Artworks in the collection itself."""
+    nested_count: int = 0
+    """Artworks in the collection and its whole subtree (each counted once)."""
+    created_at: datetime
+    updated_at: datetime
+
+
+class CollectionCreateIn(BaseModel):
+    name: str = Field(min_length=1, max_length=256)
+    parent_id: str | None = None
+    kind: CollectionKind = "manual"
+    description: str = Field(default="", max_length=4000)
+    filter: dict[str, Any] | None = None
+    """Required for a smart collection, refused for a manual one."""
+
+
+class CollectionUpdateIn(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=256)
+    description: str | None = Field(default=None, max_length=4000)
+    date_start: str | None = Field(default=None, max_length=10)
+    date_end: str | None = Field(default=None, max_length=10)
+    cover_artwork_id: str | None = None
+    """An artwork id, or `""` to clear the cover."""
+    filter: dict[str, Any] | None = None
+
+
+class CollectionMoveIn(BaseModel):
+    """Drag and drop: a new parent (`null` = top level) and the sibling to land before."""
+
+    parent_id: str | None = None
+    before_id: str | None = None
+
+
+class CollectionItemsIn(BaseModel):
+    artwork_ids: list[str] = Field(min_length=1, max_length=1000)
+
+
+class CollectionReorderIn(BaseModel):
+    artwork_id: str
+    before_id: str | None = None
+    """`null` puts it last."""
+
+
+class FilterValidateIn(BaseModel):
+    filter: dict[str, Any]
+
+
+class FilterValidateOut(ApiModel):
+    valid: bool
+    error: str | None = None
+    match_count: int | None = None
+    """How many artworks the filter matches right now (only when it is valid)."""
 
 
 # ---- uploads ------------------------------------------------------------------------------------
@@ -291,6 +366,14 @@ class ArtworkSummaryOut(ApiModel):
 
 class ArtworkOut(ArtworkSummaryOut):
     document: ArtworkDocument
+    collection_ids: list[str] = Field(default_factory=list)
+    """Manual collections holding this artwork — the ones it can be added to and removed from.
+
+    Only on the single-artwork response: a list would pay a join per row for something the grid
+    does not show."""
+    smart_collection_ids: list[str] = Field(default_factory=list)
+    """Smart collections whose filter currently matches it. Derived, so read-only: the artwork
+    leaves one by stopping to match, never by being removed from it."""
 
 
 class ArtworkPageOut(ApiModel):
@@ -539,3 +622,103 @@ class TextureOut(ApiModel):
     id: str
     name: str
     size: int
+
+
+# ---- trash --------------------------------------------------------------------------------------
+
+
+class AffectedArtworkOut(ApiModel):
+    """One artwork in the cascade dialog: what deleting these photos would do to it."""
+
+    artwork_id: str
+    title: str
+    slot_count: int
+    """Slots of this artwork that use one of the photos."""
+    photo_count: int
+    """Photos the artwork holds in total — equal to `slot_count` ⇒ nothing would be left."""
+
+
+class TrashPreviewOut(ApiModel):
+    artworks: list[AffectedArtworkOut]
+
+
+class TrashPhotosIn(BaseModel):
+    photo_ids: list[str] = Field(min_length=1, max_length=1000)
+    cascade: Literal["trash_artworks", "empty_slots"] = "trash_artworks"
+    """What happens to the artworks using them: trash them too, or empty their slots."""
+
+
+class TrashArtworksIn(BaseModel):
+    artwork_ids: list[str] = Field(min_length=1, max_length=1000)
+
+
+class RestoreIn(BaseModel):
+    photo_ids: list[str] = Field(default_factory=list, max_length=1000)
+    artwork_ids: list[str] = Field(default_factory=list, max_length=1000)
+    batch_ids: list[str] = Field(default_factory=list, max_length=100)
+    """Restores everything deleted by the same gesture."""
+
+
+class TrashResultOut(ApiModel):
+    batch_id: str
+    photos: int
+    artworks: int
+    emptied: int
+
+
+class TrashedPhotoOut(ApiModel):
+    id: str
+    original_filename: str
+    width: int
+    height: int
+    file_size: int
+    deleted_at: datetime | None
+    trash_batch_id: str | None
+
+
+class TrashedArtworkOut(ApiModel):
+    id: str
+    title: str
+    photo_count: int
+    render_hash: str | None
+    deleted_at: datetime | None
+    trash_batch_id: str | None
+
+
+class TrashOut(ApiModel):
+    photos: list[TrashedPhotoOut]
+    artworks: list[TrashedArtworkOut]
+    photo_total: int
+    artwork_total: int
+    retention_days: int
+
+
+class PurgeIn(BaseModel):
+    all: bool = False
+    """Empty the trash now instead of only purging what is past the retention window."""
+
+
+class PurgeOut(ApiModel):
+    photos: int
+    artworks: int
+    bytes_freed: int
+
+
+# ---- library query ------------------------------------------------------------------------------
+
+ArtworkSort = Literal["created_desc", "created_asc", "updated_desc", "title_asc", "manual"]
+
+
+class ArtworkQueryIn(BaseModel):
+    """The filter bar as a POST body: an AST is too big and too nested for a query string."""
+
+    filter: dict[str, Any] | None = None
+    collection_id: str | None = None
+    include_nested: bool = False
+    status: ArtworkStatus | None = None
+    favorite: bool | None = None
+    photo_id: str | None = None
+    q: str | None = Field(default=None, max_length=200)
+    sort: ArtworkSort = "created_desc"
+    cursor: str | None = None
+    limit: int = Field(default=100, ge=1, le=500)

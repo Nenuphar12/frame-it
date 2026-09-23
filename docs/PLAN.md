@@ -1,6 +1,6 @@
 # the_frame_v2 — Implementation Plan
 
-> Status: **Phases 0–8 implemented** (see `docs/progress.md`) ·
+> Status: **Phases 0–9 implemented** (see `docs/progress.md`) ·
 > Created 2026-09-16 · Placeholder name `the_frame_v2` (rename before open-sourcing)
 >
 > This plan is the single source of truth for scope and sequencing. Specs (§5–§9, §12) live in dedicated
@@ -638,7 +638,7 @@ of 40 photos produces 40 drafts in the review queue.
 `pre_template_update` snapshot puts the old look back). Batch create is unchanged from Phase 7 —
 the dialog now also offers a saved layout — and was not re-measured at 40 photos.
 
-### Phase 9 — Organization
+### Phase 9 — Organization — **done** (2026-09-23, `docs/organization.md`)
 
 1. Tags: autocomplete, create inline, tag manager (rename, merge, color, counts).
 2. Favorites everywhere (grid, editor, phone upload), Favorites view.
