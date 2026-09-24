@@ -19,7 +19,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { ApiError, artworkThumbUrl } from "@/api/client";
+import { artworkThumbUrl } from "@/api/client";
 import {
   useArtwork,
   useArtworkActions,
@@ -35,6 +35,7 @@ import { cn } from "@/shared/cn";
 import { Button } from "@/shared/ui/Button";
 import { Dialog } from "@/shared/ui/Dialog";
 import { Kbd, Spinner } from "@/shared/ui/Misc";
+import { problemMessage } from "@/shared/problem";
 import { EditorStage } from "./canvas/EditorStage";
 import * as actions from "./actions";
 import type { Side } from "./core/snapping.ts";
@@ -461,9 +462,7 @@ export function EditorPage() {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 text-sm">
         <p className="text-danger">
-          {artwork.error instanceof ApiError
-            ? t(`errors.${artwork.error.code}`, { defaultValue: artwork.error.message })
-            : t("errors.unknown")}
+          {problemMessage(t, artwork.error)}
         </p>
         <Button variant="secondary" onClick={() => void navigate({ to: "/artworks" })}>
           {t("nav.artworks")}

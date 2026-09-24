@@ -18,7 +18,7 @@ import {
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { ApiError, artworkRenderUrl, artworkThumbUrl } from "@/api/client";
+import { artworkRenderUrl, artworkThumbUrl } from "@/api/client";
 import {
   useArtwork,
   useArtworkActions,
@@ -57,7 +57,6 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onEdit, onClose }: A
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const data = artwork.data;
   const index = ids.indexOf(artworkId);
-  const error = [update, validate, duplicate, trash].find((m) => m.error)?.error;
 
   const go = (delta: number) => {
     const next = ids[index + delta];
@@ -244,13 +243,6 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onEdit, onClose }: A
                         max: Math.round((data.max_scale ?? data.min_scale) * 100),
                       })}`}
                   </span>
-                  {error && (
-                    <span className="text-xs text-danger">
-                      {error instanceof ApiError
-                        ? t(`errors.${error.code}`, { defaultValue: error.message })
-                        : t("errors.unknown")}
-                    </span>
-                  )}
                 </div>
                 <Button
                   size="sm"

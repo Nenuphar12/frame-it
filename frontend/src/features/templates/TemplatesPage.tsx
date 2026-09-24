@@ -7,7 +7,7 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Copy, Download, LayoutTemplate, Pencil, Trash2, Upload, Wand2 } from "lucide-react";
 
-import { ApiError, type FrameStyle, type Layout } from "@/api/client";
+import { type FrameStyle, type Layout } from "@/api/client";
 import {
   useCreateLayout,
   useCreateStyle,
@@ -24,6 +24,7 @@ import {
 import { Button } from "@/shared/ui/Button";
 import { Badge, EmptyState, PageHeader, Spinner } from "@/shared/ui/Misc";
 import { cn } from "@/shared/cn";
+import { problemMessage } from "@/shared/problem";
 
 import { LayoutEditorDialog, StyleEditorDialog } from "./TemplateEditors";
 import { LayoutPreview, StylePreview } from "./TemplatePreview";
@@ -236,9 +237,9 @@ export function TemplatesPage() {
         ))}
       </div>
       <div className="flex-1 overflow-y-auto p-5">
-        {error instanceof ApiError && (
+        {error != null && (
           <p className="mb-3 text-sm text-danger">
-            {t(`errors.${error.code}`, { defaultValue: error.message })}
+            {problemMessage(t, error)}
           </p>
         )}
         {loading && <Spinner />}

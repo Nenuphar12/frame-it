@@ -6,12 +6,12 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { ApiError } from "@/api/client";
 import { useSaveAsTemplate, type TemplateKind } from "@/api/queries";
 import { save as saveDocument } from "@/editor/store";
 import { Button } from "@/shared/ui/Button";
 import { Dialog } from "@/shared/ui/Dialog";
 import { Spinner } from "@/shared/ui/Misc";
+import { problemMessage } from "@/shared/problem";
 
 export function SaveAsTemplateDialog({
   kind,
@@ -68,9 +68,7 @@ export function SaveAsTemplateDialog({
         </label>
         {save.error && (
           <p className="text-sm text-danger">
-            {save.error instanceof ApiError
-              ? t(`errors.${save.error.code}`, { defaultValue: save.error.message })
-              : t("errors.unknown")}
+            {problemMessage(t, save.error)}
           </p>
         )}
         {saved && <p className="text-sm text-accent">{t("templates.saved")}</p>}

@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { ApiError, type LayoutDocumentApi, type StyleDocumentApi } from "@/api/client";
+import { type LayoutDocumentApi, type StyleDocumentApi } from "@/api/client";
 import { useRecipes } from "@/api/queries";
 import { ColorField } from "@/editor/panels/ColorField";
 import { RecipePicker } from "@/editor/panels/RecipePicker";
@@ -14,6 +14,7 @@ import { Field, NumberField, Segmented, Slider } from "@/editor/panels/Controls"
 import { Button } from "@/shared/ui/Button";
 import { Dialog } from "@/shared/ui/Dialog";
 import { Spinner } from "@/shared/ui/Misc";
+import { problemMessage } from "@/shared/problem";
 
 import { LayoutPreview, StylePreview } from "./TemplatePreview";
 
@@ -24,9 +25,7 @@ function Error({ error }: { error: unknown }) {
   if (!error) return null;
   return (
     <p className="text-sm text-danger">
-      {error instanceof ApiError
-        ? t(`errors.${error.code}`, { defaultValue: error.message })
-        : t("errors.unknown")}
+      {problemMessage(t, error)}
     </p>
   );
 }

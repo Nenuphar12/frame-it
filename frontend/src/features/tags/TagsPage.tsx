@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { TagWithCount } from "@/api/client";
-import { ApiError } from "@/api/client";
 import { useCreateTag, useDeleteTag, useMergeTags, useTags, useUpdateTag } from "@/api/queries";
 import { cn } from "@/shared/cn";
 import { Button } from "@/shared/ui/Button";
@@ -32,7 +31,6 @@ export function TagsPage() {
   const [mergeTarget, setMergeTarget] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<TagWithCount | null>(null);
   const rows = useMemo(() => tags.data ?? [], [tags.data]);
-  const error = update.error instanceof ApiError ? update.error.code : null;
 
   const rename = async (tag: TagWithCount) => {
     const name = draftName.trim();
@@ -77,7 +75,6 @@ export function TagsPage() {
           </>
         }
       />
-      {error && <p className="px-5 pt-2 text-xs text-danger">{t(`errors.${error}`)}</p>}
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
         {tags.isLoading ? (
           <div className="flex h-full items-center justify-center">

@@ -38,6 +38,7 @@ export const queryKeys = {
   collections: ["collections"] as const,
   collection: (id: string) => ["collections", "detail", id] as const,
   trash: ["trash"] as const,
+  jobs: (states: readonly string[]) => ["jobs", states] as const,
   localsendStatus: ["localsend", "status"] as const,
   localsendRequests: ["localsend", "requests"] as const,
   localsendDevices: ["localsend", "devices"] as const,
@@ -560,6 +561,7 @@ export function useCreateArtworks() {
       }
       return created;
     },
+    meta: { silentError: true },  // the create dialog keeps the reason under its button
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: ["artworks"] });
       void qc.invalidateQueries({ queryKey: ["photos"] });
@@ -712,6 +714,8 @@ function useTemplateMutation<TVariables>(
   const qc = useQueryClient();
   return useMutation({
     mutationFn,
+    // The templates page and both editors render the failure under the form it came from.
+    meta: { silentError: true },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["templates"] });
     },
@@ -1020,4 +1024,39 @@ export function useImportActions() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.imports }),
   });
   return { apply, discard };
+}
+
+
+// ---- background jobs (the activity centre) ------------------------------------------------------
+
+/**
+ * Failed jobs, and the count the sidebar badges. `job.failed` invalidates `["jobs"]` (see
+ * `api/events.ts`), so the page and the badge follow a failure without polling.
+ */
+export function useJobs(states: readonly string[] = ["failed"], enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.jobs(states),
+    queryFn: () => unwrap(api.GET("/api/v1/jobs", { params: { query: { state: [...states] } } })),
+    enabled,
+  });
+}
+
+export function useJobActions() {
+  const qc = useQueryClient();
+  const invalidate = () => void qc.invalidateQueries({ queryKey: ["jobs"] });
+  const retry = useMutation({
+    mutationFn: (jobId: string) =>
+      unwrap(api.POST("/api/v1/jobs/{job_id}/retry", { params: { path: { job_id: jobId } } })),
+    onSuccess: invalidate,
+  });
+  const dismiss = useMutation({
+    mutationFn: (jobId: string) =>
+      unwrap(api.POST("/api/v1/jobs/{job_id}/dismiss", { params: { path: { job_id: jobId } } })),
+    onSuccess: invalidate,
+  });
+  const dismissAll = useMutation({
+    mutationFn: () => unwrap(api.POST("/api/v1/jobs/dismiss-all")),
+    onSuccess: invalidate,
+  });
+  return { retry, dismiss, dismissAll };
 }

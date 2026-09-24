@@ -98,7 +98,11 @@ def test_job_queue_retry_and_permanent_failure(queue: JobQueue) -> None:
         assert s.get(Job, flaky_id).state == "done"  # type: ignore[union-attr]
         job = s.get(Job, broken_id)
         assert job is not None and job.state == "failed" and job.attempts == 1
-        assert job.error == "bad_input: nope"
+        # The code is a column, not a prefix on the message: a traceback and a `PermanentJobError`
+        # are indistinguishable by shape, and the client translates `errors.<code>`.
+        assert (job.code, job.error) == ("bad_input", "nope")
+        recovered = s.get(Job, flaky_id)
+        assert recovered is not None and recovered.code is None
 
 
 def test_job_queue_coalesces(queue: JobQueue) -> None:

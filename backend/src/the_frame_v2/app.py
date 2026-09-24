@@ -28,6 +28,7 @@ from the_frame_v2.api import (
     trash,
     uploads,
 )
+from the_frame_v2.api import jobs as jobs_router
 from the_frame_v2.api import templates as templates_router
 from the_frame_v2.auth.middleware import GuardMiddleware
 from the_frame_v2.auth.ratelimit import RateLimiter
@@ -175,6 +176,7 @@ def create_app(settings: Settings, *, start_workers: bool = True) -> FastAPI:
         artworks,
         trash,
         archive,
+        jobs_router,
         templates_router,
         rendering,
         colors,

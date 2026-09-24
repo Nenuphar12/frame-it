@@ -52,7 +52,7 @@ export interface ServerEvents {
   "localsend.cancelled": { session_id: string };
   "photo.ingested": IngestedEvent;
   "photo.ingest_failed": IngestFailedEvent;
-  "job.failed": { job_id: string; error: string | null };
+  "job.failed": { job_id: string; kind: string; code: string | null; error: string | null };
   "photo.updated": { photo_ids: string[] };
   "artwork.rendered": { artwork_id: string; render_hash: string };
   /** `entity`: `artwork` | `collection` | `tag` — what a page has to refetch. */
@@ -114,6 +114,10 @@ export function useServerEvents(enabled: boolean) {
         }
         if (name === "photo.ingested" || name === "photo.updated") {
           void qc.invalidateQueries({ queryKey: ["photos"] });
+        }
+        if (name === "job.failed") {
+          // The activity centre badges the count, and the failure is said out loud once.
+          void qc.invalidateQueries({ queryKey: ["jobs"] });
         }
         if (name.startsWith("trash.")) {
           // A purge or a restore moves rows between the library and the trash: refetch both.

@@ -15,7 +15,9 @@
     "select": "Apply a saved layout…",
     "yes": "Yes",
     "no": "No",
-    "loadMore": "Load more"
+    "loadMore": "Load more",
+    "dismiss": "Dismiss",
+    "refresh": "Refresh"
   },
   "nav": {
     "label": "Main navigation",
@@ -31,7 +33,9 @@
     "manage": "Manage",
     "mobile": "Phone upload view",
     "tags": "Tags",
-    "backup": "Export & import"
+    "backup": "Export & import",
+    "activity": "Activity",
+    "skipToContent": "Skip to content"
   },
   "palette": {
     "title": "Command palette",
@@ -64,7 +68,8 @@
     "goFavorites": "Go to favorites",
     "goTags": "Go to tags",
     "goTrash": "Go to trash",
-    "goBackup": "Go to export & import"
+    "goBackup": "Go to export & import",
+    "goActivity": "Go to activity"
   },
   "upload": {
     "addPhotos": "Add photos",
@@ -348,7 +353,13 @@
     "export_not_ready": "This export is not finished yet.",
     "unknown_artwork": "An artwork in the selection no longer exists.",
     "offset_mismatch": "The transfer lost its place. Retry.",
-    "missing_offset": "The transfer is missing its position header."
+    "missing_offset": "The transfer is missing its position header.",
+    "job_failed": "A background task failed.",
+    "unknown_job": "That task no longer exists.",
+    "job_not_failed": "That task did not fail.",
+    "unknown_job_kind": "This version of the app cannot run that task.",
+    "render_too_large": "This artwork's photos are too large to render together. Use fewer or smaller photos.",
+    "photo_file_missing": "A photo's file is missing from the library."
   },
   "localsend": {
     "title": "LocalSend",
@@ -1029,5 +1040,41 @@
       "renders": "Rendered images"
     },
     "and": " and "
+  },
+  "activity": {
+    "summary_one": "{{count}} failure needs attention",
+    "summary_other": "{{count}} failures need attention",
+    "summary_zero": "Nothing failed",
+    "empty": "Nothing to report",
+    "emptyHint": "Renders, uploads and exports that fail in the background show up here, with a way to run them again.",
+    "retry": "Retry",
+    "retryQueued": "Queued again",
+    "retryFailed": "Could not retry",
+    "dismiss": "Dismiss",
+    "dismissAll": "Dismiss all",
+    "details": "Technical details",
+    "notRetriable": "This version of the app no longer knows how to run that job.",
+    "openArtwork": "Open the artwork",
+    "jobFailed": "A background task failed",
+    "view": "View",
+    "attempts_one": "{{count}} attempt",
+    "attempts_other": "{{count}} attempts",
+    "kinds": {
+      "ingest": "Importing a photo",
+      "render": "Rendering an artwork",
+      "archive_export": "Writing an archive",
+      "archive_stage": "Reading an archive",
+      "archive_sweep": "Cleaning up archives",
+      "trash_purge": "Emptying the trash",
+      "fingerprint_backfill": "Indexing photo copies"
+    },
+    "states": {
+      "queued": "Queued",
+      "running": "Running",
+      "done": "Done",
+      "failed": "Failed",
+      "cancelled": "Cancelled",
+      "dismissed": "Dismissed"
+    }
   }
 }

@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { ApiError } from "@/api/client";
 import {
   useArtworkDefaults,
   useCreateArtworks,
@@ -13,6 +12,7 @@ import { RecipePicker } from "@/editor/panels/RecipePicker";
 import { Button } from "@/shared/ui/Button";
 import { Dialog } from "@/shared/ui/Dialog";
 import { Spinner } from "@/shared/ui/Misc";
+import { problemMessage } from "@/shared/problem";
 
 interface CreateArtworksDialogProps {
   /** Selected photos, in grid order (slot order for a multi-photo composition). */
@@ -202,9 +202,7 @@ export function CreateArtworksDialog({
         </p>
         {create.error && (
           <p className="text-sm text-danger">
-            {create.error instanceof ApiError
-              ? t(`errors.${create.error.code}`, { defaultValue: create.error.message })
-              : t("errors.unknown")}
+            {problemMessage(t, create.error)}
           </p>
         )}
         <div className="flex justify-end gap-2">

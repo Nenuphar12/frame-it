@@ -822,3 +822,37 @@ class ImportApplyOut(ApiModel):
     renders_adopted: int
     renders_queued: int
     warnings: list[str]
+
+
+# ---- jobs (the activity centre) ------------------------------------------------------------------
+
+
+class JobOut(ApiModel):
+    """One background job. `code` is the stable problem code when the handler raised one."""
+
+    id: str
+    kind: str
+    lane: str
+    state: str
+    attempts: int
+    progress: float
+    error: str | None = None
+    code: str | None = None
+    subject_id: str | None = None
+    created_at: datetime
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    retriable: bool
+
+
+class JobListOut(ApiModel):
+    jobs: list[JobOut]
+    failed: int
+
+
+class JobRetryOut(ApiModel):
+    job_id: str
+
+
+class JobDismissAllOut(ApiModel):
+    dismissed: int

@@ -1,5 +1,6 @@
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
 import {
+  Activity,
   Archive,
   Frame,
   Heart,
@@ -19,15 +20,19 @@ import {
 import { useEffect, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import { useCollectionItems, useCollections, useLibraryStats } from "@/api/queries";
+import { onServerEvent } from "@/api/events";
+import { useCollectionItems, useCollections, useJobs, useLibraryStats } from "@/api/queries";
 import { CollectionTree } from "@/features/collections/CollectionTree";
 import { GlobalDropZone } from "@/features/upload/DropZone";
 import { useFilePickers } from "@/features/upload/useFilePickers";
 import { LocalSendRequestDialog } from "@/features/localsend/LocalSendRequestDialog";
 import { UploadTray } from "@/features/upload/UploadTray";
 import { mirrorLocalSendTransfers } from "@/features/upload/uploadStore";
+import { cn } from "@/shared/cn";
+import { toast } from "@/shared/toast";
 import { Button } from "@/shared/ui/Button";
 import { Kbd } from "@/shared/ui/Misc";
+import { Toaster } from "@/shared/ui/Toaster";
 
 import { CheatSheet, CommandPalette } from "./CommandPalette";
 import { formatShortcut, useCommands, useRegisterCommands, type Command } from "./commands";
@@ -38,6 +43,8 @@ interface NavItem {
   label: string;
   icon: ReactNode;
   count?: number;
+  /** A count that is bad news (failed jobs) reads as bad news. */
+  countTone?: "accent" | "danger";
 }
 
 function NavLink({ item }: { item: NavItem }) {
@@ -50,7 +57,14 @@ function NavLink({ item }: { item: NavItem }) {
       {item.icon}
       <span className="flex-1 truncate">{item.label}</span>
       {item.count !== undefined && item.count > 0 && (
-        <span className="rounded-full bg-accent/20 px-1.5 text-[11px] font-semibold text-accent">
+        <span
+          className={cn(
+            "rounded-full px-1.5 text-[11px] font-semibold",
+            item.countTone === "danger"
+              ? "bg-danger/20 text-danger"
+              : "bg-accent/20 text-accent",
+          )}
+        >
           {item.count}
         </span>
       )}
@@ -82,7 +96,21 @@ export function Shell() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const stats = useLibraryStats();
+  const jobs = useJobs();
   useEffect(() => mirrorLocalSendTransfers(), []);
+  // A job that failed off-screen is said once, with a way to the activity centre (phase 11 §14.3).
+  useEffect(
+    () =>
+      onServerEvent("job.failed", (event) =>
+        // A coded failure gets the title *and* its own sentence; an uncoded one would otherwise
+        // print the same words twice, so it is left as the title alone.
+        toast.problem(event.code ?? undefined, "activity.jobFailed", {
+          label: "activity.view",
+          run: () => void navigate({ to: "/activity" }),
+        }),
+      ),
+    [navigate],
+  );
   const { openFiles, openFolder } = useFilePickers();
   const toggleTheme = useTheme((s) => s.toggle);
   const setPaletteOpen = useCommands((s) => s.setPaletteOpen);
@@ -186,6 +214,12 @@ export function Shell() {
         run: go("/tags"),
       },
       {
+        id: "go.activity",
+        label: "commands.goActivity",
+        group: "commands.groups.navigation",
+        run: go("/activity"),
+      },
+      {
         id: "go.trash",
         label: "commands.goTrash",
         group: "commands.groups.navigation",
@@ -219,6 +253,13 @@ export function Shell() {
     { to: "/tags", label: t("nav.tags"), icon: <TagsIcon size={16} /> },
     { to: "/templates", label: t("nav.templates"), icon: <LayoutTemplate size={16} /> },
     { to: "/trash", label: t("nav.trash"), icon: <Trash2 size={16} /> },
+    {
+      to: "/activity",
+      label: t("nav.activity"),
+      icon: <Activity size={16} />,
+      count: jobs.data?.failed,
+      countTone: "danger",
+    },
     { to: "/backup", label: t("nav.backup"), icon: <Archive size={16} /> },
     { to: "/devices", label: t("nav.devices"), icon: <MonitorSmartphone size={16} /> },
     { to: "/settings", label: t("nav.settings"), icon: <Settings size={16} /> },
@@ -266,9 +307,10 @@ export function Shell() {
           </button>
         </div>
       </nav>
-      <main className="min-w-0 flex-1 overflow-hidden">
+      <main id="main" className="min-w-0 flex-1 overflow-hidden">
         <Outlet />
       </main>
+      <Toaster />
       <UploadTray />
       <GlobalDropZone />
       <CommandPalette />

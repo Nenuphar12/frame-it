@@ -38,6 +38,8 @@ const DYNAMIC_PREFIXES = [
   "archive.kind",
   "archive.status",
   "archive.column",
+  "activity.kinds",
+  "activity.states",
 ];
 
 const has = (key) => {

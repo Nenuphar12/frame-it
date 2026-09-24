@@ -395,12 +395,15 @@ class Job(Base):
     attempts: Mapped[int] = mapped_column(Integer, default=0)
     progress: Mapped[float] = mapped_column(Float, default=0.0)
     error: Mapped[str | None] = mapped_column(Text)
+    code: Mapped[str | None] = mapped_column(String(64))
+    """Stable problem code when the handler raised `PermanentJobError` (`errors.<code>`)."""
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
     started_at: Mapped[datetime | None]
     finished_at: Mapped[datetime | None]
 
     __table_args__ = (
         Index("ix_jobs_claim", "lane", "state", "created_at"),
+        Index("ix_jobs_recent", "state", "created_at"),
         Index("ix_jobs_coalesce", "coalesce_key", "state"),
     )
 

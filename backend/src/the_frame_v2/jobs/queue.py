@@ -81,6 +81,10 @@ class JobQueue:
             raise ValueError(f"unknown lane {lane}")
         self._handlers[kind] = HandlerSpec(handler, lane, max_attempts)
 
+    def known_kinds(self) -> frozenset[str]:
+        """Kinds a handler is registered for — a job of any other kind can never be retried."""
+        return frozenset(self._handlers)
+
     def schedule_every(self, kind: str, interval_seconds: float, payload: dict[str, Any]) -> None:
         if kind not in self._handlers:
             raise ValueError(f"no handler for job kind {kind}")
@@ -200,22 +204,29 @@ class JobQueue:
                 raise PermanentJobError("unknown_job_kind", kind)
             spec.handler(JobContext(job_id, payload, self))
         except PermanentJobError as exc:
-            self._finish(job_id, "failed", f"{exc.code}: {exc}")
+            self._finish(job_id, kind, "failed", str(exc), code=exc.code)
         except Exception as exc:
             log.exception("job %s (%s) failed", job_id, kind)
             retry = spec is not None and attempts < spec.max_attempts
             detail = "".join(traceback.format_exception_only(exc)).strip()
-            self._finish(job_id, "queued" if retry else "failed", detail)
+            self._finish(job_id, kind, "queued" if retry else "failed", detail)
         else:
-            self._finish(job_id, "done", None)
+            self._finish(job_id, kind, "done", None)
 
-    def _finish(self, job_id: str, state: str, error: str | None) -> None:
+    def _finish(
+        self, job_id: str, kind: str, state: str, error: str | None, code: str | None = None
+    ) -> None:
         with self._db.session() as s:
-            values: dict[str, Any] = {"state": state, "error": error}
+            values: dict[str, Any] = {"state": state, "error": error, "code": code}
             if state != "queued":
                 values["finished_at"] = utcnow()
             if state == "done":
                 values["progress"] = 1.0
             s.execute(update(Job).where(Job.id == job_id).values(**values))
         if state == "failed":
-            self._broker.publish(Event("job.failed", {"job_id": job_id, "error": error}))
+            self._broker.publish(
+                Event(
+                    "job.failed",
+                    {"job_id": job_id, "kind": kind, "code": code, "error": error},
+                )
+            )
