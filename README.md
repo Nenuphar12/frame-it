@@ -9,6 +9,11 @@ open question — see [`docs/PLAN.md`](docs/PLAN.md) §16.)*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+![A three-photo composition on a linen mat, rendered at 3840x2160](docs/images/artwork.jpg)
+
+<sup>What comes out: one 3840×2160 file. Demo photos from [Unsplash](https://unsplash.com) —
+credits in [NOTICE.md](NOTICE.md).</sup>
+
 ## What it does
 
 - **Phone uploads in full quality** over the LAN — resumable, deduplicated, no cloud. Pair a device
@@ -27,6 +32,25 @@ open question — see [`docs/PLAN.md`](docs/PLAN.md) §16.)*
 
 Not in scope: talking to the TV. This app produces the image; you put it on the Frame the way you
 already do.
+
+## A look at it
+
+![The editor: three photos on a linen mat, the Simple panel open on the right](docs/images/editor.png)
+
+**The editor.** Everything in the right-hand panel re-solves the layout as you drag it — the
+arrangement, the outer margin, the gap, the format, the mat, the border. The selected photo is the
+bright one; the badge under the zoom slider reads *Downscaled 70%*, and the button beside it snaps
+that photo to *Native 100%*. The strip along the bottom is the review queue.
+
+|  |  |
+|---|---|
+| [![Artworks in a grid, each with its quality tier](docs/images/artworks.png)](docs/images/artworks.png) | [![A collection open beside the collection tree](docs/images/collections.png)](docs/images/collections.png) |
+| **The library.** Every artwork carries its worst quality tier, so a soft one cannot hide in the grid. | **Collections** nest and keep a manual order; a smart one stores a filter instead of a list. |
+
+![The inbox with the upload tray reporting 11 imported photos](docs/images/inbox.png)
+
+**The inbox.** New photos arrive with their pixel size and any quality warning, and the tray says
+what happened to each file — including the ones the library already had.
 
 ## Status
 

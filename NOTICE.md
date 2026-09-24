@@ -18,6 +18,14 @@ Font files are static instances (renamed families `TF <id> <weight>`) of the var
 https://github.com/google/fonts, built by `scripts/build_fonts.py`; the OFL permits this as modified versions
 under the same license (no Reserved Font Name is used).
 
+## Screenshots
+
+The photographs in `docs/images/` are from [Unsplash](https://unsplash.com) and are used under the
+[Unsplash License](https://unsplash.com/license). They are demo content for the screenshots only —
+none of them ships in the application. The filenames in the screenshots name the photographers:
+Frank Huang, Mavis Hopper, Karsten Winegeart, Pascal Debrunner, Marek Piwnicki, Martin Makaryan,
+Bruno BD and Jamo Images.
+
 ## Runtime dependencies
 
 Image processing is done by [libvips](https://www.libvips.org/) (LGPL-2.1-or-later) through
