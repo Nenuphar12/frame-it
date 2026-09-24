@@ -50,6 +50,15 @@ def render_hash(document: Mapping[str, Any], photo_shas: list[str]) -> str:
     return digest.hexdigest()
 
 
+def render_key() -> str:
+    """Everything but the document a render's hash depends on: renderer and asset versions.
+
+    An archive records it so an import can tell whether the render it carries is still the render
+    this app would produce (`services/archive_apply.py`).
+    """
+    return f"{renderer.RENDERER_VERSION}:{catalog().version_key}"
+
+
 @dataclass(frozen=True, slots=True)
 class RenderInputs:
     artwork_id: str

@@ -1,0 +1,25 @@
+{
+  "$id": "https://the-frame-v2/schemas/archive/collection_item.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "artwork_id": {
+      "title": "Artwork Id",
+      "type": "string"
+    },
+    "collection_id": {
+      "title": "Collection Id",
+      "type": "string"
+    },
+    "position": {
+      "default": 0.0,
+      "title": "Position",
+      "type": "number"
+    }
+  },
+  "required": [
+    "collection_id",
+    "artwork_id"
+  ],
+  "title": "Archive collection_item record v1",
+  "type": "object"
+}

@@ -32,6 +32,12 @@ const DYNAMIC_PREFIXES = [
   "filters.fields",
   "filters.ops",
   "trash.cascade",
+  "archive.state",
+  "archive.importState",
+  "archive.policy",
+  "archive.kind",
+  "archive.status",
+  "archive.column",
 ];
 
 const has = (key) => {

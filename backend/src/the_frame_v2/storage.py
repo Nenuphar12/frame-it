@@ -13,9 +13,11 @@ class Storage:
         self.originals = settings.originals_dir
         self.cache = settings.cache_dir
         self.uploads = settings.uploads_dir
+        self.exports = settings.exports_dir
+        self.imports = settings.imports_dir
 
     def ensure_dirs(self) -> None:
-        for d in (self.root, self.originals, self.cache, self.uploads):
+        for d in (self.root, self.originals, self.cache, self.uploads, self.exports, self.imports):
             d.mkdir(parents=True, exist_ok=True)
 
     def original_path(self, sha256: str, ext: str) -> Path:
@@ -39,3 +41,14 @@ class Storage:
 
     def palette_path(self, sha256: str) -> Path:
         return self.cache / "palettes" / f"{sha256}.json"
+
+    def export_dir(self, job_id: str) -> Path:
+        """One directory per export job, holding the single file it produced (temporary)."""
+        return self.exports / job_id
+
+    def import_dir(self, import_id: str) -> Path:
+        """Staging for one import: the received archive and nothing else (temporary)."""
+        return self.imports / import_id
+
+    def import_archive_path(self, import_id: str) -> Path:
+        return self.import_dir(import_id) / "archive.tfarchive"

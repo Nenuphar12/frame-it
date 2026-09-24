@@ -11,6 +11,7 @@ and `place`, a property of *a photo the artwork uses* — those compile to an EX
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import UTC, date, datetime
 from typing import Annotated, Any, Literal
 
@@ -244,3 +245,23 @@ def collection_ids_used(node: Group | Clause) -> set[str]:
 
 def is_empty(node: Group | Clause) -> bool:
     return isinstance(node, Group) and not node.clauses
+
+
+def remap_ids(node: Group, tags: Mapping[str, str], collections: Mapping[str, str]) -> Group:
+    """A filter travelling between libraries: rewrite the ids its clauses name (import, §12.2).
+
+    A smart collection is the one entity whose *content* holds foreign keys, so an import that
+    remaps a tag or a collection has to rewrite the AST too or the collection quietly empties.
+    Ids with no mapping are left alone: the importer drops the clause only if it stays unknown.
+    """
+    clauses: list[Node] = []
+    for child in node.clauses:
+        if isinstance(child, Group):
+            clauses.append(remap_ids(child, tags, collections))
+            continue
+        mapping = {"tag": tags, "collection": collections}.get(child.field)
+        if mapping is None:
+            clauses.append(child)
+            continue
+        clauses.append(child.model_copy(update={"value": [mapping.get(i, i) for i in child.value]}))
+    return node.model_copy(update={"clauses": clauses})

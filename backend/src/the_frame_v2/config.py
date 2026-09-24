@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     tls_key: Path | None = None
     trash_retention_days: int = 30
     max_upload_bytes: int = 1024**3
+    max_archive_bytes: int = 64 * 1024**3
+    """Largest archive `POST /imports` accepts, and the largest one staging will expand."""
+    export_retention_hours: int = 24
+    """How long a finished export stays downloadable in `exports/` before it is swept."""
+    import_retention_hours: int = 24
     max_image_pixels: int = 250_000_000
     upload_session_ttl_hours: int = 24
     ingest_workers: int = 2
@@ -73,6 +78,14 @@ class Settings(BaseSettings):
     @property
     def uploads_dir(self) -> Path:
         return self.data_dir / "uploads" / "tmp"
+
+    @property
+    def exports_dir(self) -> Path:
+        return self.data_dir / "exports"
+
+    @property
+    def imports_dir(self) -> Path:
+        return self.data_dir / "imports"
 
     @property
     def localsend_dir(self) -> Path:

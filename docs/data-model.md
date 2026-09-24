@@ -29,7 +29,8 @@ Soft delete via `deleted_at` (+ `trash_batch_id` to restore related items togeth
 | `setup_codes` | code_hash, expires_at, used_at | generated at startup when no admin device exists |
 | `upload_sessions` | id, device_key (device id or `localhost`), sha256, size, filename, mime, received_bytes, pending_meta (JSON), state (`open`/`processing`/`failed`), error, job_id, created_at, expires_at | Resumable; looked up by (device_key, sha256, size) while open. Temp file: `uploads/tmp/<id>.part`. Deleted after successful ingest |
 | `jobs` | id, kind, lane (`ingest`/`render`), coalesce_key, payload (JSON), state (`queued`/`running`/`done`/`failed`/`cancelled`), attempts, progress, error, created_at, started_at, finished_at | Lanes bound concurrency per kind of work; queued jobs with the same coalesce_key are cancelled when a new one is enqueued |
-| `settings` | key, value (JSON) | UI prefs; `artwork_defaults` = `{style_id, layout_id}` |
+| `settings` | key, value (JSON) | UI prefs; `artwork_defaults` = `{style_id, recipe_id, format}` |
+| `archive_imports` | id, filename, size, received_bytes, state (`receiving`/`staging`/`ready`/`applying`/`applied`/`failed`), error, scope, manifest (JSON), summary (JSON), job_id, created_at, expires_at | One import in progress (`docs/archive-format.md` §12.2); the archive and the per-item report live in `imports/<id>/`, which is disposable |
 | FTS5 `search_index` | entity_type, entity_id, text | titles, tag names, place names, filenames, collection names |
 
 ### Photo copies (merge by content fingerprint)

@@ -1846,6 +1846,153 @@
         "title": "DeviceUpdateIn",
         "type": "object"
       },
+      "ExportOut": {
+        "description": "An export job. The file is downloadable once `state` is `done`.",
+        "properties": {
+          "bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bytes"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filename"
+          },
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "library",
+              "renders"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "progress": {
+            "title": "Progress",
+            "type": "number"
+          },
+          "scope": {
+            "enum": [
+              "full",
+              "partial"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "queued",
+              "running",
+              "done",
+              "failed",
+              "cancelled"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "kind",
+          "scope",
+          "state",
+          "progress",
+          "filename",
+          "bytes",
+          "error",
+          "created_at"
+        ],
+        "title": "ExportOut",
+        "type": "object"
+      },
+      "ExportRequestIn": {
+        "description": "An empty selection exports the whole library (`scope: full`); anything else is partial.",
+        "properties": {
+          "artwork_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5000,
+            "title": "Artwork Ids",
+            "type": "array"
+          },
+          "collection_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Collection Ids",
+            "type": "array"
+          },
+          "include_nested": {
+            "default": true,
+            "title": "Include Nested",
+            "type": "boolean"
+          },
+          "include_renders": {
+            "default": false,
+            "title": "Include Renders",
+            "type": "boolean"
+          },
+          "include_templates": {
+            "default": true,
+            "title": "Include Templates",
+            "type": "boolean"
+          },
+          "kind": {
+            "default": "library",
+            "enum": [
+              "library",
+              "renders"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "render_format": {
+            "default": "jpg",
+            "enum": [
+              "png",
+              "jpg"
+            ],
+            "title": "Render Format",
+            "type": "string"
+          }
+        },
+        "title": "ExportRequestIn",
+        "type": "object"
+      },
       "FilterValidateIn": {
         "properties": {
           "filter": {
@@ -2162,6 +2309,323 @@
           "status"
         ],
         "title": "HashStatusOut",
+        "type": "object"
+      },
+      "ImportApplyOut": {
+        "properties": {
+          "created": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Created",
+            "type": "object"
+          },
+          "renders_adopted": {
+            "title": "Renders Adopted",
+            "type": "integer"
+          },
+          "renders_queued": {
+            "title": "Renders Queued",
+            "type": "integer"
+          },
+          "skipped": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Skipped",
+            "type": "object"
+          },
+          "updated": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Updated",
+            "type": "object"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "created",
+          "updated",
+          "skipped",
+          "renders_adopted",
+          "renders_queued",
+          "warnings"
+        ],
+        "title": "ImportApplyOut",
+        "type": "object"
+      },
+      "ImportCreateIn": {
+        "properties": {
+          "filename": {
+            "maxLength": 512,
+            "title": "Filename",
+            "type": "string"
+          },
+          "size": {
+            "exclusiveMinimum": 0.0,
+            "title": "Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "filename",
+          "size"
+        ],
+        "title": "ImportCreateIn",
+        "type": "object"
+      },
+      "ImportEntryOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "maps_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maps To"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "new",
+              "identical",
+              "matched",
+              "conflicting"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "key",
+          "name",
+          "status"
+        ],
+        "title": "ImportEntryOut",
+        "type": "object"
+      },
+      "ImportKindOut": {
+        "properties": {
+          "conflicting": {
+            "title": "Conflicting",
+            "type": "integer"
+          },
+          "identical": {
+            "title": "Identical",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ImportEntryOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "matched": {
+            "title": "Matched",
+            "type": "integer"
+          },
+          "new": {
+            "title": "New",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "total",
+          "new",
+          "identical",
+          "matched",
+          "conflicting"
+        ],
+        "title": "ImportKindOut",
+        "type": "object"
+      },
+      "ImportPoliciesIn": {
+        "description": "`default`, overridden per kind, overridden per item (keyed `\"<kind>:<identity>\"`).",
+        "properties": {
+          "default": {
+            "default": "keep_mine",
+            "enum": [
+              "keep_mine",
+              "take_theirs",
+              "keep_both"
+            ],
+            "title": "Default",
+            "type": "string"
+          },
+          "per_item": {
+            "additionalProperties": {
+              "enum": [
+                "keep_mine",
+                "take_theirs",
+                "keep_both"
+              ],
+              "type": "string"
+            },
+            "title": "Per Item",
+            "type": "object"
+          },
+          "per_kind": {
+            "additionalProperties": {
+              "enum": [
+                "keep_mine",
+                "take_theirs",
+                "keep_both"
+              ],
+              "type": "string"
+            },
+            "title": "Per Kind",
+            "type": "object"
+          }
+        },
+        "title": "ImportPoliciesIn",
+        "type": "object"
+      },
+      "ImportReportOut": {
+        "description": "The dry run: what importing this archive would do, kind by kind.",
+        "properties": {
+          "kinds": {
+            "items": {
+              "$ref": "#/components/schemas/ImportKindOut"
+            },
+            "title": "Kinds",
+            "type": "array"
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/Manifest"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "manifest",
+          "kinds"
+        ],
+        "title": "ImportReportOut",
+        "type": "object"
+      },
+      "ImportSessionOut": {
+        "properties": {
+          "chunk_bytes": {
+            "title": "Chunk Bytes",
+            "type": "integer"
+          },
+          "conflicting_items": {
+            "default": 0,
+            "title": "Conflicting Items",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "import_id": {
+            "title": "Import Id",
+            "type": "string"
+          },
+          "new_items": {
+            "default": 0,
+            "title": "New Items",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "enum": [
+                  "full",
+                  "partial"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "state": {
+            "enum": [
+              "receiving",
+              "staging",
+              "ready",
+              "applying",
+              "applied",
+              "failed"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "import_id",
+          "filename",
+          "size",
+          "offset",
+          "state",
+          "chunk_bytes",
+          "created_at"
+        ],
+        "title": "ImportSessionOut",
         "type": "object"
       },
       "LayoutDocument": {
@@ -2573,6 +3037,67 @@
           "error"
         ],
         "title": "LocalSendStatusOut",
+        "type": "object"
+      },
+      "Manifest": {
+        "description": "`manifest.json`: what this file is, what it holds and what wrote it.",
+        "properties": {
+          "app_version": {
+            "default": "",
+            "title": "App Version",
+            "type": "string"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "document_schema": {
+            "default": 1,
+            "title": "Document Schema",
+            "type": "integer"
+          },
+          "format": {
+            "default": "the_frame_v2.archive",
+            "title": "Format",
+            "type": "string"
+          },
+          "format_version": {
+            "default": 1,
+            "title": "Format Version",
+            "type": "integer"
+          },
+          "includes_renders": {
+            "default": false,
+            "title": "Includes Renders",
+            "type": "boolean"
+          },
+          "render_key": {
+            "default": "",
+            "title": "Render Key",
+            "type": "string"
+          },
+          "scope": {
+            "default": "full",
+            "enum": [
+              "full",
+              "partial"
+            ],
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "created_at"
+        ],
+        "title": "Manifest",
         "type": "object"
       },
       "MarginsSpec": {
@@ -6147,6 +6672,183 @@
         ]
       }
     },
+    "/api/v1/exports": {
+      "get": {
+        "operationId": "list_exports_api_v1_exports_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExportOut"
+                  },
+                  "title": "Response List Exports Api V1 Exports Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Exports",
+        "tags": [
+          "archive"
+        ]
+      },
+      "post": {
+        "description": "Queue an export. A selection makes it partial; no selection exports the whole library.",
+        "operationId": "start_export_api_v1_exports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Export",
+        "tags": [
+          "archive"
+        ]
+      }
+    },
+    "/api/v1/exports/{job_id}": {
+      "delete": {
+        "description": "Drop the produced file (the job row stays as history).",
+        "operationId": "delete_export_api_v1_exports__job_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Export",
+        "tags": [
+          "archive"
+        ]
+      },
+      "get": {
+        "operationId": "get_export_api_v1_exports__job_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Export",
+        "tags": [
+          "archive"
+        ]
+      }
+    },
+    "/api/v1/exports/{job_id}/download": {
+      "get": {
+        "description": "Stream the finished file. `Content-Disposition` carries the name it was written under.",
+        "operationId": "download_export_api_v1_exports__job_id__download_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download Export",
+        "tags": [
+          "archive"
+        ]
+      }
+    },
     "/api/v1/filters/validate": {
       "post": {
         "description": "Check a filter AST and say how many artworks it matches (the smart-collection editor).",
@@ -6716,6 +7418,295 @@
         "summary": "Frame Style Usage",
         "tags": [
           "templates"
+        ]
+      }
+    },
+    "/api/v1/imports": {
+      "get": {
+        "operationId": "list_imports_api_v1_imports_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ImportSessionOut"
+                  },
+                  "title": "Response List Imports Api V1 Imports Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Imports",
+        "tags": [
+          "archive"
+        ]
+      },
+      "post": {
+        "description": "Open a staging slot for an archive; the bytes follow as `PATCH` chunks.",
+        "operationId": "create_import_api_v1_imports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportSessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Import",
+        "tags": [
+          "archive"
+        ]
+      }
+    },
+    "/api/v1/imports/{import_id}": {
+      "delete": {
+        "description": "Forget an import: the staging directory and the archive go with it.",
+        "operationId": "delete_import_api_v1_imports__import_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "import_id",
+            "required": true,
+            "schema": {
+              "title": "Import Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Import",
+        "tags": [
+          "archive"
+        ]
+      },
+      "get": {
+        "operationId": "get_import_api_v1_imports__import_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "import_id",
+            "required": true,
+            "schema": {
+              "title": "Import Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportSessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Import",
+        "tags": [
+          "archive"
+        ]
+      },
+      "patch": {
+        "description": "Append a chunk at `Upload-Offset`; the last one starts staging (docs/archive-format.md).",
+        "operationId": "append_chunk_api_v1_imports__import_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "import_id",
+            "required": true,
+            "schema": {
+              "title": "Import Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/offset+octet-stream": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportSessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Append Chunk",
+        "tags": [
+          "archive"
+        ]
+      }
+    },
+    "/api/v1/imports/{import_id}/apply": {
+      "post": {
+        "description": "Write the archive into the library, per-kind and per-item policies applied (\u00a712.2 step 3).",
+        "operationId": "apply_import_api_v1_imports__import_id__apply_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "import_id",
+            "required": true,
+            "schema": {
+              "title": "Import Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportPoliciesIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportApplyOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Apply Import",
+        "tags": [
+          "archive"
+        ]
+      }
+    },
+    "/api/v1/imports/{import_id}/report": {
+      "get": {
+        "description": "The dry run (\u00a712.2 step 2): per kind, what is new, identical, remapped or conflicting.",
+        "operationId": "import_report_api_v1_imports__import_id__report_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "import_id",
+            "required": true,
+            "schema": {
+              "title": "Import Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportReportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Report",
+        "tags": [
+          "archive"
         ]
       }
     },

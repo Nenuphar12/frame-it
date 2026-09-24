@@ -1,5 +1,14 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { FolderMinus, FolderPlus, ImagePlus, Layers, Pencil, Sparkles, Trash2 } from "lucide-react";
+import {
+  FileArchive,
+  FolderMinus,
+  FolderPlus,
+  ImagePlus,
+  Layers,
+  Pencil,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -20,6 +29,8 @@ import { useSelection } from "@/features/photos/useSelection";
 import { Button } from "@/shared/ui/Button";
 import { Dialog } from "@/shared/ui/Dialog";
 import { EmptyState, PageHeader, Spinner } from "@/shared/ui/Misc";
+
+import { ExportDialog } from "@/features/archive/ExportDialog";
 
 import { AddToCollectionMenu } from "./AddToCollectionMenu";
 import { CollectionDialog } from "./CollectionDialog";
@@ -56,6 +67,7 @@ export function CollectionsPage() {
   const [creating, setCreating] = useState<"manual" | "smart" | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Collection | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const selected = rows.find((c) => c.id === selectedId) ?? null;
   const isManual = selected?.kind === "manual";
@@ -230,6 +242,9 @@ export function CollectionsPage() {
                     <FolderMinus size={14} /> {t("collections.removeItems", { count: picked.size })}
                   </Button>
                 )}
+                <Button size="sm" variant="ghost" onClick={() => setExporting(true)}>
+                  <FileArchive size={14} /> {t("archive.exportTitle")}
+                </Button>
                 <Button size="sm" variant="ghost" onClick={() => setEditing(selected)}>
                   <Pencil size={14} /> {t("common.edit")}
                 </Button>
@@ -296,6 +311,12 @@ export function CollectionsPage() {
         </div>
       </div>
 
+      {/* A collection is a natural export selection: its artworks, their photos and their tags. */}
+      <ExportDialog
+        open={exporting}
+        onOpenChange={setExporting}
+        collectionIds={selected ? [selected.id] : []}
+      />
       {/* New collections land at the top level by default; the dialog's own picker nests them
           (a "+" next to the selected collection used to be the *only* way, remarks.md #4). */}
       <CollectionDialog

@@ -7,6 +7,10 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from the_frame_v2.domain.archive import Manifest as ArchiveManifest
+from the_frame_v2.domain.archive import Policy as ImportPolicy
+from the_frame_v2.domain.archive import Scope as ArchiveScope
+from the_frame_v2.domain.archive import Status as ImportStatus
 from the_frame_v2.domain.composition import BalanceRange, RecipeNode
 from the_frame_v2.domain.document import (
     ArtworkDocument,
@@ -722,3 +726,99 @@ class ArtworkQueryIn(BaseModel):
     sort: ArtworkSort = "created_desc"
     cursor: str | None = None
     limit: int = Field(default=100, ge=1, le=500)
+
+
+# ---- export / import (docs/archive-format.md) ----------------------------------------------------
+
+ExportKind = Literal["library", "renders"]
+JobState = Literal["queued", "running", "done", "failed", "cancelled"]
+ImportState = Literal["receiving", "staging", "ready", "applying", "applied", "failed"]
+
+
+class ExportRequestIn(BaseModel):
+    """An empty selection exports the whole library (`scope: full`); anything else is partial."""
+
+    kind: ExportKind = "library"
+    artwork_ids: list[str] = Field(default_factory=list, max_length=5000)
+    collection_ids: list[str] = Field(default_factory=list, max_length=200)
+    include_nested: bool = True
+    include_renders: bool = False
+    include_templates: bool = True
+    render_format: Literal["png", "jpg"] = "jpg"
+
+
+class ExportOut(ApiModel):
+    """An export job. The file is downloadable once `state` is `done`."""
+
+    job_id: str
+    kind: ExportKind
+    scope: ArchiveScope
+    state: JobState
+    progress: float
+    filename: str | None
+    bytes: int | None
+    error: str | None
+    created_at: datetime
+
+
+class ImportCreateIn(BaseModel):
+    filename: str = Field(max_length=512)
+    size: int = Field(gt=0)
+
+
+class ImportSessionOut(ApiModel):
+    import_id: str
+    filename: str
+    size: int
+    offset: int
+    state: ImportState
+    error: str | None = None
+    scope: ArchiveScope | None = None
+    chunk_bytes: int
+    created_at: datetime
+    new_items: int = 0
+    conflicting_items: int = 0
+    """Totals from the dry run, for a one-line summary; the detail is `GET /imports/{id}/report`."""
+
+
+class ImportEntryOut(ApiModel):
+    kind: str
+    key: str
+    name: str
+    status: ImportStatus
+    maps_to: str | None = None
+
+
+class ImportKindOut(ApiModel):
+    kind: str
+    total: int
+    new: int
+    identical: int
+    matched: int
+    conflicting: int
+    items: list[ImportEntryOut] = Field(default_factory=list)
+
+
+class ImportReportOut(ApiModel):
+    """The dry run: what importing this archive would do, kind by kind."""
+
+    manifest: ArchiveManifest
+    kinds: list[ImportKindOut]
+    warnings: list[str] = Field(default_factory=list)
+
+
+class ImportPoliciesIn(BaseModel):
+    """`default`, overridden per kind, overridden per item (keyed `"<kind>:<identity>"`)."""
+
+    default: ImportPolicy = "keep_mine"
+    per_kind: dict[str, ImportPolicy] = Field(default_factory=dict)
+    per_item: dict[str, ImportPolicy] = Field(default_factory=dict)
+
+
+class ImportApplyOut(ApiModel):
+    created: dict[str, int]
+    updated: dict[str, int]
+    skipped: dict[str, int]
+    renders_adopted: int
+    renders_queued: int
+    warnings: list[str]

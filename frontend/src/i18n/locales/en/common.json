@@ -30,7 +30,8 @@
     "settings": "Settings",
     "manage": "Manage",
     "mobile": "Phone upload view",
-    "tags": "Tags"
+    "tags": "Tags",
+    "backup": "Export & import"
   },
   "palette": {
     "title": "Command palette",
@@ -62,7 +63,8 @@
     "goCollections": "Go to collections",
     "goFavorites": "Go to favorites",
     "goTags": "Go to tags",
-    "goTrash": "Go to trash"
+    "goTrash": "Go to trash",
+    "goBackup": "Go to export & import"
   },
   "upload": {
     "addPhotos": "Add photos",
@@ -319,7 +321,34 @@
     "invalid_cascade": "Unknown cascade option.",
     "manual_sort": "Manual order needs a collection.",
     "invalid_date": "That date is not valid.",
-    "manual_sort_nested": "Manual order cannot span sub-collections — sort by date instead."
+    "manual_sort_nested": "Manual order cannot span sub-collections — sort by date instead.",
+    "not_an_archive": "That file is not an archive.",
+    "missing_manifest": "This ZIP is not one of our archives (no manifest).",
+    "missing_checksums": "The archive has no checksum list.",
+    "invalid_checksums": "The archive's checksum list is damaged.",
+    "unlisted_file": "The archive holds a file its checksum list does not cover.",
+    "missing_file": "The archive is missing a file its checksum list names.",
+    "unsafe_archive_path": "The archive holds an unsafe file path.",
+    "archive_too_large": "The archive is larger than this server accepts.",
+    "unknown_format": "Unknown archive format.",
+    "unsupported_archive_version": "This archive was written by a newer version of the app.",
+    "unsupported_document_schema": "This archive holds artworks a newer version created.",
+    "invalid_manifest": "The archive's manifest is damaged.",
+    "invalid_record": "The archive holds a damaged row.",
+    "invalid_settings": "The archive's preferences file is damaged.",
+    "original_mismatch": "An original in the archive does not match its checksum.",
+    "invalid_original_name": "An original in the archive is not named after its content.",
+    "invalid_render_name": "A render in the archive is not named after its artwork.",
+    "missing_original": "The archive names a photo whose original file it does not carry.",
+    "staging_failed": "The archive could not be read.",
+    "apply_failed": "The import was rolled back: nothing was changed.",
+    "import_not_ready": "This import is not ready yet.",
+    "import_already_applied": "This import was already applied.",
+    "invalid_policy": "Unknown conflict policy.",
+    "export_not_ready": "This export is not finished yet.",
+    "unknown_artwork": "An artwork in the selection no longer exists.",
+    "offset_mismatch": "The transfer lost its place. Retry.",
+    "missing_offset": "The transfer is missing its position header."
   },
   "localsend": {
     "title": "LocalSend",
@@ -910,5 +939,95 @@
       "empty_slots": "Keep them, empty the slots",
       "emptyHint": "The artworks go back to draft with an empty slot; the change is snapshotted."
     }
+  },
+  "archive": {
+    "pageSubtitle": "Back the library up, move it to another computer, or pull finished images out.",
+    "exportTitle": "Export…",
+    "exportSelection": "Export…",
+    "exportScopeFull": "The whole library: photos, artworks, collections, tags and your templates.",
+    "exportScopePartial": "{{what}} — with the photos and tags they use.",
+    "exportScopeArtworks_one": "{{count}} artwork",
+    "exportScopeArtworks_other": "{{count}} artworks",
+    "exportScopeCollections_one": "{{count}} collection",
+    "exportScopeCollections_other": "{{count}} collections",
+    "kindLibrary": "Library archive",
+    "kindLibraryHint": "A ZIP holding the originals and everything the app knows — this is the backup.",
+    "kindRenders": "Rendered images",
+    "kindRendersHint": "Finished 4K pictures in one folder per collection, ready for a USB stick.",
+    "includeRenders": "Include the rendered images",
+    "includeRendersHint": "Bigger file, but an import skips re-rendering.",
+    "includeTemplates": "Include the styles and layouts used",
+    "includeNested": "Include sub-collections",
+    "renderFormat": "Format",
+    "startExport": "Start export",
+    "download": "Download",
+    "recentExports": "Recent exports",
+    "recentExportsHint": "Exports are kept on the server for {{hours}} h, then swept — download what you need.",
+    "noExports": "No export yet",
+    "noExportsHint": "An archive is written on the server first, then downloaded.",
+    "state": {
+      "queued": "Queued…",
+      "running": "Writing the archive…",
+      "done": "Ready",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
+    "importTitle": "Import an archive",
+    "importHint": "Nothing is written until you have seen what it would do.",
+    "chooseArchive": "Choose a file…",
+    "sending": "Sending… {{percent}} %",
+    "refused": "This archive was refused.",
+    "discard": "Discard this import",
+    "importState": {
+      "receiving": "Receiving",
+      "staging": "Checking…",
+      "ready": "Ready to import",
+      "applying": "Importing…",
+      "applied": "Imported",
+      "failed": "Refused"
+    },
+    "defaultPolicy": "On conflict, by default",
+    "apply": "Import",
+    "applyWithConflicts_one": "Import ({{count}} conflict)",
+    "applyWithConflicts_other": "Import ({{count}} conflicts)",
+    "imported": "Imported.",
+    "created": "added",
+    "updated": "replaced",
+    "skipped": "left alone",
+    "rendersAdopted_one": "{{count}} render reused",
+    "rendersAdopted_other": "{{count}} renders reused",
+    "rendersQueued_one": "{{count}} artwork to render",
+    "rendersQueued_other": "{{count}} artworks to render",
+    "column": {
+      "kind": "Kind",
+      "onConflict": "On conflict"
+    },
+    "status": {
+      "new": "New",
+      "identical": "Same",
+      "matched": "Already here",
+      "conflicting": "Conflicting"
+    },
+    "policy": {
+      "keep_mine": "Keep mine",
+      "take_theirs": "Take theirs",
+      "keep_both": "Keep both"
+    },
+    "kind": {
+      "photo": "Photos",
+      "artwork": "Artworks",
+      "tag": "Tags",
+      "collection": "Collections",
+      "collection_item": "Collection contents",
+      "artwork_tag": "Artwork tags",
+      "photo_tag": "Photo tags",
+      "frame_style": "Frame styles",
+      "layout": "Layouts",
+      "swatch": "Swatches",
+      "setting": "Preferences",
+      "library": "Library archive",
+      "renders": "Rendered images"
+    },
+    "and": " and "
   }
 }

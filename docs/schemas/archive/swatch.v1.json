@@ -1,0 +1,30 @@
+{
+  "$id": "https://the-frame-v2/schemas/archive/swatch.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "color": {
+      "title": "Color",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "default": "",
+      "title": "Name",
+      "type": "string"
+    },
+    "position": {
+      "default": 0.0,
+      "title": "Position",
+      "type": "number"
+    }
+  },
+  "required": [
+    "id",
+    "color"
+  ],
+  "title": "Archive swatch record v1",
+  "type": "object"
+}

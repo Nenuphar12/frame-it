@@ -335,6 +335,32 @@ class UploadSession(Base):
     __table_args__ = (Index("ix_upload_sessions_lookup", "device_key", "sha256", "size", "state"),)
 
 
+class ArchiveImport(Base):
+    """One import in progress: the archive received, its staging report and what came of it.
+
+    Spec: docs/archive-format.md §12.2. The archive itself lives in `imports/<id>/`, which is
+    disposable — deleting the row deletes the directory (`services/archive_import.py`).
+    """
+
+    __tablename__ = "archive_imports"
+
+    id: Mapped[str] = _id()
+    filename: Mapped[str] = mapped_column(String(512))
+    size: Mapped[int] = mapped_column(Integer)
+    received_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    state: Mapped[str] = mapped_column(String(16), default="receiving")
+    """receiving | staging | ready | applying | applied | failed"""
+    error: Mapped[str | None] = mapped_column(String(128))
+    """Problem code of the refusal (`unsupported_archive_version`, `checksum_mismatch`, …)."""
+    scope: Mapped[str | None] = mapped_column(String(16))
+    manifest: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    summary: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    """Per-kind counts from the dry run; the per-item report lives in the staging dir."""
+    job_id: Mapped[str | None] = mapped_column(String(36))
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    expires_at: Mapped[datetime]
+
+
 class LocalSendDevice(Base):
     """A phone/computer sending through the LocalSend protocol (identified by its fingerprint)."""
 

@@ -1,10 +1,11 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Frame, Heart, Search, Trash2 } from "lucide-react";
+import { FileArchive, Frame, Heart, Search, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { ArtworkSort } from "@/api/client";
 import { useArtworks, useTrashActions, type ArtworkFilter } from "@/api/queries";
+import { ExportDialog } from "@/features/archive/ExportDialog";
 import { AddToCollectionMenu } from "@/features/collections/AddToCollectionMenu";
 import { FilterBar } from "@/features/library/FilterBar";
 import type { ChipFilter } from "@/features/library/filters";
@@ -50,6 +51,7 @@ export function ArtworksPage({ favoritesOnly = false }: ArtworksPageProps) {
   const { artworks: trashArtworks } = useTrashActions();
   const searchRef = useRef<HTMLInputElement>(null);
   const [collectionMenuOpen, setCollectionMenuOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = artworks;
   const loadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
@@ -102,6 +104,9 @@ export function ArtworksPage({ favoritesOnly = false }: ArtworksPageProps) {
                   onOpenChange={setCollectionMenuOpen}
                   onDone={clear}
                 />
+                <Button size="sm" variant="ghost" onClick={() => setExporting(true)}>
+                  <FileArchive size={14} /> {t("archive.exportSelection")}
+                </Button>
                 <Button
                   size="sm"
                   variant="ghost"
@@ -163,6 +168,13 @@ export function ArtworksPage({ favoritesOnly = false }: ArtworksPageProps) {
           onClose={() => setOpenId(null)}
         />
       )}
+      {/* A partial archive of the selection (docs/archive-format.md §12.1) — the same dialog the
+          Backup page opens for the whole library. */}
+      <ExportDialog
+        open={exporting}
+        onOpenChange={setExporting}
+        artworkIds={selectedInOrder}
+      />
     </div>
   );
 }

@@ -8,7 +8,7 @@
 Self-hosted web app to prepare pictures for a 4K art-mode TV (Samsung The Frame, 3840×2160): phone uploads in
 full quality over the LAN, pixel-perfect framing/compositions, collections, export/import.
 
-- **Current state (2026-09-23): Phases 0–9 done** — foundations, device auth &
+- **Current state (2026-09-23): Phases 0–10 done** — foundations, device auth &
   pairing, resumable uploads, LocalSend receiver, ingest, Photos + Inbox UI, phone upload page; artwork
   document + geometry (Python/TS mirrored), pyvips renderer, built-in styles/layouts, artworks API;
   **editor** (Konva canvas, crop/placement/locks with the constraint solver, colour tools, alternatives,
@@ -34,8 +34,16 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
   manual purge that frees originals and render caches); Favorites view, the heart in the grid and
   the editor (`f`), and read-only mobile browsing at `/m/browse`. Migration `0005` adds the
   indexes those queries lean on; `scripts/seed_library.py` fills a 10k-item library.
-- **Next: Phase 10** (`docs/PLAN.md` §14): export / import — archive writer and reader, dry-run
-  report with conflict policies, rendered-image export, published JSON Schemas.
+- **Phase 10 (2026-09-23, `docs/archive-format.md`)**: export / import — the `.tfarchive`
+  (a plain **ZIP of JSON + JSON Lines + the originals**, with a `sha256sum`-format
+  `checksums.sha256` and JSON Schemas in `docs/schemas/archive/`), full and partial exports as a
+  job you then download, **rendered-image** export laid out by collection, and the import flow:
+  chunked receive → **staging** (safety + checksums + every record parsed) → **dry-run report**
+  (new / identical / matched / conflicting) → apply under `keep_mine | take_theirs | keep_both`
+  (per import, per kind, per item) in one transaction. `the_frame_v2 export` / `import` do the
+  same without a browser. Migration `0006` adds `archive_imports`.
+- **Next: Phase 11** (`docs/PLAN.md` §14): hardening & polish — performance and memory pass,
+  accessibility, error UX, service installers, user guide, security review.
 - Verified by the user on real hardware (2026-09-17): Android uploads (both pickers keep full quality but
   Android zeroes GPS → no place; see `docs/research/phone-uploads.md`), Docker image build/run/persistence.
 
@@ -50,6 +58,7 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
 | Golden images | `make golden-update` after an intended pixel change (review PNGs, bump `RENDERER_VERSION`) |
 | Render budgets | `cd backend && uv run python ../scripts/bench_render.py` |
 | Seed a big library (Phase 9 AC) | `cd backend && uv run python ../scripts/seed_library.py --data-dir /tmp/seed --artworks 10000` |
+| Export / import a library | `uv run the_frame_v2 export -o lib.tfarchive` · `uv run the_frame_v2 import lib.tfarchive --dry-run` |
 | Editor E2E against a copy of the library | `cp -r .dev-data /tmp/e2e && cd backend && THE_FRAME_V2_DATA_DIR=/tmp/e2e THE_FRAME_V2_PORT=8799 uv run the_frame_v2 serve`, then `cd frontend && THE_FRAME_V2_BACKEND=http://127.0.0.1:8799 pnpm dev --port 5199` |
 | Backend tests only | `cd backend && uv run pytest` (add `-k name`) |
 | Regenerate API types + `docs/schemas/` (after any API/document schema change) | `make gen-api` |
@@ -67,10 +76,10 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `backend/src/the_frame_v2/app.py` | App factory: context, routers, SPA serving, lifespan (jobs, setup code) |
 | `…/config.py` | Settings (env `THE_FRAME_V2_*` > `<data_dir>/config.toml` > defaults), LAN IP, allowed hosts |
 | `…/context.py` | `AppContext` service container (`app.state.ctx`) |
-| `…/api/` | Thin routers + `schemas.py` (Pydantic API models = OpenAPI source) + `deps.py` (auth deps); `templates.py` = styles/layouts CRUD, usage, push update, template files; `library.py` = tags + collections + `POST /filters/validate`; `trash.py` = preview/trash/restore/purge |
+| `…/api/` | Thin routers + `schemas.py` (Pydantic API models = OpenAPI source) + `deps.py` (auth deps); `templates.py` = styles/layouts CRUD, usage, push update, template files; `library.py` = tags + collections + `POST /filters/validate`; `trash.py` = preview/trash/restore/purge; `archive.py` = exports + imports |
 | `…/auth/` | `principal.py` (cookie/localhost → role), `middleware.py` (Host/CSRF/headers), `ratelimit.py` |
-| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos`, `tags`, `geocode`, `artworks` (create/save/snapshots), `render` (cache, jobs, region), `templates` (presets, CRUD, template files, artwork defaults; the artwork-writing half — apply/push update — is in `artworks`), `recipes` (the bundled composition catalogue, no DB), `colors` (photo palette, swatches, curated presets), `library` (the filter compiler + the artwork listing), `collections` (tree, items, smart filters), `tags` (rename/merge/delete), `search` (FTS index), `trash` (soft delete, cascade, restore, purge) |
-| `…/domain/` | PURE: `document` (artwork document v1 + the `composition` block + reference checks), `geometry`, `quality` (tiers), `placement`, `constraints` (editor solver §7.3), `alternatives` (§7.6), `arrange` (align/distribute/new slot, §7.7), `composition` (recipe trees, the parametric solver and `apply` = what it writes into a document, `docs/simple-editor.md` §3), `templates` (style/layout docs, `restyle`/`relayout`/save-as, `build_composition_document`), `filters` (the library filter AST, `docs/data-model.md` §5.2) |
+| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos`, `tags`, `geocode`, `artworks` (create/save/snapshots), `render` (cache, jobs, region), `templates` (presets, CRUD, template files, artwork defaults; the artwork-writing half — apply/push update — is in `artworks`), `recipes` (the bundled composition catalogue, no DB), `colors` (photo palette, swatches, curated presets), `library` (the filter compiler + the artwork listing), `collections` (tree, items, smart filters), `tags` (rename/merge/delete), `search` (FTS index), `trash` (soft delete, cascade, restore, purge), `archive_export` (the `.tfarchive` writer + the rendered-image ZIP), `archive_import` (receive, validate, classify), `archive_apply` (the import transaction and its id maps) |
+| `…/domain/` | PURE: `document` (artwork document v1 + the `composition` block + reference checks), `geometry`, `quality` (tiers), `placement`, `constraints` (editor solver §7.3), `alternatives` (§7.6), `arrange` (align/distribute/new slot, §7.7), `composition` (recipe trees, the parametric solver and `apply` = what it writes into a document, `docs/simple-editor.md` §3), `templates` (style/layout docs, `restyle`/`relayout`/save-as, `build_composition_document`), `filters` (the library filter AST, `docs/data-model.md` §5.2), `archive` (the archive's records, file layout and member-name safety, `docs/archive-format.md`) |
 | `…/imaging/` | `sniff` (magic bytes), `decode` (the only pixel access), `metadata` (EXIF/ICC), `fingerprint` (hash ignoring EXIF), `capabilities`, `render` (the renderer), `palette` (OKLab k-means), `assets` (fonts/textures catalog) |
 | `…/assets/` | `geonames/`, `fonts/` (OFL, `scripts/build_fonts.py`), `textures/` (CC0, `scripts/generate_textures.py`), `presets/` (built-in styles/layouts + `recipes.json`) |
 | `…/localsend/` | LocalSend v2 receiver: `app.py` (protocol routes, own TLS port), `discovery.py` (multicast), `identity.py` (cert/fingerprint), `client.py` (outgoing TLS), `runner.py` (lifespan); logic in `services/localsend.py`, admin API `api/localsend.py` |
@@ -88,7 +97,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `frontend/src/editor/` | `EditorPage.tsx` (layout, shortcuts, review queue), `store.ts` (working document, undo/redo on Immer patches, autosave + conflicts), `operations.ts` (pure document mutations: how a change propagates), `actions.ts` (what the UI calls), `TvPreview.tsx` |
 | `…/editor/canvas/` | `EditorStage.tsx` (Konva stage, one pointer pipeline for every gesture, overlays), `SlotNode.tsx` (bands, photo, shadows), `CaptionNode.tsx`, `SelectionOverlay.tsx` (outlines + transform handles), `hit.ts` (rotation-aware hit tests, handle maths), `texture.ts`, `fonts.ts`, `useOrientedImage.ts` |
 | `…/editor/panels/` | `SimplePanel` (the parametric editor, §6.2) + `RecipePicker` (schemas drawn by the solver), `SlotsPanel` (z-order, add/remove, photos), `PhotoPicker`, `ArrangePanel` (align/distribute), `CaptionsPanel`, `FramingPanel`, `StylePanel`, `ColorField` (picker + swatches + palette + presets), `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`, `ShadowFields` (shared with the template editor), `Controls` |
-| `frontend/src/features/` | `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, grid, viewer, create dialog), `templates/` (page, editors, push update, `.tf*.json` files), `library/` (the filter AST + chip bar), `collections/` (page, tree, create/edit dialog), `trash/` (page + the cascade dialog), `tags/` (picker + manager page), `devices/`, `auth/`, `mobile/` (upload + read-only browse), `settings/`, `localsend/` (the editor lives in `src/editor/`, not here) |
+| `frontend/src/features/` | `archive/` (export dialog, import report + policies), `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, grid, viewer, create dialog), `templates/` (page, editors, push update, `.tf*.json` files), `library/` (the filter AST + chip bar), `collections/` (page, tree, create/edit dialog), `trash/` (page + the cascade dialog), `tags/` (picker + manager page), `devices/`, `auth/`, `mobile/` (upload + read-only browse), `settings/`, `localsend/` (the editor lives in `src/editor/`, not here) |
 | `frontend/src/shared/` | UI primitives (`ui/`), `format.ts`, `cn.ts`, `dnd.ts` (the MIME types our own drags carry) |
 | `frontend/src/i18n/` | i18next setup; strings in `locales/en/common.json` |
 | `docs/` | Plan, specs, ADRs (`adr/`), research findings (`research/`), progress |
@@ -108,6 +117,10 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
   and dropped so the app still shows a transfer), and the web tray (`localsend.*` events) tells what happened.
 - Ingest flow: `POST /uploads` → `PATCH` chunks (`Upload-Offset`) → SHA-256 verified → `ingest` job → photo in
   inbox → SSE `photo.ingested` (or `photo.ingest_failed` with a problem code).
+- Export/import flow (`docs/archive-format.md`): `POST /exports` → job → `exports/<job_id>/<name>.tfarchive`
+  → `GET /exports/{job_id}/download`; `POST /imports` + `PATCH` chunks → staging job (validate, then classify
+  every row against the library) → `GET /imports/{id}/report` → `POST /imports/{id}/apply`, which writes
+  everything in one transaction through the id maps. Both staging areas are swept by `archive.sweep`.
 - Frontend: server state only in TanStack Query; SSE invalidates `["photos"]`; upload queue is a Zustand store
   outside React (hash → open/resume → chunks with retry → wait for SSE, polling fallback).
 - Compositions (Phase 7, `docs/simple-editor.md`): an optional `composition` block holds a recipe id
@@ -163,7 +176,8 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 `docs/PLAN.md` (scope, phases, DoD) · `docs/data-model.md` · `docs/localsend.md` · `docs/artwork-document.md` ·
 `docs/simple-editor.md` (Phase 7: compositions, recipes, the solver) · `docs/templates.md` (Phase 8) ·
 `docs/organization.md` (Phase 9: tags, collections, filters, search, trash) ·
-`docs/geometry-and-quality.md` · `docs/rendering-spec.md` · `docs/security.md` · `docs/archive-format.md` ·
+`docs/geometry-and-quality.md` · `docs/rendering-spec.md` · `docs/security.md` ·
+`docs/archive-format.md` (Phase 10: the archive, the dry run, the policies) ·
 `docs/schemas/` (generated) · `docs/adr/` · `docs/research/` · `NOTICE.md` (asset licenses)
 
 ## Gotchas
@@ -337,6 +351,30 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
   openapi-fetch binds `globalThis.fetch` at `createClient` time, so patching `window.fetch` later
   intercepts nothing (read results back through the API); and dispatch a synthetic key **once**, on
   the focused element — dispatching on `body` *and* `window` makes tinykeys see every key twice.
+- An archive is **a ZIP anyone can open** — that is a requirement, not an accident: JSON + JSON
+  Lines + the originals + a `sha256sum`-format `checksums.sha256`, schemas in
+  `docs/schemas/archive/`. `domain/archive.py` is the one place that says which columns travel;
+  add a field there, keep it inside that shape.
+- **An import matches on meaning, not on ids**: a photo is its SHA-256 (a local copy *is* that
+  photo, and a trashed one comes back), a tag is its name, a built-in template is never
+  overwritten. Everything else is by id, and `identical` ignores every timestamp, the trash batch
+  and `document_version` — a no-op save on one side is not a conflict.
+- Every id an archive carries is rewritten through **one set of maps** (`archive_import.IdMaps`):
+  a document's `photo_id`s, a collection's `parent_id`/`cover_artwork_id`, a **smart collection's
+  filter** (`filters.remap_ids`) and `artwork_defaults.style_id`. A reference to a **built-in**
+  template has no mapping and must survive as written — mapping it to `None` quietly loses the
+  origin badge on every artwork (regression-tested). An imported document is otherwise stored
+  **verbatim**: an import is a restore, not a client save, so the solver is not re-run over it.
+- **A row is compared after translation *and* after migration** — `archive_import._translated` (used
+  by the report and the apply pass) plus `archive.comparable`, which runs both documents through the
+  schema. The same artwork in two libraries names the same photo under two ids, and a document
+  stored before a field existed has no default where a parsed one does: either alone makes a
+  re-import report every artwork as a conflict (measured: 23 of 30 on the dev library). Anything
+  new holding a foreign key goes through `artwork_values` / `collection_values`.
+- A render travels only while it is still the render this app would make: the manifest carries
+  `render_key` (renderer + asset versions, `services/render.render_key`); a mismatch re-renders.
+- Two libraries in a test are two apps over **two data dirs** (`app_factory(data_dir=…)`), or you
+  are importing an archive into the library that wrote it.
 - Dev over the Vite proxy is **not** trusted as localhost (`xfwd` adds `X-Forwarded-For`, invariant 5): the
   first load asks for the setup code printed in the server log. Point Vite at another backend with
   `THE_FRAME_V2_BACKEND=http://127.0.0.1:<port>`.

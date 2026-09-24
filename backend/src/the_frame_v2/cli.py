@@ -151,13 +151,18 @@ def openapi(
 def schemas(
     output: Annotated[Path, typer.Option("--output", "-o", help="Destination directory")],
 ) -> None:
-    """Export the JSON Schemas of published documents (artwork document, templates)."""
-    from the_frame_v2.domain import document, templates
+    """Export the JSON Schemas of published documents and of the archive format."""
+    from the_frame_v2.domain import archive, document, templates
 
     output.mkdir(parents=True, exist_ok=True)
     for name, schema in schema_documents(document, templates).items():
         (output / name).write_text(json.dumps(schema, indent=2, sort_keys=True) + "\n")
         typer.echo(f"Wrote {output / name}")
+    archive_dir = output / "archive"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    for name, schema in archive.json_schemas().items():
+        (archive_dir / name).write_text(json.dumps(schema, indent=2, sort_keys=True) + "\n")
+        typer.echo(f"Wrote {archive_dir / name}")
 
 
 def schema_documents(document: Any, templates: Any) -> dict[str, dict[str, Any]]:
@@ -177,6 +182,89 @@ def schema_documents(document: Any, templates: Any) -> dict[str, dict[str, Any]]
         )
         result[filename] = schema
     return result
+
+
+@app.command("export")
+def export_archive(
+    output: Annotated[Path, typer.Option("--out", "-o", help="File to write")],
+    data_dir: DataDir = None,
+    kind: Annotated[
+        str, typer.Option("--kind", help="library (a .tfarchive) or renders (a ZIP of images)")
+    ] = "library",
+    artwork: Annotated[
+        list[str] | None, typer.Option("--artwork", help="Artwork id (repeatable)")
+    ] = None,
+    collection: Annotated[
+        list[str] | None, typer.Option("--collection", help="Collection id (repeatable)")
+    ] = None,
+    nested: Annotated[
+        bool, typer.Option("--nested/--no-nested", help="Follow sub-collections")
+    ] = True,
+    renders: Annotated[bool, typer.Option("--renders", help="Include rendered PNGs")] = False,
+    templates: Annotated[bool, typer.Option("--templates/--no-templates")] = True,
+    image_format: Annotated[str, typer.Option("--format", help="renders: jpg or png")] = "jpg",
+) -> None:
+    """Write an archive (docs/archive-format.md). No selection exports the whole library."""
+    from the_frame_v2.app import build_context
+    from the_frame_v2.services import archive_export
+
+    settings = _settings(data_dir)
+    _configure_logging(settings.log_level)
+    ctx = build_context(settings)
+    options = archive_export.ExportOptions(
+        kind="renders" if kind == "renders" else "library",
+        artwork_ids=tuple(artwork or ()),
+        collection_ids=tuple(collection or ()),
+        include_nested=nested,
+        include_renders=renders,
+        include_templates=templates,
+        render_format="png" if image_format == "png" else "jpg",
+    )
+    write = archive_export.write_render_zip if kind == "renders" else archive_export.write_archive
+    result = write(ctx, options, output)
+    ctx.db.dispose()
+    typer.echo(json.dumps({"path": str(result.path), "scope": result.scope, **result.counts}))
+    for warning in result.warnings:
+        typer.echo(f"warning: {warning}", err=True)
+
+
+@app.command("import")
+def import_archive(
+    source: Annotated[Path, typer.Argument(help="Archive to read")],
+    data_dir: DataDir = None,
+    policy: Annotated[
+        str, typer.Option("--policy", help="keep_mine | take_theirs | keep_both (conflicts)")
+    ] = "keep_mine",
+    dry_run: Annotated[bool, typer.Option("--dry-run", help="Report only, write nothing")] = False,
+) -> None:
+    """Import an archive, reporting what it would do first (docs/archive-format.md §12.2)."""
+    from the_frame_v2.app import build_context
+    from the_frame_v2.domain import archive
+    from the_frame_v2.services import archive_apply, archive_import
+
+    if policy not in archive.POLICIES:
+        typer.echo(f"Unknown policy {policy!r} (use {', '.join(archive.POLICIES)})", err=True)
+        raise typer.Exit(2)
+    settings = _settings(data_dir)
+    _configure_logging(settings.log_level)
+    ctx = build_context(settings)
+    import_id, report = archive_import.stage_local(ctx, source)
+    typer.echo(json.dumps(report.summary(), indent=2, sort_keys=True))
+    for warning in report.warnings:
+        typer.echo(f"warning: {warning}", err=True)
+    if dry_run:
+        with ctx.db.session() as session:
+            archive_import.delete_import(ctx, session, import_id)
+        ctx.db.dispose()
+        return
+    result = archive_apply.apply_import(
+        ctx,
+        import_id,
+        archive_apply.Policies(default=policy),
+    )
+    ctx.jobs.run_pending_sync()  # render what the import left to render, then exit
+    ctx.db.dispose()
+    typer.echo(json.dumps(result.as_dict(), indent=2, sort_keys=True))
 
 
 @app.command()

@@ -21,6 +21,8 @@ import {
   type Layout,
   type LayoutDocumentApi,
   type Photo,
+  type ExportRequest,
+  type ImportPolicy,
   type StyleDocumentApi,
   type TrashCascade,
 } from "./client";
@@ -52,6 +54,10 @@ export const queryKeys = {
   snapshots: (artworkId: string) => ["artworks", "snapshots", artworkId] as const,
   templateUsage: (kind: TemplateKind, id: string) => ["templates", "usage", kind, id] as const,
   artworkDefaults: ["templates", "defaults"] as const,
+  exports: ["archive", "exports"] as const,
+  imports: ["archive", "imports"] as const,
+  importSession: (id: string) => ["archive", "imports", id] as const,
+  importReport: (id: string) => ["archive", "imports", id, "report"] as const,
 };
 
 export interface ArtworkFilter {
@@ -329,9 +335,7 @@ function useTagMutation<TVariables, TResult>(
 
 export function useUpdateTag() {
   return useTagMutation(({ id, ...body }: { id: string; name?: string; color?: string }) =>
-    unwrap(
-      api.PATCH("/api/v1/tags/{tag_id}", { params: { path: { tag_id: id } }, body }),
-    ),
+    unwrap(api.PATCH("/api/v1/tags/{tag_id}", { params: { path: { tag_id: id } }, body })),
   );
 }
 
@@ -914,4 +918,106 @@ export function usePhotosByIds(ids: string[]) {
       isLoading: results.some((result) => result.isLoading),
     }),
   });
+}
+
+// ---- export / import (docs/archive-format.md) --------------------------------------------------
+
+/** Export jobs, newest first. Polled while one is running: the file appears when it is done. */
+export function useExports() {
+  return useQuery({
+    queryKey: queryKeys.exports,
+    queryFn: () => unwrap(api.GET("/api/v1/exports")),
+    refetchInterval: (query) =>
+      (query.state.data ?? []).some((job) => job.state === "queued" || job.state === "running")
+        ? 1000
+        : false,
+  });
+}
+
+export function useExportActions() {
+  const qc = useQueryClient();
+  const invalidate = () => void qc.invalidateQueries({ queryKey: queryKeys.exports });
+  const start = useMutation({
+    mutationFn: (body: ExportRequest) => unwrap(api.POST("/api/v1/exports", { body })),
+    onSuccess: invalidate,
+  });
+  const remove = useMutation({
+    mutationFn: (jobId: string) =>
+      unwrap(api.DELETE("/api/v1/exports/{job_id}", { params: { path: { job_id: jobId } } })),
+    onSuccess: invalidate,
+  });
+  return { start, remove };
+}
+
+export function useImports() {
+  return useQuery({
+    queryKey: queryKeys.imports,
+    queryFn: () => unwrap(api.GET("/api/v1/imports")),
+  });
+}
+
+/** One import session. Polled while the archive is being staged (validated + classified). */
+export function useImportSession(importId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.importSession(importId ?? ""),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/v1/imports/{import_id}", {
+          params: { path: { import_id: importId as string } },
+        }),
+      ),
+    enabled: importId !== null,
+    refetchInterval: (query) => (query.state.data?.state === "staging" ? 700 : false),
+  });
+}
+
+export function useImportReport(importId: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.importReport(importId ?? ""),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/v1/imports/{import_id}/report", {
+          params: { path: { import_id: importId as string } },
+        }),
+      ),
+    enabled: enabled && importId !== null,
+  });
+}
+
+export interface ImportDecision {
+  importId: string;
+  default: ImportPolicy;
+  per_kind?: Record<string, ImportPolicy>;
+  per_item?: Record<string, ImportPolicy>;
+}
+
+export function useImportActions() {
+  const qc = useQueryClient();
+  const apply = useMutation({
+    mutationFn: (decision: ImportDecision) =>
+      unwrap(
+        api.POST("/api/v1/imports/{import_id}/apply", {
+          params: { path: { import_id: decision.importId } },
+          body: {
+            default: decision.default,
+            per_kind: decision.per_kind ?? {},
+            per_item: decision.per_item ?? {},
+          },
+        }),
+      ),
+    onSuccess: () => {
+      // An import can touch anything: start every list over rather than guess.
+      qc.clear();
+    },
+  });
+  const discard = useMutation({
+    mutationFn: (importId: string) =>
+      unwrap(
+        api.DELETE("/api/v1/imports/{import_id}", {
+          params: { path: { import_id: importId } },
+        }),
+      ),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.imports }),
+  });
+  return { apply, discard };
 }

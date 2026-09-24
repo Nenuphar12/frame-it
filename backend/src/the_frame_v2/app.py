@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 from the_frame_v2 import __version__
 from the_frame_v2.api import (
+    archive,
     artworks,
     auth,
     colors,
@@ -40,8 +41,16 @@ from the_frame_v2.imaging import capabilities
 from the_frame_v2.jobs.gate import RenderGate
 from the_frame_v2.jobs.queue import JobQueue
 from the_frame_v2.localsend.runner import LocalSendRunner
+from the_frame_v2.services import (
+    archive_export,
+    archive_import,
+    ingest,
+    photo_copies,
+    render,
+    search,
+    templates,
+)
 from the_frame_v2.services import devices as devices_service
-from the_frame_v2.services import ingest, photo_copies, render, search, templates
 from the_frame_v2.services import trash as trash_service
 from the_frame_v2.services import uploads as uploads_service
 from the_frame_v2.services.geocode import Geocoder
@@ -78,6 +87,10 @@ def build_context(settings: Settings) -> AppContext:
     jobs.register(render.RENDER_JOB, render.render_job(ctx), lane="render", max_attempts=2)
     jobs.register(trash_service.PURGE_JOB, trash_service.purge_job(ctx), lane="ingest")
     jobs.schedule_every(trash_service.PURGE_JOB, trash_service.PURGE_INTERVAL_SECONDS, {})
+    jobs.register(archive_export.EXPORT_JOB, archive_export.export_job(ctx), lane="ingest")
+    jobs.register(archive_import.STAGE_JOB, archive_import.stage_job(ctx), lane="ingest")
+    jobs.register(archive_export.SWEEP_JOB, archive_export.sweep_job(ctx), lane="ingest")
+    jobs.schedule_every(archive_export.SWEEP_JOB, archive_export.SWEEP_INTERVAL_SECONDS, {})
     with db.session() as s:
         templates.seed_builtins(s)
         if search.is_empty(s):
@@ -161,6 +174,7 @@ def create_app(settings: Settings, *, start_workers: bool = True) -> FastAPI:
         library,
         artworks,
         trash,
+        archive,
         templates_router,
         rendering,
         colors,

@@ -1,5 +1,110 @@
 # Progress log
 
+## 2026-09-23 — Phase 10 (export / import)
+
+**The format is deliberately boring.** A `.tfarchive` is a ZIP holding `manifest.json`, one
+[JSON Lines](https://jsonlines.org/) file per entity under `data/`, the originals under their own
+SHA-256, optional renders, and `checksums.sha256` in `sha256sum` format — so `unzip` +
+`sha256sum -c` + `jq` read an archive with none of this app present, and every record shape is
+published as a JSON Schema in `docs/schemas/archive/`. That is a property worth protecting for
+something meant to outlive the code: `domain/archive.py` is the single place that says which
+columns travel, and the file layout lives beside them.
+
+**What travels, and what deliberately does not.** Devices, codes, upload sessions, jobs, snapshots,
+LocalSend senders, the FTS index, `artwork_photos` and the photo hash aliases stay behind: derived,
+local, or secrets. Trashed rows *do* travel (with `deleted_at`), so a round-trip restores the trash
+too. **Built-in** styles and layouts are part of the app, seeded on both sides — exporting them
+would only invent conflicts, and an artwork's reference to one survives by id. That last clause is
+not decoration: mapping an unmapped builtin id to `None` lost the origin badge on every artwork and
+made a re-import report 0 identical artworks instead of 2. The round-trip test caught it.
+
+**Identity is meaning, not ids.** A photo *is* its bytes, so a local photo with the same SHA-256
+(merged copies included) is the same photo whatever id either side gave it — references are remapped
+and, per §12.2, a local copy sitting in the trash comes back. A tag is its name, case-insensitively,
+so tags merge instead of duplicating. Everything else matches by id, and `identical` ignores every
+timestamp, the trash batch and `document_version`: a no-op save on one side is not a conflict. The
+three policies (`keep_mine` / `take_theirs` / `keep_both`) therefore only ever apply to a genuine
+same-id-different-content clash — which in practice means *the same library edited in two places*.
+A photo is the one exception: `take_theirs` on two different images sharing an id cannot mean
+anything under content-addressed originals, so it behaves as `keep_both`.
+
+**A row is compared *after* translation, and after migration.** Two findings, both about what
+`identical` means, and the second only showed up on a real library.
+
+The first version compared the archive's record against the local row as read, which meant an artwork whose photo had been matched by SHA-256 to a local
+photo with a different id read as `conflicting` on every re-import — the classification would have
+pushed people to pick policies for changes that did not exist. The fix made the translation shared
+(`archive_import._translated`, `artwork_values`, `collection_values`, `remapped_document`): the
+report predicts the maps an import would use (photos by hash, tags by name, everything else itself
+— `keep_both` is the one policy that moves an id, and it is chosen *after* the report) and compares
+the translated record, which is also exactly what apply writes. Regression-tested both ways.
+
+Then, driving the dev library in a browser: **23 of its 30 artworks read as `conflicting` on a
+re-import of their own archive**. Their stored documents predate `margins.mirror_x`/`mirror_y`, so
+the row on disk has no such key while the same document read back through the schema does — the
+comparison was between a raw dict and a parsed one. `archive.comparable` now runs *both* sides
+through the schema (artwork documents and template documents alike), which is also the honest
+reading of the question: an older schema that migrates to the same document is not a conflict. The
+counts went to 30 identical, 0 conflicting, every policy control correctly disabled. Under
+`keep_mine` the outcome had been right by accident; `take_theirs` would have rewritten 23 artworks
+for nothing.
+
+**One set of id maps, and passes in reference order.** Writing rows as they are read is impossible
+once anything can be remapped, so the apply pass fills `IdMaps` kind by kind (tags → photos →
+templates → swatches → artworks → collections → links → settings) and every reference reads it: an
+artwork document's `photo_id`s, a collection's `parent_id` and `cover_artwork_id`, a **smart
+collection's filter** (a filter is content that holds foreign keys — `filters.remap_ids` is the pure
+half) and `artwork_defaults.style_id`. Documents are stored **verbatim** otherwise: an import is a
+restore, not a client save, so the composition solver is not re-run over it (the exporting side had
+already applied it, and the next editor save re-solves as usual).
+
+**Safety is checked before anything is read.** Member names (no absolute paths, no `..`, no
+backslashes, no drive letters), a bounded expanded size, `checksums.sha256` covering every member
+and matching it, each `originals/<sha256>` matching its own name, the manifest's format and
+versions, every record and every artwork document parsed. A newer `format_version` is refused
+rather than guessed at. Six fixtures cover it, built by rewriting a real archive: a traversing
+member, a tampered original, an unlisted file, a future version, a non-ZIP and a ZIP with no
+manifest.
+
+**Two decisions that keep an import from being a cliff.** A photo whose original file is missing is
+left out of the *export* with a warning (a damaged library is exactly when a backup matters, and an
+archive must still stand on its own — the importer refuses one whose records name a file it does not
+carry); the artworks that used it still travel, and the import leaves those slots as the placeholder
+a new artwork would have, which is the same rule the trash cascade uses. And a render is adopted
+straight into the cache only when the manifest's `render_key` — renderer version plus asset-manifest
+version, the other two thirds of the render hash — still matches; otherwise it re-renders, which
+produces the same pixels anyway. On the dev library that turned 30 re-renders into 30 file copies.
+
+**Surface.** `POST /exports` → a job in the `ingest` lane writing into `exports/<job_id>/`, then
+`GET /exports/{job_id}/download`; `POST /imports` + `PATCH` chunks (the upload protocol, so a
+dropped connection resumes) → staging job → `GET /imports/{id}/report` → `POST /imports/{id}/apply`.
+Both staging areas are swept on a schedule (`archive.sweep`, 6 h). The UI is one page
+(`/backup`, `g b`) holding the import flow and the recent exports, plus the same export dialog from
+a selection on any grid of artworks and from a collection's header. The CLI does both without a
+browser: `the_frame_v2 export -o lib.tfarchive`, `the_frame_v2 import lib.tfarchive [--dry-run]
+[--policy …]`.
+
+**Verified**: `make check` green — 948 backend tests (42 new), mypy strict, ESLint, tsc, i18n,
+conformance. Driven in a real browser (headless Chromium over CDP against the production build on
+trusted localhost, a copy of the 336 MB dev library), each result read back through the **API**
+rather than off the screen:
+
+- A full export from the dialog: 41.5 MB, `scope: full`, download link live in the UI.
+- That file handed back to the import panel via `DOM.setFileInputFiles`: staging → a report reading
+  `Photos 17 already here`, `Artworks 30 same`, `Tags 1 same`, `Collections 4 same`, every policy
+  select correctly **disabled** (nothing conflicts) → apply → `left alone: 72`, and the 25 live
+  artworks came back byte-identical, render hashes included.
+- A partial export from a one-artwork selection on `/artworks`: 3.6 MB, `scope: partial`, and the
+  dialog's scope line reads "1 artwork — with the photos and tags they use".
+- The *Rendered images* card: JPEG/PNG offered, `the_frame_v2-renders-….zip` written.
+- A real conflict: renaming an artwork locally then re-importing gives `Artworks … 1 conflicting`,
+  **only that row's** policy select enabled, the button reading `Import (1 conflict)`; choosing
+  *Take theirs* restored the title and left a `pre_import` snapshot — the undo, as specified.
+
+Not driven in a browser: resuming an interrupted archive upload (the offset protocol is the photo
+uploader's, regression-tested there and covered by a chunked-receive API test), and the CLI's
+`--policy` combinations (covered by API tests over the same service functions).
+
 ## 2026-09-23 — Phase 9 feedback, second round (remarks.md, 6 items)
 
 **A smart sub-collection contributed nothing to include-nested (#3).** Real bug: the listing scoped

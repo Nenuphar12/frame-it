@@ -1,0 +1,63 @@
+{
+  "$id": "https://the-frame-v2/schemas/archive/manifest.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "`manifest.json`: what this file is, what it holds and what wrote it.",
+  "properties": {
+    "app_version": {
+      "default": "",
+      "title": "App Version",
+      "type": "string"
+    },
+    "counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Counts",
+      "type": "object"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "document_schema": {
+      "default": 1,
+      "title": "Document Schema",
+      "type": "integer"
+    },
+    "format": {
+      "default": "the_frame_v2.archive",
+      "title": "Format",
+      "type": "string"
+    },
+    "format_version": {
+      "default": 1,
+      "title": "Format Version",
+      "type": "integer"
+    },
+    "includes_renders": {
+      "default": false,
+      "title": "Includes Renders",
+      "type": "boolean"
+    },
+    "render_key": {
+      "default": "",
+      "title": "Render Key",
+      "type": "string"
+    },
+    "scope": {
+      "default": "full",
+      "enum": [
+        "full",
+        "partial"
+      ],
+      "title": "Scope",
+      "type": "string"
+    }
+  },
+  "required": [
+    "created_at"
+  ],
+  "title": "Archive manifest v1",
+  "type": "object"
+}

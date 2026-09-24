@@ -506,6 +506,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Exports */
+        get: operations["list_exports_api_v1_exports_get"];
+        put?: never;
+        /**
+         * Start Export
+         * @description Queue an export. A selection makes it partial; no selection exports the whole library.
+         */
+        post: operations["start_export_api_v1_exports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exports/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Export */
+        get: operations["get_export_api_v1_exports__job_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Export
+         * @description Drop the produced file (the job row stays as history).
+         */
+        delete: operations["delete_export_api_v1_exports__job_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exports/{job_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Export
+         * @description Stream the finished file. `Content-Disposition` carries the name it was written under.
+         */
+        get: operations["download_export_api_v1_exports__job_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/filters/validate": {
         parameters: {
             query?: never;
@@ -722,6 +784,92 @@ export interface paths {
          * @description Artworks made from this style (compare `origin_style_revision` to spot outdated ones).
          */
         get: operations["frame_style_usage_api_v1_frame_styles__style_id__usage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Imports */
+        get: operations["list_imports_api_v1_imports_get"];
+        put?: never;
+        /**
+         * Create Import
+         * @description Open a staging slot for an archive; the bytes follow as `PATCH` chunks.
+         */
+        post: operations["create_import_api_v1_imports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{import_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Import */
+        get: operations["get_import_api_v1_imports__import_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Import
+         * @description Forget an import: the staging directory and the archive go with it.
+         */
+        delete: operations["delete_import_api_v1_imports__import_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Append Chunk
+         * @description Append a chunk at `Upload-Offset`; the last one starts staging (docs/archive-format.md).
+         */
+        patch: operations["append_chunk_api_v1_imports__import_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/imports/{import_id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply Import
+         * @description Write the archive into the library, per-kind and per-item policies applied (§12.2 step 3).
+         */
+        post: operations["apply_import_api_v1_imports__import_id__apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{import_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Import Report
+         * @description The dry run (§12.2 step 2): per kind, what is new, identical, remapped or conflicting.
+         */
+        get: operations["import_report_api_v1_imports__import_id__report_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2173,6 +2321,79 @@ export interface components {
             /** Role */
             role?: ("admin" | "uploader") | null;
         };
+        /**
+         * ExportOut
+         * @description An export job. The file is downloadable once `state` is `done`.
+         */
+        ExportOut: {
+            /** Bytes */
+            bytes: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error */
+            error: string | null;
+            /** Filename */
+            filename: string | null;
+            /** Job Id */
+            job_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "library" | "renders";
+            /** Progress */
+            progress: number;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "full" | "partial";
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "queued" | "running" | "done" | "failed" | "cancelled";
+        };
+        /**
+         * ExportRequestIn
+         * @description An empty selection exports the whole library (`scope: full`); anything else is partial.
+         */
+        ExportRequestIn: {
+            /** Artwork Ids */
+            artwork_ids?: string[];
+            /** Collection Ids */
+            collection_ids?: string[];
+            /**
+             * Include Nested
+             * @default true
+             */
+            include_nested: boolean;
+            /**
+             * Include Renders
+             * @default false
+             */
+            include_renders: boolean;
+            /**
+             * Include Templates
+             * @default true
+             */
+            include_templates: boolean;
+            /**
+             * Kind
+             * @default library
+             * @enum {string}
+             */
+            kind: "library" | "renders";
+            /**
+             * Render Format
+             * @default jpg
+             * @enum {string}
+             */
+            render_format: "png" | "jpg";
+        };
         /** FilterValidateIn */
         FilterValidateIn: {
             /** Filter */
@@ -2280,6 +2501,135 @@ export interface components {
             status: "new" | "exists" | "in_progress";
             /** Upload Id */
             upload_id?: string | null;
+        };
+        /** ImportApplyOut */
+        ImportApplyOut: {
+            /** Created */
+            created: {
+                [key: string]: number;
+            };
+            /** Renders Adopted */
+            renders_adopted: number;
+            /** Renders Queued */
+            renders_queued: number;
+            /** Skipped */
+            skipped: {
+                [key: string]: number;
+            };
+            /** Updated */
+            updated: {
+                [key: string]: number;
+            };
+            /** Warnings */
+            warnings: string[];
+        };
+        /** ImportCreateIn */
+        ImportCreateIn: {
+            /** Filename */
+            filename: string;
+            /** Size */
+            size: number;
+        };
+        /** ImportEntryOut */
+        ImportEntryOut: {
+            /** Key */
+            key: string;
+            /** Kind */
+            kind: string;
+            /** Maps To */
+            maps_to?: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "new" | "identical" | "matched" | "conflicting";
+        };
+        /** ImportKindOut */
+        ImportKindOut: {
+            /** Conflicting */
+            conflicting: number;
+            /** Identical */
+            identical: number;
+            /** Items */
+            items?: components["schemas"]["ImportEntryOut"][];
+            /** Kind */
+            kind: string;
+            /** Matched */
+            matched: number;
+            /** New */
+            new: number;
+            /** Total */
+            total: number;
+        };
+        /**
+         * ImportPoliciesIn
+         * @description `default`, overridden per kind, overridden per item (keyed `"<kind>:<identity>"`).
+         */
+        ImportPoliciesIn: {
+            /**
+             * Default
+             * @default keep_mine
+             * @enum {string}
+             */
+            default: "keep_mine" | "take_theirs" | "keep_both";
+            /** Per Item */
+            per_item?: {
+                [key: string]: "keep_mine" | "take_theirs" | "keep_both";
+            };
+            /** Per Kind */
+            per_kind?: {
+                [key: string]: "keep_mine" | "take_theirs" | "keep_both";
+            };
+        };
+        /**
+         * ImportReportOut
+         * @description The dry run: what importing this archive would do, kind by kind.
+         */
+        ImportReportOut: {
+            /** Kinds */
+            kinds: components["schemas"]["ImportKindOut"][];
+            manifest: components["schemas"]["Manifest"];
+            /** Warnings */
+            warnings?: string[];
+        };
+        /** ImportSessionOut */
+        ImportSessionOut: {
+            /** Chunk Bytes */
+            chunk_bytes: number;
+            /**
+             * Conflicting Items
+             * @default 0
+             */
+            conflicting_items: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error */
+            error?: string | null;
+            /** Filename */
+            filename: string;
+            /** Import Id */
+            import_id: string;
+            /**
+             * New Items
+             * @default 0
+             */
+            new_items: number;
+            /** Offset */
+            offset: number;
+            /** Scope */
+            scope?: ("full" | "partial") | null;
+            /** Size */
+            size: number;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "receiving" | "staging" | "ready" | "applying" | "applied" | "failed";
         };
         /**
          * LayoutDocument
@@ -2418,6 +2768,57 @@ export interface components {
             port: number;
             /** Running */
             running: boolean;
+        };
+        /**
+         * Manifest
+         * @description `manifest.json`: what this file is, what it holds and what wrote it.
+         */
+        Manifest: {
+            /**
+             * App Version
+             * @default
+             */
+            app_version: string;
+            /** Counts */
+            counts?: {
+                [key: string]: number;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Document Schema
+             * @default 1
+             */
+            document_schema: number;
+            /**
+             * Format
+             * @default the_frame_v2.archive
+             */
+            format: string;
+            /**
+             * Format Version
+             * @default 1
+             */
+            format_version: number;
+            /**
+             * Includes Renders
+             * @default false
+             */
+            includes_renders: boolean;
+            /**
+             * Render Key
+             * @default
+             */
+            render_key: string;
+            /**
+             * Scope
+             * @default full
+             * @enum {string}
+             */
+            scope: "full" | "partial";
         };
         /** MarginsSpec */
         MarginsSpec: {
@@ -4223,6 +4624,148 @@ export interface operations {
             };
         };
     };
+    list_exports_api_v1_exports_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportOut"][];
+                };
+            };
+        };
+    };
+    start_export_api_v1_exports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_export_api_v1_exports__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_export_api_v1_exports__job_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_export_api_v1_exports__job_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     validate_filter_api_v1_filters_validate_post: {
         parameters: {
             query?: never;
@@ -4635,6 +5178,220 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ArtworkSummaryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_imports_api_v1_imports_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportSessionOut"][];
+                };
+            };
+        };
+    };
+    create_import_api_v1_imports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportCreateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportSessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_import_api_v1_imports__import_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                import_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportSessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_import_api_v1_imports__import_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                import_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    append_chunk_api_v1_imports__import_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                import_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/offset+octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportSessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_import_api_v1_imports__import_id__apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                import_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportPoliciesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportApplyOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_report_api_v1_imports__import_id__report_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                import_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportReportOut"];
                 };
             };
             /** @description Validation Error */

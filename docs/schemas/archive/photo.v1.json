@@ -1,0 +1,244 @@
+{
+  "$id": "https://the-frame-v2/schemas/archive/photo.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "bit_depth": {
+      "default": 8,
+      "title": "Bit Depth",
+      "type": "integer"
+    },
+    "camera_make": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Camera Make"
+    },
+    "camera_model": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Camera Model"
+    },
+    "content_fingerprint": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Content Fingerprint"
+    },
+    "deleted_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Deleted At"
+    },
+    "exif_orientation": {
+      "default": 1,
+      "title": "Exif Orientation",
+      "type": "integer"
+    },
+    "ext": {
+      "title": "Ext",
+      "type": "string"
+    },
+    "file_size": {
+      "title": "File Size",
+      "type": "integer"
+    },
+    "gps_lat": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Gps Lat"
+    },
+    "gps_lon": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Gps Lon"
+    },
+    "has_gain_map": {
+      "default": false,
+      "title": "Has Gain Map",
+      "type": "boolean"
+    },
+    "height": {
+      "title": "Height",
+      "type": "integer"
+    },
+    "icc_description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Icc Description"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "imported_at": {
+      "format": "date-time",
+      "title": "Imported At",
+      "type": "string"
+    },
+    "inbox_state": {
+      "default": "inbox",
+      "title": "Inbox State",
+      "type": "string"
+    },
+    "is_wide_gamut": {
+      "default": false,
+      "title": "Is Wide Gamut",
+      "type": "boolean"
+    },
+    "lens": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lens"
+    },
+    "mime": {
+      "title": "Mime",
+      "type": "string"
+    },
+    "original_filename": {
+      "title": "Original Filename",
+      "type": "string"
+    },
+    "place_admin1": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Place Admin1"
+    },
+    "place_country": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Place Country"
+    },
+    "place_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Place Name"
+    },
+    "quality_warnings": {
+      "items": {},
+      "title": "Quality Warnings",
+      "type": "array"
+    },
+    "sha256": {
+      "title": "Sha256",
+      "type": "string"
+    },
+    "taken_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Taken At"
+    },
+    "trash_batch_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Trash Batch Id"
+    },
+    "width": {
+      "title": "Width",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "sha256",
+    "ext",
+    "mime",
+    "original_filename",
+    "file_size",
+    "width",
+    "height",
+    "imported_at"
+  ],
+  "title": "Archive photo record v1",
+  "type": "object"
+}

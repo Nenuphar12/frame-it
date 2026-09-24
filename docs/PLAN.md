@@ -1,6 +1,6 @@
 # the_frame_v2 — Implementation Plan
 
-> Status: **Phases 0–9 implemented** (see `docs/progress.md`) ·
+> Status: **Phases 0–10 implemented** (see `docs/progress.md`) ·
 > Created 2026-09-16 · Placeholder name `the_frame_v2` (rename before open-sourcing)
 >
 > This plan is the single source of truth for scope and sequencing. Specs (§5–§9, §12) live in dedicated
@@ -305,12 +305,12 @@ the UI). Lists use keyset pagination (`?cursor=&limit=`). All payloads are Pydan
 | colours | `GET /photos/{id}/palette` (OKLab k-means, cached), `GET /presets/colors` | admin |
 | defaults | `GET/PUT /artwork-defaults` ({style_id, recipe_id, format}) | admin |
 | trash | `GET /trash`, `POST /trash/restore`, `POST /trash/purge`, `DELETE` flows use `?cascade=trash_artworks|empty_slots` | admin |
-| exports | `POST /exports` ({kind: full/partial/renders/template, selection, options}) → job; `GET /exports/{job_id}/download` (streaming) | admin |
-| imports | `POST /imports` (chunked upload reuse) → staging job; `GET /imports/{id}/report`; `POST /imports/{id}/apply` ({policies, per-item decisions}); `DELETE /imports/{id}` | admin |
-| events | `GET /events` (SSE): `photo.ingested`, `photo.ingest_failed`, `upload.completed`, `artwork.rendered`, `job.progress`, `job.failed`, `entity.changed` | uploader+ (filtered) |
+| exports | `POST /exports` ({kind: library/renders, selection, options}) → job; `GET /exports`, `GET /exports/{job_id}`, `GET /exports/{job_id}/download` (streaming), `DELETE /exports/{job_id}` | admin |
+| imports | `POST /imports` then `PATCH /imports/{id}` (chunks, `Upload-Offset`) → staging job; `GET /imports`, `GET /imports/{id}`, `GET /imports/{id}/report`; `POST /imports/{id}/apply` ({default, per_kind, per_item}); `DELETE /imports/{id}` | admin |
+| events | `GET /events` (SSE): `photo.ingested`, `photo.ingest_failed`, `upload.completed`, `artwork.rendered`, `job.progress`, `job.failed`, `entity.changed`, `export.ready`, `import.staged`, `import.failed`, `import.applied` | uploader+ (filtered) |
 | jobs | `GET /jobs?state=`, `POST /jobs/{id}/retry` | admin |
 
-CLI (`the_frame_v2`): `serve`, `doctor`, `setup-code`, `export`, `import`, `service install|uninstall|status`
+CLI (`the_frame_v2`): `serve`, `doctor`, `setup-code`, `openapi`, `schemas`, `export`, `import`, `service install|uninstall|status`
 (systemd user unit / launchd agent; Windows: documented manual steps), `db upgrade`, `cache clear`.
 
 ---
@@ -653,13 +653,16 @@ the dialog now also offers a saved layout — and was not re-measured at 40 phot
 smart collections update live; deleting a used photo lists affected artworks and both cascade options behave;
 purge frees disk space.
 
-### Phase 10 — Export / Import
+### Phase 10 — Export / Import — **done** (2026-09-23, `docs/archive-format.md`)
 
-1. Archive writer (full/partial, optional renders) as streamed job + download; CLI `export`.
+1. Archive writer (full/partial, optional renders) as a job + download; CLI `export`.
 2. Archive reader: validation & safety, migrations, staging.
 3. Dry-run report + policy UI (bulk + per item) + apply transaction; CLI `import --policy`.
 4. Rendered images export (ZIP/folder structure).
-5. JSON Schemas published in `docs/schemas/`; `docs/archive-format.md` finalized.
+5. JSON Schemas published in `docs/schemas/archive/`; `docs/archive-format.md` finalized.
+
+Nothing about the file needs this app to read it: a ZIP of JSON + JSON Lines + the originals, with
+a `sha256sum`-format checksum list — chosen so an archive stays openable if the app disappears.
 
 **AC**: full export → import into empty library yields identical DB content (excluding devices/jobs) and identical
 renders; partial import into a non-empty library classifies new/identical/conflicting correctly and all three

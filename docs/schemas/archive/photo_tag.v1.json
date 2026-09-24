@@ -1,0 +1,20 @@
+{
+  "$id": "https://the-frame-v2/schemas/archive/photo_tag.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "photo_id": {
+      "title": "Photo Id",
+      "type": "string"
+    },
+    "tag_id": {
+      "title": "Tag Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "photo_id",
+    "tag_id"
+  ],
+  "title": "Archive photo_tag record v1",
+  "type": "object"
+}

@@ -1,0 +1,20 @@
+{
+  "$id": "https://the-frame-v2/schemas/archive/artwork_tag.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "artwork_id": {
+      "title": "Artwork Id",
+      "type": "string"
+    },
+    "tag_id": {
+      "title": "Tag Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "artwork_id",
+    "tag_id"
+  ],
+  "title": "Archive artwork_tag record v1",
+  "type": "object"
+}

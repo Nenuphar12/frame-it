@@ -1,5 +1,6 @@
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
 import {
+  Archive,
   Frame,
   Heart,
   Images,
@@ -191,6 +192,13 @@ export function Shell() {
         run: go("/trash"),
       },
       {
+        id: "go.backup",
+        label: "commands.goBackup",
+        group: "commands.groups.navigation",
+        shortcut: "g b",
+        run: go("/backup"),
+      },
+      {
         id: "go.mobile",
         label: "commands.goMobile",
         group: "commands.groups.navigation",
@@ -211,6 +219,7 @@ export function Shell() {
     { to: "/tags", label: t("nav.tags"), icon: <TagsIcon size={16} /> },
     { to: "/templates", label: t("nav.templates"), icon: <LayoutTemplate size={16} /> },
     { to: "/trash", label: t("nav.trash"), icon: <Trash2 size={16} /> },
+    { to: "/backup", label: t("nav.backup"), icon: <Archive size={16} /> },
     { to: "/devices", label: t("nav.devices"), icon: <MonitorSmartphone size={16} /> },
     { to: "/settings", label: t("nav.settings"), icon: <Settings size={16} /> },
   ];

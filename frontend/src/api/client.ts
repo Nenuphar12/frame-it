@@ -36,6 +36,14 @@ export type Swatch = Schemas["SwatchOut"];
 export type PaletteEntry = Schemas["PaletteEntryOut"];
 export type ColorPreset = Schemas["ColorPresetOut"];
 export type Snapshot = Schemas["SnapshotOut"];
+export type ExportJob = Schemas["ExportOut"];
+export type ExportRequest = Schemas["ExportRequestIn"];
+export type ImportSession = Schemas["ImportSessionOut"];
+export type ImportReport = Schemas["ImportReportOut"];
+export type ImportKindReport = Schemas["ImportKindOut"];
+export type ImportEntry = Schemas["ImportEntryOut"];
+export type ImportPolicy = Schemas["ImportPoliciesIn"]["default"];
+export type ImportResult = Schemas["ImportApplyOut"];
 
 export const API_BASE = "/api/v1";
 /** Required on every mutating request (CSRF guard, see docs/security.md). */
@@ -93,6 +101,9 @@ export async function unwrap<T>(
   }
   return data as T;
 }
+
+/** The finished archive: a plain download, so the browser streams it straight to disk. */
+export const exportDownloadUrl = (jobId: string) => `${API_BASE}/exports/${jobId}/download`;
 
 export const photoThumbUrl = (id: string, size: 256 | 768 = 768) =>
   `${API_BASE}/photos/${id}/thumb/${size}`;
