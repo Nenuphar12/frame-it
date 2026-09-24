@@ -106,7 +106,7 @@ def read_archive(path: Path, *, max_bytes: int) -> StagedArchive:
         raise archive.ArchiveError("not_an_archive", "not a ZIP archive")
     with zipfile.ZipFile(path) as zf:
         names = _safe_names(zf, max_bytes)
-        checksums = _verify_checksums(zf, names)
+        checksums = _verify_checksums(zf, names, max_bytes)
         manifest = _read_manifest(zf)
         records, documents = _read_records(zf, names)
         settings = _read_settings(zf, names)
@@ -116,7 +116,13 @@ def read_archive(path: Path, *, max_bytes: int) -> StagedArchive:
 
 
 def _safe_names(zf: zipfile.ZipFile, max_bytes: int) -> list[str]:
-    """Member names are untrusted: refuse escapes, and refuse an archive that expands too far."""
+    """Member names are untrusted: refuse escapes, and refuse an archive that claims too much.
+
+    `info.file_size` is what the archive *declares*. CPython's `zipfile` stops a member at that
+    many bytes and then fails its CRC, so understating it cannot smuggle a bomb past this gate —
+    but that is a property of the standard library, not of the format. `_verify_checksums` counts
+    the bytes that actually come out, so the budget holds without relying on it.
+    """
     infos = zf.infolist()
     if len(infos) > MAX_MEMBERS:
         raise archive.ArchiveError("archive_too_large", f"{len(infos)} members")
@@ -137,8 +143,13 @@ def _safe_names(zf: zipfile.ZipFile, max_bytes: int) -> list[str]:
     return names
 
 
-def _verify_checksums(zf: zipfile.ZipFile, names: Sequence[str]) -> dict[str, str]:
-    """`checksums.sha256` must cover every other member, and every digest must match."""
+def _verify_checksums(zf: zipfile.ZipFile, names: Sequence[str], max_bytes: int) -> dict[str, str]:
+    """`checksums.sha256` must cover every other member, and every digest must match.
+
+    This is also where the **measured** expanded size is enforced, as opposed to the declared one
+    `_safe_names` adds up. Every member is streamed here before anything else reads one, so the
+    budget is spent against real bytes and no later `zf.read` can exceed it.
+    """
     if archive.CHECKSUMS_NAME not in names:
         raise archive.ArchiveError("missing_checksums", "no checksums.sha256")
     listed: dict[str, str] = {}
@@ -156,18 +167,28 @@ def _verify_checksums(zf: zipfile.ZipFile, names: Sequence[str]) -> dict[str, st
         )
     if absent := listed.keys() - expected:
         raise archive.ArchiveError("missing_file", f"listed but absent: {sorted(absent)[0]}")
+    budget = max_bytes
     for name, digest in listed.items():
-        if _member_digest(zf, name) != digest:
+        actual, read = _member_digest(zf, name, budget)
+        if actual != digest:
             raise archive.ArchiveError("checksum_mismatch", name)
+        budget -= read
     return listed
 
 
-def _member_digest(zf: zipfile.ZipFile, name: str) -> str:
+def _member_digest(zf: zipfile.ZipFile, name: str, budget: int) -> tuple[str, int]:
+    """Digest of a member, streamed, stopping the moment it has produced more than `budget`."""
     sha = hashlib.sha256()
+    read = 0
     with zf.open(name) as fh:
         while chunk := fh.read(1024 * 1024):
+            read += len(chunk)
+            if read > budget:
+                raise archive.ArchiveError(
+                    "archive_too_large", f"{name} expands past the {max(0, budget)}-byte budget"
+                )
             sha.update(chunk)
-    return sha.hexdigest()
+    return sha.hexdigest(), read
 
 
 def _read_manifest(zf: zipfile.ZipFile) -> archive.Manifest:

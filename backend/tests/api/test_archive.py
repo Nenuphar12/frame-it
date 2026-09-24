@@ -545,3 +545,67 @@ def test_an_export_can_be_deleted_and_needs_admin(local: TestClient) -> None:
     assert uploader.get(f"{API}/imports").status_code == 403
     assert local.delete(f"{API}/exports/{job_id}").status_code == 204
     assert local.get(f"{API}/exports/{job_id}/download").status_code == 404
+
+
+def test_a_member_that_lies_about_its_size_is_refused(local: TestClient) -> None:
+    """An archive whose central directory understates a member is refused, not expanded.
+
+    The budget in `_safe_names` adds up the sizes the archive *declares*, so it is worth pinning
+    what happens when one lies: `zipfile` stops the member at the declared length and its CRC no
+    longer matches, which staging reports rather than reading 8 MB out of a 64-byte claim.
+    """
+    import hashlib
+    import struct
+
+    photo(local)
+    path = export_archive(local)
+    bomb = b"\0" * (8 * 1024 * 1024)
+    target = path.with_name("bomb.tfarchive")
+    with zipfile.ZipFile(path) as src, zipfile.ZipFile(target, "w") as dst:
+        members = {
+            name: src.read(name) for name in src.namelist() if name != archive.CHECKSUMS_NAME
+        }
+        members["data/bomb.bin"] = bomb
+        for name, body in members.items():
+            dst.writestr(name, body, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+        lines = sorted(f"{hashlib.sha256(b).hexdigest()}  {n}\n" for n, b in members.items())
+        dst.writestr(archive.CHECKSUMS_NAME, "".join(lines))
+
+    raw = bytearray(target.read_bytes())
+    for marker, offset_to_size in ((b"PK\x03\x04", 22), (b"PK\x01\x02", 24)):
+        at = 0
+        while (at := raw.find(marker, at)) != -1:
+            base = at + offset_to_size
+            if struct.unpack_from("<I", raw, base)[0] == len(bomb):
+                struct.pack_into("<I", raw, base, 64)
+            at += 4
+    target.write_bytes(raw)
+    with zipfile.ZipFile(target) as zf:
+        assert zf.getinfo("data/bomb.bin").file_size == 64
+
+    assert _refused(local, target) == "staging_failed"
+
+
+def test_an_archive_over_the_size_budget_is_refused(
+    local: TestClient, app_factory: Callable[..., TestClient]
+) -> None:
+    """The budget is spent against the bytes that actually come out of the members."""
+    photo(local)
+    path = export_archive(local)
+    import hashlib
+
+    target = path.with_name("big.tfarchive")
+    with zipfile.ZipFile(path) as src, zipfile.ZipFile(target, "w") as dst:
+        members = {
+            name: src.read(name) for name in src.namelist() if name != archive.CHECKSUMS_NAME
+        }
+        # Compresses to a few KB, so it sails through the upload cap and is caught on expansion.
+        members["data/filler.bin"] = b"\0" * (8 * 1024 * 1024)
+        for name, body in members.items():
+            dst.writestr(name, body, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+        lines = sorted(f"{hashlib.sha256(b).hexdigest()}  {n}\n" for n, b in members.items())
+        dst.writestr(archive.CHECKSUMS_NAME, "".join(lines))
+    assert target.stat().st_size < 1024 * 1024
+
+    victim = app_factory(max_archive_bytes=1024 * 1024)
+    assert _refused(victim, target) == "archive_too_large"

@@ -98,7 +98,29 @@ def test_csrf_rejects_cross_origin(local: TestClient) -> None:
 def test_security_headers(local: TestClient) -> None:
     res = local.get("/api/v1/system/me")
     assert res.headers["x-content-type-options"] == "nosniff"
-    assert "frame-ancestors 'none'" in res.headers["content-security-policy"]
+    assert res.headers["referrer-policy"] == "no-referrer"
+    assert res.headers["x-frame-options"] == "DENY"
+    # Another origin must not be able to embed a render, open a window on us, or ask for a device.
+    assert res.headers["cross-origin-resource-policy"] == "same-origin"
+    assert res.headers["cross-origin-opener-policy"] == "same-origin"
+    assert "geolocation=()" in res.headers["permissions-policy"]
+    csp = res.headers["content-security-policy"]
+    for directive in (
+        "default-src 'self'",
+        "connect-src 'self'",
+        "frame-ancestors 'none'",
+        "base-uri 'self'",
+        # A form's POST target is not covered by `default-src`.
+        "form-action 'self'",
+        "object-src 'none'",
+    ):
+        assert directive in csp, directive
+
+
+def test_an_image_response_carries_the_headers_too(local: TestClient) -> None:
+    """The guard is ASGI-level, so a streamed file gets the same headers as a JSON body."""
+    res = local.get("/api/v1/photos", params={"limit": 1})
+    assert res.headers["cross-origin-resource-policy"] == "same-origin"
 
 
 def test_setup_code_flow(local: TestClient) -> None:

@@ -22,10 +22,18 @@ _SECURITY_HEADERS = {
     "x-content-type-options": "nosniff",
     "referrer-policy": "no-referrer",
     "x-frame-options": "DENY",
+    # A page in another tab must not be able to read a render or a thumbnail by embedding it;
+    # `same-origin` also keeps the library out of another origin's cache.
+    "cross-origin-resource-policy": "same-origin",
+    "cross-origin-opener-policy": "same-origin",
+    # Nothing here asks for a device. Saying so stops an injected script from asking either.
+    "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
     "content-security-policy": (
         "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; "
         "script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'; font-src 'self' data:; "
-        "frame-ancestors 'none'; base-uri 'self'"
+        # `form-action`: a POST target is not covered by `default-src`, so without this an
+        # injected form could post the page's fields to another origin.
+        "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
     ),
 }
 
