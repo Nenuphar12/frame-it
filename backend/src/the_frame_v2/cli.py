@@ -17,8 +17,10 @@ from the_frame_v2.config import Settings, load_settings
 app = typer.Typer(no_args_is_help=True, add_completion=False, help="the_frame_v2 server")
 db_app = typer.Typer(no_args_is_help=True, help="Database maintenance")
 cache_app = typer.Typer(no_args_is_help=True, help="Cache maintenance")
+service_app = typer.Typer(no_args_is_help=True, help="Run the server at login (systemd / launchd)")
 app.add_typer(db_app, name="db")
 app.add_typer(cache_app, name="cache")
+app.add_typer(service_app, name="service")
 
 DataDir = Annotated[
     Path | None, typer.Option("--data-dir", envvar="THE_FRAME_V2_DATA_DIR", help="Library data dir")
@@ -130,6 +132,79 @@ def cache_clear(data_dir: DataDir = None) -> None:
         shutil.rmtree(settings.cache_dir)
     settings.cache_dir.mkdir(parents=True, exist_ok=True)
     typer.echo(f"Cleared {settings.cache_dir}")
+
+
+# ---- service ------------------------------------------------------------------------------------
+
+
+def _service_plan(data_dir: Path | None, public_url: str | None) -> tuple[Any, Settings]:
+    from the_frame_v2 import service
+
+    settings = _settings(data_dir, public_url=public_url)
+    try:
+        return service.plan(settings.data_dir, public_url=settings.public_url), settings
+    except service.ServiceError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(2) from exc
+
+
+@service_app.command("install")
+def service_install(
+    data_dir: DataDir = None,
+    public_url: Annotated[
+        str | None, typer.Option(help="URL phones use (QR codes); baked into the unit")
+    ] = None,
+    force: Annotated[bool, typer.Option("--force", help="Overwrite an existing unit")] = False,
+    show: Annotated[bool, typer.Option("--show", help="Print the unit, write nothing")] = False,
+) -> None:
+    """Write a user service unit for this machine (it is not started for you)."""
+    plan, settings = _service_plan(data_dir, public_url)
+    if show:
+        typer.echo(plan.content)
+        return
+    if plan.path.exists() and not force:
+        typer.echo(f"{plan.path} already exists (use --force to replace it).", err=True)
+        raise typer.Exit(1)
+    plan.path.parent.mkdir(parents=True, exist_ok=True)
+    plan.path.write_text(plan.content)
+    settings.data_dir.mkdir(parents=True, exist_ok=True)
+    typer.echo(f"Wrote {plan.kind} unit: {plan.path}")
+    typer.echo(f"Library: {settings.data_dir}")
+    typer.echo("\nEnable it with:")
+    for command in plan.enable:
+        typer.echo(f"  {command}")
+
+
+@service_app.command("uninstall")
+def service_uninstall(data_dir: DataDir = None) -> None:
+    """Remove the unit this machine's `service install` wrote (the library is untouched)."""
+    plan, _ = _service_plan(data_dir, None)
+    if not plan.path.exists():
+        typer.echo(f"Nothing to remove at {plan.path}.")
+        return
+    typer.echo("Stop it first with:")
+    for command in plan.disable:
+        typer.echo(f"  {command}")
+    plan.path.unlink()
+    typer.echo(f"\nRemoved {plan.path}")
+
+
+@service_app.command("status")
+def service_status(data_dir: DataDir = None) -> None:
+    """Report whether a unit is installed, and what it points at."""
+    plan, settings = _service_plan(data_dir, None)
+    typer.echo(
+        json.dumps(
+            {
+                "kind": plan.kind,
+                "path": str(plan.path),
+                "installed": plan.path.exists(),
+                "data_dir": str(settings.data_dir),
+                "public_url": settings.effective_public_url,
+            },
+            indent=2,
+        )
+    )
 
 
 @app.command()
