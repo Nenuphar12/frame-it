@@ -1,6 +1,6 @@
 # the_frame_v2 — Implementation Plan
 
-> Status: **Phases 0–10 implemented** (see `docs/progress.md`) ·
+> Status: **Phases 0–11 implemented** (see `docs/progress.md`) ·
 > Created 2026-09-16 · Placeholder name `the_frame_v2` (rename before open-sourcing)
 >
 > This plan is the single source of truth for scope and sequencing. Specs (§5–§9, §12) live in dedicated
@@ -668,16 +668,34 @@ a `sha256sum`-format checksum list — chosen so an archive stays openable if th
 renders; partial import into a non-empty library classifies new/identical/conflicting correctly and all three
 policies work; malicious archive fixtures are rejected.
 
-### Phase 11 — Hardening & polish
+### Phase 11 — Hardening & polish ✅ (2026-09-24)
 
 1. Performance pass against §8.5 on seeded library; memory profiling of renders.
+   → `scripts/bench_library.py` times the three grids' real requests on a 10k library; migration
+   `0008` leads every artwork index with `deleted_at` (13 ms → 0.5 ms a page at the SQL level, no
+   temp sort). `scripts/bench_render.py` reports peak RSS: 9 slots of 24 MP peak at 2.3 GB, which
+   is why `MAX_RENDER_PIXELS` refuses a document that would ask for more (§8.5, §8.6).
 2. Accessibility pass (focus management, labels, contrast in both themes).
+   → Light-theme `accent` and `warning` raised to pass AA on every surface, a `--color-border-strong`
+   token for control boundaries (WCAG 1.4.11), a skip link, `prefers-reduced-motion`, and an
+   `aria-live` region for the toasts. Audited: 188 buttons, all with an accessible name.
 3. Error UX: toasts with problem types, job failure center, retry.
+   → `shared/toast.ts` + one `problemMessage`, a `MutationCache` that reports any mutation that
+   does not render its own failure, and `/activity` — `GET /jobs`, retry, dismiss, with the badge
+   in the sidebar and a toast on SSE `job.failed`. `jobs.code` (migration `0007`) carries the
+   problem code so the client translates it.
 4. `service install` helpers (systemd user unit, launchd agent), docs for Windows.
-5. Docs: user guide (pairing, sending originals from Android, quality tiers explained), README with screenshots,
-   CONTRIBUTING, NOTICE (fonts, GeoNames, ICC profiles).
+   → `the_frame_v2 service install|status|uninstall` generates the unit for *this* machine and
+   prints the commands that enable it. Windows is Task Scheduler / NSSM in the user guide.
+5. Docs: user guide, README with screenshots, CONTRIBUTING, NOTICE.
+   → `docs/user-guide.md`, README rewritten, `CONTRIBUTING.md`, `NOTICE.md` extended with the
+   runtime dependencies and the ICC answer (none bundled — libvips' built-in sRGB).
 6. Security review against §9; dependency audit.
+   → `docs/security.md` "Review — 2026-09-24": both audits clean, five response-header directives
+   added, the archive byte budget spent against measured rather than declared sizes.
 7. Decide name + license (open questions §16).
+   → **MIT** (`LICENSE`, declared in both manifests). The name stays the placeholder by decision;
+   the rename is a single mechanical commit whenever it is wanted.
 
 **AC**: all budgets met; no known data-loss bugs; fresh-user walkthrough (install → pair phone → upload → create
 artwork → collection → export) completes without reading code.
@@ -729,7 +747,10 @@ artwork → collection → export) completes without reading code.
 
 ### Open questions (to decide at the indicated phase)
 
-- Final project name and license (Phase 11).
+- Final project name (kept as the placeholder `the_frame_v2` by decision on 2026-09-24; the
+  rename touches the package, the `THE_FRAME_V2_*` env prefix, the data dir and the error URLs,
+  and is one mechanical commit whenever it is wanted).
+- ~~License (Phase 11)~~ — **MIT**, decided 2026-09-24 (`LICENSE`).
 - Caption band factor (1.5 × size) reserved by the composition solver: implemented and pinned by
   conformance, still to be checked against a real render (Phase 7 stage 3, `docs/simple-editor.md` §10).
 - ~~Exact bundled fonts and texture set (Phase 4)~~ — decided in ADR-0008.

@@ -1,5 +1,122 @@
 # Progress log
 
+## 2026-09-24 — Phase 11 (hardening & polish)
+
+**The performance pass found one thing, and it was worth the whole exercise.** `scripts/bench_library.py`
+times the requests the three grids actually make, through the real app, against a 10k-artwork library.
+The first run said every case was inside the 67 ms budget — and that was true, but it hid the shape of
+the problem: `EXPLAIN QUERY PLAN` showed `USE TEMP B-TREE FOR ORDER BY` on *every* page of the grid.
+Each listing filters `deleted_at IS NULL` and then orders, and with `deleted_at` alone in a
+single-column index SQLite was reading the matching rows and sorting all 10 000 of them, per page.
+13 ms for the default order, **64 ms for `created_asc`** — one scroll gesture away from missing the
+budget on its own. Migration `0008` leads each composite with `deleted_at` (and adds one for the
+Favorites view): 0.5 ms, no sort, and the old single-column index is dropped rather than kept beside
+them because every query it served is served by the composites. Through the API: artworks page
+21.9 → 11.6 ms, the sidebar's collections tree 41.1 → 24.5 ms, search 28.3 → 17.0 ms, worst p95
+45.2 → 28.7 ms.
+
+One attempted optimization was **reverted**: restructuring `collections.counts` to avoid loading
+artwork ids for leaf collections made the tree *five times slower* (41 → 220 ms), because it added a
+second query without removing the first. The index does the job instead. Measuring before and after
+is the only reason that is a paragraph here rather than a regression in the tree.
+
+**Memory turned out to be the binding constraint on renders, not time.** `bench_render.py` now reports
+peak RSS beside each duration (it was also quietly broken since Phase 8 — it still called the removed
+`build_document`, and nothing in `make check` runs `scripts/`). A 6-slot collage of 24 MP sources peaks
+at 1.6 GB; nine slots at **2.3 GB**. pyvips builds a lazy pipeline, so every decoded original stays
+resident until the image is written — the 512 MB LRU bounds what is kept *between* renders, not what
+one holds. A document may carry 32 slots, which at 48 MP each asks for roughly 14 GB: an
+out-of-memory kill of the server, taking the job queue with it, from a document a paired uploader can
+save. `MAX_RENDER_PIXELS` (320 Mpx of *distinct* sources, counted from the file headers so nothing is
+decoded first) now refuses that as `render_too_large`.
+
+**Error UX: a failure is no longer allowed to be silent.** Three pieces. `shared/toast.ts` is a store
+outside React that carries a **problem code, not a sentence**, so the same failure reads the same
+wherever it is raised; `problemMessage` replaces the
+`t("errors." + code, { defaultValue: e.message })` expression that was copy-pasted into eight
+components and missing from everywhere else; and a `MutationCache` in `main.tsx` reports any mutation
+that does not render its own failure (`meta: { silentError: true }` opts out). Two inline error lines
+were *removed* in the process — the artwork viewer's and the tag manager's — because the action they
+belonged to is triggered from places with no footer to put the message in, and a toast is better
+placed than a line the user has already scrolled past.
+
+Then the **activity centre**: `GET /jobs`, retry, dismiss, at `/activity`, with the failed count as a
+red badge in the sidebar and a toast on SSE `job.failed` offering *View*. A retry is a **new job**
+rather than a reset of the old row, so the history of what failed is never rewritten; the failed row
+becomes `dismissed`. Two things had to be right underneath: `jobs.code` is a **column** (migration
+`0007`) rather than a prefix parsed back out of the error text — the first implementation did parse
+it, and `"RuntimeError: boom"` is indistinguishable in shape from `"render_failed: no pixels"`, so a
+traceback claimed the code `RuntimeError` — and `retry_job` **commits before enqueuing**, because
+`JobQueue.enqueue` opens its own session and SQLite has one writer (the first version deadlocked with
+"database is locked").
+
+**Accessibility.** Contrast was computed rather than eyeballed: dark passes AA everywhere, light had
+three pairs under 4.5:1 on `panel-2` (`accent` 4.24, `warning` 3.93), now 5.07 and 4.68. Separately,
+no control had a 3:1 boundary — `--color-border` is 1.45:1 against the page, which is right for a
+separator and wrong for the edge of a field, and it is spelled `border border-border` at ~90 call
+sites. `--color-border-strong` (6a6a76 / 7d7970, ≥ 3:1 on every surface) now dresses buttons and form
+controls; the controls get it through an **attribute selector** in `styles.css` (0,1,1), which
+outranks a single Tailwind utility (0,1,0) without touching any of those call sites. Plus a skip
+link, `prefers-reduced-motion`, and `role="status"` + `aria-live` on the toasts. An audit of all 188
+buttons found **no** icon-only button without an accessible name, and every `<img>` already carried
+an `alt` — that part of the codebase was already right.
+
+**Service installers.** `the_frame_v2 service install|status|uninstall` generates the unit for *this*
+machine — the absolute path of this interpreter's console script and the data directory the user
+chose, neither of which is guessable from a shipped file — and prints the commands that enable it
+rather than running them. `systemd-analyze --user verify` passes on the generated unit. Windows gets
+Task Scheduler / NSSM instructions in the user guide instead of a generated file.
+
+**Security review.** Both dependency audits clean (`pip-audit` runtime and dev, `pnpm audit`). Five
+response-header directives were missing and are now sent and pinned by a test: `form-action 'self'`
+(a form's POST target is not covered by `default-src`), `object-src 'none'`,
+`Cross-Origin-Resource-Policy`, `Cross-Origin-Opener-Policy` and a `Permissions-Policy` denying
+camera, microphone, geolocation, payment and USB. One suspected vulnerability turned out **not** to
+be one: the archive size budget adds up each member's *declared* `file_size`, which looked like the
+classic zip-bomb hole — but CPython's `zipfile` stops a member at its declared length and then fails
+its CRC, so understating it cannot smuggle anything through. That is a property of the standard
+library rather than of the ZIP format, so `_verify_checksums` now spends the budget against the bytes
+it actually streams, and both cases are pinned by tests. The rest of `docs/security.md` was walked
+through and found correct; the review is written up there.
+
+**Name and licence.** MIT (`LICENSE`, declared in both manifests). The name stays the placeholder by
+the user's decision — the rename touches the package, the `THE_FRAME_V2_*` prefix, the data dir and
+the error URLs, and is better as one mechanical commit than as a strand of this one.
+
+**Docs.** `docs/user-guide.md` (install, service, pairing, the two upload routes and why Android
+matters, what the three quality tiers mean, templates, organising, export, a troubleshooting table,
+every setting), a rewritten README, `CONTRIBUTING.md`, and `NOTICE.md` extended with the runtime
+dependencies and the ICC answer (none are bundled — libvips' built-in sRGB).
+
+**Verified**: `make check` green. Driven in a real browser (headless Chromium over CDP against the
+production build on trusted localhost), results read back through the API where the DOM would not
+settle it:
+
+- Every page renders with no CSP violation and no console error after the header changes.
+- The whole error path, end to end: hiding an original on disk and duplicating the artwork makes the
+  render job fail → the toast reads *"A background task failed / A photo's file is missing from the
+  library. / View"* → the sidebar badge reads `Activity 1` → the page's summary reads "1 failure
+  needs attention" and the row shows the translated sentence with the traceback folded behind
+  *Technical details* → **Retry** takes the failed count back to 0.
+- **That run found two real bugs**, both fixed and re-verified: the message was a raw
+  `DecodeError` traceback carrying an absolute server path, because `render_job` converts
+  `RenderError` and `ProblemError` but a `DecodeError` from the decoder escaped both (the decoded
+  cache now wraps it); and the toast printed its title twice, because an uncoded failure was given a
+  code whose string said the same thing as the title.
+- Keyboard: one `Tab` from a fresh page lands on the skip link, which becomes 130×36 px and jumps to
+  `#main`. **A false alarm here is worth recording**: measured through `element.focus()` the link
+  stayed 1×1, and I replaced the Tailwind utilities with hand-written CSS to "fix" it — the real
+  cause was that a headless window is not focused, so `:focus` never matched. Checking the built
+  stylesheet showed Tailwind emits `focus:not-sr-only` *after* `.sr-only`, so the ordering hazard I
+  had assumed was not real. The hand-written CSS was reverted.
+- Tokens computed by the browser match the intended values in both themes; a secondary button and
+  the form controls both report `rgb(106, 106, 118)` (the strong border), and
+  `prefers-reduced-motion: reduce` takes transitions from 0.15 s to 1e-05 s.
+
+**Not done**: the README's screenshots. The only library available here is `seed_library.py`'s
+synthetic one — coloured rectangles — and a screenshot of that presented as the product would
+misrepresent it. The UI itself was captured and reviewed; real screenshots need real photos.
+
 ## 2026-09-23 — Phase 10 (export / import)
 
 **The format is deliberately boring.** A `.tfarchive` is a ZIP holding `manifest.json`, one

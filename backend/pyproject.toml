@@ -5,6 +5,8 @@ description = "Prepare and curate pictures for a 4K art-mode TV (Samsung The Fra
 authors = [
     { name = "Nenuphar12", email = "nenuphar12@protonmail.com" }
 ]
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.14"
 dependencies = [
     "alembic>=1.20.0",

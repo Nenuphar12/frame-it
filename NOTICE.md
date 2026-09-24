@@ -1,4 +1,9 @@
-# Third-party assets
+# Third-party notices
+
+the_frame_v2 itself is MIT-licensed (`LICENSE`). Everything below ships *inside* the package and
+keeps its own licence.
+
+## Assets
 
 | Asset | Location | License |
 |---|---|---|
@@ -12,3 +17,17 @@
 Font files are static instances (renamed families `TF <id> <weight>`) of the variable fonts published in
 https://github.com/google/fonts, built by `scripts/build_fonts.py`; the OFL permits this as modified versions
 under the same license (no Reserved Font Name is used).
+
+## Runtime dependencies
+
+Image processing is done by [libvips](https://www.libvips.org/) (LGPL-2.1-or-later) through
+`pyvips`; the wheels installed by `pyvips[binary]` carry their own bundled codecs and notices.
+The rest of the Python and JavaScript dependencies are permissively licensed (MIT / BSD / Apache-2.0)
+and are not redistributed in this repository — `uv.lock` and `pnpm-lock.yaml` pin exactly what an
+install pulls.
+
+## ICC profiles
+
+None are bundled. Photos carrying an embedded profile are converted to sRGB by libvips' own
+`icc_transform` (perceptual intent), and photos without one are interpreted as sRGB
+(`imaging/decode.py`). The sRGB profile used for output is libvips' built-in one.

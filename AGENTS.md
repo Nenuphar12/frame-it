@@ -8,7 +8,7 @@
 Self-hosted web app to prepare pictures for a 4K art-mode TV (Samsung The Frame, 3840×2160): phone uploads in
 full quality over the LAN, pixel-perfect framing/compositions, collections, export/import.
 
-- **Current state (2026-09-23): Phases 0–10 done** — foundations, device auth &
+- **Current state (2026-09-24): Phases 0–11 done** — foundations, device auth &
   pairing, resumable uploads, LocalSend receiver, ingest, Photos + Inbox UI, phone upload page; artwork
   document + geometry (Python/TS mirrored), pyvips renderer, built-in styles/layouts, artworks API;
   **editor** (Konva canvas, crop/placement/locks with the constraint solver, colour tools, alternatives,
@@ -42,8 +42,18 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
   (new / identical / matched / conflicting) → apply under `keep_mine | take_theirs | keep_both`
   (per import, per kind, per item) in one transaction. `the_frame_v2 export` / `import` do the
   same without a browser. Migration `0006` adds `archive_imports`.
-- **Next: Phase 11** (`docs/PLAN.md` §14): hardening & polish — performance and memory pass,
-  accessibility, error UX, service installers, user guide, security review.
+- **Phase 11 (2026-09-24, `docs/user-guide.md`, `docs/security.md`)**: hardening & polish —
+  **performance** (`scripts/bench_library.py`; migration `0008` leads every artwork index with
+  `deleted_at`, killing the temp sort: 13 → 0.5 ms a page at the SQL level, 22 → 12 ms through the
+  API on 10k artworks) and **memory** (`bench_render.py` reports peak RSS; `MAX_RENDER_PIXELS`
+  refuses a document whose distinct sources exceed 320 Mpx); **accessibility** (AA in both themes,
+  `--color-border-strong` for control boundaries, skip link, reduced motion, `aria-live`);
+  **error UX** (`shared/toast.ts`, `problemMessage`, a `MutationCache` that reports any unhandled
+  mutation failure, and `/activity` — failed jobs with retry, `jobs.code` from migration `0007`);
+  **`the_frame_v2 service install`** (systemd user unit / launchd agent); docs (user guide,
+  README, `CONTRIBUTING.md`, `NOTICE.md`); a **security review** (`docs/security.md`) with clean
+  `pip-audit`/`pnpm audit` runs. Licence: **MIT**; the name stays the placeholder by decision.
+- **Next: nothing planned.** `docs/PLAN.md` §16 keeps the open questions (the rename above all).
 - Verified by the user on real hardware (2026-09-17): Android uploads (both pickers keep full quality but
   Android zeroes GPS → no place; see `docs/research/phone-uploads.md`), Docker image build/run/persistence.
 
@@ -56,14 +66,17 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
 | Everything that must pass | `make check` (ruff, ESLint, mypy strict, tsc, i18n keys, geometry conformance, pytest) |
 | Geometry fixtures | `make conformance` (TS); regenerate from Python: `cd backend && CONFORMANCE_UPDATE=1 uv run pytest tests/unit/test_conformance.py` |
 | Golden images | `make golden-update` after an intended pixel change (review PNGs, bump `RENDERER_VERSION`) |
-| Render budgets | `cd backend && uv run python ../scripts/bench_render.py` |
+| Render budgets + peak RSS | `cd backend && uv run python ../scripts/bench_render.py` |
+| Library budgets (seeded 10k) | `cd backend && uv run python ../scripts/bench_library.py --data-dir /tmp/seed` |
+| Dependency audit | `cd frontend && pnpm audit`; backend: `uv export --no-emit-project --no-dev --format requirements.txt -o /tmp/r.txt && uv run --with pip-audit pip-audit -r /tmp/r.txt` |
+| Run at login | `uv run the_frame_v2 service install` (`--show` prints the unit; `status`, `uninstall`) |
 | Seed a big library (Phase 9 AC) | `cd backend && uv run python ../scripts/seed_library.py --data-dir /tmp/seed --artworks 10000` |
 | Export / import a library | `uv run the_frame_v2 export -o lib.tfarchive` · `uv run the_frame_v2 import lib.tfarchive --dry-run` |
 | Editor E2E against a copy of the library | `cp -r .dev-data /tmp/e2e && cd backend && THE_FRAME_V2_DATA_DIR=/tmp/e2e THE_FRAME_V2_PORT=8799 uv run the_frame_v2 serve`, then `cd frontend && THE_FRAME_V2_BACKEND=http://127.0.0.1:8799 pnpm dev --port 5199` |
 | Backend tests only | `cd backend && uv run pytest` (add `-k name`) |
 | Regenerate API types + `docs/schemas/` (after any API/document schema change) | `make gen-api` |
 | Production build + serve | `make serve` (frontend built into `backend/src/the_frame_v2/static`) |
-| CLI | `uv run the_frame_v2 --help` (`serve`, `doctor`, `setup-code`, `openapi`, `db upgrade`, `cache clear`) |
+| CLI | `uv run the_frame_v2 --help` (`serve`, `doctor`, `setup-code`, `openapi`, `schemas`, `db upgrade`, `cache clear`, `service`, `export`, `import`) |
 | New migration | edit `db/models.py`, then `cd backend && uv run python -m the_frame_v2.db.migrate "message"`, rename to `NNNN_message.py`, replace custom types by `sa.String` |
 | Docker | `make docker`; `docker/compose.yaml` (set `THE_FRAME_V2_PUBLIC_URL`) |
 
@@ -76,9 +89,9 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `backend/src/the_frame_v2/app.py` | App factory: context, routers, SPA serving, lifespan (jobs, setup code) |
 | `…/config.py` | Settings (env `THE_FRAME_V2_*` > `<data_dir>/config.toml` > defaults), LAN IP, allowed hosts |
 | `…/context.py` | `AppContext` service container (`app.state.ctx`) |
-| `…/api/` | Thin routers + `schemas.py` (Pydantic API models = OpenAPI source) + `deps.py` (auth deps); `templates.py` = styles/layouts CRUD, usage, push update, template files; `library.py` = tags + collections + `POST /filters/validate`; `trash.py` = preview/trash/restore/purge; `archive.py` = exports + imports |
+| `…/api/` | Thin routers + `schemas.py` (Pydantic API models = OpenAPI source) + `deps.py` (auth deps); `templates.py` = styles/layouts CRUD, usage, push update, template files; `library.py` = tags + collections + `POST /filters/validate`; `trash.py` = preview/trash/restore/purge; `archive.py` = exports + imports; `jobs.py` = the activity centre (list/retry/dismiss) |
 | `…/auth/` | `principal.py` (cookie/localhost → role), `middleware.py` (Host/CSRF/headers), `ratelimit.py` |
-| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos`, `tags`, `geocode`, `artworks` (create/save/snapshots), `render` (cache, jobs, region), `templates` (presets, CRUD, template files, artwork defaults; the artwork-writing half — apply/push update — is in `artworks`), `recipes` (the bundled composition catalogue, no DB), `colors` (photo palette, swatches, curated presets), `library` (the filter compiler + the artwork listing), `collections` (tree, items, smart filters), `tags` (rename/merge/delete), `search` (FTS index), `trash` (soft delete, cascade, restore, purge), `archive_export` (the `.tfarchive` writer + the rendered-image ZIP), `archive_import` (receive, validate, classify), `archive_apply` (the import transaction and its id maps) |
+| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos`, `tags`, `geocode`, `artworks` (create/save/snapshots), `render` (cache, jobs, region), `templates` (presets, CRUD, template files, artwork defaults; the artwork-writing half — apply/push update — is in `artworks`), `recipes` (the bundled composition catalogue, no DB), `colors` (photo palette, swatches, curated presets), `library` (the filter compiler + the artwork listing), `collections` (tree, items, smart filters), `tags` (rename/merge/delete), `search` (FTS index), `trash` (soft delete, cascade, restore, purge), `archive_export` (the `.tfarchive` writer + the rendered-image ZIP), `archive_import` (receive, validate, classify), `archive_apply` (the import transaction and its id maps), `jobs_admin` (what failed, and running it again) |
 | `…/domain/` | PURE: `document` (artwork document v1 + the `composition` block + reference checks), `geometry`, `quality` (tiers), `placement`, `constraints` (editor solver §7.3), `alternatives` (§7.6), `arrange` (align/distribute/new slot, §7.7), `composition` (recipe trees, the parametric solver and `apply` = what it writes into a document, `docs/simple-editor.md` §3), `templates` (style/layout docs, `restyle`/`relayout`/save-as, `build_composition_document`), `filters` (the library filter AST, `docs/data-model.md` §5.2), `archive` (the archive's records, file layout and member-name safety, `docs/archive-format.md`) |
 | `…/imaging/` | `sniff` (magic bytes), `decode` (the only pixel access), `metadata` (EXIF/ICC), `fingerprint` (hash ignoring EXIF), `capabilities`, `render` (the renderer), `palette` (OKLab k-means), `assets` (fonts/textures catalog) |
 | `…/assets/` | `geonames/`, `fonts/` (OFL, `scripts/build_fonts.py`), `textures/` (CC0, `scripts/generate_textures.py`), `presets/` (built-in styles/layouts + `recipes.json`) |
@@ -87,18 +100,19 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `…/events.py` | Thread-safe SSE broker (`/api/v1/events`) |
 | `…/db/` | `models.py`, `session.py` (WAL), `migrate.py`, `migrations/versions/` |
 | `…/storage.py` | Data-dir layout (originals, cache, uploads) |
+| `…/service.py` | Generates this machine's systemd unit / launchd plist (`the_frame_v2 service`) |
 | `…/assets/geonames/` | Offline place dataset (built by `scripts/build_geonames.py`, CC BY 4.0) |
 | `backend/tests/` | `unit/`, `api/`, `golden/` (reference PNGs in `refs/`); fixtures & helpers in `conftest.py` (`make_jpeg`, `pair`, `upload_bytes`) |
 | `conformance/geometry/` | Shared JSON fixtures: Python domain ↔ `frontend/src/editor/core` |
-| `scripts/` | `build_geonames.py`, `build_fonts.py`, `generate_textures.py`, `bench_render.py`, `render_parity/` (S3 page) |
+| `scripts/` | `build_geonames.py`, `build_fonts.py`, `generate_textures.py`, `bench_render.py` (time **and** peak RSS), `bench_library.py` (§8.6 budgets), `seed_library.py`, `render_parity/` (S3 page) |
 | `frontend/src/api/` | `client.ts` (openapi-fetch + `ApiError`), `queries.ts` (TanStack Query hooks), `events.ts` (SSE), generated `schema.d.ts` |
 | `frontend/src/app/` | `router.tsx`, `AuthGate.tsx` (role routing), `Shell.tsx` (sidebar), `commands.ts` (shortcuts/palette registry), `theme.ts` |
 | `frontend/src/editor/core/` | PURE TS mirror of `domain/` (`geometry`, `quality`, `placement`, `constraints`, `alternatives`, `arrange`, `composition`, `templates`) + `snapping.ts` and `bounds.ts` (client-only) and `document.ts` (the document with every optional field filled in); relative imports with `.ts` extension (run by Node in `scripts/conformance.ts`) |
 | `frontend/src/editor/` | `EditorPage.tsx` (layout, shortcuts, review queue), `store.ts` (working document, undo/redo on Immer patches, autosave + conflicts), `operations.ts` (pure document mutations: how a change propagates), `actions.ts` (what the UI calls), `TvPreview.tsx` |
 | `…/editor/canvas/` | `EditorStage.tsx` (Konva stage, one pointer pipeline for every gesture, overlays), `SlotNode.tsx` (bands, photo, shadows), `CaptionNode.tsx`, `SelectionOverlay.tsx` (outlines + transform handles), `hit.ts` (rotation-aware hit tests, handle maths), `texture.ts`, `fonts.ts`, `useOrientedImage.ts` |
 | `…/editor/panels/` | `SimplePanel` (the parametric editor, §6.2) + `RecipePicker` (schemas drawn by the solver), `SlotsPanel` (z-order, add/remove, photos), `PhotoPicker`, `ArrangePanel` (align/distribute), `CaptionsPanel`, `FramingPanel`, `StylePanel`, `ColorField` (picker + swatches + palette + presets), `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`, `ShadowFields` (shared with the template editor), `Controls` |
-| `frontend/src/features/` | `archive/` (export dialog, import report + policies), `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, grid, viewer, create dialog), `templates/` (page, editors, push update, `.tf*.json` files), `library/` (the filter AST + chip bar), `collections/` (page, tree, create/edit dialog), `trash/` (page + the cascade dialog), `tags/` (picker + manager page), `devices/`, `auth/`, `mobile/` (upload + read-only browse), `settings/`, `localsend/` (the editor lives in `src/editor/`, not here) |
-| `frontend/src/shared/` | UI primitives (`ui/`), `format.ts`, `cn.ts`, `dnd.ts` (the MIME types our own drags carry) |
+| `frontend/src/features/` | `activity/` (failed jobs + retry), `archive/` (export dialog, import report + policies), `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, grid, viewer, create dialog), `templates/` (page, editors, push update, `.tf*.json` files), `library/` (the filter AST + chip bar), `collections/` (page, tree, create/edit dialog), `trash/` (page + the cascade dialog), `tags/` (picker + manager page), `devices/`, `auth/`, `mobile/` (upload + read-only browse), `settings/`, `localsend/` (the editor lives in `src/editor/`, not here) |
+| `frontend/src/shared/` | UI primitives (`ui/`, incl. `Toaster.tsx`), `toast.ts` (the store, outside React), `problem.ts` (`problemMessage`), `format.ts`, `cn.ts`, `dnd.ts` (the MIME types our own drags carry) |
 | `frontend/src/i18n/` | i18next setup; strings in `locales/en/common.json` |
 | `docs/` | Plan, specs, ADRs (`adr/`), research findings (`research/`), progress |
 
@@ -160,6 +174,10 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
     (§8.5 budget — and a per-event render freezes the tab, see Gotchas).
 13. A photo the editor has not loaded (`sizes`) must not reach a geometry operation: `ensurePhotoSize` first,
     or the slot is built as if it were empty (crop = the slot's shape instead of the photo's).
+14. A failure is never silent: a mutation either renders its own (`meta: { silentError: true }`) or the
+    `MutationCache` in `main.tsx` raises a toast. A job that fails reaches `/activity` through `jobs.code`.
+15. Colour is a token, never a literal, and a new pair must pass AA (4.5:1 for text, 3:1 for a control's
+    boundary — `--color-border-strong`) in **both** themes.
 
 ## Conventions
 
@@ -178,7 +196,9 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 `docs/organization.md` (Phase 9: tags, collections, filters, search, trash) ·
 `docs/geometry-and-quality.md` · `docs/rendering-spec.md` · `docs/security.md` ·
 `docs/archive-format.md` (Phase 10: the archive, the dry run, the policies) ·
-`docs/schemas/` (generated) · `docs/adr/` · `docs/research/` · `NOTICE.md` (asset licenses)
+`docs/user-guide.md` (phase 11: install, pairing, tiers, troubleshooting, settings) ·
+`docs/schemas/` (generated) · `docs/adr/` · `docs/research/` · `NOTICE.md` (third-party notices) ·
+`CONTRIBUTING.md` · `LICENSE` (MIT)
 
 ## Gotchas
 
@@ -378,3 +398,21 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 - Dev over the Vite proxy is **not** trusted as localhost (`xfwd` adds `X-Forwarded-For`, invariant 5): the
   first load asks for the setup code printed in the server log. Point Vite at another backend with
   `THE_FRAME_V2_BACKEND=http://127.0.0.1:<port>`.
+- **Every artwork listing filters `deleted_at IS NULL` and then orders**, so an index that does not lead
+  with `deleted_at` makes SQLite sort the whole table into a temp B-tree — 13 ms a page on 10k artworks,
+  64 ms for `created_asc` (migration `0008`). A new sort order needs its own composite starting with
+  `deleted_at`; check `EXPLAIN QUERY PLAN` shows no `TEMP B-TREE` and measure with `scripts/bench_library.py`.
+- A render holds **every decoded original at once** (pyvips is lazy: nothing is released until the image is
+  written, and the 512 MB LRU bounds what is kept *between* renders). Measured: 9 slots of 24 MP peak at
+  2.3 GB. `MAX_RENDER_PIXELS` refuses more, counted from the file headers, as `render_too_large`.
+- `retry_job` **commits before enqueuing**: `JobQueue.enqueue` opens its own session and SQLite has one
+  writer, so enqueuing inside a request's `DbSession` deadlocks. Same reflex as `_changed` in `api/artworks.py`.
+- A failure carries a **code**, never a sentence: `jobs.code` is a column (a traceback and a
+  `PermanentJobError` are indistinguishable by shape), and `toast.problem`/`toast.error` pass the code so the
+  component translates `errors.<code>` — a new code needs its string or the raw server text shows through.
+  Dotted job kinds map `.` to `_` (`activity.kinds.archive_export`).
+- A Tailwind utility is one class (0,1,0), so an element-level floor in `styles.css` loses to it: the
+  control-boundary rule uses an attribute selector (`select[class]`, 0,1,1) to outrank ~90 `border-border`
+  call sites without editing them.
+- `make check` does not lint or run `scripts/`: `bench_render.py` had been broken since Phase 8 (it called
+  the removed `build_document`) and nothing said so. Run a script you changed.
