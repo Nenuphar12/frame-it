@@ -108,5 +108,50 @@ compensation offset is needed at all.
 Measured 2026-09-17 (`scripts/bench_render.py`, i7-12650H, synthetic 24 MP JPEGs, PNG master written):
 single slot 1.6–1.8 s cold / 1.0 s warm; 9-slot collage with drop shadows 3.8 s (was 7.1 s before parallel
 decoding); loupe region 0.08 s warm, 0.63 s cold (first decode). Ingest budgets: measured in Phase 3.
+
+Re-measured 2026-09-24 (phase 11), the same script now reporting peak RSS alongside the time:
+
+| Case | Time | Peak RSS | Added by the render |
+|---|---|---|---|
+| single slot 4K PNG, cold | 1.86 s | 645 MB | +120 MB |
+| single slot 4K PNG, warm | 1.33 s | 645 MB | — |
+| region 512², warm | 0.08 s | 645 MB | — |
+| region 512², cold | 0.56 s | 657 MB | +12 MB |
+| 6-slot collage + shadows, cold | 3.22 s | 1 551 MB | +894 MB |
+| 9-slot collage + shadows, cold | 4.68 s | 2 270 MB | +719 MB |
+
+**Memory is the binding constraint, not time.** pyvips builds a lazy pipeline, so every decoded
+original stays resident until the image is written: the 512 MB LRU bounds what is *kept between*
+renders, not what one render holds. That is why `render_workers` defaults to 1, and why
+`imaging/render.py` refuses a document whose distinct sources exceed `MAX_RENDER_PIXELS`
+(320 Mpx, problem code `render_too_large`) — a 32-slot document of 48 MP photos would otherwise
+ask for roughly 14 GB and be killed rather than refused (`docs/security.md`).
+
+### 8.6 Library budgets (phase 11)
+
+The grid is virtualized, so "no jank on 10k items" is a statement about the server: every page it
+asks for while scrolling must come back inside a few frames. `scripts/bench_library.py` times the
+requests the three grids actually make, through the real app, against a library seeded by
+`scripts/seed_library.py --artworks 10000` (41 collections, 3 324 collection items, 7 tags).
+
+Budget: 67 ms per page (four frames). Measured 2026-09-24, median (p95):
+
+| Request | Before | After |
+|---|---|---|
+| artworks, first page of 60 | 21.9 ms (26.0) | **11.6 ms (13.4)** |
+| artworks, 8 pages by cursor | 23.0 ms/page | **11.7 ms/page** |
+| artworks sorted by title | 24.4 ms (29.3) | **11.7 ms (13.9)** |
+| favorites, first page | 17.5 ms (18.9) | **11.9 ms (12.8)** |
+| search | 28.3 ms (34.1) | **17.0 ms (21.2)** |
+| collections tree (the sidebar) | 41.1 ms (45.2) | **24.5 ms (28.7)** |
+| tags with counts | 22.7 ms (25.8) | **15.1 ms (18.0)** |
+| photos, 8 pages by cursor | 1.1 ms/page | 1.1 ms/page |
+
+The difference is migration `0008`: every artwork listing filters `deleted_at IS NULL` and *then*
+orders, so with `deleted_at` only in a single-column index SQLite read the matching rows and sorted
+them in a temp B-tree — the whole table, for every page. Leading each composite index with
+`deleted_at` lets the index supply the order instead. At the SQL level that is 13 ms → 0.5 ms for a
+page (and 64 ms → 0.5 ms for the oldest-first order, which was over budget on its own); the rest of
+what the API spends is serialization.
 JPEG shrink-on-load was tried for strongly reduced slots and rejected: visibly different fine detail (MAE ≈ 3 on
 sharp edges) for a gain that parallel decoding already provides.

@@ -23,7 +23,7 @@ import pyvips
 from the_frame_v2.domain.document import ArtworkDocument, Caption, Shadow, Slot
 from the_frame_v2.domain.geometry import CANVAS_HEIGHT, CANVAS_WIDTH, Rect, round_half_even
 from the_frame_v2.imaging.assets import AssetCatalog, FontAsset, catalog
-from the_frame_v2.imaging.decode import load_srgb
+from the_frame_v2.imaging.decode import DecodeError, load_srgb, pixel_count
 
 RENDERER_VERSION = "1"
 MIN_BLUR_AMPLITUDE = 0.005
@@ -54,6 +54,15 @@ PhotoResolver = Callable[[str], Path | None]
 # ---- decoded originals (§8.4) ------------------------------------------------------------------
 DECODED_CACHE_BYTES = 512 * 1024 * 1024
 DECODE_WORKERS = 4
+#: Source pixels one render may hold at once, summed over its *distinct* photos.
+#:
+#: pyvips builds a lazy pipeline, so every decoded original stays resident until the image is
+#: written — the 512 MB cache bounds what is *kept*, not what one render holds. Measured on 24 MP
+#: JPEGs (`scripts/bench_render.py`): 6 slots peak at 1.6 GB RSS, 9 slots at 2.3 GB. A document may
+#: carry 32 slots, which at 48 MP each would ask for roughly 14 GB and be killed rather than
+#: refused. 320 Mpx ≈ 1 GB of decoded pixels ≈ 2.5 GB peak, which covers every realistic artwork
+#: (13 × 24 MP) and stops the pathological ones with a problem code.
+MAX_RENDER_PIXELS = 320_000_000
 
 
 class _DecodedCache:
@@ -74,7 +83,12 @@ class _DecodedCache:
             if key in self._items:
                 self._items.move_to_end(key)
                 return self._items[key]
-        image = load_srgb(path).copy_memory()
+        try:
+            image = load_srgb(path).copy_memory()
+        except DecodeError as exc:
+            # A corrupt original must leave as a code the UI can translate: a `DecodeError`
+            # escaping here reached the activity centre as a raw traceback carrying a server path.
+            raise RenderError(exc.code, str(exc)) from exc
         with self._lock:
             self._items[key] = image
             total = sum(i.width * i.height * i.bands for i in self._items.values())
@@ -216,6 +230,19 @@ def _decode_all(doc: ArtworkDocument, resolve: PhotoResolver) -> dict[str, Any]:
         paths[slot.photo_id] = path
     if not paths:
         return {}
+    try:
+        total = sum(pixel_count(path) for path in paths.values())
+    except DecodeError as exc:
+        # The budget is read before anything is decoded, so this is the first thing to touch the
+        # file: a missing or unreadable source has to leave as the `RenderError` the cache would
+        # have raised, not as a decode error the renderer's callers do not catch.
+        raise RenderError("photo_file_missing", str(exc)) from exc
+    if total > MAX_RENDER_PIXELS:
+        raise RenderError(
+            "render_too_large",
+            f"{len(paths)} photos totalling {total / 1e6:.0f} Mpx "
+            f"(limit {MAX_RENDER_PIXELS / 1e6:.0f} Mpx)",
+        )
     with ThreadPoolExecutor(max_workers=min(DECODE_WORKERS, len(paths))) as pool:
         images = list(pool.map(decoded_originals.get, paths.values()))
     return dict(zip(paths, images, strict=True))

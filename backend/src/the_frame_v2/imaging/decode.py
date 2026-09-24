@@ -103,6 +103,19 @@ def _to_srgb8(image: Any) -> Any:
     return image.cast("uchar")
 
 
+def pixel_count(path: Path) -> int:
+    """Source pixels, read from the header — no pixels are decoded.
+
+    A renderer holding every original of a document at once needs to know the bill before it runs
+    up: this is what lets it refuse rather than be killed (`imaging/render.py`, §8.5).
+    """
+    try:
+        image = pyvips.Image.new_from_file(str(path), access="sequential")
+        return int(image.width) * int(image.height)
+    except pyvips.Error as exc:
+        raise DecodeError("corrupt_image", str(exc).splitlines()[0]) from exc
+
+
 def load_srgb(path: Path) -> Any:
     """Full-resolution original, EXIF-oriented, 8-bit sRGB, 3 bands (for rendering)."""
     try:

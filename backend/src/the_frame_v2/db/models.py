@@ -165,11 +165,16 @@ class Artwork(Base):
     deleted_at: Mapped[datetime | None]
     trash_batch_id: Mapped[str | None] = mapped_column(String(36))
 
+    # Every listing filters `deleted_at IS NULL` first and then orders, so `deleted_at` leads each
+    # index: without that, SQLite sorted the whole table into a temp B-tree for every page of the
+    # grid (measured on 10k artworks: 13 ms a page, 64 ms for `created_asc`; 0.5 ms with these).
+    # They also cover the `deleted_at IS NOT NULL` half, which is why there is no single-column
+    # index on it any more.
     __table_args__ = (
-        Index("ix_artworks_created", "created_at", "id"),
-        Index("ix_artworks_updated", "updated_at", "id"),
-        Index("ix_artworks_deleted", "deleted_at"),
-        Index("ix_artworks_title", "title", "id"),
+        Index("ix_artworks_created", "deleted_at", "created_at", "id"),
+        Index("ix_artworks_updated", "deleted_at", "updated_at", "id"),
+        Index("ix_artworks_title", "deleted_at", "title", "id"),
+        Index("ix_artworks_favorite", "deleted_at", "favorite", "created_at", "id"),
     )
 
 
