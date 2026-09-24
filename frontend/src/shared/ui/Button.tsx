@@ -14,7 +14,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<Variant, string> = {
   primary: "bg-accent text-accent-contrast hover:brightness-110",
-  secondary: "bg-panel-2 text-text border border-border hover:bg-border/60",
+  // `border-strong`: a button's edge is what says it is a button (WCAG 1.4.11, 3:1).
+  secondary: "bg-panel-2 text-text border border-border-strong hover:bg-border/60",
   ghost: "text-text hover:bg-panel-2",
   danger: "bg-danger/15 text-danger border border-danger/40 hover:bg-danger/25",
 };

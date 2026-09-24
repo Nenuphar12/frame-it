@@ -267,6 +267,10 @@ export function Shell() {
 
   return (
     <div className="flex h-full">
+      {/* First tab stop: past a sidebar of ~20 links, straight to the page (WCAG 2.4.1). */}
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-panel focus:px-3 focus:py-2 focus:text-sm focus:shadow-lg">
+        {t("nav.skipToContent")}
+      </a>
       <nav
         className="flex w-56 shrink-0 flex-col gap-4 border-r border-border bg-panel px-2.5 py-3"
         aria-label={t("nav.label")}

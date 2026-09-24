@@ -7,6 +7,10 @@
   --color-panel: #1b1b1d;
   --color-panel-2: #242427;
   --color-border: #313136;
+  /* Boundary of a control the user must be able to find: WCAG 1.4.11 asks 3:1, which the
+     decorative `--color-border` (1.45 on the page) does not give. Buttons, inputs and selects
+     use this one; separators keep the quiet border. */
+  --color-border-strong: #6a6a76;
   --color-text: #ececee;
   --color-muted: #9a9aa3;
   --color-accent: #7fb59a;
@@ -22,12 +26,13 @@
   --color-panel: #ffffff;
   --color-panel-2: #ecebe8;
   --color-border: #d9d7d2;
+  --color-border-strong: #7d7970;
   --color-text: #1b1b1d;
   --color-muted: #6a6a72;
-  --color-accent: #3f7a5c;
+  --color-accent: #386d52;
   --color-accent-contrast: #ffffff;
   --color-danger: #b8433b;
-  --color-warning: #9a6b12;
+  --color-warning: #8a6010;
   --color-info: #2f64a8;
   color-scheme: light;
 }
@@ -37,6 +42,7 @@
   --color-panel: var(--color-panel);
   --color-panel-2: var(--color-panel-2);
   --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
   --color-text: var(--color-text);
   --color-muted: var(--color-muted);
   --color-accent: var(--color-accent);
@@ -72,6 +78,32 @@ select,
 option {
   color: var(--color-text);
   background-color: var(--color-bg);
+}
+
+/*
+ * A control the user has to find needs a 3:1 boundary (WCAG 1.4.11). The decorative border is
+ * 1.45:1 on the page, which is right for a separator and wrong for the edge of a field, and it
+ * is spelled `border border-border` at ~90 call sites. An attribute selector (0,1,1) outranks
+ * the single utility class (0,1,0) without touching any of them; a control that wants another
+ * colour still wins by raising its own specificity, and this only names the types that draw a box.
+ */
+input:is([type="text"], [type="search"], [type="number"], [type="password"], [type="url"],
+    [type="email"], [type="date"], [type="time"], [type="datetime-local"]):not([type="range"]),
+input:not([type]),
+select[class],
+textarea[class] {
+  border-color: var(--color-border-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 :focus-visible {
