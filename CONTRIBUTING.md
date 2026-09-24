@@ -5,8 +5,8 @@ Thanks for looking. This is a small, self-hosted app with a deliberately narrow 
 is a real list and most of what is on it was decided on purpose.
 
 **If you are a coding agent, read [`AGENTS.md`](AGENTS.md) first.** It is the entry point, it is
-kept current with the code, and it carries the invariants and the gotchas that are not obvious from
-reading a file.
+kept current with the code, and it carries the invariants; the subsystem-specific gotchas — the things
+that are not obvious from reading a file — are in [`docs/gotchas.md`](docs/gotchas.md).
 
 ## Getting set up
 
