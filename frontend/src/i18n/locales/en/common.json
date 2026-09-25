@@ -17,7 +17,8 @@
     "no": "No",
     "loadMore": "Load more",
     "dismiss": "Dismiss",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "add": "Add"
   },
   "nav": {
     "label": "Main navigation",
@@ -35,7 +36,8 @@
     "tags": "Tags",
     "backup": "Export & import",
     "activity": "Activity",
-    "skipToContent": "Skip to content"
+    "skipToContent": "Skip to content",
+    "display": "TV"
   },
   "palette": {
     "title": "Command palette",
@@ -69,7 +71,8 @@
     "goTags": "Go to tags",
     "goTrash": "Go to trash",
     "goBackup": "Go to export & import",
-    "goActivity": "Go to activity"
+    "goActivity": "Go to activity",
+    "goDisplay": "Go to TV"
   },
   "upload": {
     "addPhotos": "Add photos",
@@ -359,7 +362,16 @@
     "job_not_failed": "That task did not fail.",
     "unknown_job_kind": "This version of the app cannot run that task.",
     "render_too_large": "This artwork's photos are too large to render together. Use fewer or smaller photos.",
-    "photo_file_missing": "A photo's file is missing from the library."
+    "photo_file_missing": "A photo's file is missing from the library.",
+    "tv_unreachable": "The TV did not answer. Is it on the network?",
+    "tv_unauthorized": "The TV no longer trusts this app — pair again.",
+    "tv_rejected": "The TV refused that.",
+    "target_not_found": "That TV is not registered.",
+    "invalid_interval": "The TV does not accept that interval.",
+    "invalid_render_format": "Use JPEG or PNG.",
+    "no_source": "Pick what this TV should show first.",
+    "empty_set": "That set has no artworks.",
+    "set_too_large": "That set is larger than a TV can hold."
   },
   "localsend": {
     "title": "LocalSend",
@@ -1075,6 +1087,71 @@
       "failed": "Failed",
       "cancelled": "Cancelled",
       "dismissed": "Dismissed"
+    }
+  },
+  "display": {
+    "title": "TV",
+    "addTv": "Add a TV",
+    "addHint": "Its address is on the TV: Settings → Support → About this TV. It must be on the same network.",
+    "name": "Name",
+    "namePlaceholder": "Living room",
+    "address": "IP address",
+    "emptyTitle": "No TV yet",
+    "emptyDescription": "Add your Frame to show a collection on it.",
+    "paired": "Paired",
+    "pairedToast": "Paired with the TV.",
+    "notPaired": "Not paired",
+    "pair": "Pair",
+    "repair": "Pair again",
+    "pairHint": "Turn the TV on first — in art mode it cannot show the permission dialog.",
+    "pairWaiting": "Accept “allow this device” on the TV…",
+    "checkTv": "Check the TV",
+    "showing": "Showing",
+    "noSet": "Nothing yet",
+    "noSetHint": "Pick a collection or a selection first, with “Show on the TV”.",
+    "onTheTv": "On the TV",
+    "itemCount_one": "{{count}} image",
+    "itemCount_other": "{{count}} images",
+    "lastPush": "Last sent",
+    "artApi": "Art API",
+    "artMode": "Art mode",
+    "myPhotos_one": "{{count}} photo in My Photos",
+    "myPhotos_other": "{{count}} photos in My Photos",
+    "fromThisApp_one": "{{count}} from this app",
+    "fromThisApp_other": "{{count}} from this app",
+    "rotating": "Changes every {{minutes}} min",
+    "inOrder": "in order",
+    "slideshowOff": "Slideshow off",
+    "foreignCount_one": "{{count}} photo this app did not send",
+    "foreignCount_other": "{{count}} photos this app did not send",
+    "every": "Change every",
+    "playInOrder": "Play in order",
+    "push": "Send to the TV",
+    "pushHint": "Uploads the set and starts the slideshow. Takes a few seconds per image.",
+    "pushQueued": "Sending to the TV…",
+    "showOnTv": "Show on the TV",
+    "showOnTvDescription": "Send “{{name}}” to a TV and play it in art mode.",
+    "chooseTv": "Which TV?",
+    "noTvTitle": "No paired TV",
+    "noTvDescription": "Add your Frame under TV, then pair it — the TV must be on to accept.",
+    "mirrorWarning": "The Frame plays everything in My Photos, so it can only show this set: the images sent before are removed, and any photo already on the TV keeps being shown unless you remove it below.",
+    "deleteForeignOption": "Also remove photos this app did not send",
+    "deleteForeignHint": "The TV cannot give them back — keep a copy elsewhere first.",
+    "foreignTitle": "Photos this app did not send",
+    "foreignDescription_one": "{{count}} photo on the TV did not come from this app.",
+    "foreignDescription_other": "{{count}} photos on the TV did not come from this app.",
+    "foreignWarning": "They are shown between your artworks. Removing them is permanent: the TV cannot give an image back.",
+    "keepThem": "Keep them",
+    "deleteThem_one": "Remove {{count}} photo",
+    "deleteThem_other": "Remove {{count}} photos",
+    "selectionLabel_one": "{{count}} artwork",
+    "selectionLabel_other": "{{count}} artworks",
+    "intervals": {
+      "3": "3 minutes",
+      "15": "15 minutes",
+      "60": "1 hour",
+      "720": "12 hours",
+      "1440": "24 hours"
     }
   }
 }

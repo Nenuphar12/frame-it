@@ -702,7 +702,7 @@ artwork → collection → export) completes without reading code.
 
 ---
 
-### Phase 12 — Display on the TV ✅ backend (2026-09-25, `docs/tv-display.md`)
+### Phase 12 — Display on the TV ✅ (2026-09-25, `docs/tv-display.md`)
 
 Measured first (`docs/research/tv-display.md`, `scripts/tv_probe.py`), then built. The Frame's
 slideshow plays a whole category and cannot be scoped: favourites refuse the API, a sent
@@ -713,7 +713,7 @@ becomes the set — and the app never deletes what it did not upload unless told
 |---|---|---|
 | 12.1 | `tv/` (`TvClient`, `SamsungTvClient`, `FakeTv`), pairing on the remote-control channel, `display_targets` (migration `0009`), `the_frame_v2 tv add|list|pair|status` | ✅ |
 | 12.2 | `display_target_items` (`(artwork, render_hash) → content_id`), the push (render → upload in reverse → delete ours → optionally delete foreign → stop/select/start), `display` job lane, `/display` API, `tv push` | ✅ |
-| 12.3 | UI: Settings → Display (pair, re-pair, state, interval, what is on the TV), "Show on the TV" on a collection / grid selection / `/m/browse` | ☐ |
+| 12.3 | UI: a **TV** page (pair / re-pair, live status, interval, push) and "Show on the TV" on a collection and on a grid selection, with the mirror warning and the foreign-photo confirmation | ✅ |
 | 12.4 | Polish: "show this now" (it stops the rotation — say so), user-guide section, gotchas | ☐ |
 
 AC met by 12.1–12.2: a push of a 10-artwork collection uploads 10 then 0 on a re-push; editing one

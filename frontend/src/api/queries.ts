@@ -17,12 +17,14 @@ import {
   type ArtworkDefaults,
   type ArtworkSort,
   type CollectionKind,
+  type DisplaySource,
   type FrameStyle,
   type Layout,
   type LayoutDocumentApi,
   type Photo,
   type ExportRequest,
   type ImportPolicy,
+  type Schemas,
   type StyleDocumentApi,
   type TrashCascade,
 } from "./client";
@@ -53,6 +55,9 @@ export const queryKeys = {
   palette: (photoId: string) => ["colors", "palette", photoId] as const,
   swatches: ["colors", "swatches"] as const,
   snapshots: (artworkId: string) => ["artworks", "snapshots", artworkId] as const,
+  displayTargets: ["display", "targets"] as const,
+  displayStatus: (id: string) => ["display", "status", id] as const,
+  displayCapabilities: ["display", "capabilities"] as const,
   templateUsage: (kind: TemplateKind, id: string) => ["templates", "usage", kind, id] as const,
   artworkDefaults: ["templates", "defaults"] as const,
   exports: ["archive", "exports"] as const,
@@ -561,7 +566,7 @@ export function useCreateArtworks() {
       }
       return created;
     },
-    meta: { silentError: true },  // the create dialog keeps the reason under its button
+    meta: { silentError: true }, // the create dialog keeps the reason under its button
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: ["artworks"] });
       void qc.invalidateQueries({ queryKey: ["photos"] });
@@ -1026,7 +1031,6 @@ export function useImportActions() {
   return { apply, discard };
 }
 
-
 // ---- background jobs (the activity centre) ------------------------------------------------------
 
 /**
@@ -1059,4 +1063,97 @@ export function useJobActions() {
     onSuccess: invalidate,
   });
   return { retry, dismiss, dismissAll };
+}
+
+// ---- Display targets (docs/tv-display.md) -------------------------------------------------------
+
+export function useDisplayTargets() {
+  return useQuery({
+    queryKey: queryKeys.displayTargets,
+    queryFn: () => unwrap(api.GET("/api/v1/display/targets")),
+  });
+}
+
+/** What the TV accepts — the intervals above all, since it refuses anything else. */
+export function useDisplayCapabilities() {
+  return useQuery({
+    queryKey: queryKeys.displayCapabilities,
+    queryFn: () => unwrap(api.GET("/api/v1/display/capabilities")),
+    staleTime: Infinity,
+  });
+}
+
+/**
+ * Asks the TV itself, so it fails when the TV is asleep: only fetched on demand, never retried,
+ * and the error is the answer (`tv_unreachable`).
+ */
+export function useDisplayStatus(targetId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.displayStatus(targetId ?? ""),
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/v1/display/targets/{target_id}/status", {
+          params: { path: { target_id: targetId as string } },
+        }),
+      ),
+    enabled: Boolean(targetId),
+    retry: false,
+    staleTime: 10_000,
+  });
+}
+
+function useDisplayMutation<TVariables, TResult>(
+  mutationFn: (variables: TVariables) => Promise<TResult>,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["display"] }),
+  });
+}
+
+export function useDisplayActions() {
+  const create = useDisplayMutation((body: { name: string; host: string }) =>
+    unwrap(api.POST("/api/v1/display/targets", { body })),
+  );
+  const update = useDisplayMutation(
+    ({ id, ...body }: { id: string } & Schemas["DisplayTargetUpdateIn"]) =>
+      unwrap(
+        api.PATCH("/api/v1/display/targets/{target_id}", {
+          params: { path: { target_id: id } },
+          body,
+        }),
+      ),
+  );
+  const remove = useDisplayMutation((id: string) =>
+    unwrap(
+      api.DELETE("/api/v1/display/targets/{target_id}", { params: { path: { target_id: id } } }),
+    ),
+  );
+  // Pairing waits for someone to accept a prompt on the TV: it must not look like a hang.
+  const pair = useDisplayMutation((id: string) =>
+    unwrap(
+      api.POST("/api/v1/display/targets/{target_id}/pair", {
+        params: { path: { target_id: id } },
+      }),
+    ),
+  );
+  const setSource = useDisplayMutation(({ id, ...body }: { id: string } & DisplaySource) =>
+    unwrap(
+      api.PUT("/api/v1/display/targets/{target_id}/source", {
+        params: { path: { target_id: id } },
+        body,
+      }),
+    ),
+  );
+  const push = useDisplayMutation(
+    ({ id, allowDeleteForeign }: { id: string; allowDeleteForeign: boolean }) =>
+      unwrap(
+        api.POST("/api/v1/display/targets/{target_id}/push", {
+          params: { path: { target_id: id } },
+          body: { allow_delete_foreign: allowDeleteForeign },
+        }),
+      ),
+  );
+  return { create, update, remove, pair, setSource, push };
 }

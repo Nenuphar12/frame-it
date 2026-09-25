@@ -59,6 +59,19 @@ export interface ServerEvents {
   "entity.changed": { entity: string; id: string };
   "trash.purged": { photos: number; artworks: number; bytes: number };
   "trash.changed": { batch_id: string };
+  /** A push finished: what went to the TV, and what it refused to delete on its own. */
+  "display.pushed": {
+    target_id: string;
+    uploaded: number;
+    reused: number;
+    deleted_ours: number;
+    deleted_foreign: number;
+    foreign_remaining: number;
+    total: number;
+    slideshow_minutes: number | null;
+    first_content_id: string | null;
+    warnings: string[];
+  };
 }
 
 type EventName = keyof ServerEvents;
@@ -99,6 +112,7 @@ export function useServerEvents(enabled: boolean) {
       "entity.changed",
       "trash.changed",
       "trash.purged",
+      "display.pushed",
     ];
     const handlers = names.map((name) => {
       const handler = (message: MessageEvent<string>) => {
@@ -125,6 +139,9 @@ export function useServerEvents(enabled: boolean) {
           void qc.invalidateQueries({ queryKey: ["photos"] });
           void qc.invalidateQueries({ queryKey: ["artworks"] });
           void qc.invalidateQueries({ queryKey: ["collections"] });
+        }
+        if (name === "display.pushed") {
+          void qc.invalidateQueries({ queryKey: ["display"] });
         }
         if (name.startsWith("localsend.")) {
           void qc.invalidateQueries({ queryKey: ["localsend"] });

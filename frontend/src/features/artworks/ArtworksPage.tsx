@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { FileArchive, Frame, Heart, Search, Trash2 } from "lucide-react";
+import { Cast, FileArchive, Frame, Heart, Search, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -7,6 +7,7 @@ import type { ArtworkSort } from "@/api/client";
 import { useArtworks, useTrashActions, type ArtworkFilter } from "@/api/queries";
 import { ExportDialog } from "@/features/archive/ExportDialog";
 import { AddToCollectionMenu } from "@/features/collections/AddToCollectionMenu";
+import { ShowOnTvDialog } from "@/features/display/ShowOnTvDialog";
 import { FilterBar } from "@/features/library/FilterBar";
 import type { ChipFilter } from "@/features/library/filters";
 import { useSelection } from "@/features/photos/useSelection";
@@ -52,6 +53,7 @@ export function ArtworksPage({ favoritesOnly = false }: ArtworksPageProps) {
   const searchRef = useRef<HTMLInputElement>(null);
   const [collectionMenuOpen, setCollectionMenuOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [showingOnTv, setShowingOnTv] = useState(false);
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = artworks;
   const loadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
@@ -104,6 +106,9 @@ export function ArtworksPage({ favoritesOnly = false }: ArtworksPageProps) {
                   onOpenChange={setCollectionMenuOpen}
                   onDone={clear}
                 />
+                <Button size="sm" variant="ghost" onClick={() => setShowingOnTv(true)}>
+                  <Cast size={14} /> {t("display.showOnTv")}
+                </Button>
                 <Button size="sm" variant="ghost" onClick={() => setExporting(true)}>
                   <FileArchive size={14} /> {t("archive.exportSelection")}
                 </Button>
@@ -168,6 +173,13 @@ export function ArtworksPage({ favoritesOnly = false }: ArtworksPageProps) {
           onClose={() => setOpenId(null)}
         />
       )}
+      {/* The picked artworks, in the order they were picked — the TV plays exactly them. */}
+      <ShowOnTvDialog
+        open={showingOnTv}
+        onOpenChange={setShowingOnTv}
+        label={t("display.selectionLabel", { count: selectedInOrder.length })}
+        source={{ artwork_ids: selectedInOrder }}
+      />
       {/* A partial archive of the selection (docs/archive-format.md §12.1) — the same dialog the
           Backup page opens for the whole library. */}
       <ExportDialog

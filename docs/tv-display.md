@@ -60,7 +60,23 @@ again once the TV is awake.
 CLI, same service layer: `the_frame_v2 tv add|list|pair|status|push`, with
 `--collection`, `--favorites`, `--every`, `--shuffle`, `--yes-delete-others`.
 
-## 5. Testing
+## 5. UI
+
+- **TV** in the sidebar (`/display`): one card per TV — pair / **pair again** (a power cut clears
+  the TV's tokens, so re-pairing is a first-class action, not a recovery procedure), *Check the
+  TV* (a live probe: art mode, how many photos it holds, how many came from this app, whether the
+  slideshow runs), the interval (only the five the firmware accepts) and ordered/shuffle, and
+  *Send to the TV*.
+- **Show on the TV** on a collection and on a grid selection. The dialog says what a push means in
+  one sentence — the Frame plays everything in My Photos, so the set is all it can show — and
+  offers, unticked, *also remove photos this app did not send*, with the reason it matters: the TV
+  cannot give an image back.
+- When a push would remove somebody else's photos, the Display page asks again, naming the count,
+  with three ways out: cancel, keep them, remove them.
+- A push is a job: the toast says it started, `display.pushed` refreshes the page, and a failure
+  lands in `/activity` with its code (`tv_unreachable` and friends are translated).
+
+## 6. Testing
 
 `the_frame_v2.tv.FakeTv` implements the same `TvClient` protocol as the real client and encodes the
 firmware's behaviour — newest-first listing, `select_image` stopping the slideshow, `-7` for an
@@ -69,7 +85,7 @@ interval outside the accepted list, and the fact that starting a slideshow does 
 idempotence, one changed artwork replacing one image, foreign photos surviving a push, and an
 unreachable TV failing with a code. A test puts the fake on the context (`ctx.tv_factory`).
 
-## 6. Not done here
+## 7. Not done here
 
 Nothing rotates on a schedule from this app (the TV does that), no brightness/colour-temperature or
 art-mode toggling is written (read-only at most), and there is no "keep in sync" — a push is always

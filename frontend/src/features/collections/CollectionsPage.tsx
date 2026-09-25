@@ -1,5 +1,6 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
+  Cast,
   FileArchive,
   FolderMinus,
   FolderPlus,
@@ -31,6 +32,7 @@ import { Dialog } from "@/shared/ui/Dialog";
 import { EmptyState, PageHeader, Spinner } from "@/shared/ui/Misc";
 
 import { ExportDialog } from "@/features/archive/ExportDialog";
+import { ShowOnTvDialog } from "@/features/display/ShowOnTvDialog";
 
 import { AddToCollectionMenu } from "./AddToCollectionMenu";
 import { CollectionDialog } from "./CollectionDialog";
@@ -68,6 +70,7 @@ export function CollectionsPage() {
   const [confirmDelete, setConfirmDelete] = useState<Collection | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [showingOnTv, setShowingOnTv] = useState(false);
 
   const selected = rows.find((c) => c.id === selectedId) ?? null;
   const isManual = selected?.kind === "manual";
@@ -242,6 +245,9 @@ export function CollectionsPage() {
                     <FolderMinus size={14} /> {t("collections.removeItems", { count: picked.size })}
                   </Button>
                 )}
+                <Button size="sm" variant="ghost" onClick={() => setShowingOnTv(true)}>
+                  <Cast size={14} /> {t("display.showOnTv")}
+                </Button>
                 <Button size="sm" variant="ghost" onClick={() => setExporting(true)}>
                   <FileArchive size={14} /> {t("archive.exportTitle")}
                 </Button>
@@ -311,6 +317,17 @@ export function CollectionsPage() {
         </div>
       </div>
 
+      {/* The TV plays what a collection holds, in its manual order when it has one (§4). */}
+      <ShowOnTvDialog
+        open={showingOnTv}
+        onOpenChange={setShowingOnTv}
+        label={selected?.name ?? ""}
+        source={{
+          collection_id: selected?.id ?? null,
+          include_nested: includeNested,
+          sort: effectiveSort,
+        }}
+      />
       {/* A collection is a natural export selection: its artworks, their photos and their tags. */}
       <ExportDialog
         open={exporting}

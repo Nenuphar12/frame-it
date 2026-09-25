@@ -7,6 +7,7 @@ import { ArtworksPage } from "@/features/artworks/ArtworksPage";
 import { PairPage, SetupPage } from "@/features/auth/AuthPages";
 import { CollectionsPage } from "@/features/collections/CollectionsPage";
 import { DevicesPage } from "@/features/devices/DevicesPage";
+import { DisplayPage } from "@/features/display/DisplayPage";
 import { InboxPage } from "@/features/inbox/InboxPage";
 import { MobileBrowsePage } from "@/features/mobile/MobileBrowsePage";
 import { MobileUploadPage } from "@/features/mobile/MobileUploadPage";
@@ -65,6 +66,7 @@ const routeTree = rootRoute.addChildren([
     page("/trash", TrashPage),
     page("/activity", ActivityPage),
     page("/backup", BackupPage),
+    page("/display", DisplayPage),
     page("/devices", DevicesPage),
     page("/settings", SettingsPage),
   ]),

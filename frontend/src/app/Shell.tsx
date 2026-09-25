@@ -9,6 +9,7 @@ import {
   Keyboard,
   Layers,
   LayoutTemplate,
+  MonitorPlay,
   MonitorSmartphone,
   Search,
   Settings,
@@ -179,6 +180,12 @@ export function Shell() {
         run: go("/artworks"),
       },
       {
+        id: "go.display",
+        label: "commands.goDisplay",
+        group: "commands.groups.navigation",
+        run: go("/display"),
+      },
+      {
         id: "go.devices",
         label: "commands.goDevices",
         group: "commands.groups.navigation",
@@ -261,6 +268,7 @@ export function Shell() {
       countTone: "danger",
     },
     { to: "/backup", label: t("nav.backup"), icon: <Archive size={16} /> },
+    { to: "/display", label: t("nav.display"), icon: <MonitorPlay size={16} /> },
     { to: "/devices", label: t("nav.devices"), icon: <MonitorSmartphone size={16} /> },
     { to: "/settings", label: t("nav.settings"), icon: <Settings size={16} /> },
   ];
