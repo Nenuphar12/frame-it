@@ -18,9 +18,11 @@ app = typer.Typer(no_args_is_help=True, add_completion=False, help="the_frame_v2
 db_app = typer.Typer(no_args_is_help=True, help="Database maintenance")
 cache_app = typer.Typer(no_args_is_help=True, help="Cache maintenance")
 service_app = typer.Typer(no_args_is_help=True, help="Run the server at login (systemd / launchd)")
+tv_app = typer.Typer(no_args_is_help=True, help="The TV a set is shown on (docs/tv-display.md)")
 app.add_typer(db_app, name="db")
 app.add_typer(cache_app, name="cache")
 app.add_typer(service_app, name="service")
+app.add_typer(tv_app, name="tv")
 
 DataDir = Annotated[
     Path | None, typer.Option("--data-dir", envvar="THE_FRAME_V2_DATA_DIR", help="Library data dir")
@@ -350,3 +352,141 @@ def version() -> None:
 
 def main() -> None:
     app()
+
+
+# ---- TV -----------------------------------------------------------------------------------------
+
+
+def _display_ctx(data_dir: Path | None) -> Any:
+    from the_frame_v2.app import build_context
+
+    settings = _settings(data_dir)
+    _configure_logging(settings.log_level)
+    return build_context(settings)
+
+
+@tv_app.command("add")
+def tv_add(
+    host: Annotated[str, typer.Argument(help="The TV's IP address")],
+    name: Annotated[str, typer.Option("--name", help="What to call it")] = "The Frame",
+    data_dir: DataDir = None,
+) -> None:
+    """Register a TV. Pair it next — the TV must be ON for its dialog to appear."""
+    from the_frame_v2.services import display
+
+    ctx = _display_ctx(data_dir)
+    with ctx.db.session() as s:
+        target = display.create_target(s, name=name, host=host)
+        typer.echo(f"{target.id}  {target.name}  {target.host}")
+
+
+@tv_app.command("list")
+def tv_list(data_dir: DataDir = None) -> None:
+    """Every TV this library knows."""
+    from the_frame_v2.services import display
+
+    ctx = _display_ctx(data_dir)
+    with ctx.db.session() as s:
+        targets = display.list_targets(s)
+        if not targets:
+            typer.echo("No TV yet. Add one with `the_frame_v2 tv add <ip>`.")
+        for t in targets:
+            paired = "paired" if t.token else "NOT PAIRED"
+            shown = t.source_label or "no set"
+            typer.echo(
+                f"{t.id}  {t.name} ({t.host})  {paired}  {shown}  every {t.slideshow_minutes} min"
+            )
+
+
+@tv_app.command("pair")
+def tv_pair(
+    target_id: Annotated[str, typer.Argument(help="Target id (`tv list`)")],
+    data_dir: DataDir = None,
+) -> None:
+    """Ask the TV for a token: accept the prompt on screen. The TV must be ON, not in art mode."""
+    from the_frame_v2.services import display
+
+    ctx = _display_ctx(data_dir)
+    typer.echo("Accept the 'allow this device' prompt on the TV …")
+    with ctx.db.session() as s:
+        target = display.pair(s, target_id)
+        typer.echo(f"Paired with {target.name} ({target.host}).")
+
+
+@tv_app.command("status")
+def tv_status(
+    target_id: Annotated[str, typer.Argument(help="Target id (`tv list`)")],
+    data_dir: DataDir = None,
+) -> None:
+    """What the TV says right now, and how much of what it holds came from this app."""
+    from the_frame_v2.services import display
+
+    ctx = _display_ctx(data_dir)
+    with ctx.db.session() as s:
+        result = display.status(ctx, s, target_id)
+    info = result.info
+    typer.echo(f"{info.name or '?'} — {info.model or '?'} (art API {info.api_version or '?'})")
+    typer.echo(f"art mode: {'on' if info.art_mode else 'off'}")
+    typer.echo(f"my photos: {info.my_pictures} ({result.ours} from this app, {result.foreign} not)")
+    if info.slideshow_minutes:
+        kind = "ordered" if info.slideshow_ordered else "shuffled"
+        typer.echo(f"slideshow: every {info.slideshow_minutes} min, {kind}")
+    else:
+        typer.echo("slideshow: off")
+
+
+@tv_app.command("push")
+def tv_push(
+    target_id: Annotated[str, typer.Argument(help="Target id (`tv list`)")],
+    collection: Annotated[
+        str | None, typer.Option("--collection", help="Collection id to show")
+    ] = None,
+    favorites: Annotated[bool, typer.Option("--favorites", help="Show the Favorites view")] = False,
+    every: Annotated[
+        int | None, typer.Option("--every", help="Minutes between images (3, 15, 60, 720, 1440)")
+    ] = None,
+    shuffle: Annotated[bool, typer.Option("--shuffle", help="Shuffle instead of in order")] = False,
+    yes_delete_others: Annotated[
+        bool,
+        typer.Option(
+            "--yes-delete-others",
+            help="Delete photos on the TV this app did not upload (irreversible)",
+        ),
+    ] = False,
+    data_dir: DataDir = None,
+) -> None:
+    """Make the TV show a set. Without --collection/--favorites it re-pushes the current one."""
+    from the_frame_v2.services import display
+
+    ctx = _display_ctx(data_dir)
+    with ctx.db.session() as s:
+        if collection or favorites:
+            source: dict[str, Any] = {"sort": "manual" if collection else "created_desc"}
+            label = "Favorites"
+            if collection:
+                source["collection_id"] = collection
+                label = f"Collection {collection}"
+            if favorites:
+                source["favorite"] = True
+                source["sort"] = "created_desc"
+            display.set_source(s, target_id, source=source, label=label)
+        if every is not None or shuffle:
+            display.update_target(
+                s,
+                target_id,
+                slideshow_minutes=every,
+                slideshow_ordered=False if shuffle else None,
+            )
+    result = display.push(ctx, target_id, allow_delete_foreign=yes_delete_others)
+    typer.echo(
+        f"{result.total} artwork(s): {result.uploaded} uploaded, {result.reused} already there, "
+        f"{result.deleted_ours} removed."
+    )
+    if result.deleted_foreign:
+        typer.echo(f"{result.deleted_foreign} photo(s) not from this app were deleted.")
+    if result.foreign_remaining:
+        typer.echo(
+            f"WARNING: {result.foreign_remaining} photo(s) on the TV are not part of this set and "
+            "are still shown. Re-run with --yes-delete-others to remove them."
+        )
+    typer.echo(f"Slideshow: every {result.slideshow_minutes} min.")

@@ -1846,6 +1846,457 @@
         "title": "DeviceUpdateIn",
         "type": "object"
       },
+      "DisplayCapabilitiesOut": {
+        "description": "What this TV generation can do \u2014 measured, not assumed (`docs/tv-display.md`).",
+        "properties": {
+          "favourites": {
+            "default": false,
+            "title": "Favourites",
+            "type": "boolean"
+          },
+          "max_set": {
+            "title": "Max Set",
+            "type": "integer"
+          },
+          "scoped_slideshow": {
+            "default": false,
+            "title": "Scoped Slideshow",
+            "type": "boolean"
+          },
+          "slideshow_minutes": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Slideshow Minutes",
+            "type": "array"
+          },
+          "thumbnails": {
+            "default": false,
+            "title": "Thumbnails",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "slideshow_minutes",
+          "max_set"
+        ],
+        "title": "DisplayCapabilitiesOut",
+        "type": "object"
+      },
+      "DisplayPushIn": {
+        "properties": {
+          "allow_delete_foreign": {
+            "default": false,
+            "title": "Allow Delete Foreign",
+            "type": "boolean"
+          }
+        },
+        "title": "DisplayPushIn",
+        "type": "object"
+      },
+      "DisplayPushOut": {
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "title": "DisplayPushOut",
+        "type": "object"
+      },
+      "DisplaySourceIn": {
+        "description": "The set this TV should show \u2014 the same query shape the artwork grid uses.",
+        "properties": {
+          "artwork_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Artwork Ids",
+            "type": "array"
+          },
+          "collection_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection Id"
+          },
+          "favorite": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Favorite"
+          },
+          "filter": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter"
+          },
+          "include_nested": {
+            "default": false,
+            "title": "Include Nested",
+            "type": "boolean"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "sort": {
+            "default": "created_desc",
+            "title": "Sort",
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "title": "DisplaySourceIn",
+        "type": "object"
+      },
+      "DisplayStatusOut": {
+        "description": "What the TV reports right now, next to what this app believes it put there.",
+        "properties": {
+          "art_mode": {
+            "title": "Art Mode",
+            "type": "boolean"
+          },
+          "current_content_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Content Id"
+          },
+          "foreign": {
+            "title": "Foreign",
+            "type": "integer"
+          },
+          "my_pictures": {
+            "title": "My Pictures",
+            "type": "integer"
+          },
+          "ours": {
+            "title": "Ours",
+            "type": "integer"
+          },
+          "slideshow_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slideshow Minutes"
+          },
+          "slideshow_ordered": {
+            "default": false,
+            "title": "Slideshow Ordered",
+            "type": "boolean"
+          },
+          "store_items": {
+            "title": "Store Items",
+            "type": "integer"
+          },
+          "target": {
+            "$ref": "#/components/schemas/DisplayTargetOut"
+          }
+        },
+        "required": [
+          "target",
+          "art_mode",
+          "my_pictures",
+          "store_items",
+          "ours",
+          "foreign"
+        ],
+        "title": "DisplayStatusOut",
+        "type": "object"
+      },
+      "DisplayTargetIn": {
+        "properties": {
+          "host": {
+            "maxLength": 64,
+            "minLength": 3,
+            "title": "Host",
+            "type": "string"
+          },
+          "name": {
+            "default": "",
+            "maxLength": 128,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "host"
+        ],
+        "title": "DisplayTargetIn",
+        "type": "object"
+      },
+      "DisplayTargetListOut": {
+        "properties": {
+          "targets": {
+            "items": {
+              "$ref": "#/components/schemas/DisplayTargetOut"
+            },
+            "title": "Targets",
+            "type": "array"
+          }
+        },
+        "required": [
+          "targets"
+        ],
+        "title": "DisplayTargetListOut",
+        "type": "object"
+      },
+      "DisplayTargetOut": {
+        "properties": {
+          "api_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Version"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "host": {
+            "title": "Host",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "item_count": {
+            "title": "Item Count",
+            "type": "integer"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error"
+          },
+          "last_pushed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Pushed At"
+          },
+          "last_seen_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Seen At"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "paired": {
+            "title": "Paired",
+            "type": "boolean"
+          },
+          "render_format": {
+            "title": "Render Format",
+            "type": "string"
+          },
+          "slideshow_minutes": {
+            "title": "Slideshow Minutes",
+            "type": "integer"
+          },
+          "slideshow_ordered": {
+            "title": "Slideshow Ordered",
+            "type": "boolean"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "source_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Label"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "host",
+          "state",
+          "slideshow_minutes",
+          "slideshow_ordered",
+          "render_format",
+          "paired",
+          "item_count",
+          "created_at"
+        ],
+        "title": "DisplayTargetOut",
+        "type": "object"
+      },
+      "DisplayTargetUpdateIn": {
+        "properties": {
+          "host": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Host"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "render_format": {
+            "anyOf": [
+              {
+                "enum": [
+                  "jpg",
+                  "png"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Render Format"
+          },
+          "slideshow_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slideshow Minutes"
+          },
+          "slideshow_ordered": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slideshow Ordered"
+          }
+        },
+        "title": "DisplayTargetUpdateIn",
+        "type": "object"
+      },
       "ExportOut": {
         "description": "An export job. The file is downloadable once `state` is `done`.",
         "properties": {
@@ -6808,6 +7259,363 @@
         "summary": "Update Device",
         "tags": [
           "devices"
+        ]
+      }
+    },
+    "/api/v1/display/capabilities": {
+      "get": {
+        "description": "What a Frame can actually do, so the UI never offers something the TV refuses.",
+        "operationId": "capabilities_api_v1_display_capabilities_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisplayCapabilitiesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Capabilities",
+        "tags": [
+          "display"
+        ]
+      }
+    },
+    "/api/v1/display/targets": {
+      "get": {
+        "operationId": "list_targets_api_v1_display_targets_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisplayTargetListOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Targets",
+        "tags": [
+          "display"
+        ]
+      },
+      "post": {
+        "operationId": "create_target_api_v1_display_targets_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisplayTargetIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisplayTargetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Target",
+        "tags": [
+          "display"
+        ]
+      }
+    },
+    "/api/v1/display/targets/{target_id}": {
+      "delete": {
+        "operationId": "delete_target_api_v1_display_targets__target_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "target_id",
+            "required": true,
+            "schema": {
+              "title": "Target Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Target",
+        "tags": [
+          "display"
+        ]
+      },
+      "patch": {
+        "operationId": "update_target_api_v1_display_targets__target_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "target_id",
+            "required": true,
+            "schema": {
+              "title": "Target Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisplayTargetUpdateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisplayTargetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Target",
+        "tags": [
+          "display"
+        ]
+      }
+    },
+    "/api/v1/display/targets/{target_id}/pair": {
+      "post": {
+        "description": "Ask the TV for a token. It must be **on** \u2014 in art mode it cannot draw its own dialog.\n\nPairing blocks until the prompt is accepted, so it runs off the event loop.",
+        "operationId": "pair_api_v1_display_targets__target_id__pair_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "target_id",
+            "required": true,
+            "schema": {
+              "title": "Target Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisplayTargetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pair",
+        "tags": [
+          "display"
+        ]
+      }
+    },
+    "/api/v1/display/targets/{target_id}/push": {
+      "post": {
+        "description": "Queue a push. Uploading a set takes minutes, so the work happens in the `display` lane.",
+        "operationId": "push_api_v1_display_targets__target_id__push_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "target_id",
+            "required": true,
+            "schema": {
+              "title": "Target Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisplayPushIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisplayPushOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Push",
+        "tags": [
+          "display"
+        ]
+      }
+    },
+    "/api/v1/display/targets/{target_id}/source": {
+      "put": {
+        "operationId": "set_source_api_v1_display_targets__target_id__source_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "target_id",
+            "required": true,
+            "schema": {
+              "title": "Target Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisplaySourceIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisplayTargetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Source",
+        "tags": [
+          "display"
+        ]
+      }
+    },
+    "/api/v1/display/targets/{target_id}/status": {
+      "get": {
+        "operationId": "status_api_v1_display_targets__target_id__status_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "target_id",
+            "required": true,
+            "schema": {
+              "title": "Target Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisplayStatusOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Status",
+        "tags": [
+          "display"
         ]
       }
     },

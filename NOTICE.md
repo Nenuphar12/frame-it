@@ -28,6 +28,10 @@ Bruno BD and Jamo Images.
 
 ## Runtime dependencies
 
+Talking to a Samsung Frame uses [samsungtvws](https://github.com/xchwarze/samsung-tv-ws-api)
+(LGPL-3.0-or-later), imported unmodified as a library; the art-mode protocol it implements is
+reverse-engineered, not documented by Samsung.
+
 Image processing is done by [libvips](https://www.libvips.org/) (LGPL-2.1-or-later) through
 `pyvips`; the wheels installed by `pyvips[binary]` carry their own bundled codecs and notices.
 The rest of the Python and JavaScript dependencies are permissively licensed (MIT / BSD / Apache-2.0)

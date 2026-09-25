@@ -702,6 +702,29 @@ artwork → collection → export) completes without reading code.
 
 ---
 
+### Phase 12 — Display on the TV ✅ backend (2026-09-25, `docs/tv-display.md`)
+
+Measured first (`docs/research/tv-display.md`, `scripts/tv_probe.py`), then built. The Frame's
+slideshow plays a whole category and cannot be scoped: favourites refuse the API, a sent
+`content_list` is ignored, no per-item request exists. So a push **mirrors** — the TV's My Photos
+becomes the set — and the app never deletes what it did not upload unless told to.
+
+| Stage | Contents | Status |
+|---|---|---|
+| 12.1 | `tv/` (`TvClient`, `SamsungTvClient`, `FakeTv`), pairing on the remote-control channel, `display_targets` (migration `0009`), `the_frame_v2 tv add|list|pair|status` | ✅ |
+| 12.2 | `display_target_items` (`(artwork, render_hash) → content_id`), the push (render → upload in reverse → delete ours → optionally delete foreign → stop/select/start), `display` job lane, `/display` API, `tv push` | ✅ |
+| 12.3 | UI: Settings → Display (pair, re-pair, state, interval, what is on the TV), "Show on the TV" on a collection / grid selection / `/m/browse` | ☐ |
+| 12.4 | Polish: "show this now" (it stops the rotation — say so), user-guide section, gotchas | ☐ |
+
+AC met by 12.1–12.2: a push of a 10-artwork collection uploads 10 then 0 on a re-push; editing one
+artwork replaces exactly one image; a TV holding somebody else's photos keeps them unless
+`allow_delete_foreign`; an unreachable TV fails the job with `tv_unreachable` and shows in
+`/activity`. Intervals are the five the firmware accepts (3/15/60/720/1440 min).
+
+Not verified on hardware yet: deleting somebody else's photos (the user had not recovered their
+originals), and whether the pairing token survives a TV power cut — hence a re-pair action in the
+API from day one.
+
 ## 15. Cross-cutting conventions & Definition of Done
 
 ### Conventions
@@ -747,6 +770,11 @@ artwork → collection → export) completes without reading code.
 
 ### Open questions (to decide at the indicated phase)
 
+- Displaying a chosen set on the TV (out of scope for v1, studied in `docs/research/tv-display.md`,
+  revised 2026-09-25 for the actual unit — a 2025 55" Frame, `TQ55LS03FAUXXC`): the recommendation is
+  the local art-mode WebSocket with **the set mirrored into My Photos** and the TV's own slideshow
+  doing the rotation (so it survives the server being off), USB as the fallback. Implementation waits
+  on the S5a–S5d spikes on the real TV — the one real risk is `send_image` on 2025 firmware.
 - Final project name (kept as the placeholder `the_frame_v2` by decision on 2026-09-24; the
   rename touches the package, the `THE_FRAME_V2_*` env prefix, the data dir and the error URLs,
   and is one mechanical commit whenever it is wanted).
@@ -761,6 +789,6 @@ artwork → collection → export) completes without reading code.
 
 ### Out of scope for v1
 
-TV connection/sync, HEIC/HEIF, RAW/TIFF/WebP inputs, AI upscaling, linear-light resampling, portrait canvas, multi-user
+HEIC/HEIF, RAW/TIFF/WebP inputs, AI upscaling, linear-light resampling, portrait canvas, multi-user
 accounts, native mobile apps, PWA/offline, frontend test suite, CI, HDR tone mapping, face/saliency smart crop,
 maps view, custom user fonts/textures.

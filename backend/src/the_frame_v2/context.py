@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -15,8 +16,10 @@ from the_frame_v2.services.geocode import Geocoder
 from the_frame_v2.storage import Storage
 
 if TYPE_CHECKING:
+    from the_frame_v2.db.models import DisplayTarget
     from the_frame_v2.localsend.runner import LocalSendRunner
     from the_frame_v2.services.localsend import LocalSendHub
+    from the_frame_v2.tv import TvClient
 
 
 @dataclass(slots=True)
@@ -32,3 +35,5 @@ class AppContext:
     render_gate: RenderGate
     localsend_runner: LocalSendRunner | None = None
     """Set while the LocalSend receiver runs (app lifespan)."""
+    tv_factory: Callable[[DisplayTarget], TvClient] | None = None
+    """How `services/display.py` reaches a TV; tests put a `FakeTv` here."""

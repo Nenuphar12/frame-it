@@ -19,6 +19,7 @@ from the_frame_v2.api import (
     auth,
     colors,
     devices,
+    display,
     events,
     library,
     localsend,
@@ -52,6 +53,9 @@ from the_frame_v2.services import (
     templates,
 )
 from the_frame_v2.services import devices as devices_service
+from the_frame_v2.services import (
+    display as display_service,
+)
 from the_frame_v2.services import trash as trash_service
 from the_frame_v2.services import uploads as uploads_service
 from the_frame_v2.services.geocode import Geocoder
@@ -70,7 +74,14 @@ def build_context(settings: Settings) -> AppContext:
     upgrade_to_head(db.engine)
     broker = EventBroker()
     jobs = JobQueue(
-        db, broker, lanes={"ingest": settings.ingest_workers, "render": settings.render_workers}
+        db,
+        broker,
+        lanes={
+            "ingest": settings.ingest_workers,
+            "render": settings.render_workers,
+            # One worker: a push owns the TV's websocket for its whole duration.
+            "display": 1,
+        },
     )
     ctx = AppContext(
         settings=settings,
@@ -90,6 +101,7 @@ def build_context(settings: Settings) -> AppContext:
     jobs.schedule_every(trash_service.PURGE_JOB, trash_service.PURGE_INTERVAL_SECONDS, {})
     jobs.register(archive_export.EXPORT_JOB, archive_export.export_job(ctx), lane="ingest")
     jobs.register(archive_import.STAGE_JOB, archive_import.stage_job(ctx), lane="ingest")
+    jobs.register(display_service.PUSH_JOB, display_service.push_job(ctx), lane="display")
     jobs.register(archive_export.SWEEP_JOB, archive_export.sweep_job(ctx), lane="ingest")
     jobs.schedule_every(archive_export.SWEEP_JOB, archive_export.SWEEP_INTERVAL_SECONDS, {})
     with db.session() as s:
@@ -178,6 +190,7 @@ def create_app(settings: Settings, *, start_workers: bool = True) -> FastAPI:
         archive,
         jobs_router,
         templates_router,
+        display,
         rendering,
         colors,
         events,

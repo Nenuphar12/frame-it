@@ -384,6 +384,66 @@ class LocalSendDevice(Base):
     decided_at: Mapped[datetime | None]
 
 
+class DisplayTarget(Base):
+    """A TV this library can push a set to (Phase 12, `docs/tv-display.md`).
+
+    `source` is an artwork query (the filter AST plus a sort), so a collection, a smart collection,
+    Favorites and an ad-hoc selection are all the same thing. `token` is a credential for the TV:
+    it lives here, in the data dir, and never leaves it.
+    """
+
+    __tablename__ = "display_targets"
+
+    id: Mapped[str] = _id()
+    name: Mapped[str] = mapped_column(String(128))
+    host: Mapped[str] = mapped_column(String(64))
+    mac: Mapped[str | None] = mapped_column(String(32))
+    token: Mapped[str | None] = mapped_column(Text)
+    model: Mapped[str | None] = mapped_column(String(128))
+    api_version: Mapped[str | None] = mapped_column(String(32))
+    source: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    """The query the last push used: {filter, collection_id, include_nested, favorite, sort}."""
+    source_label: Mapped[str | None] = mapped_column(String(256))
+    """What to call it in the UI ("Collection: Iceland 2026")."""
+    slideshow_minutes: Mapped[int] = mapped_column(Integer, default=60)
+    """One of `tv.SLIDESHOW_MINUTES`; anything else the TV refuses."""
+    slideshow_ordered: Mapped[bool] = mapped_column(Boolean, default=True)
+    render_format: Mapped[str] = mapped_column(String(8), default="jpg")
+    state: Mapped[str] = mapped_column(String(16), default="new")
+    """new | ready | pushing | error"""
+    last_error: Mapped[str | None] = mapped_column(String(64))
+    """Problem code of the last failure (`tv_unreachable`, `tv_unauthorized`, …)."""
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    last_pushed_at: Mapped[datetime | None]
+    last_seen_at: Mapped[datetime | None]
+
+
+class DisplayTargetItem(Base):
+    """One render this app put on a TV: `(artwork, render_hash) -> content_id`.
+
+    The map is what makes a push idempotent (re-pushing uploads nothing) and what keeps the app
+    honest: an item on the TV that is not in this table was not put there by us, and is never
+    deleted without the user saying so.
+    """
+
+    __tablename__ = "display_target_items"
+
+    id: Mapped[str] = _id()
+    target_id: Mapped[str] = mapped_column(ForeignKey("display_targets.id", ondelete="CASCADE"))
+    artwork_id: Mapped[str] = mapped_column(String(36))
+    render_hash: Mapped[str] = mapped_column(String(64))
+    content_id: Mapped[str] = mapped_column(String(64))
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    """Index in the pushed set, 0 first — the order the TV was asked to play."""
+    uploaded_at: Mapped[datetime] = mapped_column(default=utcnow)
+
+    __table_args__ = (
+        Index("ix_display_items_target", "target_id", "position"),
+        Index("uq_display_items_content", "target_id", "content_id", unique=True),
+        Index("ix_display_items_artwork", "target_id", "artwork_id"),
+    )
+
+
 # ---- Infrastructure ---------------------------------------------------------------------------
 
 

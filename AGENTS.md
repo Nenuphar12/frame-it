@@ -55,6 +55,18 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
   README, `CONTRIBUTING.md`, `NOTICE.md`); a **security review** (`docs/security.md`) with clean
   `pip-audit`/`pnpm audit` runs. Licence: **MIT**; the name stays the placeholder by decision.
 - **Next: nothing planned.** `docs/PLAN.md` §16 keeps the open questions (the rename above all).
+- **Phase 12 (2026-09-25, `docs/tv-display.md`)**: **display on the TV** — a `tv/` client for the
+  Frame's art channel (pairing on the remote-control channel, upload/delete/select/slideshow) with
+  a `FakeTv` that encodes the firmware's real behaviour; `display_targets` + `display_target_items`
+  (migration `0009`) mapping `(artwork, render_hash) → content_id`; `services/display.py` pushing a
+  set in the `display` lane; `/display` API and `the_frame_v2 tv add|list|pair|status|push`. The
+  Frame's slideshow **cannot be scoped to a subset** (measured: favourites refuse, `content_list`
+  is ignored, no per-item request), so a push **mirrors** — and never deletes anything this app did
+  not upload without `allow_delete_foreign`. Intervals are 3/15/60/720/1440 min; uploads go in
+  reverse because the TV lists newest first; a push is stop → select → start because `select_image`
+  stops a running slideshow. Measurements: `docs/research/tv-display.md`; probe: `scripts/tv_probe.py`.
+- **Next: the display UI** (Settings → Display, "Show on the TV" on a collection/selection) — the
+  backend and CLI are done, the browser side is not.
 - Verified by the user on real hardware (2026-09-17): Android uploads (both pickers keep full quality but
   Android zeroes GPS → no place; see `docs/research/phone-uploads.md`), Docker image build/run/persistence.
 
@@ -92,10 +104,11 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `…/context.py` | `AppContext` service container (`app.state.ctx`) |
 | `…/api/` | Thin routers + `schemas.py` (Pydantic API models = OpenAPI source) + `deps.py` (auth deps); `templates.py` = styles/layouts CRUD, usage, push update, template files; `library.py` = tags + collections + `POST /filters/validate`; `trash.py` = preview/trash/restore/purge; `archive.py` = exports + imports; `jobs.py` = the activity centre (list/retry/dismiss) |
 | `…/auth/` | `principal.py` (cookie/localhost → role), `middleware.py` (Host/CSRF/headers), `ratelimit.py` |
-| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos`, `tags`, `geocode`, `artworks` (create/save/snapshots), `render` (cache, jobs, region), `templates` (presets, CRUD, template files, artwork defaults; the artwork-writing half — apply/push update — is in `artworks`), `recipes` (the bundled composition catalogue, no DB), `colors` (photo palette, swatches, curated presets), `library` (the filter compiler + the artwork listing), `collections` (tree, items, smart filters), `tags` (rename/merge/delete), `search` (FTS index), `trash` (soft delete, cascade, restore, purge), `archive_export` (the `.tfarchive` writer + the rendered-image ZIP), `archive_import` (receive, validate, classify), `archive_apply` (the import transaction and its id maps), `jobs_admin` (what failed, and running it again) |
+| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos`, `tags`, `geocode`, `artworks` (create/save/snapshots), `render` (cache, jobs, region), `templates` (presets, CRUD, template files, artwork defaults; the artwork-writing half — apply/push update — is in `artworks`), `recipes` (the bundled composition catalogue, no DB), `colors` (photo palette, swatches, curated presets), `library` (the filter compiler + the artwork listing), `collections` (tree, items, smart filters), `tags` (rename/merge/delete), `search` (FTS index), `trash` (soft delete, cascade, restore, purge), `archive_export` (the `.tfarchive` writer + the rendered-image ZIP), `archive_import` (receive, validate, classify), `archive_apply` (the import transaction and its id maps), `display` (display targets: pair, status, and the push that mirrors a set onto a TV), `jobs_admin` (what failed, and running it again) |
 | `…/domain/` | PURE: `document` (artwork document v1 + the `composition` block + reference checks), `geometry`, `quality` (tiers), `placement`, `constraints` (editor solver §7.3), `alternatives` (§7.6), `arrange` (align/distribute/new slot, §7.7), `composition` (recipe trees, the parametric solver and `apply` = what it writes into a document, `docs/simple-editor.md` §3), `templates` (style/layout docs, `restyle`/`relayout`/save-as, `build_composition_document`), `filters` (the library filter AST, `docs/data-model.md` §5.2), `archive` (the archive's records, file layout and member-name safety, `docs/archive-format.md`) |
 | `…/imaging/` | `sniff` (magic bytes), `decode` (the only pixel access), `metadata` (EXIF/ICC), `fingerprint` (hash ignoring EXIF), `capabilities`, `render` (the renderer), `palette` (OKLab k-means), `assets` (fonts/textures catalog) |
 | `…/assets/` | `geonames/`, `fonts/` (OFL, `scripts/build_fonts.py`), `textures/` (CC0, `scripts/generate_textures.py`), `presets/` (built-in styles/layouts + `recipes.json`) |
+| `…/tv/` | Samsung Frame art channel: `client.py` (`TvClient` + `SamsungTvClient` over `samsungtvws`, pairing, `SLIDESHOW_MINUTES`), `fake.py` (`FakeTv` — the firmware's quirks, used by every test) |
 | `…/localsend/` | LocalSend v2 receiver: `app.py` (protocol routes, own TLS port), `discovery.py` (multicast), `identity.py` (cert/fingerprint), `client.py` (outgoing TLS), `runner.py` (lifespan); logic in `services/localsend.py`, admin API `api/localsend.py` |
 | `…/jobs/` | `queue.py` persistent in-process job queue (lanes, retries, coalescing); `gate.py` render concurrency |
 | `…/events.py` | Thread-safe SSE broker (`/api/v1/events`) |
@@ -105,7 +118,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `…/assets/geonames/` | Offline place dataset (built by `scripts/build_geonames.py`, CC BY 4.0) |
 | `backend/tests/` | `unit/`, `api/`, `golden/` (reference PNGs in `refs/`); fixtures & helpers in `conftest.py` (`make_jpeg`, `pair`, `upload_bytes`) |
 | `conformance/geometry/` | Shared JSON fixtures: Python domain ↔ `frontend/src/editor/core` |
-| `scripts/` | `build_geonames.py`, `build_fonts.py`, `generate_textures.py`, `bench_render.py` (time **and** peak RSS), `bench_library.py` (§8.6 budgets), `seed_library.py`, `render_parity/` (S3 page) |
+| `scripts/` | `build_geonames.py`, `build_fonts.py`, `generate_textures.py`, `bench_render.py` (time **and** peak RSS), `bench_library.py` (§8.6 budgets), `seed_library.py`, `render_parity/` (S3 page), `tv_probe.py` (S5 spike: probes the Frame's art channel, `--fake` self-tests it without hardware — `docs/research/tv-display.md`) |
 | `frontend/src/api/` | `client.ts` (openapi-fetch + `ApiError`), `queries.ts` (TanStack Query hooks), `events.ts` (SSE), generated `schema.d.ts` |
 | `frontend/src/app/` | `router.tsx`, `AuthGate.tsx` (role routing), `Shell.tsx` (sidebar), `commands.ts` (shortcuts/palette registry), `theme.ts` |
 | `frontend/src/editor/core/` | PURE TS mirror of `domain/` (`geometry`, `quality`, `placement`, `constraints`, `alternatives`, `arrange`, `composition`, `templates`) + `snapping.ts` and `bounds.ts` (client-only) and `document.ts` (the document with every optional field filled in); relative imports with `.ts` extension (run by Node in `scripts/conformance.ts`) |
@@ -177,7 +190,10 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
     or the slot is built as if it were empty (crop = the slot's shape instead of the photo's).
 14. A failure is never silent: a mutation either renders its own (`meta: { silentError: true }`) or the
     `MutationCache` in `main.tsx` raises a toast. A job that fails reaches `/activity` through `jobs.code`.
-15. Colour is a token, never a literal, and a new pair must pass AA (4.5:1 for text, 3:1 for a control's
+15. A TV only loses what the user agreed to lose: the app deletes a `content_id` it did not
+    upload **only** when the caller passed `allow_delete_foreign`, because the art channel cannot
+    give an image back (`docs/tv-display.md`).
+16. Colour is a token, never a literal, and a new pair must pass AA (4.5:1 for text, 3:1 for a control's
     boundary — `--color-border-strong`) in **both** themes.
 
 ## Conventions
@@ -198,6 +214,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 `docs/geometry-and-quality.md` · `docs/rendering-spec.md` · `docs/security.md` ·
 `docs/archive-format.md` (Phase 10: the archive, the dry run, the policies) ·
 `docs/user-guide.md` (phase 11: install, pairing, tiers, troubleshooting, settings) ·
+`docs/tv-display.md` (Phase 12: the TV, what it allows, and how a push works) ·
 `docs/schemas/` (generated) · `docs/adr/` · `docs/research/` · `NOTICE.md` (third-party notices) ·
 `docs/gotchas.md` (the subsystem-specific ones) · `CONTRIBUTING.md` · `LICENSE` (MIT)
 

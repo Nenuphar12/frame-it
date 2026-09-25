@@ -17,6 +17,7 @@ dependencies = [
     "pydantic>=2.13.5",
     "pydantic-settings>=2.15.0",
     "pyvips[binary]>=3.2.0",
+    "samsungtvws>=3.0.6",
     "sqlalchemy>=2",
     "sse-starlette>=3.4.11",
     "typer>=0.27.2",
@@ -59,7 +60,7 @@ plugins = ["pydantic.mypy"]
 exclude = ["src/the_frame_v2/db/migrations/"]
 
 [[tool.mypy.overrides]]
-module = ["pyvips", "pyvips.*"]
+module = ["pyvips", "pyvips.*", "samsungtvws", "samsungtvws.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

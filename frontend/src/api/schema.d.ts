@@ -486,6 +486,138 @@ export interface paths {
         patch: operations["update_device_api_v1_devices__device_id__patch"];
         trace?: never;
     };
+    "/api/v1/display/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Capabilities
+         * @description What a Frame can actually do, so the UI never offers something the TV refuses.
+         */
+        get: operations["capabilities_api_v1_display_capabilities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/display/targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Targets */
+        get: operations["list_targets_api_v1_display_targets_get"];
+        put?: never;
+        /** Create Target */
+        post: operations["create_target_api_v1_display_targets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/display/targets/{target_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Target */
+        delete: operations["delete_target_api_v1_display_targets__target_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Target */
+        patch: operations["update_target_api_v1_display_targets__target_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/display/targets/{target_id}/pair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pair
+         * @description Ask the TV for a token. It must be **on** — in art mode it cannot draw its own dialog.
+         *
+         *     Pairing blocks until the prompt is accepted, so it runs off the event loop.
+         */
+        post: operations["pair_api_v1_display_targets__target_id__pair_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/display/targets/{target_id}/push": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Push
+         * @description Queue a push. Uploading a set takes minutes, so the work happens in the `display` lane.
+         */
+        post: operations["push_api_v1_display_targets__target_id__push_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/display/targets/{target_id}/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Source */
+        put: operations["set_source_api_v1_display_targets__target_id__source_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/display/targets/{target_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_v1_display_targets__target_id__status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events": {
         parameters: {
             query?: never;
@@ -2388,6 +2520,170 @@ export interface components {
             name?: string | null;
             /** Role */
             role?: ("admin" | "uploader") | null;
+        };
+        /**
+         * DisplayCapabilitiesOut
+         * @description What this TV generation can do — measured, not assumed (`docs/tv-display.md`).
+         */
+        DisplayCapabilitiesOut: {
+            /**
+             * Favourites
+             * @default false
+             */
+            favourites: boolean;
+            /** Max Set */
+            max_set: number;
+            /**
+             * Scoped Slideshow
+             * @default false
+             */
+            scoped_slideshow: boolean;
+            /** Slideshow Minutes */
+            slideshow_minutes: number[];
+            /**
+             * Thumbnails
+             * @default false
+             */
+            thumbnails: boolean;
+        };
+        /** DisplayPushIn */
+        DisplayPushIn: {
+            /**
+             * Allow Delete Foreign
+             * @default false
+             */
+            allow_delete_foreign: boolean;
+        };
+        /** DisplayPushOut */
+        DisplayPushOut: {
+            /** Job Id */
+            job_id: string;
+        };
+        /**
+         * DisplaySourceIn
+         * @description The set this TV should show — the same query shape the artwork grid uses.
+         */
+        DisplaySourceIn: {
+            /** Artwork Ids */
+            artwork_ids?: string[];
+            /** Collection Id */
+            collection_id?: string | null;
+            /** Favorite */
+            favorite?: boolean | null;
+            /** Filter */
+            filter?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Include Nested
+             * @default false
+             */
+            include_nested: boolean;
+            /** Label */
+            label?: string | null;
+            /**
+             * Sort
+             * @default created_desc
+             */
+            sort: string;
+            /** Status */
+            status?: string | null;
+        };
+        /**
+         * DisplayStatusOut
+         * @description What the TV reports right now, next to what this app believes it put there.
+         */
+        DisplayStatusOut: {
+            /** Art Mode */
+            art_mode: boolean;
+            /** Current Content Id */
+            current_content_id?: string | null;
+            /** Foreign */
+            foreign: number;
+            /** My Pictures */
+            my_pictures: number;
+            /** Ours */
+            ours: number;
+            /** Slideshow Minutes */
+            slideshow_minutes?: number | null;
+            /**
+             * Slideshow Ordered
+             * @default false
+             */
+            slideshow_ordered: boolean;
+            /** Store Items */
+            store_items: number;
+            target: components["schemas"]["DisplayTargetOut"];
+        };
+        /** DisplayTargetIn */
+        DisplayTargetIn: {
+            /** Host */
+            host: string;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+        };
+        /** DisplayTargetListOut */
+        DisplayTargetListOut: {
+            /** Targets */
+            targets: components["schemas"]["DisplayTargetOut"][];
+        };
+        /** DisplayTargetOut */
+        DisplayTargetOut: {
+            /** Api Version */
+            api_version?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Host */
+            host: string;
+            /** Id */
+            id: string;
+            /** Item Count */
+            item_count: number;
+            /** Last Error */
+            last_error?: string | null;
+            /** Last Pushed At */
+            last_pushed_at?: string | null;
+            /** Last Seen At */
+            last_seen_at?: string | null;
+            /** Model */
+            model?: string | null;
+            /** Name */
+            name: string;
+            /** Paired */
+            paired: boolean;
+            /** Render Format */
+            render_format: string;
+            /** Slideshow Minutes */
+            slideshow_minutes: number;
+            /** Slideshow Ordered */
+            slideshow_ordered: boolean;
+            /** Source */
+            source?: {
+                [key: string]: unknown;
+            } | null;
+            /** Source Label */
+            source_label?: string | null;
+            /** State */
+            state: string;
+        };
+        /** DisplayTargetUpdateIn */
+        DisplayTargetUpdateIn: {
+            /** Host */
+            host?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Render Format */
+            render_format?: ("jpg" | "png") | null;
+            /** Slideshow Minutes */
+            slideshow_minutes?: number | null;
+            /** Slideshow Ordered */
+            slideshow_ordered?: boolean | null;
         };
         /**
          * ExportOut
@@ -4713,6 +5009,275 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeviceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    capabilities_api_v1_display_capabilities_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisplayCapabilitiesOut"];
+                };
+            };
+        };
+    };
+    list_targets_api_v1_display_targets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisplayTargetListOut"];
+                };
+            };
+        };
+    };
+    create_target_api_v1_display_targets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DisplayTargetIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisplayTargetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_target_api_v1_display_targets__target_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                target_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_target_api_v1_display_targets__target_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                target_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DisplayTargetUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisplayTargetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pair_api_v1_display_targets__target_id__pair_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                target_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisplayTargetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    push_api_v1_display_targets__target_id__push_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                target_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DisplayPushIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisplayPushOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_source_api_v1_display_targets__target_id__source_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                target_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DisplaySourceIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisplayTargetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_api_v1_display_targets__target_id__status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                target_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisplayStatusOut"];
                 };
             };
             /** @description Validation Error */

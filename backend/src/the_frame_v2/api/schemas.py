@@ -856,3 +856,91 @@ class JobRetryOut(ApiModel):
 
 class JobDismissAllOut(ApiModel):
     dismissed: int
+
+
+# ---- Display targets (Phase 12) ----------------------------------------------------------------
+
+
+class DisplayTargetIn(BaseModel):
+    name: str = Field(default="", max_length=128)
+    host: str = Field(min_length=3, max_length=64)
+
+
+class DisplayTargetUpdateIn(BaseModel):
+    name: str | None = Field(default=None, max_length=128)
+    host: str | None = Field(default=None, max_length=64)
+    slideshow_minutes: int | None = None
+    """One of the intervals the TV accepts (`GET /display/capabilities`)."""
+    slideshow_ordered: bool | None = None
+    render_format: Literal["jpg", "png"] | None = None
+
+
+class DisplaySourceIn(BaseModel):
+    """The set this TV should show — the same query shape the artwork grid uses."""
+
+    filter: dict[str, Any] | None = None
+    collection_id: str | None = None
+    include_nested: bool = False
+    favorite: bool | None = None
+    status: str | None = None
+    sort: str = "created_desc"
+    artwork_ids: list[str] = Field(default_factory=list, max_length=200)
+    label: str | None = Field(default=None, max_length=256)
+
+
+class DisplayPushIn(BaseModel):
+    allow_delete_foreign: bool = False
+    """Delete items on the TV this app did not upload. The UI asks first, every time."""
+
+
+class DisplayTargetOut(ApiModel):
+    id: str
+    name: str
+    host: str
+    model: str | None = None
+    api_version: str | None = None
+    state: str
+    last_error: str | None = None
+    source_label: str | None = None
+    source: dict[str, Any] | None = None
+    slideshow_minutes: int
+    slideshow_ordered: bool
+    render_format: str
+    paired: bool
+    item_count: int
+    created_at: datetime
+    last_pushed_at: datetime | None = None
+    last_seen_at: datetime | None = None
+
+
+class DisplayTargetListOut(ApiModel):
+    targets: list[DisplayTargetOut]
+
+
+class DisplayStatusOut(ApiModel):
+    """What the TV reports right now, next to what this app believes it put there."""
+
+    target: DisplayTargetOut
+    art_mode: bool
+    my_pictures: int
+    store_items: int
+    ours: int
+    foreign: int
+    slideshow_minutes: int | None = None
+    slideshow_ordered: bool = False
+    current_content_id: str | None = None
+
+
+class DisplayPushOut(ApiModel):
+    job_id: str
+
+
+class DisplayCapabilitiesOut(ApiModel):
+    """What this TV generation can do — measured, not assumed (`docs/tv-display.md`)."""
+
+    slideshow_minutes: list[int]
+    max_set: int
+    scoped_slideshow: bool = False
+    """False everywhere so far: a Frame plays a whole category, so a push mirrors the set."""
+    favourites: bool = False
+    thumbnails: bool = False
