@@ -26,6 +26,7 @@ import {
   type ImportPolicy,
   type Schemas,
   type StyleDocumentApi,
+  type TagSort,
   type TrashCascade,
 } from "./client";
 
@@ -148,10 +149,20 @@ export function useUpdatePhoto() {
       ),
     onSuccess: (photo) => {
       qc.setQueryData(queryKeys.photo(photo.id), photo);
-      void qc.invalidateQueries({ queryKey: ["photos"] });
-      void qc.invalidateQueries({ queryKey: ["tags"] });
+      invalidatePhotoTags(qc);
     },
   });
+}
+
+/**
+ * A photo's tags changed: the artworks made of it carry them too (docs/organization.md §1), so
+ * their lists, the smart collections matching on a tag and the counts all move with it.
+ */
+function invalidatePhotoTags(qc: ReturnType<typeof useQueryClient>) {
+  void qc.invalidateQueries({ queryKey: ["photos"] });
+  void qc.invalidateQueries({ queryKey: ["artworks"] });
+  void qc.invalidateQueries({ queryKey: ["tags"] });
+  void qc.invalidateQueries({ queryKey: ["collections"] });
 }
 
 export function useInboxAction() {
@@ -175,18 +186,34 @@ export function useDevices(refetchInterval: number | false = false) {
   });
 }
 
-export function useTags(q: string) {
+/**
+ * Tags matching `q`. The autocomplete asks for a handful in `recent` order (what you tagged with a
+ * minute ago comes first); the manager, the filters and the tag menu ask for all of them.
+ */
+export function useTags(q: string, options: { sort?: TagSort; limit?: number } = {}) {
+  const sort = options.sort ?? "usage";
+  const limit = options.limit ?? 20;
   return useQuery({
-    queryKey: queryKeys.tags(q),
-    queryFn: () => unwrap(api.GET("/api/v1/tags", { params: { query: { q, limit: 20 } } })),
+    queryKey: [...queryKeys.tags(q), sort, limit] as const,
+    queryFn: () => unwrap(api.GET("/api/v1/tags", { params: { query: { q, limit, sort } } })),
     placeholderData: keepPreviousData,
   });
+}
+
+/** Every tag (the server caps a page at 500), alphabetical — for lists rather than suggestions. */
+export function useAllTags() {
+  return useTags("", { sort: "name", limit: 500 });
 }
 
 export function useCreateTag() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (name: string) => unwrap(api.POST("/api/v1/tags", { body: { name } })),
+    mutationFn: (vars: string | { name: string; category_id?: string | null }) =>
+      unwrap(
+        api.POST("/api/v1/tags", {
+          body: typeof vars === "string" ? { name: vars } : vars,
+        }),
+      ),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["tags"] }),
   });
 }
@@ -337,13 +364,17 @@ function useTagMutation<TVariables, TResult>(
       void qc.invalidateQueries({ queryKey: ["tags"] });
       void qc.invalidateQueries({ queryKey: ["photos"] });
       void qc.invalidateQueries({ queryKey: ["artworks"] });
+      // a smart collection matching on a tag changes size when the tag is merged or deleted
+      void qc.invalidateQueries({ queryKey: ["collections"] });
     },
   });
 }
 
+/** `category_id`: a category, `null` for "Other", absent to leave it alone. */
 export function useUpdateTag() {
-  return useTagMutation(({ id, ...body }: { id: string; name?: string; color?: string }) =>
-    unwrap(api.PATCH("/api/v1/tags/{tag_id}", { params: { path: { tag_id: id } }, body })),
+  return useTagMutation(
+    ({ id, ...body }: { id: string; name?: string; color?: string; category_id?: string | null }) =>
+      unwrap(api.PATCH("/api/v1/tags/{tag_id}", { params: { path: { tag_id: id } }, body })),
   );
 }
 
@@ -363,6 +394,95 @@ export function useDeleteTag() {
   return useTagMutation((id: string) =>
     unwrap(api.DELETE("/api/v1/tags/{tag_id}", { params: { path: { tag_id: id } } })),
   );
+}
+
+/** Move many tags into one category (`null` ⇒ "Other"). */
+export function useCategorizeTags() {
+  return useTagMutation((vars: { tag_ids: string[]; category_id: string | null }) =>
+    unwrap(api.POST("/api/v1/tags/categorize", { body: vars })),
+  );
+}
+
+/** Tags attached to nothing at all (trashed rows count as a use). */
+export function useUnusedTags() {
+  return useQuery({
+    queryKey: ["tags", "unused"] as const,
+    queryFn: () => unwrap(api.GET("/api/v1/tags/unused")),
+  });
+}
+
+export function useDeleteUnusedTags() {
+  return useTagMutation(() => unwrap(api.POST("/api/v1/tags/delete-unused")));
+}
+
+/** Categories live under `["tags"]`, so every tag mutation refreshes them too. */
+export function useTagCategories() {
+  return useQuery({
+    queryKey: ["tags", "categories"] as const,
+    queryFn: () => unwrap(api.GET("/api/v1/tag-categories")),
+    staleTime: 60_000,
+  });
+}
+
+export function useTagCategoryActions() {
+  const create = useTagMutation((body: { name: string; color?: string | null }) =>
+    unwrap(api.POST("/api/v1/tag-categories", { body })),
+  );
+  const update = useTagMutation(({ id, ...body }: { id: string; name?: string; color?: string }) =>
+    unwrap(
+      api.PATCH("/api/v1/tag-categories/{category_id}", {
+        params: { path: { category_id: id } },
+        body,
+      }),
+    ),
+  );
+  const remove = useTagMutation((id: string) =>
+    unwrap(
+      api.DELETE("/api/v1/tag-categories/{category_id}", {
+        params: { path: { category_id: id } },
+      }),
+    ),
+  );
+  return { create, update, remove };
+}
+
+/**
+ * Bulk tagging (docs/organization.md §1): additive `add` / `remove`, never a replacement. On
+ * artworks, `remove` only reaches their own tags — an inherited one belongs to a photo.
+ */
+export function useBulkTags() {
+  const qc = useQueryClient();
+  const photos = useMutation({
+    mutationFn: (vars: { photo_ids: string[]; add?: string[]; remove?: string[] }) =>
+      unwrap(
+        api.POST("/api/v1/photos/tags", {
+          body: { photo_ids: vars.photo_ids, add: vars.add ?? [], remove: vars.remove ?? [] },
+        }),
+      ),
+    onSuccess: () => invalidatePhotoTags(qc),
+  });
+  const artworks = useMutation({
+    mutationFn: (vars: { artwork_ids: string[]; add?: string[]; remove?: string[] }) =>
+      unwrap(
+        api.POST("/api/v1/artworks/tags", {
+          body: { artwork_ids: vars.artwork_ids, add: vars.add ?? [], remove: vars.remove ?? [] },
+        }),
+      ),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["artworks"] });
+      void qc.invalidateQueries({ queryKey: ["tags"] });
+      void qc.invalidateQueries({ queryKey: ["collections"] });
+    },
+  });
+  return { photos, artworks };
+}
+
+/** Where the photos were taken — derived from their metadata, read-only. */
+export function usePlaces() {
+  return useQuery({
+    queryKey: ["photos", "places"] as const,
+    queryFn: () => unwrap(api.GET("/api/v1/places")),
+  });
 }
 
 // ---- trash (docs/organization.md §5) ------------------------------------------------------------

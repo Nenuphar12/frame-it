@@ -43,7 +43,7 @@ def test_full_upload_creates_inbox_photo_with_metadata(local: TestClient) -> Non
     assert photo["camera_make"] == "TestCam"
     assert photo["taken_at"].startswith("2026-04-12T10:30:00")
     assert photo["place_name"] == "Kyoto" and photo["place_country"] == "Japan"
-    assert photo["tags"] == [{"id": tag["id"], "name": "Japan", "color": None}]
+    assert photo["tags"] == [{"id": tag["id"], "name": "Japan", "color": None, "category_id": None}]
     assert photo["quality_warnings"] == []
 
     ctx = ctx_of(local)

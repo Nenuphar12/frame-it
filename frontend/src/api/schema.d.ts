@@ -66,6 +66,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/artworks/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tag Artworks
+         * @description Add and remove **own** tags on many artworks (additive: other tags are left alone).
+         *
+         *     An inherited tag belongs to a photo: `remove` cannot take it off an artwork. `count` = the
+         *     live artworks it applied to.
+         */
+        post: operations["tag_artworks_api_v1_artworks_tags_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/artworks/{artwork_id}": {
         parameters: {
             query?: never;
@@ -248,7 +271,9 @@ export interface paths {
         put?: never;
         /**
          * Validate Artwork
-         * @description Mark as ready (displayable). 422 `artwork_incomplete` / `invalid_document` otherwise.
+         * @description Mark as ready — done: its photos leave the inbox (docs/organization.md §6).
+         *
+         *     422 `artwork_incomplete` / `invalid_document` otherwise.
          */
         post: operations["validate_artwork_api_v1_artworks__artwork_id__validate_post"];
         delete?: never;
@@ -1087,7 +1112,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Restore To Inbox */
+        /**
+         * Restore To Inbox
+         * @description Back to the inbox — from anywhere: processed, dismissed (docs/organization.md §6).
+         */
         post: operations["restore_to_inbox_api_v1_inbox_restore_post"];
         delete?: never;
         options?: never;
@@ -1444,6 +1472,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/photos/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tag Photos
+         * @description Add and remove tags on many photos at once (additive: other tags are left alone).
+         *
+         *     `count` = the live photos it applied to. 422 `unknown_tag`, or `tag_conflict` when one tag is
+         *     both added and removed.
+         */
+        post: operations["tag_photos_api_v1_photos_tags_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/photos/{photo_id}": {
         parameters: {
             query?: never;
@@ -1525,6 +1576,26 @@ export interface paths {
         };
         /** Photo Thumb */
         get: operations["photo_thumb_api_v1_photos__photo_id__thumb__size__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/places": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Places
+         * @description Where the photos were taken — country → region → place — derived from their metadata.
+         */
+        get: operations["list_places_api_v1_places_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1680,6 +1751,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tag-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Tag Categories
+         * @description Categories in their order; a tag with no category is "Other" (not listed here).
+         */
+        get: operations["list_tag_categories_api_v1_tag_categories_get"];
+        put?: never;
+        /**
+         * Create Tag Category
+         * @description 409 `category_exists` when the name (case-insensitive) is taken.
+         */
+        post: operations["create_tag_category_api_v1_tag_categories_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tag-categories/{category_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Tag Category
+         * @description Delete a category; its tags stay and become "Other". `count` = tags that moved.
+         */
+        delete: operations["delete_tag_category_api_v1_tag_categories__category_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Tag Category */
+        patch: operations["update_tag_category_api_v1_tag_categories__category_id__patch"];
+        trace?: never;
+    };
     "/api/v1/tags": {
         parameters: {
             query?: never;
@@ -1687,7 +1803,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Tags */
+        /**
+         * List Tags
+         * @description `usage` (most used first), `recent` (last attached first — the picker) or `name`.
+         */
         get: operations["list_tags_api_v1_tags_get"];
         put?: never;
         /**
@@ -1695,6 +1814,66 @@ export interface paths {
          * @description Create a tag, or return the existing one with the same name (case-insensitive).
          */
         post: operations["create_tag_api_v1_tags_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tags/categorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Categorize Tags
+         * @description Move many tags into one category at once (`category_id: null` ⇒ "Other").
+         */
+        post: operations["categorize_tags_api_v1_tags_categorize_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tags/delete-unused": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Unused Tags
+         * @description Delete every tag `GET /tags/unused` lists.
+         */
+        post: operations["delete_unused_tags_api_v1_tags_delete_unused_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tags/unused": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Unused Tags
+         * @description Tags attached to nothing at all — trashed photos and artworks count as a use.
+         */
+        get: operations["list_unused_tags_api_v1_tags_unused_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1717,7 +1896,7 @@ export interface paths {
         head?: never;
         /**
          * Update Tag
-         * @description Rename or recolour. 409 `tag_exists` when the name is taken (merge instead).
+         * @description Rename, recolour, or move to a category. 409 `tag_exists` when the name is taken.
          */
         patch: operations["update_tag_api_v1_tags__tag_id__patch"];
         trace?: never;
@@ -2050,6 +2229,8 @@ export interface components {
             favorite: boolean;
             /** Id */
             id: string;
+            /** Inherited Tags */
+            inherited_tags?: components["schemas"]["TagOut"][];
             /** Is Incomplete */
             is_incomplete: boolean;
             /** Max Scale */
@@ -2147,6 +2328,8 @@ export interface components {
             favorite: boolean;
             /** Id */
             id: string;
+            /** Inherited Tags */
+            inherited_tags?: components["schemas"]["TagOut"][];
             /** Is Incomplete */
             is_incomplete: boolean;
             /** Max Scale */
@@ -2183,6 +2366,15 @@ export interface components {
             updated_at: string;
             /** Worst Tier */
             worst_tier: ("native" | "downscaled" | "upscaled") | null;
+        };
+        /** ArtworkTagsIn */
+        ArtworkTagsIn: {
+            /** Add */
+            add?: string[];
+            /** Artwork Ids */
+            artwork_ids: string[];
+            /** Remove */
+            remove?: string[];
         };
         /** ArtworkUpdateIn */
         ArtworkUpdateIn: {
@@ -3585,6 +3777,8 @@ export interface components {
             camera_make: string | null;
             /** Camera Model */
             camera_model: string | null;
+            /** Draft Artwork Ids */
+            draft_artwork_ids?: string[];
             /** File Size */
             file_size: number;
             /** Gps Lat */
@@ -3641,12 +3835,42 @@ export interface components {
             /** Next Cursor */
             next_cursor: string | null;
         };
+        /** PhotoTagsIn */
+        PhotoTagsIn: {
+            /** Add */
+            add?: string[];
+            /** Photo Ids */
+            photo_ids: string[];
+            /** Remove */
+            remove?: string[];
+        };
         /** PhotoUpdateIn */
         PhotoUpdateIn: {
             /** Inbox State */
             inbox_state?: ("inbox" | "processed" | "dismissed") | null;
             /** Tag Ids */
             tag_ids?: string[] | null;
+        };
+        /**
+         * PlaceOut
+         * @description One level of the Places view: a country, a region in it, or a place in that region.
+         */
+        PlaceOut: {
+            /** Artwork Count */
+            artwork_count: number;
+            /** Children */
+            children?: components["schemas"]["PlaceOut"][];
+            /** Name */
+            name: string;
+            /** Photo Count */
+            photo_count: number;
+        };
+        /** PlacesOut */
+        PlacesOut: {
+            /** Countries */
+            countries: components["schemas"]["PlaceOut"][];
+            /** Unplaced Photos */
+            unplaced_photos: number;
         };
         /** PurgeIn */
         PurgeIn: {
@@ -3911,8 +4135,40 @@ export interface components {
             /** Version */
             version: string;
         };
+        /** TagCategoryCreateIn */
+        TagCategoryCreateIn: {
+            /** Color */
+            color?: string | null;
+            /** Name */
+            name: string;
+        };
+        /** TagCategoryOut */
+        TagCategoryOut: {
+            /** Color */
+            color: string | null;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Position */
+            position: number;
+            /**
+             * Tag Count
+             * @default 0
+             */
+            tag_count: number;
+        };
+        /** TagCategoryUpdateIn */
+        TagCategoryUpdateIn: {
+            /** Color */
+            color?: string | null;
+            /** Name */
+            name?: string | null;
+        };
         /** TagCreateIn */
         TagCreateIn: {
+            /** Category Id */
+            category_id?: string | null;
             /** Name */
             name: string;
         };
@@ -3926,6 +4182,8 @@ export interface components {
         };
         /** TagOut */
         TagOut: {
+            /** Category Id */
+            category_id?: string | null;
             /** Color */
             color: string | null;
             /** Id */
@@ -3935,6 +4193,8 @@ export interface components {
         };
         /** TagUpdateIn */
         TagUpdateIn: {
+            /** Category Id */
+            category_id?: string | null;
             /** Color */
             color?: string | null;
             /** Name */
@@ -3947,14 +4207,33 @@ export interface components {
              * @default 0
              */
             artwork_count: number;
+            /** Category Id */
+            category_id?: string | null;
             /** Color */
             color: string | null;
             /** Id */
             id: string;
+            /** Last Used At */
+            last_used_at?: string | null;
             /** Name */
             name: string;
+            /**
+             * Own Artwork Count
+             * @default 0
+             */
+            own_artwork_count: number;
             /** Photo Count */
             photo_count: number;
+        };
+        /**
+         * TagsCategorizeIn
+         * @description Move many tags into one category (null ⇒ "Other").
+         */
+        TagsCategorizeIn: {
+            /** Category Id */
+            category_id?: string | null;
+            /** Tag Ids */
+            tag_ids: string[];
         };
         /** TemplateApplicationOut */
         TemplateApplicationOut: {
@@ -4320,6 +4599,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ArtworkPageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tag_artworks_api_v1_artworks_tags_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtworkTagsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CountOut"];
                 };
             };
             /** @description Validation Error */
@@ -7100,6 +7412,39 @@ export interface operations {
             };
         };
     };
+    tag_photos_api_v1_photos_tags_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhotoTagsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_photo_api_v1_photos__photo_id__get: {
         parameters: {
             query?: never;
@@ -7281,6 +7626,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_places_api_v1_places_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlacesOut"];
                 };
             };
         };
@@ -7548,11 +7913,131 @@ export interface operations {
             };
         };
     };
+    list_tag_categories_api_v1_tag_categories_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagCategoryOut"][];
+                };
+            };
+        };
+    };
+    create_tag_category_api_v1_tag_categories_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagCategoryCreateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagCategoryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_tag_category_api_v1_tag_categories__category_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_tag_category_api_v1_tag_categories__category_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagCategoryUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagCategoryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_tags_api_v1_tags_get: {
         parameters: {
             query?: {
                 q?: string | null;
                 limit?: number;
+                sort?: "usage" | "recent" | "name";
             };
             header?: never;
             path?: never;
@@ -7609,6 +8094,79 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    categorize_tags_api_v1_tags_categorize_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagsCategorizeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_unused_tags_api_v1_tags_delete_unused_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CountOut"];
+                };
+            };
+        };
+    };
+    list_unused_tags_api_v1_tags_unused_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagOut"][];
                 };
             };
         };

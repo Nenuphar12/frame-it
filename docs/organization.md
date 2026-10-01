@@ -15,19 +15,89 @@ collection's stored definition and what `POST /artworks/query` compiles are the 
 
 ## 1. Tags
 
-Flat, case-insensitive-unique names (`tags`), attached to **photos** and to **artworks** through
-two link tables. `services/tags.py` owns them.
+Case-insensitive-unique names (`tags`), attached to **photos** and to **artworks** through two link
+tables, each optionally in one **category**. `services/tags.py` owns them.
 
 | Action | Rule |
 |---|---|
-| Create | `POST /tags` returns the existing tag when the name is taken (the picker relies on it) |
+| Create | `POST /tags` returns the existing tag when the name is taken (the picker relies on it); a `category_id` only applies to a *new* tag — an existing one keeps its own |
 | Rename | 409 `tag_exists` when another tag has that name — *merge* is the way out, never a silent join |
-| Recolour | `#rrggbb` / `#rrggbbaa`, or `""` to clear |
+| Recolour | `#rrggbb` / `#rrggbbaa`, or `""` to clear (the tag then shows its category's colour) |
+| Re-categorise | `PATCH /tags/{id}` `category_id` (absent = unchanged, `null` = Other); many at once with `POST /tags/categorize` |
 | Merge | every link of the sources moves to the target, a link that would duplicate collapses, the sources are deleted |
 | Delete | links go, nothing else does: a tag is never a container |
+| Clean up | `GET /tags/unused` / `POST /tags/delete-unused`: tags attached to nothing — a link from a *trashed* photo or artwork counts as a use, so restoring it never finds its tag gone |
 
-Counts are per kind (`photo_count`, `artwork_count`) and ignore trashed rows — the delete dialog
-says what it is actually about to detach.
+### 1.1 An artwork carries its photos' tags
+
+An artwork's **effective** tags are its own **plus the tags of the photos it uses** (live photos:
+a trashed one stops lending its tags). They are *read*, never copied: tagging a photo later tags
+every artwork made of it, and removing a photo from an artwork removes what it lent. It is the
+reading `taken_at` and `place` already have — an artwork shows Alice when one of its photos does.
+
+- **Filters and smart collections** — the `tag` clause (`has_any`, `has_all`, `none`) matches
+  own *or* inherited tags (`services/library._carries`). One compiler, so the filter bar, smart
+  collections, `nested_count` and `POST /filters/validate` all follow.
+- **Search** — an artwork's FTS text holds its own tag names *and* its photos'. Every write that
+  changes a photo's tags re-indexes the artworks using it (`search.index_artworks_using`: single
+  and bulk tagging, rename / merge / delete, ingest, a duplicate upload, an archive import). The
+  index carries a version (`search.INDEX_VERSION`, in a marker row), and startup rebuilds an index
+  written under older rules once.
+- **API** — an artwork's `tags` are its own (removable from it); `inherited_tags` are its photos'
+  that it does not also own. The UI shows the latter apart — dashed, *from its photos*, never
+  removable on the artwork, exactly like smart-collection membership.
+- **Counts** — `artwork_count` is what the filter returns (own or inherited, distinct artworks);
+  `own_artwork_count` is what deleting the tag detaches from artworks directly. The delete dialog
+  says both: an artwork that only carried the tag through a photo loses it too.
+
+Tags that are about the *artwork* rather than its content ("to print", "living room") are simply
+its own tags.
+
+### 1.2 Bulk tagging
+
+`POST /photos/tags` and `POST /artworks/tags` take `{ids, add, remove}` and are **additive**: only
+the tags named move, so tagging fifty photos that carry different tags never replaces anything.
+422 `unknown_tag`, or `tag_conflict` when one tag is both added and removed. On artworks `remove`
+only reaches their own tags — an inherited one belongs to a photo and is removed there.
+
+The UI is one **tag menu** (`features/tags/TagMenu.tsx`, key `t`) on every selection — Photos,
+Inbox, Artworks, Favorites, a collection — and on a batch that just arrived (*Tag these N
+photos…* in the upload tray, duplicates included). Each row says whether **all**, **some** or
+**none** of the selection carry the tag; a click adds it to all of them, or removes it from all of
+them when they all have it. It can create a tag on the spot.
+
+A duplicate upload keeps what its batch chose: the phone page's tags are *added* to the photo the
+library already had, and its collections and favourite join the photo's pending metadata
+(`photos.apply_upload_meta`, on every path an upload can take).
+
+### 1.3 Categories and "recent"
+
+A category (`tag_categories`: name, colour, position) groups tags **one level deep** — People,
+Events and Themes to start with, renamable, deletable, and more can be added. A tag with none is
+**Other**. Deleting a category keeps its tags: they become Other (`ON DELETE SET NULL`). The colour
+lives on the category; a tag's own colour overrides it. The picker, the tag menu, the filter
+chips and the Tags page group by category.
+
+`tags.last_used_at` is touched whenever a tag gets attached to something; the picker and the tag
+menu offer the **recent** ones first (`GET /tags?sort=recent`) — what you tagged the previous photo
+with is what you want on this one. `sort=usage` (the default) and `sort=name` exist too.
+
+There is **no "Places" category**, on purpose: a place is photo *metadata* the offline geocoder
+fills from the GPS position, so the Tags page has a read-only **Places** tab instead
+(`GET /places`, `services/places.py`): country → region → place, with photo and artwork counts per
+level (an artwork made of photos from two cities counts once for their country), and the number
+of photos without a position. A row opens the artworks filtered by that place
+(`/artworks?place=…`, the `place` clause, "contains"). No nested tags either: a category is the one
+level of grouping.
+
+### 1.4 Later: keywords already in the files
+
+Not built. Lightroom, digiKam, darktable and Apple exports write keywords into the file (XMP
+`dc:subject` / `lr:hierarchicalSubject`, IPTC Keywords); phones rarely do. When it is built:
+read them through libvips' metadata blobs as **untrusted input** (bounded length and count, no
+entity expansion), put them in an "Imported" category — mapping a hierarchical `People|Alice` onto
+category + tag — and keep it **idempotent**: receiving the same photo again must not duplicate or
+resurrect a tag the user deleted on purpose.
 
 Every mutation re-indexes the entities that carried the tag: a tag name is searchable text (§4).
 
@@ -89,7 +159,7 @@ Filing artworks works from either end: drag cards onto a row in the tree or the 
 
 | Field | Operators | Reaches |
 |---|---|---|
-| `tag` | `has_any` `has_all` `none` | `artwork_tags` |
+| `tag` | `has_any` `has_all` `none` | `artwork_tags` **or** the `photo_tags` of a live photo it uses (§1.1) |
 | `favorite`, `is_incomplete` | `eq` | the artwork column |
 | `status` | `eq` `in` | idem |
 | `worst_tier` | `in` | idem |
@@ -119,13 +189,15 @@ what the smart-collection editor shows while you type.
 
 The FTS5 table `search_index` (created by migration 0001) holds one row per entity:
 
-- **artwork** — its title, its tags' names, and the file names and places of the photos it uses;
+- **artwork** — its title, its tags' names (its own and its photos', §1.1), and the file names and
+  places of the photos it uses;
 - **photo** — file name, place, camera, lens, tags;
 - **collection** — name and description.
 
 Writers keep it in sync inside the same transaction as the change (`services/search.py`), so the
 index never outlives what it describes. It is nonetheless **disposable**: `reindex_all` rebuilds it
-from the columns, and the app does that at startup when the table is empty.
+from the columns, and the app does that at startup when the table is empty — or when the marker
+row says it was written under older rules than `search.INDEX_VERSION` (2: tag inheritance).
 
 User text becomes a prefix query (`"kyo"*`), tokens only — everything FTS5 would read as an
 operator is dropped. Photo search keeps a `LIKE` arm beside it so a fragment inside a word
@@ -155,17 +227,50 @@ Restoring puts a photo back and re-indexes it; nothing else about it changed (it
 tags, its artworks are untouched), which is the same promise as receiving a photo again
 (`docs/data-model.md`, *Photo copies*).
 
-## 6. UI
+**Acting, then Undo.** The trash is reversible, so moving something there never asks first: it
+happens, and a toast offers **Undo**, which restores exactly the batch that gesture created
+(`features/trash/useTrashWithUndo.ts`). That covers `Delete` and the buttons on every grid and in
+the viewer. The one question left is the cascade above, and only when an artwork actually uses
+the photos: `useDeletePhotos` asks for the preview first and skips the dialog when nothing is
+affected. The dialog opens on *Move to trash*, so **Enter** or **`Delete` again** confirms it.
+After an `empty_slots` cascade no Undo is offered — restoring the photo would not refill the slots
+(each artwork's `pre_trash` snapshot does) — and the toast says so.
+
+## 6. The inbox and "ready"
+
+The inbox is a **to-do list**: photos waiting for a *finished* artwork.
+
+- A photo arrives in it (`inbox_state = inbox`), and comes back to it whenever it is received
+  again (invariant 1, `receive_again`).
+- Creating an artwork **does not** take its photos out: a draft is work in progress, and an
+  abandoned draft must not make a photo vanish from the list. While a photo has drafts, its inbox
+  tile shows a **Draft** badge that opens the (oldest) draft instead of inviting a second artwork
+  (`PhotoOut.draft_artwork_ids`).
+- **Marking an artwork ready** (`mark_ready` — `POST /artworks/{id}/validate` and `PATCH status:
+  ready` both go through it) moves its photos from `inbox` to `processed`. That is the only
+  automatic way out, and it is **one-way**: going back to draft, trashing the artwork or restoring
+  it never puts a photo back. A `dismissed` photo stays dismissed.
+- By hand: **Dismiss** (`d`) keeps the photo in the library but off the list; **Delete** trashes
+  it (with Undo); **Back to inbox** (Photos page, selection or drawer — `POST /inbox/restore`)
+  puts any photo back.
+
+So **Ready** means *done*: the artwork was checked (complete, valid) and its photos left the
+inbox. Nothing else gates on it (the TV and exports take drafts too). Libraries from before this
+rule were not changed retroactively: photos already `processed` stay so, drafts included.
+
+## 7. UI
 
 | Place | What |
 |---|---|
 | Sidebar | the collection tree under the library links; a row opens *that* collection (`/collections?id=…`), and dropping artworks on one files them |
-| Artworks / Favorites | the filter bar (chips), search, sort, multi-select, *Add to collection*, *Move to trash* |
+| Artworks / Favorites | the filter bar (chips), search, sort, multi-select, *Add to collection*, the tag menu (`t`), *Move to trash* (with Undo); `/artworks?place=…` / `?tag=<id>` open it with that chip |
 | Collections page | tree with drag-and-drop (re-parent, reorder, drop-to-top-level), a parent picker in the dialog, sort picker, include-nested toggle (only where there *are* children), manual ordering by dragging a card, *Add artworks* |
-| Artwork viewer | two rows — what it is and what you can do to it, then where it is filed: manual collections as plain badges, smart ones in accent with a sparkle (read-only), and the tags, editable in place |
-| Tags page | rename in place, six colours, merge, delete, counts |
+| Artwork viewer | two rows — what it is and what you can do to it, then where it is filed: manual collections as plain badges, smart ones in accent with a sparkle (read-only), its own tags (editable in place — *Done* or `Esc` closes the editor, and moving to another artwork does too) and its photos' tags, dashed |
+| Tags page | grouped by category: rename / recolour / delete a category, add one; per tag rename, own colour, category, merge, delete, counts (the artwork count links to the filtered grid); select tags to move them to a category; *Delete N unused tags*; a **Places** tab |
 | Trash page | both lists, restore by item or by batch, purge expired, empty |
-| Photos page | a tag filter next to the search box; `Delete` opens the cascade dialog |
+| Photos page | a tag filter (every tag, grouped) next to the search box; the tag menu (`t`); *Back to inbox*; `Delete` trashes with Undo, or opens the cascade dialog when artworks use the photos |
+| Inbox | Draft badges; *Dismiss* (`d`) and *Delete* (`Delete`) kept apart; the tag menu (`t`) |
+| Upload tray | *Tag these N photos…* for the batch that just landed, duplicates included |
 | Editor | `f` toggles the artwork's favourite |
 | Phone (`/m/browse`) | read-only: artworks, favourites, collections, full render on tap |
 
@@ -175,8 +280,9 @@ applied when the artwork is created). Photos have no heart of their own.
 ### Shortcuts
 
 One hook (`useArtworkGridCommands`) gives every grid of artworks the same keyboard, so Artworks,
-Favorites and a collection's page cannot drift: `c` add to collection · `f` favourite the selection
-· `e` edit · `Delete` trash · `/` search · `Ctrl/Cmd+A` select all · `Esc` clear. A collection adds
+Favorites and a collection's page cannot drift: `c` add to collection · `t` tag · `f` favourite the
+selection · `e` edit · `Delete` trash (Undo in the toast) · `/` search · `Ctrl/Cmd+A` select all ·
+`Esc` clear. A collection adds
 `Backspace` — taking an artwork *out of a collection* is a far gentler act than trashing it and
 deserves its own key.
 Navigation chords live in the shell: `g a` artworks, `g c` collections, `g f` favorites, `g p`
@@ -191,12 +297,14 @@ Reordering a card inserts it **before** the drop target when dragging backwards 
 when dragging forwards. "Always before" made a forward drag ask for the place the card already
 had, so dragging right did nothing.
 
-## 7. What is deliberately not here
+## 8. What is deliberately not here
 
 - No per-collection cover picker in the UI yet (`cover_artwork_id` exists and the API accepts it).
 - A `<select>` left transparent gets a native popup Chrome paints from the control's own colours —
   light popup, near-white options, readable only under the hover highlight. `styles.css` gives
   `select`/`option` an element-level colour and background so the fallback can never happen; any
   utility class on a specific select still wins.
-- No tag colours beyond six presets: a tag list is not a palette editor.
+- No tag colours beyond six presets: a tag list is not a palette editor. A colour is a dot beside
+  the name, never the text's colour, so a pale one stays readable in both themes (invariant 16).
+- No nested tags and no "Places" category (§1.3); no keyword import yet (§1.4).
 - Photo-side smart collections: collections hold artworks (`docs/data-model.md` §5.1).

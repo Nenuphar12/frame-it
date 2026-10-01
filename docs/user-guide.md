@@ -110,8 +110,9 @@ to `.jpg` will not sneak it past.
 
 ## 3. From photo to artwork
 
-**Inbox** is where new photos land. Review them, tag them, and make artworks; `i` shows the
-details of the selected photo.
+**Inbox** is your to-do list: new photos land there and stay until an artwork using them is
+**finished**. Review them, tag them (`t`), and make artworks; `i` shows the details of the selected
+photo.
 
 Select one or more photos and press `n` (or *Create artworks*). With several photos selected the
 dialog offers **one artwork holding all of them** — pick the arrangement from the schemas — or one
@@ -119,6 +120,17 @@ artwork per photo.
 
 An **artwork** is one 3840×2160 picture: your photos, the mat around them, optional borders,
 shadows and a caption. It is a recipe, not a file — nothing is flattened until you export.
+
+### Draft and Ready
+
+A new artwork is a **draft**. While you work on it, its photos stay in the inbox, marked
+**Draft** — click the badge to reopen the draft rather than starting another one. When you are
+happy with it, mark it **Ready** (`Enter` in the editor's review queue or in the viewer): *ready*
+means *done* — it is complete, and its photos leave the inbox. Going back to draft, or deleting
+the artwork, does not put them back; *Back to inbox* on the Photos page does, whenever you want.
+
+Two other ways off the list, kept apart on purpose: **Dismiss** (`d`) keeps the photo in your
+library, just not on the to-do list; **Delete** sends it to the trash.
 
 ---
 
@@ -180,8 +192,17 @@ Templates travel as `.tfstyle.json` / `.tflayout.json` files.
 
 ## 6. Organising
 
-- **Tags** are flat and shared by photos and artworks. The tag manager renames, recolours, merges
-  and deletes them, with the counts of what each change will touch.
+- **Tags** are shared by photos and artworks, and an **artwork carries its photos' tags**: tag a
+  photo "Alice" and every artwork made of it shows up under Alice — in filters, smart collections
+  and search. Those inherited tags appear dashed on the artwork; change them on the photo. Tags
+  that are about the artwork itself ("to print") are put on the artwork.
+- **Tag many at once**: select photos or artworks and press `t`. Each tag says whether all, some
+  or none of the selection has it; a click adds it to all (or removes it from all). After an
+  upload, *Tag these N photos…* in the upload panel does the same for what just arrived.
+- **Categories** group tags (People, Events, Themes, and your own); a tag with none is "Other".
+  The Tags page renames, recolours, merges and deletes tags and categories, moves tags between
+  categories, and clears out tags nothing uses. Its **Places** tab lists where your photos were
+  taken (from their GPS position) and opens the artworks from each place.
 - **Collections** nest, and you order their contents by hand (drag a card, drag onto the tree).
 - **Smart collections** store a filter instead of a list — their contents are whatever matches, so
   there is nothing to reorder and nothing to add by hand. An artwork leaves one by ceasing to match.
@@ -191,11 +212,12 @@ Templates travel as `.tfstyle.json` / `.tflayout.json` files.
 ### The trash
 
 Deleting is reversible for 30 days. **What is deleted together is restored together**: one gesture
-is one batch, and restoring the batch brings all of it back.
+is one batch, and restoring the batch brings all of it back. So `Delete` does not ask first: it
+moves the selection to the trash, and the message that appears offers **Undo**.
 
 Trashing a photo that artworks use asks you to choose: trash those artworks too, or empty their
-slots and keep them. Nothing is freed from disk until a purge — daily, or on demand from the trash
-page. That is the only step that cannot be undone.
+slots and keep them (`Enter` or `Delete` again confirms). Nothing is freed from disk until a
+purge — daily, or on demand from the trash page. That is the only step that cannot be undone.
 
 ---
 

@@ -7,9 +7,10 @@ list, so a smart collection can never disagree with the filter that made it.
 Two clause families:
 
 - **artwork columns** — `favorite`, `status`, `worst_tier`, `photo_count`, `is_incomplete`,
-  `title`, `created_at`, `updated_at`, `tag`, `collection`;
+  `title`, `created_at`, `updated_at`, `collection`;
 - **photo properties** — `taken_at` and `place` hold when *some photo the artwork uses* matches,
-  compiled as an EXISTS over `artwork_photos` (an artwork is only as old as its oldest photo).
+  compiled as an EXISTS over `artwork_photos` (an artwork is only as old as its oldest photo);
+- **both** — `tag` reads the artwork's own tags *and* its live photos' (tag inheritance).
 
 `text` matches the FTS index (`services/search.py`).
 """
@@ -18,7 +19,7 @@ from __future__ import annotations
 
 import base64
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Literal
 
@@ -32,6 +33,7 @@ from the_frame_v2.db.models import (
     Collection,
     CollectionItem,
     Photo,
+    PhotoTag,
     Tag,
 )
 from the_frame_v2.domain import filters
@@ -144,20 +146,29 @@ def _clause_sql(session: Session, clause: Clause, depth: int) -> ColumnElement[b
     raise ProblemError(422, "invalid_filter", "Unsupported filter field", field)
 
 
+def _carries(tag_ids: Sequence[str]) -> ColumnElement[bool]:
+    """The artwork carries one of these tags — its own, or through one of its live photos.
+
+    An artwork's effective tags are its own plus its photos' (docs/organization.md §1), the same
+    reading `taken_at` and `place` already have: an artwork shows Alice when one of its photos does.
+    """
+    ids = list(tag_ids)
+    own = select(ArtworkTag.artwork_id).where(ArtworkTag.tag_id.in_(ids))
+    inherited = (
+        select(ArtworkPhoto.artwork_id)
+        .join(PhotoTag, PhotoTag.photo_id == ArtworkPhoto.photo_id)
+        .join(Photo, Photo.id == ArtworkPhoto.photo_id)
+        .where(PhotoTag.tag_id.in_(ids), Photo.deleted_at.is_(None))
+    )
+    return or_(Artwork.id.in_(own), Artwork.id.in_(inherited))
+
+
 def _tag_sql(op: str, tag_ids: Sequence[str]) -> ColumnElement[bool]:
-    has_one = Artwork.id.in_(
-        select(ArtworkTag.artwork_id).where(ArtworkTag.tag_id.in_(list(tag_ids)))
-    )
     if op == "has_any":
-        return has_one
+        return _carries(tag_ids)
     if op == "none":
-        return not_(has_one)
-    return and_(
-        *(
-            Artwork.id.in_(select(ArtworkTag.artwork_id).where(ArtworkTag.tag_id == tag_id))
-            for tag_id in tag_ids
-        )
-    )
+        return not_(_carries(tag_ids))
+    return and_(*(_carries([tag_id]) for tag_id in tag_ids))
 
 
 def _date_sql(column: Any, op: str, value: Any) -> ColumnElement[bool]:
@@ -246,6 +257,8 @@ class ArtworkPage:
     items: list[Artwork]
     tags: dict[str, list[Tag]]
     next_cursor: str | None
+    inherited: dict[str, list[Tag]] = field(default_factory=dict)
+    """artwork id → tags it carries through its photos (`artworks.inherited_tags_for`)."""
 
 
 def _sort_key(artwork: Artwork, sort: Sort) -> str:
@@ -340,8 +353,12 @@ def list_artworks(
             _encode_cursor(rows_only[limit - 1], sort, None) if len(rows_only) > limit else None
         )
         items = rows_only[:limit]
+    ids = [a.id for a in items]
     return ArtworkPage(
-        items, artworks_service.tags_for(session, [a.id for a in items]), next_cursor
+        items,
+        artworks_service.tags_for(session, ids),
+        next_cursor,
+        artworks_service.inherited_tags_for(session, ids),
     )
 
 

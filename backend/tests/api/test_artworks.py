@@ -84,7 +84,10 @@ def test_create_single_artwork_with_defaults(local: TestClient) -> None:
     assert doc["slots"][0]["rect"] == {"x": 480, "y": 120, "w": 2880, "h": 1920}
     assert artwork["worst_tier"] == "downscaled" and artwork["photo_count"] == 1
     assert not artwork["is_incomplete"]
-    assert local.get(f"{API}/photos/{pid}").json()["inbox_state"] == "processed"
+    # A draft keeps its photo in the inbox: it leaves when the artwork is marked ready.
+    in_inbox = local.get(f"{API}/photos/{pid}").json()
+    assert in_inbox["inbox_state"] == "inbox"
+    assert in_inbox["draft_artwork_ids"] == [artwork["id"]]
     listed = local.get(f"{API}/artworks", params={"photo_id": pid}).json()["items"]
     assert [a["id"] for a in listed] == [artwork["id"]]
     # the pending metadata is consumed: a second artwork is not favourite

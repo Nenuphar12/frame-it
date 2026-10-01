@@ -15,7 +15,8 @@ Identity is deliberately not "same id" alone (§12.2):
 
 - a **photo** is its bytes, so a local photo with the same SHA-256 *is* this photo, whatever its
   id — references are remapped to it and, if it sat in the trash, it comes back;
-- a **tag** is its name (case-insensitive), so tags merge instead of duplicating;
+- a **tag** is its name (case-insensitive), so tags merge instead of duplicating — and so is a
+  **tag category**;
 - everything else is matched by id: same content ⇒ `identical` (nothing to do), different
   content ⇒ `conflicting`, and the caller's policy decides
   (`keep_mine` / `take_theirs` / `keep_both`).
@@ -57,6 +58,7 @@ from the_frame_v2.db.models import (
     Setting,
     Swatch,
     Tag,
+    TagCategory,
 )
 from the_frame_v2.domain import archive, filters
 from the_frame_v2.domain.document import SCHEMA_VERSION, ArtworkDocument, parse_document
@@ -358,6 +360,7 @@ def _local_index(session: Session, entity: archive.Entity) -> dict[str, Any]:
     """Every local row of this kind by id — the comparison the report is made of."""
     model: Any = {
         "photo": Photo,
+        "tag_category": TagCategory,
         "tag": Tag,
         "artwork": Artwork,
         "collection": Collection,
@@ -397,7 +400,12 @@ def classify(session: Session, staged: StagedArchive) -> Report:
     """Compare every record to the library. Pure reading: this is what the dialog shows."""
     kinds: list[KindReport] = []
     photo_by_sha = photos_by_sha(session)
-    tags_by_name = {row.name.casefold(): row for row in session.scalars(select(Tag))}
+    by_name: dict[str, Mapping[str, Any]] = {
+        archive.TAGS.kind: {row.name.casefold(): row for row in session.scalars(select(Tag))},
+        archive.TAG_CATEGORIES.kind: {
+            row.name.casefold(): row for row in session.scalars(select(TagCategory))
+        },
+    }
     maps = predicted_maps(session, staged)
     for entity in archive.ENTITIES:
         rows = staged.rows(entity.kind)
@@ -408,7 +416,7 @@ def classify(session: Session, staged: StagedArchive) -> Report:
                 _classify_link(session, entity, record)
                 if entity.is_link
                 else _classify_row(
-                    session, entity, record, local, photo_by_sha, tags_by_name, maps, staged
+                    session, entity, record, local, photo_by_sha, by_name, maps, staged
                 )
             )
         kinds.append(_kind_report(entity.kind, entries))
@@ -556,6 +564,11 @@ def predicted_maps(session: Session, staged: StagedArchive) -> IdMaps:
         assert isinstance(record, archive.PhotoRecord)
         match = by_sha.get(record.sha256)
         maps.put(archive.PHOTOS.kind, record.id, match.id if match else record.id)
+    categories = {row.name.casefold(): row for row in session.scalars(select(TagCategory))}
+    for record in staged.rows(archive.TAG_CATEGORIES.kind):
+        assert isinstance(record, archive.TagCategoryRecord)
+        category = categories.get(record.name.casefold())
+        maps.put(archive.TAG_CATEGORIES.kind, record.id, category.id if category else record.id)
     by_name = {row.name.casefold(): row for row in session.scalars(select(Tag))}
     for record in staged.rows(archive.TAGS.kind):
         assert isinstance(record, archive.TagRecord)
@@ -580,7 +593,7 @@ def _classify_row(
     record: archive.Record,
     local: Mapping[str, Any],
     photo_by_sha: Mapping[str, Photo],
-    tags_by_name: Mapping[str, Tag],
+    by_name: Mapping[str, Mapping[str, Any]],
     maps: IdMaps,
     staged: StagedArchive,
 ) -> Entry:
@@ -591,11 +604,12 @@ def _classify_row(
         match = photo_by_sha.get(record.sha256)
         if match is not None:  # a photo is its bytes, whatever id either side gave it
             return Entry(entity.kind, key, name, "matched", match.id)
-    if entity is archive.TAGS:
-        assert isinstance(record, archive.TagRecord)
-        match_tag = tags_by_name.get(record.name.casefold())
-        if match_tag is not None and match_tag.id != record.id:
-            return Entry(entity.kind, key, name, "matched", match_tag.id)
+    if entity in (archive.TAGS, archive.TAG_CATEGORIES):
+        # A tag — and a tag category — is its name: the same name under another id merges.
+        assert isinstance(record, archive.TagRecord | archive.TagCategoryRecord)
+        match_named = by_name[entity.kind].get(record.name.casefold())
+        if match_named is not None and match_named.id != record.id:
+            return Entry(entity.kind, key, name, "matched", match_named.id)
     existing = local.get(key)
     if existing is None:
         return Entry(entity.kind, key, name, "new")
@@ -627,7 +641,20 @@ def _translated(
     if entity is archive.COLLECTIONS:
         assert isinstance(record, archive.CollectionRecord)
         return record.model_copy(update=collection_values(session, record, maps))
+    if entity is archive.TAGS:
+        assert isinstance(record, archive.TagRecord)
+        return record.model_copy(update={"category_id": tag_category(session, record, maps)})
     return record
+
+
+def tag_category(session: Session, record: archive.TagRecord, maps: IdMaps) -> str | None:
+    """Where a tag's category landed: remapped (matched by name), itself, or none ("Other")."""
+    if not record.category_id:
+        return None
+    mapped = maps.get(archive.TAG_CATEGORIES.kind, record.category_id)
+    if mapped is not None:
+        return mapped
+    return record.category_id if session.get(TagCategory, record.category_id) else None
 
 
 def _kind_report(kind: str, entries: Sequence[Entry]) -> KindReport:

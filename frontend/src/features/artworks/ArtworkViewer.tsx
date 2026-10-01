@@ -1,6 +1,7 @@
 import * as RadixDialog from "@radix-ui/react-dialog";
 import {
   Cast,
+  Check,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -30,7 +31,10 @@ import {
 import { useRegisterCommands, type Command } from "@/app/commands";
 import { AddToCollectionMenu } from "@/features/collections/AddToCollectionMenu";
 import { ShowOnTvDialog } from "@/features/display/ShowOnTvDialog";
+import { TagDot } from "@/features/tags/TagDot";
 import { TagPicker } from "@/features/tags/TagPicker";
+import { useTagCategoryIndex } from "@/features/tags/useTagCategories";
+import { useTrashWithUndo } from "@/features/trash/useTrashWithUndo";
 import { Badge, Kbd, Spinner } from "@/shared/ui/Misc";
 import { Button } from "@/shared/ui/Button";
 
@@ -53,10 +57,14 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onEdit, onClose }: A
   const layouts = useLayouts();
   const collections = useCollections();
   const [collectionMenuOpen, setCollectionMenuOpen] = useState(false);
-  const [editingTags, setEditingTags] = useState(false);
+  /** The artwork whose tags are being edited — derived, so moving to another one closes the
+   *  editor by itself (remarks.md "Other" #3: the extra row could never be closed). */
+  const [editingTagsFor, setEditingTagsFor] = useState<string | null>(null);
+  const editingTags = editingTagsFor === artworkId;
+  const { update, validate, duplicate } = useArtworkActions();
+  const { trashArtworks } = useTrashWithUndo();
+  const { colorOf } = useTagCategoryIndex();
   const [showingOnTv, setShowingOnTv] = useState(false);
-  const { update, validate, duplicate, trash } = useArtworkActions();
-  const [confirmTrash, setConfirmTrash] = useState<string | null>(null);
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const data = artwork.data;
   const index = ids.indexOf(artworkId);
@@ -75,17 +83,17 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onEdit, onClose }: A
       },
       duplicate: () =>
         data && duplicate.mutate(data.id, { onSuccess: (copy) => onNavigate(copy.id) }),
+      // The trash is reversible, so this acts at once and the toast offers Undo — no second
+      // press to confirm (docs/organization.md §5).
       trash: () => {
         if (!data) return;
-        if (confirmTrash !== data.id) {
-          setConfirmTrash(data.id);
-          return;
-        }
         const next = ids[index + 1] ?? ids[index - 1];
-        trash.mutate(data.id, { onSuccess: () => (next ? onNavigate(next) : onClose()) });
+        void trashArtworks([data.id]);
+        if (next) onNavigate(next);
+        else onClose();
       },
     }),
-    [confirmTrash, data, duplicate, ids, index, onClose, onNavigate, trash, update, validate],
+    [data, duplicate, ids, index, onClose, onNavigate, trashArtworks, update, validate],
   );
 
   const commands = useMemo<Command[]>(
@@ -166,6 +174,7 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onEdit, onClose }: A
   const memberOf = data?.collection_ids ?? [];
   const matchedBy = data?.smart_collection_ids ?? [];
   const artworkTags = data?.tags ?? [];
+  const inheritedTags = data?.inherited_tags ?? [];
   const all = collections.data ?? [];
   const inCollections = all.filter((c) => memberOf.includes(c.id));
   const inSmart = all.filter((c) => matchedBy.includes(c.id));
@@ -177,7 +186,15 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onEdit, onClose }: A
         <RadixDialog.Overlay className="fixed inset-0 z-40 bg-black/90" />
         <RadixDialog.Content
           // `Escape` only closes the viewer (see `shared/ui/Dialog`).
-          onEscapeKeyDown={(event) => event.stopPropagation()}
+          onEscapeKeyDown={(event) => {
+            event.stopPropagation();
+            // Radix hears Escape first (capture, on the document): while the tag editor is
+            // open, Escape closes the editor, not the viewer.
+            if (editingTags) {
+              event.preventDefault();
+              setEditingTagsFor(null);
+            }
+          }}
           className="fixed inset-0 z-50 flex flex-col outline-none"
         >
           <RadixDialog.Title className="sr-only">
@@ -267,6 +284,9 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onEdit, onClose }: A
                   size="sm"
                   variant={data.status === "ready" ? "ghost" : "primary"}
                   onClick={actions.toggleReady}
+                  title={t(
+                    data.status === "ready" ? "artworks.backToDraftHint" : "artworks.readyHint",
+                  )}
                 >
                   {data.status === "ready" ? <Undo2 size={14} /> : <CheckCircle2 size={14} />}
                   {data.status === "ready"
@@ -294,8 +314,7 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onEdit, onClose }: A
                   </a>
                 </Button>
                 <Button size="sm" variant="danger" onClick={actions.trash}>
-                  <Trash2 size={14} />{" "}
-                  {confirmTrash === data.id ? t("artworks.confirmTrash") : t("artworks.trash")}
+                  <Trash2 size={14} /> {t("artworks.trash")}
                 </Button>
                 <RadixDialog.Close
                   className="rounded p-1.5 text-muted hover:bg-panel-2 hover:text-text"
@@ -344,35 +363,60 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onEdit, onClose }: A
                 <span className="mx-1 h-3 w-px bg-border" />
                 <TagIcon size={13} className="text-muted" />
                 {editingTags ? (
-                  <span className="min-w-56 flex-1">
-                    <TagPicker
-                      value={artworkTags}
-                      onChange={(tags) =>
-                        update.mutate({ id: data.id, tag_ids: tags.map((tag) => tag.id) })
-                      }
-                    />
-                  </span>
+                  <>
+                    <span className="min-w-56 flex-1">
+                      <TagPicker
+                        autoFocus
+                        value={artworkTags}
+                        onChange={(tags) =>
+                          update.mutate({ id: data.id, tag_ids: tags.map((tag) => tag.id) })
+                        }
+                      />
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => setEditingTagsFor(null)}
+                      title={t("tags.doneHint")}
+                    >
+                      <Check size={13} /> {t("tags.done")}
+                    </Button>
+                  </>
                 ) : (
                   <>
-                    {artworkTags.length === 0 ? (
+                    {artworkTags.length + inheritedTags.length === 0 && (
                       <span className="text-muted">{t("tags.none")}</span>
-                    ) : (
-                      artworkTags.map((tag) => (
-                        <Badge key={tag.id} tone="neutral">
-                          {tag.name}
-                        </Badge>
-                      ))
                     )}
+                    {artworkTags.map((tag) => (
+                      <Badge key={tag.id} tone="neutral">
+                        <TagDot color={colorOf(tag)} />
+                        {tag.name}
+                      </Badge>
+                    ))}
                     <button
                       type="button"
-                      onClick={() => setEditingTags(true)}
+                      onClick={() => setEditingTagsFor(data.id)}
                       aria-label={t("tags.edit")}
+                      title={t("tags.edit")}
                       className="rounded px-1 text-muted hover:bg-panel-2 hover:text-text"
                     >
                       <Plus size={13} />
                     </button>
                   </>
                 )}
+                {/* Its photos' tags: the artwork carries them (filters, search), but they are
+                    the photos' to change — shown apart, never removable here (like smart
+                    collections above). */}
+                {inheritedTags.map((tag) => (
+                  <span
+                    key={tag.id}
+                    title={t("tags.inheritedHint")}
+                    className="inline-flex items-center gap-1 rounded border border-dashed border-border-strong px-1.5 py-px text-muted"
+                  >
+                    <TagDot color={colorOf(tag)} />
+                    {tag.name}
+                  </span>
+                ))}
               </div>
             </div>
           )}

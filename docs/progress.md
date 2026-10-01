@@ -55,6 +55,73 @@ and, on request, the 3 foreign photos; after which the checkbox no longer appear
 **Not verified on hardware**: discovery on the real LAN (SSDP and the sweep), following a TV that
 moved, a "Don't change" push (`select_image` + stop), and deleting foreign photos.
 
+## 2026-10-01 — Tags, the inbox and "ready" (remarks: tags #1/#2/#3/#5/#12, ready #13, inbox #17/#23, trash #22)
+
+**An artwork now carries its photos' tags** — read at query time, never copied, the reading
+`taken_at` and `place` already had. The `tag` clause compiles to "own **or** through a live
+photo", so smart collections and `nested_count` follow with no code of their own; the artwork's
+FTS text holds its photos' tag names, and every write that changes a photo's tags re-indexes the
+artworks made of it (single, bulk, rename/merge/delete, ingest, duplicate upload, archive import).
+The index is now versioned (`search.INDEX_VERSION = 2`, a `meta` marker row): on the dev library the
+first start logged *search index rebuilt (127 entries)*, and `test-photos` went from 1 artwork
+(own) to 6 (own or inherited) — the five others carry it through their photos, which is exactly what
+the user expected a tag to mean. The API reports both (`tags` own, `inherited_tags` the rest), and
+the counts distinguish what the filter returns (`artwork_count`) from what a deletion detaches
+(`own_artwork_count`).
+
+**Categories** (migration `0011`): `tag_categories` seeded People / Events / Themes, and
+`tags.category_id` (`ON DELETE SET NULL`: deleting a category keeps its tags, as "Other") +
+`last_used_at` (the picker's "recent" order). The migration adds the columns with a plain
+`ALTER TABLE … ADD COLUMN`, deliberately not a batch rebuild: `photo_tags` and `artwork_tags`
+cascade from `tags`, and dropping the table with foreign keys on would delete every link in the
+library — `tests/unit/test_migrations.py` pins that a link survives. It applied cleanly to a copy
+of the dev library. Categories travel in the archive (`tag_categories.jsonl`, matched by name
+like tags, so the seeded three never double) within format version 1 — the file and the field are
+optional both ways, and an archive without them still imports (tested by stripping them).
+No "Places" category: a read-only **Places** tab derives country → region → place from the photos'
+metadata (`GET /places`), and a row opens `/artworks?place=…`.
+
+**The inbox rule changed**: creating an artwork no longer takes its photos out — only marking one
+**ready** does, one-way (back to draft, trash and restore never put a photo back; a dismissed photo
+stays dismissed). A draft shows as a badge on its photo's inbox tile that opens it. **Existing data
+was not changed retroactively**: photos already `processed` with only draft artworks stay out of
+the inbox (*Back to inbox* on the Photos page brings any of them back by hand).
+
+**Bulk tagging** is additive (`POST /photos/tags`, `POST /artworks/tags`), behind one tri-state
+`TagMenu` on every selection (`t`) and *Tag these N photos…* in the upload tray. A duplicate upload
+used to drop the phone page's tags/collections/favourite on the floor (`open_session` returned
+`exists` before reading them); every upload path now goes through `photos.apply_upload_meta`.
+
+**The trash acts, then offers Undo** (restoring the batch). The cascade dialog stays only when
+artworks use the photos — `useDeletePhotos` asks for the preview first — and it opens focused on
+*Move to trash*, so `Enter` or a second `Delete` confirms (it used to focus the close cross: Enter
+cancelled). After an `empty_slots` cascade no Undo is offered, since restoring the photo would not
+refill the slots; the toast says the artworks' history can. Remark #3 (the viewer's tag row could
+never be closed) is fixed: *Done*, `Esc` (handled in the viewer's `onEscapeKeyDown`, because Radix
+hears Escape in the capture phase before any input could) and moving to another artwork all close it.
+
+Found on the way: the Tags page, the Photos tag filter and the filter bar's tag chip asked
+`GET /tags` with the autocomplete's limit of 20 — a library with more tags could not filter by the
+rest. They use `useAllTags()` (alphabetical, up to 500) now.
+
+**Verified in a browser** (headless Chromium over CDP, production build, a copy of the dev library,
+results read back through the API): 29 of 30 scripted checks passed first time, then 3 more
+(Enter on a radio confirms the cascade dialog; `empty_slots` keeps the artwork, incomplete and
+draft; its toast has no Undo) — no console error, no 4xx/5xx in 744 requests. Driven: the Tags page
+grouped by category and a tag moved between categories; Places → `/artworks?place=Cantagallo` with
+the chip and the 7 expected artworks; `t` + a new tag on two photos, then the artwork made of one
+of them carrying it (viewer, dashed) and found by search; the viewer's tag editor closed by `Esc`
+(viewer stays open), *Done* and navigation; `Delete` on the grid → Undo; deleting an unused photo
+(no dialog) → Undo; deleting a used one → dialog focused on *Move to trash* → `Delete` again →
+Undo restoring photo and artworks as one batch; the inbox Draft badge opening the editor; *Back to
+inbox*; the inbox's `t`, *Delete* and *Dismiss*; a synthetic drop of one new photo and one
+duplicate → *Tag these 2 photos…* tagging both; `t` on two artworks. The one failure: marking
+ready **through the API ~1 s after the inbox page loaded** did not refresh it — the app's
+EventSource was not connected yet, and events are not replayed. With the page settled (a probe 3 s
+after load) the tile left the inbox on the `photo.updated` event as designed. Not driven: the
+phone page's upload (the duplicate path is covered by an API test) and LocalSend batches (the tray
+treats them like any other item).
+
 ## 2026-10-01 — Two bugs from the remarks review (#4, #19)
 
 **The TV preview opened, flickered and closed (#4).** `EditorPage` passes `onClose` as an inline

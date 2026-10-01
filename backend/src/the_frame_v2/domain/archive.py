@@ -149,10 +149,23 @@ class PhotoRecord(Record):
     trash_batch_id: str | None = None
 
 
+class TagCategoryRecord(Record):
+    """A group of tags (People, Events…). Absent from archives written before categories: a
+    reader treats a missing `tag_categories.jsonl` as empty."""
+
+    id: str
+    name: str
+    color: str | None = None
+    position: float = 0.0
+    created_at: datetime
+
+
 class TagRecord(Record):
     id: str
     name: str
     color: str | None = None
+    category_id: str | None = None
+    """Its `TagCategoryRecord`, or none ("Other")."""
     created_at: datetime
 
 
@@ -274,6 +287,14 @@ class Entity:
 
 
 PHOTOS = Entity("photo", "data/photos.jsonl", PhotoRecord, ignored=frozenset({"imported_at"}))
+TAG_CATEGORIES = Entity(
+    "tag_category",
+    "data/tag_categories.jsonl",
+    TagCategoryRecord,
+    # Where a category sits in the list is presentation, not content: not a conflict.
+    ignored=frozenset({"created_at", "position"}),
+    named="name",
+)
 TAGS = Entity("tag", "data/tags.jsonl", TagRecord, named="name")
 ARTWORKS = Entity("artwork", "data/artworks.jsonl", ArtworkRecord, named="title")
 ARTWORK_TAGS = Entity(
@@ -295,6 +316,7 @@ SWATCHES = Entity("swatch", "data/swatches.jsonl", SwatchRecord, named="name")
 
 #: Write and read order — references first, so an importer never sees a dangling id.
 ENTITIES: tuple[Entity, ...] = (
+    TAG_CATEGORIES,
     TAGS,
     PHOTOS,
     FRAME_STYLES,

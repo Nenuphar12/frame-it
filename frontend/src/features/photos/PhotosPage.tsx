@@ -1,14 +1,18 @@
-import { Images, Info, Search, Trash2, Wand2, X } from "lucide-react";
+import { Images, Inbox, Info, Search, Trash2, Wand2, X } from "lucide-react";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useNavigate } from "@tanstack/react-router";
 
-import { usePhotos, useTags } from "@/api/queries";
+import { useAllTags, useBulkTags, useInboxAction, usePhotos } from "@/api/queries";
 import { useRegisterCommands, type Command } from "@/app/commands";
 import { CreateArtworksDialog } from "@/features/artworks/CreateArtworksDialog";
+import { TagMenu } from "@/features/tags/TagMenu";
+import { TagOptions } from "@/features/tags/TagOptions";
 import { TrashPhotosDialog } from "@/features/trash/TrashPhotosDialog";
+import { useDeletePhotos } from "@/features/trash/useDeletePhotos";
 import { useFilePickers } from "@/features/upload/useFilePickers";
+import { toast } from "@/shared/toast";
 import { Button } from "@/shared/ui/Button";
 import { EmptyState, PageHeader, Spinner } from "@/shared/ui/Misc";
 
@@ -21,11 +25,14 @@ export function PhotosPage() {
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query.trim());
   const [tagId, setTagId] = useState<string>("");
-  const tags = useTags("");
+  const tags = useAllTags();
   const searchRef = useRef<HTMLInputElement>(null);
   const photos = usePhotos(
     useMemo(
-      () => ({ ...(deferredQuery ? { q: deferredQuery } : {}), ...(tagId ? { tag_id: tagId } : {}) }),
+      () => ({
+        ...(deferredQuery ? { q: deferredQuery } : {}),
+        ...(tagId ? { tag_id: tagId } : {}),
+      }),
       [deferredQuery, tagId],
     ),
   );
@@ -34,17 +41,25 @@ export function PhotosPage() {
   const selection = useSelection(ids);
   const { selected, clear, selectAll, prune } = selection;
   const selectedInOrder = useMemo(() => ids.filter((id) => selected.has(id)), [ids, selected]);
+  const selectedPhotos = useMemo(() => items.filter((p) => selected.has(p.id)), [items, selected]);
   const [openId, setOpenId] = useState<string | null>(null);
   /** Photos given to the create dialog (the selection, or the photo shown in the drawer). */
   const [creatingIds, setCreatingIds] = useState<string[] | null>(null);
-  /** Photos about to be deleted: the dialog asks what happens to the artworks using them. */
-  const [deletingIds, setDeletingIds] = useState<string[] | null>(null);
+  const [tagMenuOpen, setTagMenuOpen] = useState(false);
+  const bulkTags = useBulkTags();
+  const inbox = useInboxAction();
   const navigate = useNavigate();
   const { openFiles } = useFilePickers();
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = photos;
   const loadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const afterDelete = useCallback(() => {
+    clear();
+    setOpenId(null);
+  }, [clear]);
+  /** Nothing uses them ⇒ straight to the trash with Undo; otherwise the cascade dialog asks. */
+  const deletion = useDeletePhotos(afterDelete);
 
   useEffect(() => prune(new Set(ids)), [ids, prune]);
 
@@ -53,8 +68,23 @@ export function PhotosPage() {
   }, [selectedInOrder]);
 
   const trashSelection = useCallback(() => {
-    if (selectedInOrder.length > 0) setDeletingIds(selectedInOrder);
-  }, [selectedInOrder]);
+    if (selectedInOrder.length > 0) void deletion.request(selectedInOrder);
+  }, [deletion, selectedInOrder]);
+
+  /** Only the selected photos that are not already waiting there. */
+  const backToInbox = useMemo(
+    () => selectedPhotos.filter((p) => p.inbox_state !== "inbox").map((p) => p.id),
+    [selectedPhotos],
+  );
+  const sendBackToInbox = useCallback(() => {
+    if (backToInbox.length === 0) return;
+    inbox.mutate(
+      { ids: backToInbox, action: "restore" },
+      {
+        onSuccess: () => toast.success("photos.backToInboxToast"),
+      },
+    );
+  }, [backToInbox, inbox]);
 
   const commands = useMemo<Command[]>(
     () => [
@@ -80,11 +110,26 @@ export function PhotosPage() {
         run: createFromSelection,
       },
       {
+        id: "photos.tag",
+        label: "tags.tagSelection",
+        group: "commands.groups.library",
+        shortcut: "t",
+        run: () => {
+          if (selectedInOrder.length > 0) setTagMenuOpen(true);
+        },
+      },
+      {
         id: "photos.trash",
         label: "trash.moveToTrash",
         group: "commands.groups.library",
         shortcut: "Delete",
         run: trashSelection,
+      },
+      {
+        id: "photos.backToInbox",
+        label: "photos.backToInbox",
+        group: "commands.groups.library",
+        run: sendBackToInbox,
       },
       {
         id: "photos.search",
@@ -101,7 +146,7 @@ export function PhotosPage() {
         run: () => setOpenId((current) => (current ? null : (selectedInOrder[0] ?? null))),
       },
     ],
-    [clear, createFromSelection, selectAll, selectedInOrder, trashSelection],
+    [clear, createFromSelection, selectAll, selectedInOrder, sendBackToInbox, trashSelection],
   );
   useRegisterCommands(commands);
 
@@ -130,7 +175,7 @@ export function PhotosPage() {
                 />
               </label>
               {/* Tags reach photos as well as artworks, so the photo grid filters by one too
-                  (remarks.md #7). `tag_id` has always been in the API; nothing offered it. */}
+                  (remarks.md #7). Every tag, grouped by category — not the autocomplete's 20. */}
               <div className="flex items-center gap-1.5">
                 <select
                   value={tagId}
@@ -139,11 +184,7 @@ export function PhotosPage() {
                   className="h-9 rounded-md border border-border bg-bg px-2 text-sm text-text outline-none"
                 >
                   <option value="">{t("photos.allTags")}</option>
-                  {(tags.data ?? []).map((tag) => (
-                    <option key={tag.id} value={tag.id}>
-                      {tag.name} ({tag.photo_count})
-                    </option>
-                  ))}
+                  <TagOptions tags={tags.data ?? []} count={(tag) => tag.photo_count} />
                 </select>
                 {tagId && (
                   <button
@@ -164,6 +205,24 @@ export function PhotosPage() {
               >
                 <Wand2 size={16} /> {t("photos.createArtworks")}
               </Button>
+              <TagMenu
+                itemTags={selectedPhotos.map((p) => p.tags ?? [])}
+                open={tagMenuOpen}
+                onOpenChange={setTagMenuOpen}
+                onChange={(change) =>
+                  bulkTags.photos.mutate({ photo_ids: selectedInOrder, ...change })
+                }
+              />
+              {backToInbox.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={sendBackToInbox}
+                  title={t("photos.backToInboxHint")}
+                >
+                  <Inbox size={14} /> {t("photos.backToInbox")}
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 disabled={selected.size === 0}
@@ -225,15 +284,7 @@ export function PhotosPage() {
           onCreateArtwork={(id) => setCreatingIds([id])}
         />
       )}
-      <TrashPhotosDialog
-        photoIds={deletingIds ?? []}
-        open={deletingIds !== null}
-        onOpenChange={(open) => !open && setDeletingIds(null)}
-        onDone={() => {
-          clear();
-          setOpenId(null);
-        }}
-      />
+      <TrashPhotosDialog {...deletion.dialog} />
       <CreateArtworksDialog
         photoIds={creatingIds ?? []}
         open={creatingIds !== null}

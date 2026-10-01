@@ -1,12 +1,14 @@
-// Artwork metadata while editing: title, tags (inherited from the photos and pre-checked), the
-// favourite flag and the snapshots — including "revert to when opened" (§11.1, §14 phase 5.7).
+// Artwork metadata while editing: title, tags (its own, editable; its photos', carried and shown
+// apart), the favourite flag and the snapshots — including "revert to when opened" (§11.1).
 import { Heart, History } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { Artwork, Photo } from "@/api/client";
 import { useArtworkActions, useRestoreSnapshot, useSnapshots } from "@/api/queries";
+import { TagDot } from "@/features/tags/TagDot";
 import { TagPicker } from "@/features/tags/TagPicker";
+import { useTagCategoryIndex } from "@/features/tags/useTagCategories";
 import { Button } from "@/shared/ui/Button";
 import { PanelSection } from "./Controls";
 
@@ -21,19 +23,19 @@ export function InfoSheet({ artwork, photos, openedSnapshotId }: InfoSheetProps)
   const { update } = useArtworkActions();
   const snapshots = useSnapshots(artwork.id);
   const restore = useRestoreSnapshot();
+  const { colorOf } = useTagCategoryIndex();
   // A draft over the stored title: no effect is needed to follow the server's value.
   const [draft, setDraft] = useState<string | null>(null);
   const title = draft ?? artwork.title;
 
-  // Tags of the photos the artwork is made of: the obvious suggestions when tagging it.
+  // Its own tags are edited here; its photos' tags it simply carries (docs/organization.md §1) —
+  // listed apart, each naming the photos it comes from, which is where it can be removed.
   const tags = artwork.tags ?? [];
-  const suggested = photos
-    .flatMap((photo) => photo.tags ?? [])
-    .filter(
-      (tag, index, all) =>
-        all.findIndex((other) => other.id === tag.id) === index &&
-        !tags.some((existing) => existing.id === tag.id),
-    );
+  const inherited = artwork.inherited_tags ?? [];
+  const sources = (tagId: string) =>
+    photos
+      .filter((photo) => (photo.tags ?? []).some((tag) => tag.id === tagId))
+      .map((photo) => photo.original_filename);
 
   const setTags = (tags: { id: string }[]) =>
     update.mutate({ id: artwork.id, tag_ids: tags.map((tag) => tag.id) });
@@ -64,19 +66,28 @@ export function InfoSheet({ artwork, photos, openedSnapshotId }: InfoSheetProps)
 
       <PanelSection title={t("editor.sections.tags")}>
         <TagPicker value={tags} onChange={setTags} />
-        {suggested.length > 0 && (
+        {inherited.length > 0 && (
           <div className="flex flex-wrap items-center gap-1">
-            <span className="text-[11px] text-muted">{t("editor.info.fromPhotos")}</span>
-            {suggested.map((tag) => (
-              <button
-                key={tag.id}
-                type="button"
-                onClick={() => setTags([...tags, tag])}
-                className="rounded border border-dashed border-border px-1.5 py-px text-[11px] text-muted hover:text-text"
-              >
-                + {tag.name}
-              </button>
-            ))}
+            <span className="text-[11px] text-muted" title={t("tags.inheritedHint")}>
+              {t("editor.info.fromPhotos")}
+            </span>
+            {inherited.map((tag) => {
+              const from = sources(tag.id);
+              return (
+                <span
+                  key={tag.id}
+                  title={
+                    from.length > 0
+                      ? t("tags.inheritedFrom", { names: from.join(", ") })
+                      : t("tags.inheritedHint")
+                  }
+                  className="inline-flex items-center gap-1 rounded border border-dashed border-border-strong px-1.5 py-px text-[11px] text-muted"
+                >
+                  <TagDot color={colorOf(tag)} />
+                  {tag.name}
+                </span>
+              );
+            })}
           </div>
         )}
       </PanelSection>

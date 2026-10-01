@@ -8,7 +8,7 @@ import {
   RotateCw,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/cn";
@@ -16,6 +16,7 @@ import { formatBytes } from "@/shared/format";
 import { Button } from "@/shared/ui/Button";
 import { Spinner } from "@/shared/ui/Misc";
 
+import { TagBatchMenu } from "./TagBatchMenu";
 import { isFinished, useUploads, type UploadItem } from "./uploadStore";
 import { useUploadSummary } from "./useUploadSummary";
 
@@ -92,6 +93,20 @@ export function UploadTray() {
   const clearFinished = useUploads((s) => s.clearFinished);
   const summary = useUploadSummary();
   const [collapsed, setCollapsed] = useState(false);
+  /** The photos this batch landed on — new ones and the ones the library already had. */
+  const photoIds = useMemo(
+    () => [
+      ...new Set(
+        items.flatMap((item) =>
+          item.photoId &&
+          (item.status === "done" || item.status === "duplicate" || item.status === "merged")
+            ? [item.photoId]
+            : [],
+        ),
+      ),
+    ],
+    [items],
+  );
   if (items.length === 0) return null;
 
   return (
@@ -108,6 +123,7 @@ export function UploadTray() {
           )}
         </div>
         <div className="flex items-center gap-1">
+          <TagBatchMenu photoIds={photoIds} />
           {summary.active === 0 && (
             <Button size="sm" variant="ghost" onClick={clearFinished}>
               {t("upload.clear")}

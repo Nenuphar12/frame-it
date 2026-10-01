@@ -17,13 +17,13 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from the_frame_v2.context import AppContext
-from the_frame_v2.db.models import Photo, PhotoPendingMeta, PhotoTag, UploadSession
+from the_frame_v2.db.models import Photo, UploadSession
 from the_frame_v2.events import Event
 from the_frame_v2.imaging import decode
 from the_frame_v2.imaging.decode import DecodeError, ProbeResult
 from the_frame_v2.imaging.fingerprint import content_fingerprint
 from the_frame_v2.jobs.queue import JobContext, PermanentJobError
-from the_frame_v2.services import photo_copies, search
+from the_frame_v2.services import photo_copies, photos, search
 
 log = logging.getLogger(__name__)
 
@@ -178,16 +178,7 @@ def ingest_upload(ctx: AppContext, upload_id: str, *, _retry: bool = True) -> st
             )
             s.add(photo)
             s.flush()
-            for tag_id in pending.get("tag_ids", []):
-                s.add(PhotoTag(photo_id=photo.id, tag_id=tag_id))
-            if pending.get("collection_ids") or pending.get("favorite"):
-                s.add(
-                    PhotoPendingMeta(
-                        photo_id=photo.id,
-                        collection_ids=list(pending.get("collection_ids", [])),
-                        favorite=bool(pending.get("favorite")),
-                    )
-                )
+            photos.apply_upload_meta(s, photo, pending)
             row = s.get(UploadSession, upload.id)
             if row is not None:
                 s.delete(row)
@@ -210,6 +201,10 @@ def _finish_as_existing(
         row = s.get(UploadSession, upload.id)
         if row is not None:
             s.delete(row)
+        # A duplicate keeps what the sender chose for its batch (tags, collections, favourite).
+        photo = s.get(Photo, photo_id)
+        if photo is not None:
+            photos.apply_upload_meta(s, photo, upload.pending_meta)
     ctx.storage.upload_temp_path(upload.id).unlink(missing_ok=True)
     _publish_ingested(ctx, upload, photo_id, duplicate=True, merged=merged)
 

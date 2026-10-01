@@ -1,12 +1,15 @@
 """Full-text search index (`search_index`, FTS5 — docs/data-model.md §5.1).
 
 One row per entity holding everything worth searching for it: an artwork's title, the names of
-its tags, and the place names and file names of the photos it uses; a photo's file name, place,
-camera and tags; a collection's name and description. Writers call `index_artwork` /
-`index_photo` / `index_collection` inside the same transaction as the change, so the index never
-outlives what it describes.
+its tags — its own and the ones it inherits from its photos (docs/organization.md §1) — and the
+place names and file names of the photos it uses; a photo's file name, place, camera and tags; a
+collection's name and description. Writers call `index_artwork` / `index_photo` /
+`index_collection` inside the same transaction as the change, so the index never outlives what it
+describes; a change to a photo's tags also re-indexes the artworks made of it
+(`index_artworks_using`).
 
-The table is disposable: `reindex_all` rebuilds it from the library (startup job when it is empty).
+The table is disposable: `reindex_all` rebuilds it from the library, at startup when it is empty
+or was written under older rules than `INDEX_VERSION` (kept in a marker row).
 """
 
 from __future__ import annotations
@@ -28,6 +31,11 @@ from the_frame_v2.db.models import (
 )
 
 MAX_TEXT = 4000
+#: Bump when what an entity's text holds changes: startup then rebuilds the index once.
+#: 2 — an artwork's text holds its photos' tag names (tag inheritance).
+INDEX_VERSION = 2
+#: Entity type of the marker row that records `INDEX_VERSION` (never matched by a search).
+_META = "meta"
 #: Only these characters survive into an FTS5 MATCH expression (everything else is an operator).
 _TOKEN = re.compile(r"[\w'-]+", re.UNICODE)
 
@@ -94,17 +102,25 @@ def index_photo(session: Session, photo: Photo) -> None:
 
 
 def artwork_text(session: Session, artwork: Artwork) -> str:
-    tags = session.scalars(
+    own = session.scalars(
         select(Tag.name)
         .join(ArtworkTag, ArtworkTag.tag_id == Tag.id)
         .where(ArtworkTag.artwork_id == artwork.id)
+    )
+    inherited = session.scalars(
+        select(Tag.name)
+        .join(PhotoTag, PhotoTag.tag_id == Tag.id)
+        .join(ArtworkPhoto, ArtworkPhoto.photo_id == PhotoTag.photo_id)
+        .join(Photo, Photo.id == PhotoTag.photo_id)
+        .where(ArtworkPhoto.artwork_id == artwork.id, Photo.deleted_at.is_(None))
+        .order_by(Tag.name)
     )
     photos = session.execute(
         select(Photo.original_filename, Photo.place_name, Photo.place_admin1, Photo.place_country)
         .join(ArtworkPhoto, ArtworkPhoto.photo_id == Photo.id)
         .where(ArtworkPhoto.artwork_id == artwork.id)
     )
-    parts: list[str | None] = [artwork.title, *tags]
+    parts: list[str | None] = [artwork.title, *own, *inherited]
     for row in photos:
         parts.extend(row)
     return _join(parts)
@@ -112,6 +128,21 @@ def artwork_text(session: Session, artwork: Artwork) -> str:
 
 def index_artwork(session: Session, artwork: Artwork) -> None:
     _replace(session, "artwork", artwork.id, artwork_text(session, artwork))
+
+
+def index_artworks_using(session: Session, photo_ids: Iterable[str]) -> None:
+    """Re-index the live artworks made of these photos: their text holds the photos' tags."""
+    ids = set(photo_ids)
+    if not ids:
+        return
+    rows = session.scalars(
+        select(Artwork).where(
+            Artwork.deleted_at.is_(None),
+            Artwork.id.in_(select(ArtworkPhoto.artwork_id).where(ArtworkPhoto.photo_id.in_(ids))),
+        )
+    )
+    for artwork in rows:
+        index_artwork(session, artwork)
 
 
 def index_collection(session: Session, collection: Collection) -> None:
@@ -134,12 +165,24 @@ def search_ids(session: Session, entity_type: str, query: str, limit: int = 500)
 
 
 def is_empty(session: Session) -> bool:
-    return not session.execute(text("SELECT 1 FROM search_index LIMIT 1")).first()
+    return not session.execute(
+        text("SELECT 1 FROM search_index WHERE entity_type != :m LIMIT 1"), {"m": _META}
+    ).first()
+
+
+def needs_rebuild(session: Session) -> bool:
+    """Empty, or written under older rules than `INDEX_VERSION` (the marker row says which)."""
+    marker = session.execute(
+        text("SELECT text FROM search_index WHERE entity_type = :m AND entity_id = 'version'"),
+        {"m": _META},
+    ).first()
+    return marker is None or marker[0] != str(INDEX_VERSION) or is_empty(session)
 
 
 def reindex_all(session: Session) -> int:
     """Rebuild the whole index (cheap: the text comes from columns we already hold)."""
     session.execute(text("DELETE FROM search_index"))
+    _replace(session, _META, "version", str(INDEX_VERSION))
     count = 0
     for photo in session.scalars(select(Photo)):
         _replace(session, "photo", photo.id, photo_text(session, photo))

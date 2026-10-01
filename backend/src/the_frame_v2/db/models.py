@@ -114,6 +114,10 @@ class PhotoTag(Base):
     )
     tag_id: Mapped[str] = mapped_column(ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True)
 
+    # An artwork carries its photos' tags (docs/organization.md §1), so the tag filter walks
+    # `tag → photos → artworks`: without this, every tag clause scanned the whole link table.
+    __table_args__ = (Index("ix_photo_tags_tag", "tag_id", "photo_id"),)
+
 
 class PhotoPendingMeta(Base):
     """Metadata chosen at upload time, applied when artworks are created from the photo."""
@@ -127,6 +131,19 @@ class PhotoPendingMeta(Base):
     favorite: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class TagCategory(Base):
+    """A group of tags (People, Events…): one level, no nesting (docs/organization.md §1)."""
+
+    __tablename__ = "tag_categories"
+
+    id: Mapped[str] = _id()
+    name: Mapped[str] = mapped_column(String(64, collation="NOCASE"), unique=True)
+    color: Mapped[str | None] = mapped_column(String(9))
+    """The colour of its tags, unless a tag has its own."""
+    position: Mapped[float] = mapped_column(Float, default=0.0)
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+
+
 class Tag(Base):
     __tablename__ = "tags"
 
@@ -134,6 +151,12 @@ class Tag(Base):
     name: Mapped[str] = mapped_column(String(128, collation="NOCASE"), unique=True)
     color: Mapped[str | None] = mapped_column(String(9))
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    category_id: Mapped[str | None] = mapped_column(
+        ForeignKey("tag_categories.id", ondelete="SET NULL"), index=True
+    )
+    """NULL ⇒ the tag is uncategorised ("Other" in the UI)."""
+    last_used_at: Mapped[datetime | None]
+    """When the tag was last attached to something: the picker offers recent tags first."""
 
 
 # ---- Artworks ---------------------------------------------------------------------------------
@@ -195,6 +218,8 @@ class ArtworkTag(Base):
         ForeignKey("artworks.id", ondelete="CASCADE"), primary_key=True
     )
     tag_id: Mapped[str] = mapped_column(ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True)
+
+    __table_args__ = (Index("ix_artwork_tags_tag", "tag_id", "artwork_id"),)
 
 
 class ArtworkSnapshot(Base):

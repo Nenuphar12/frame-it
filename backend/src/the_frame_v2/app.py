@@ -108,8 +108,9 @@ def build_context(settings: Settings) -> AppContext:
     jobs.schedule_every(archive_export.SWEEP_JOB, archive_export.SWEEP_INTERVAL_SECONDS, {})
     with db.session() as s:
         templates.seed_builtins(s)
-        if search.is_empty(s):
-            # The FTS index is disposable (docs/data-model.md): rebuild it when it is missing.
+        if search.needs_rebuild(s):
+            # The FTS index is disposable (docs/data-model.md): rebuild it when it is missing or
+            # was written under older rules (`search.INDEX_VERSION`).
             count = search.reindex_all(s)
             if count:
                 log.info("search index rebuilt (%d entries)", count)

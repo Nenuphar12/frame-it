@@ -8,6 +8,12 @@ export type Device = Schemas["DeviceOut"];
 export type Me = Schemas["Me"];
 export type Tag = Schemas["TagOut"];
 export type TagWithCount = Schemas["TagWithCount"];
+export type TagSort = NonNullable<
+  NonNullable<paths["/api/v1/tags"]["get"]["parameters"]["query"]>["sort"]
+>;
+export type TagCategory = Schemas["TagCategoryOut"];
+export type Places = Schemas["PlacesOut"];
+export type PlaceNode = Schemas["PlaceOut"];
 export type Collection = Schemas["CollectionOut"];
 export type CollectionKind = Collection["kind"];
 export type ArtworkSort = NonNullable<Schemas["ArtworkQueryIn"]["sort"]>;

@@ -4,15 +4,25 @@ from __future__ import annotations
 
 import base64
 from collections import defaultdict
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import Select, and_, delete, func, or_, select
 from sqlalchemy.orm import Session
 
-from the_frame_v2.db.models import Photo, PhotoTag, Tag
+from the_frame_v2.db.models import (
+    Artwork,
+    ArtworkPhoto,
+    Collection,
+    Photo,
+    PhotoPendingMeta,
+    PhotoTag,
+    Tag,
+)
 from the_frame_v2.errors import ProblemError, not_found
-from the_frame_v2.services import search
+from the_frame_v2.services import search, tags
 
 INBOX_STATES = ("inbox", "processed", "dismissed")
 MAX_LIMIT = 500
@@ -31,6 +41,8 @@ class PhotoPage:
     items: list[Photo]
     tags: dict[str, list[Tag]]
     next_cursor: str | None
+    drafts: dict[str, list[str]] = field(default_factory=dict)
+    """photo id → live draft artworks using it (`draft_artworks_for`)."""
 
 
 def _encode_cursor(photo: Photo) -> str:
@@ -101,7 +113,8 @@ def list_photos(session: Session, flt: PhotoFilter, cursor: str | None, limit: i
     rows = list(session.scalars(stmt))
     next_cursor = _encode_cursor(rows[limit - 1]) if len(rows) > limit else None
     items = rows[:limit]
-    return PhotoPage(items, tags_for(session, [p.id for p in items]), next_cursor)
+    ids = [p.id for p in items]
+    return PhotoPage(items, tags_for(session, ids), next_cursor, draft_artworks_for(session, ids))
 
 
 def count_photos(session: Session, flt: PhotoFilter) -> int:
@@ -129,11 +142,83 @@ def update_photo(
         known = set(session.scalars(select(Tag.id).where(Tag.id.in_(unique))))
         if len(known) != len(unique):
             raise ProblemError(422, "unknown_tag", "Unknown tag")
+        before = set(session.scalars(select(PhotoTag.tag_id).where(PhotoTag.photo_id == photo.id)))
         session.execute(delete(PhotoTag).where(PhotoTag.photo_id == photo.id))
         session.add_all(PhotoTag(photo_id=photo.id, tag_id=t) for t in unique)
+        tags.touch(session, [t for t in unique if t not in before])
         session.flush()
         search.index_photo(session, photo)
+        # The artworks made of this photo carry its tags (docs/organization.md §1).
+        search.index_artworks_using(session, [photo.id])
     return photo
+
+
+def apply_upload_meta(session: Session, photo: Photo, meta: Mapping[str, Any] | None) -> None:
+    """What the sender chose for a batch (tags, collections, favourite), on one photo of it.
+
+    The same whether the photo is new or one the library already had (a duplicate, or a copy of
+    it): tags land on the photo now — **added**, never replacing what it carries — and the
+    collections and favourite wait in `photo_pending_meta` for the first artwork made of it,
+    merged with whatever was already waiting. Unknown tags and collections are dropped, so a tag
+    deleted between upload and ingest cannot break the ingest.
+    """
+    if not meta:
+        return
+    wanted = [str(t) for t in meta.get("tag_ids") or []]
+    known = set(session.scalars(select(Tag.id).where(Tag.id.in_(wanted)))) if wanted else set()
+    have = set(session.scalars(select(PhotoTag.tag_id).where(PhotoTag.photo_id == photo.id)))
+    added = [t for t in dict.fromkeys(wanted) if t in known and t not in have]
+    session.add_all(PhotoTag(photo_id=photo.id, tag_id=t) for t in added)
+    tags.touch(session, added)
+
+    collection_ids = [str(c) for c in meta.get("collection_ids") or []]
+    if collection_ids:
+        collection_ids = list(
+            session.scalars(select(Collection.id).where(Collection.id.in_(collection_ids)))
+        )
+    favorite = bool(meta.get("favorite"))
+    if collection_ids or favorite:
+        pending = session.get(PhotoPendingMeta, photo.id)
+        if pending is None:
+            session.add(
+                PhotoPendingMeta(
+                    photo_id=photo.id, collection_ids=collection_ids, favorite=favorite
+                )
+            )
+        else:
+            pending.collection_ids = list(
+                dict.fromkeys([*(str(c) for c in pending.collection_ids), *collection_ids])
+            )
+            pending.favorite = pending.favorite or favorite
+    session.flush()
+    if added:
+        search.index_photo(session, photo)
+        search.index_artworks_using(session, [photo.id])
+
+
+def draft_artworks_for(session: Session, photo_ids: list[str]) -> dict[str, list[str]]:
+    """photo id → the live **draft** artworks using it, oldest first.
+
+    While a photo has only drafts it stays in the inbox (it leaves when one is marked ready), and
+    the inbox shows a badge that opens the draft rather than inviting a second artwork.
+    """
+    result: dict[str, list[str]] = defaultdict(list)
+    if not photo_ids:
+        return result
+    rows = session.execute(
+        select(ArtworkPhoto.photo_id, Artwork.id)
+        .join(Artwork, Artwork.id == ArtworkPhoto.artwork_id)
+        .where(
+            ArtworkPhoto.photo_id.in_(photo_ids),
+            Artwork.deleted_at.is_(None),
+            Artwork.status == "draft",
+        )
+        .order_by(Artwork.created_at, Artwork.id)
+    )
+    for photo_id, artwork_id in rows:
+        if artwork_id not in result[photo_id]:
+            result[photo_id].append(artwork_id)
+    return result
 
 
 def set_inbox_state(session: Session, photo_ids: list[str], state: str) -> int:

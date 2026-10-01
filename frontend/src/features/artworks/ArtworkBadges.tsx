@@ -20,7 +20,11 @@ export function ArtworkBadges({ artwork }: { artwork: ArtworkSummary }) {
           {tier === "upscaled" && percent !== null && ` ${percent}%`}
         </Badge>
       )}
-      <Badge tone={artwork.status === "ready" ? "info" : "neutral"}>
+      {/* "Ready" means done: the artwork was checked, and its photos left the inbox. */}
+      <Badge
+        tone={artwork.status === "ready" ? "info" : "neutral"}
+        title={t(`artworks.statusHints.${artwork.status}`)}
+      >
         {t(`artworks.statuses.${artwork.status}`)}
       </Badge>
       {artwork.is_incomplete && (

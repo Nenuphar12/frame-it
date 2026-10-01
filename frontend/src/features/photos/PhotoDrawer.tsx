@@ -1,9 +1,10 @@
-import { Download, Wand2, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Download, PencilLine, Undo2, Wand2, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { photoOriginalUrl, photoProxyUrl, type Photo } from "@/api/client";
-import { usePhoto, useUpdatePhoto } from "@/api/queries";
+import { useInboxAction, usePhoto, useUpdatePhoto } from "@/api/queries";
 import { TagPicker } from "@/features/tags/TagPicker";
 import { formatBytes, formatCaptureTime, formatDateTime, megapixels } from "@/shared/format";
 import { Button } from "@/shared/ui/Button";
@@ -36,6 +37,7 @@ export function PhotoDrawer({ photoId, onClose, onCreateArtwork }: PhotoDrawerPr
   const { t } = useTranslation();
   const { data: photo, isLoading } = usePhoto(photoId);
   const update = useUpdatePhoto();
+  const inbox = useInboxAction();
 
   return (
     <aside
@@ -109,8 +111,39 @@ export function PhotoDrawer({ photoId, onClose, onCreateArtwork }: PhotoDrawerPr
             <Row label={t("photos.fields.colorProfile")}>{photo.icc_description}</Row>
             <Row label={t("photos.fields.imported")}>{formatDateTime(photo.imported_at)}</Row>
             <Row label={t("photos.fields.inbox")}>
-              {t(`photos.inboxState.${photo.inbox_state}`)}
+              <span className="flex flex-wrap items-center gap-2">
+                {t(`photos.inboxState.${photo.inbox_state}`)}
+                {/* It left the inbox when an artwork using it was marked ready (or by Dismiss):
+                    sending it back is always allowed, never automatic (docs/organization.md §6). */}
+                {photo.inbox_state !== "inbox" && (
+                  <button
+                    type="button"
+                    disabled={inbox.isPending}
+                    onClick={() => inbox.mutate({ ids: [photo.id], action: "restore" })}
+                    className="inline-flex items-center gap-1 rounded text-xs text-accent hover:underline"
+                  >
+                    <Undo2 size={12} /> {t("photos.backToInbox")}
+                  </button>
+                )}
+              </span>
             </Row>
+            {(photo.draft_artwork_ids ?? []).length > 0 && (
+              <Row label={t("photos.fields.drafts")}>
+                <span className="flex flex-wrap gap-2">
+                  {(photo.draft_artwork_ids ?? []).map((artworkId, index) => (
+                    <Link
+                      key={artworkId}
+                      to="/editor/$artworkId"
+                      params={{ artworkId }}
+                      className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
+                    >
+                      <PencilLine size={12} />
+                      {t("photos.openDraft", { n: index + 1 })}
+                    </Link>
+                  ))}
+                </span>
+              </Row>
+            )}
           </dl>
           <div className="flex flex-wrap gap-2">
             {onCreateArtwork && (

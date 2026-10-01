@@ -149,6 +149,22 @@ export function useServerEvents(enabled: boolean) {
         if (name === "photo.ingested" || name === "photo.updated") {
           void qc.invalidateQueries({ queryKey: ["photos"] });
         }
+        if (name === "photo.updated") {
+          // An artwork carries its photos' tags, and marking it ready moves its photos out of
+          // the inbox: what an artwork list, a smart collection or a tag count shows moves too.
+          void qc.invalidateQueries({ queryKey: ["artworks"] });
+          void qc.invalidateQueries({ queryKey: ["tags"] });
+          void qc.invalidateQueries({ queryKey: ["collections"] });
+        }
+        if (
+          name === "entity.changed" &&
+          (data as ServerEvents["entity.changed"]).entity === "tag"
+        ) {
+          // A tag renamed, merged, deleted or re-categorised elsewhere: the chips on photos and
+          // artworks, and the smart collections matching on it, change too.
+          void qc.invalidateQueries({ queryKey: ["photos"] });
+          void qc.invalidateQueries({ queryKey: ["collections"] });
+        }
         if (name === "job.failed") {
           // The activity centre badges the count, and the failure is said out loud once.
           void qc.invalidateQueries({ queryKey: ["jobs"] });

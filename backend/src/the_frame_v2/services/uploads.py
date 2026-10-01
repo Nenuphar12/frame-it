@@ -23,6 +23,7 @@ from the_frame_v2.db.models import Collection, Photo, Tag, UploadSession
 from the_frame_v2.errors import ProblemError, not_found
 from the_frame_v2.ids import utcnow
 from the_frame_v2.services import photo_copies
+from the_frame_v2.services import photos as photos_service
 
 MAX_CHUNK_BYTES = 16 * 1024 * 1024
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -113,6 +114,9 @@ def open_session(
     photo = session.get(Photo, photo_id) if photo_id is not None else None
     if photo is not None:
         photo_copies.receive_again(photo)
+        # Nothing is transferred, but what the sender chose for the batch still applies: the
+        # phone page's tags, collections and favourite reach a photo the library already had.
+        photos_service.apply_upload_meta(session, photo, _clean_meta(session, meta or {}))
         return OpenResult("exists", None, photo.id)
     existing = session.scalars(
         select(UploadSession).where(

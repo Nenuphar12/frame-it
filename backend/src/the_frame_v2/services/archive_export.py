@@ -45,6 +45,7 @@ from the_frame_v2.db.models import (
     Setting,
     Swatch,
     Tag,
+    TagCategory,
 )
 from the_frame_v2.domain import archive
 from the_frame_v2.domain.document import SCHEMA_VERSION
@@ -91,6 +92,7 @@ class Selection:
     scope: archive.Scope
     artworks: list[Artwork] = field(default_factory=list)
     photos: list[Photo] = field(default_factory=list)
+    tag_categories: list[TagCategory] = field(default_factory=list)
     tags: list[Any] = field(default_factory=list)
     frame_styles: list[FrameStyle] = field(default_factory=list)
     layouts: list[Layout] = field(default_factory=list)
@@ -199,6 +201,18 @@ def plan_export(session: Session, options: ExportOptions) -> Selection:
             select(Tag) if scope == "full" else select(Tag).where(Tag.id.in_(tag_ids or {""}))
         )
     )
+    # Every category travels with a full archive (an empty one is still the user's); a partial
+    # one carries only the categories of the tags it holds.
+    category_ids = {t.category_id for t in tags if t.category_id}
+    tag_categories = list(
+        session.scalars(
+            select(TagCategory).order_by(TagCategory.position)
+            if scope == "full"
+            else select(TagCategory)
+            .where(TagCategory.id.in_(category_ids or {""}))
+            .order_by(TagCategory.position)
+        )
+    )
 
     styles: list[FrameStyle] = []
     layouts: list[Layout] = []
@@ -222,6 +236,7 @@ def plan_export(session: Session, options: ExportOptions) -> Selection:
         scope=scope,
         artworks=artworks,
         photos=photos,
+        tag_categories=tag_categories,
         tags=tags,
         frame_styles=styles,
         layouts=layouts,
@@ -288,6 +303,7 @@ def _jsonl(records: Iterable[archive.Record]) -> str:
 
 
 _ROWS: dict[str, Callable[[Selection], list[Any]]] = {
+    "tag_category": lambda s: s.tag_categories,
     "tag": lambda s: s.tags,
     "photo": lambda s: s.photos,
     "frame_style": lambda s: s.frame_styles,

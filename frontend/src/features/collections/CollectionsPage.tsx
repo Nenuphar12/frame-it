@@ -16,11 +16,13 @@ import { useTranslation } from "react-i18next";
 import type { ArtworkSort, ArtworkSummary, Collection } from "@/api/client";
 import {
   useArtworks,
+  useBulkTags,
   useCollectionItems,
   useCollections,
   useDeleteCollection,
   useMoveCollection,
 } from "@/api/queries";
+import { TagMenu } from "@/features/tags/TagMenu";
 import { useRegisterCommands, type Command } from "@/app/commands";
 import { ArtworkGrid } from "@/features/artworks/ArtworkGrid";
 import { ArtworkViewer } from "@/features/artworks/ArtworkViewer";
@@ -104,6 +106,8 @@ export function CollectionsPage() {
   );
 
   const [collectionMenuOpen, setCollectionMenuOpen] = useState(false);
+  const [tagMenuOpen, setTagMenuOpen] = useState(false);
+  const bulkTags = useBulkTags();
   const removeFromCollection = useCallback(
     (artworkIds: string[]) => {
       if (selected && isManual) items.remove.mutate({ id: selected.id, artwork_ids: artworkIds });
@@ -117,6 +121,7 @@ export function CollectionsPage() {
     clear,
     openEditor,
     openCollectionMenu: () => setCollectionMenuOpen(true),
+    openTagMenu: () => setTagMenuOpen(true),
     removeFromCollection: isManual ? removeFromCollection : undefined,
     suspended: openId !== null,
   });
@@ -230,6 +235,17 @@ export function CollectionsPage() {
                     open={collectionMenuOpen}
                     onOpenChange={setCollectionMenuOpen}
                     onDone={clear}
+                  />
+                )}
+                {picked.size > 0 && (
+                  <TagMenu
+                    itemTags={found.filter((a) => picked.has(a.id)).map((a) => a.tags ?? [])}
+                    hint={t("tags.inheritedNotListed")}
+                    open={tagMenuOpen}
+                    onOpenChange={setTagMenuOpen}
+                    onChange={(change) =>
+                      bulkTags.artworks.mutate({ artwork_ids: selectedInOrder, ...change })
+                    }
                   />
                 )}
                 {picked.size > 0 && isManual && (

@@ -100,27 +100,100 @@ class TagOut(ApiModel):
     id: str
     name: str
     color: str | None
+    """Its own colour; when null the UI shows its category's (`TagCategoryOut.color`)."""
+    category_id: str | None = None
+    """Its category, or null ("Other")."""
 
 
 class TagWithCount(TagOut):
     photo_count: int
     artwork_count: int = 0
+    """Live artworks carrying it — their own tag or one of their photos' — i.e. what the tag
+    filter returns (docs/organization.md §1)."""
+    own_artwork_count: int = 0
+    """Live artworks it is attached to directly: what deleting it detaches from artworks."""
+    last_used_at: datetime | None = None
+
+
+TagSort = Literal["usage", "recent", "name"]
 
 
 class TagCreateIn(BaseModel):
     name: str = Field(min_length=1, max_length=64)
+    category_id: str | None = None
+    """Category of a *new* tag; an existing tag with this name keeps its own."""
 
 
 class TagUpdateIn(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=64)
     color: str | None = Field(default=None, max_length=9)
     """`#rrggbb`, `#rrggbbaa`, or `""` to clear it."""
+    category_id: str | None = None
+    """A category id, or null for "Other". Left alone when the field is absent."""
 
 
 class TagMergeIn(BaseModel):
     """Move every use of `source_ids` onto this tag; the sources disappear."""
 
     source_ids: list[str] = Field(min_length=1, max_length=100)
+
+
+class TagsCategorizeIn(BaseModel):
+    """Move many tags into one category (null ⇒ "Other")."""
+
+    tag_ids: list[str] = Field(min_length=1, max_length=500)
+    category_id: str | None = None
+
+
+class TagCategoryOut(ApiModel):
+    id: str
+    name: str
+    color: str | None
+    position: float
+    tag_count: int = 0
+
+
+class TagCategoryCreateIn(BaseModel):
+    name: str = Field(min_length=1, max_length=64)
+    color: str | None = Field(default=None, max_length=9)
+
+
+class TagCategoryUpdateIn(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=64)
+    color: str | None = Field(default=None, max_length=9)
+    """`#rrggbb`, `#rrggbbaa`, or `""` to clear it."""
+
+
+class BulkTagIn(BaseModel):
+    """Additive: `add` and `remove` name tags, nothing else is touched (docs/organization.md §1)."""
+
+    add: list[str] = Field(default_factory=list, max_length=200)
+    remove: list[str] = Field(default_factory=list, max_length=200)
+
+
+class PhotoTagsIn(BulkTagIn):
+    photo_ids: list[str] = Field(min_length=1, max_length=1000)
+
+
+class ArtworkTagsIn(BulkTagIn):
+    artwork_ids: list[str] = Field(min_length=1, max_length=1000)
+    """`remove` only reaches an artwork's own tags: an inherited one belongs to a photo."""
+
+
+class PlaceOut(ApiModel):
+    """One level of the Places view: a country, a region in it, or a place in that region."""
+
+    name: str
+    photo_count: int
+    artwork_count: int
+    """Live artworks using at least one photo from here."""
+    children: list[PlaceOut] = Field(default_factory=list)
+
+
+class PlacesOut(ApiModel):
+    countries: list[PlaceOut]
+    unplaced_photos: int
+    """Live photos without a place (no GPS — e.g. Android's photo picker strips it)."""
 
 
 CollectionKind = Literal["manual", "smart"]
@@ -265,6 +338,9 @@ class PhotoOut(ApiModel):
     inbox_state: InboxState
     quality_warnings: list[str]
     tags: list[TagOut] = Field(default_factory=list)
+    draft_artwork_ids: list[str] = Field(default_factory=list)
+    """Live **draft** artworks using it, oldest first. A photo stays in the inbox until one of its
+    artworks is marked ready, so the inbox offers to open the draft instead of making another."""
 
 
 class PhotoPageOut(ApiModel):
@@ -366,6 +442,10 @@ class ArtworkSummaryOut(ApiModel):
     created_at: datetime
     updated_at: datetime
     tags: list[TagOut] = Field(default_factory=list)
+    """Its own tags — the ones that can be removed from it."""
+    inherited_tags: list[TagOut] = Field(default_factory=list)
+    """Tags of its photos that are not its own: it carries them too (filters, search), but they
+    are removed from the photo, not from the artwork (docs/organization.md §1)."""
 
 
 class ArtworkOut(ArtworkSummaryOut):

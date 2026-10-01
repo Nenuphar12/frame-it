@@ -1,13 +1,15 @@
 import { AlertTriangle } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { TrashCascade } from "@/api/client";
-import { useTrashActions, useTrashPreview } from "@/api/queries";
+import { useTrashPreview } from "@/api/queries";
 import { cn } from "@/shared/cn";
 import { Button } from "@/shared/ui/Button";
 import { Dialog } from "@/shared/ui/Dialog";
-import { Spinner } from "@/shared/ui/Misc";
+import { Kbd, Spinner } from "@/shared/ui/Misc";
+
+import { useTrashWithUndo } from "./useTrashWithUndo";
 
 interface TrashPhotosDialogProps {
   photoIds: string[];
@@ -20,6 +22,10 @@ interface TrashPhotosDialogProps {
  * Deleting photos an artwork uses is a decision, not a confirmation (docs/organization.md §5):
  * the server lists the affected artworks first, then the cascade says whether they follow the
  * photo into the trash or keep their place with an empty slot.
+ *
+ * Opened by `Delete`, so it confirms like it was opened: **Enter** or **Delete again** moves to
+ * the trash with the option shown (the button has the focus, not the close cross). Callers go
+ * through `useDeletePhotos`, which skips this dialog when no artwork is affected.
  */
 export function TrashPhotosDialog({
   photoIds,
@@ -29,8 +35,9 @@ export function TrashPhotosDialog({
 }: TrashPhotosDialogProps) {
   const { t } = useTranslation();
   const preview = useTrashPreview(open ? photoIds : []);
-  const { photos } = useTrashActions();
+  const { trashPhotos, isPending } = useTrashWithUndo();
   const [cascade, setCascade] = useState<TrashCascade>("trash_artworks");
+  const confirmRef = useRef<HTMLButtonElement>(null);
   const affected = preview.data?.artworks ?? [];
 
   const options: { value: TrashCascade; label: string; hint: string }[] = [
@@ -46,14 +53,37 @@ export function TrashPhotosDialog({
     },
   ];
 
+  const confirm = () => {
+    if (isPending || preview.isLoading) return;
+    const ids = photoIds;
+    onOpenChange(false);
+    onDone?.();
+    void trashPhotos(ids, cascade);
+  };
+
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const onButton = (event.target as HTMLElement).tagName === "BUTTON";
+    // A focused button answers Enter itself (Cancel must stay Cancel); anywhere else — a radio —
+    // Enter confirms. `Delete` confirms from anywhere: it is the key that opened the dialog.
+    if (event.key === "Delete" || (event.key === "Enter" && !onButton)) {
+      event.preventDefault();
+      event.stopPropagation(); // the page's own `Delete` must not open the dialog again
+      confirm();
+    }
+  };
+
   return (
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
       title={t("trash.deletePhotos", { count: photoIds.length })}
       description={t("trash.deletePhotosHint")}
+      onOpenAutoFocus={(event) => {
+        event.preventDefault();
+        confirmRef.current?.focus();
+      }}
     >
-      <div className="space-y-3">
+      <div className="space-y-3" onKeyDown={onKeyDown}>
         {preview.isLoading ? (
           <Spinner />
         ) : affected.length === 0 ? (
@@ -77,7 +107,7 @@ export function TrashPhotosDialog({
                 </ul>
               </div>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5" role="radiogroup">
               {options.map((option) => (
                 <label
                   key={option.value}
@@ -102,19 +132,16 @@ export function TrashPhotosDialog({
             </div>
           </>
         )}
-        <div className="flex justify-end gap-2 pt-1">
+        <div className="flex items-center justify-end gap-2 pt-1">
+          <span className="mr-auto text-[11px] text-muted">
+            {t("trash.confirmKeys")} <Kbd>↵</Kbd> <Kbd>Del</Kbd>
+          </span>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {t("common.cancel")}
           </Button>
-          <Button
-            variant="danger"
-            disabled={photos.isPending}
-            onClick={() => {
-              photos.mutate({ photo_ids: photoIds, cascade });
-              onOpenChange(false);
-              onDone?.();
-            }}
-          >
+          {/* Never disabled while the preview loads: a disabled button cannot take the focus the
+              dialog opens on (`confirm` waits for the preview itself). */}
+          <Button ref={confirmRef} variant="danger" disabled={isPending} onClick={confirm}>
             {t("trash.moveToTrash")}
           </Button>
         </div>

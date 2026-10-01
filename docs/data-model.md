@@ -10,14 +10,15 @@ Soft delete via `deleted_at` (+ `trash_batch_id` to restore related items togeth
 | Table | Columns (main) | Notes |
 |---|---|---|
 | `photos` | id, sha256 (unique), content_fingerprint (unique, SHA-256 ignoring JPEG EXIF), ext, mime, original_filename, file_size, width, height (post-EXIF-orientation), exif_orientation, bit_depth, icc_description, is_wide_gamut, has_gain_map, taken_at, camera_make, camera_model, lens, gps_lat, gps_lon, place_name, place_admin1, place_country, uploaded_by_device_id, imported_at, inbox_state (`inbox`/`processed`/`dismissed`), quality_warnings (JSON), deleted_at, trash_batch_id | `taken_at` is a **floating wall-clock time** (camera local time, stored with a `Z` marker, never converted; display with `timeZone: UTC`). `quality_warnings` codes: `metadata_missing`, `location_removed`, `possibly_downscaled`, `below_tv_resolution`, `high_bit_depth_reduced` |
-| `photo_tags` | photo_id, tag_id | |
-| `photo_pending_meta` | photo_id, collection_ids (JSON), favorite | Set at phone upload; applied when artworks are created from the photo |
-| `tags` | id, name (unique, NOCASE), color, created_at | |
+| `photo_tags` | photo_id, tag_id | Index `(tag_id, photo_id)`: the tag filter walks tag → photos → artworks (an artwork carries its photos' tags, `docs/organization.md` §1.1) |
+| `photo_pending_meta` | photo_id, collection_ids (JSON), favorite | Set at upload (phone page) — by a duplicate upload too, merged; applied when the first artwork is created from the photo |
+| `tag_categories` | id, name (unique, NOCASE), color, position, created_at | One level of grouping (People, Events, Themes seeded by migration 0011); a tag with none is "Other" |
+| `tags` | id, name (unique, NOCASE), color, category_id (→ `tag_categories`, `ON DELETE SET NULL`), last_used_at, created_at | `color` overrides the category's; `last_used_at` is touched when the tag is attached (the picker's "recent" order) |
 | `artworks` | id, title, status (`draft`/`ready`), document (JSON), document_version (int, optimistic concurrency), schema_version, favorite, worst_tier, min_scale, max_scale, photo_count, is_incomplete, origin_style_id, origin_style_revision, origin_layout_id, origin_layout_revision, render_hash, rendered_at, created_at, updated_at, deleted_at, trash_batch_id | Derived columns recomputed on every document save |
 | `photo_hash_aliases` | sha256 (PK), photo_id | SHA-256 of other copies merged into a photo (see *Photo copies*); used by dedupe |
 | `localsend_devices` | id, fingerprint (unique), alias, device_model, device_type, status (`pending`/`approved`/`blocked`), last_ip, created_at, last_seen_at, decided_at | LocalSend senders (`docs/localsend.md`); their uploads use `upload_sessions.device_key = localsend:<id>` |
 | `artwork_photos` | artwork_id, slot_id, photo_id | Derived index for usage queries |
-| `artwork_tags` | artwork_id, tag_id | |
+| `artwork_tags` | artwork_id, tag_id | The artwork's **own** tags; index `(tag_id, artwork_id)` |
 | `artwork_snapshots` | id, artwork_id, document, document_version, reason (`opened`/`manual`/`pre_restore`/`pre_template_update`/`pre_import`), created_at | Keep last 20 per artwork |
 | `collections` | id, parent_id, name, description, date_start, date_end, cover_artwork_id, kind (`manual`/`smart`), filter (JSON AST, smart only), position (REAL, among siblings), created_at, updated_at | Cycle prevention on move; deletion is not trashed (artworks unaffected) |
 | `collection_items` | collection_id, artwork_id, position (REAL) | Manual collections only; renormalize when gaps < 1e-9 |
@@ -31,7 +32,7 @@ Soft delete via `deleted_at` (+ `trash_batch_id` to restore related items togeth
 | `jobs` | id, kind, lane (`ingest`/`render`), coalesce_key, payload (JSON), state (`queued`/`running`/`done`/`failed`/`cancelled`), attempts, progress, error, created_at, started_at, finished_at | Lanes bound concurrency per kind of work; queued jobs with the same coalesce_key are cancelled when a new one is enqueued |
 | `settings` | key, value (JSON) | UI prefs; `artwork_defaults` = `{style_id, recipe_id, format}` |
 | `archive_imports` | id, filename, size, received_bytes, state (`receiving`/`staging`/`ready`/`applying`/`applied`/`failed`), error, scope, manifest (JSON), summary (JSON), job_id, created_at, expires_at | One import in progress (`docs/archive-format.md` §12.2); the archive and the per-item report live in `imports/<id>/`, which is disposable |
-| FTS5 `search_index` | entity_type, entity_id, text | titles, tag names, place names, filenames, collection names |
+| FTS5 `search_index` | entity_type, entity_id, text | titles, tag names (an artwork's own and its photos'), place names, filenames, collection names; a `meta`/`version` row records `search.INDEX_VERSION` so startup rebuilds an index written under older rules |
 
 ### Photo copies (merge by content fingerprint)
 

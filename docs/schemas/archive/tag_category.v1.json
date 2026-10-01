@@ -1,19 +1,8 @@
 {
-  "$id": "https://the-frame-v2/schemas/archive/tag.v1.json",
+  "$id": "https://the-frame-v2/schemas/archive/tag_category.v1.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "A group of tags (People, Events\u2026). Absent from archives written before categories: a\nreader treats a missing `tag_categories.jsonl` as empty.",
   "properties": {
-    "category_id": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Category Id"
-    },
     "color": {
       "anyOf": [
         {
@@ -38,6 +27,11 @@
     "name": {
       "title": "Name",
       "type": "string"
+    },
+    "position": {
+      "default": 0.0,
+      "title": "Position",
+      "type": "number"
     }
   },
   "required": [
@@ -45,6 +39,6 @@
     "name",
     "created_at"
   ],
-  "title": "Archive tag record v1",
+  "title": "Archive tag_category record v1",
   "type": "object"
 }

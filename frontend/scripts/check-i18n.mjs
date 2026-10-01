@@ -18,6 +18,7 @@ const DYNAMIC_PREFIXES = [
   "artworks.statuses",
   "artworks.tiers",
   "artworks.tierHints",
+  "artworks.statusHints",
   "artworks.create.placements",
   "editor.tabs",
   "editor.sides",

@@ -19,7 +19,9 @@ from the_frame_v2.api.schemas import (
     ArtworkSort,
     ArtworkStatus,
     ArtworkSummaryOut,
+    ArtworkTagsIn,
     ArtworkUpdateIn,
+    CountOut,
     SnapshotIn,
     SnapshotOut,
     TagOut,
@@ -30,7 +32,7 @@ from the_frame_v2.domain.document import ArtworkDocument
 from the_frame_v2.errors import ProblemError
 from the_frame_v2.events import Event
 from the_frame_v2.imaging.render import RenderError
-from the_frame_v2.services import artworks, collections, library, render
+from the_frame_v2.services import artworks, collections, library, render, tags
 
 router = APIRouter(prefix="/artworks", tags=["artworks"])
 _IMMUTABLE = {"Cache-Control": "private, max-age=31536000, immutable"}
@@ -41,6 +43,10 @@ def _summary(session: Session, artwork: Artwork) -> ArtworkSummaryOut:
     out = ArtworkSummaryOut.model_validate(artwork)
     out.tags = [
         TagOut.model_validate(t) for t in artworks.tags_for(session, [artwork.id])[artwork.id]
+    ]
+    out.inherited_tags = [
+        TagOut.model_validate(t)
+        for t in artworks.inherited_tags_for(session, [artwork.id])[artwork.id]
     ]
     return out
 
@@ -66,6 +72,13 @@ def _changed(ctx: AppContext, session: Session, artwork_id: str, *, rerender: bo
         render.enqueue_render(ctx, artwork_id)
 
 
+def _photos_left_inbox(ctx: AppContext, session: Session, artwork: Artwork) -> None:
+    """Marking ready moves the photos out of the inbox: the inbox and the photo grids refresh."""
+    photo_ids = artworks.document_of(artwork).photo_ids()
+    if photo_ids:
+        ctx.broker.publish(Event("photo.updated", {"photo_ids": photo_ids}, audience="all"))
+
+
 def _etag(artwork: Artwork) -> dict[str, str]:
     return {"ETag": f'"{artwork.document_version}"'}
 
@@ -86,6 +99,7 @@ def _page_out(page: library.ArtworkPage) -> ArtworkPageOut:
     for artwork in page.items:
         out = ArtworkSummaryOut.model_validate(artwork)
         out.tags = [TagOut.model_validate(t) for t in page.tags[artwork.id]]
+        out.inherited_tags = [TagOut.model_validate(t) for t in page.inherited.get(artwork.id, [])]
         items.append(out)
     return ArtworkPageOut(items=items, next_cursor=page.next_cursor)
 
@@ -173,6 +187,19 @@ def put_document(
     return _full(session, artwork)
 
 
+@router.post("/tags")
+def tag_artworks(body: ArtworkTagsIn, _: Admin, ctx: Ctx, session: DbSession) -> CountOut:
+    """Add and remove **own** tags on many artworks (additive: other tags are left alone).
+
+    An inherited tag belongs to a photo: `remove` cannot take it off an artwork. `count` = the
+    live artworks it applied to.
+    """
+    count = tags.tag_artworks(session, body.artwork_ids, add=body.add, remove=body.remove)
+    # One event for the batch: a client refetches the lists once, not once per artwork.
+    _changed(ctx, session, body.artwork_ids[0], rerender=False)
+    return CountOut(count=count)
+
+
 @router.patch("/{artwork_id}")
 def update_artwork(
     artwork_id: str, body: ArtworkUpdateIn, _: Admin, ctx: Ctx, session: DbSession
@@ -188,6 +215,8 @@ def update_artwork(
         origin_layout_id=body.origin_layout_id,
     )
     _changed(ctx, session, artwork.id, rerender=False)
+    if body.status == "ready":
+        _photos_left_inbox(ctx, session, artwork)
     return _full(session, artwork)
 
 
@@ -215,9 +244,13 @@ def apply_template(
 
 @router.post("/{artwork_id}/validate")
 def validate_artwork(artwork_id: str, _: Admin, ctx: Ctx, session: DbSession) -> ArtworkOut:
-    """Mark as ready (displayable). 422 `artwork_incomplete` / `invalid_document` otherwise."""
+    """Mark as ready — done: its photos leave the inbox (docs/organization.md §6).
+
+    422 `artwork_incomplete` / `invalid_document` otherwise.
+    """
     artwork = artworks.mark_ready(session, artwork_id)
     _changed(ctx, session, artwork.id, rerender=False)
+    _photos_left_inbox(ctx, session, artwork)
     return _full(session, artwork)
 
 

@@ -2,7 +2,8 @@ import * as Popover from "@radix-ui/react-popover";
 import { Filter, Plus, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { useCollections, useTags } from "@/api/queries";
+import { useAllTags, useCollections } from "@/api/queries";
+import { TagOptions } from "@/features/tags/TagOptions";
 import { cn } from "@/shared/cn";
 import { Button } from "@/shared/ui/Button";
 
@@ -34,7 +35,8 @@ const input =
  */
 export function FilterBar({ chips, onChange, children }: FilterBarProps) {
   const { t } = useTranslation();
-  const tags = useTags("");
+  // Every tag, not the autocomplete's first twenty: a filter must reach any of them.
+  const tags = useAllTags();
   const collections = useCollections();
 
   const patch = (index: number, next: Partial<FilterClause>) =>
@@ -91,11 +93,8 @@ export function FilterBar({ chips, onChange, children }: FilterBarProps) {
             onChange={(event) => patch(index, { value: [event.target.value] })}
           >
             <option value="">{t("filters.pick")}</option>
-            {(tags.data ?? []).map((tag) => (
-              <option key={tag.id} value={tag.id}>
-                {tag.name}
-              </option>
-            ))}
+            {/* An artwork carries its own tags and its photos': the count is that union. */}
+            <TagOptions tags={tags.data ?? []} count={(tag) => tag.artwork_count} />
           </select>
         );
       case "collection":

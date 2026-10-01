@@ -3,7 +3,7 @@ import { createRootRoute, createRoute, createRouter, Navigate } from "@tanstack/
 import { EditorPage } from "@/editor/EditorPage";
 import { ActivityPage } from "@/features/activity/ActivityPage";
 import { BackupPage } from "@/features/archive/BackupPage";
-import { ArtworksPage } from "@/features/artworks/ArtworksPage";
+import { ArtworksPage, type ArtworksSearch } from "@/features/artworks/ArtworksPage";
 import { PairPage, SetupPage } from "@/features/auth/AuthPages";
 import { CollectionsPage } from "@/features/collections/CollectionsPage";
 import { DevicesPage } from "@/features/devices/DevicesPage";
@@ -45,7 +45,15 @@ const routeTree = rootRoute.addChildren([
     }),
     page("/inbox", InboxPage),
     page("/photos", PhotosPage),
-    page("/artworks", () => <ArtworksPage />),
+    createRoute({
+      getParentRoute: () => shellRoute,
+      path: "/artworks",
+      component: () => <ArtworksPage />,
+      validateSearch: (search: Record<string, unknown>): ArtworksSearch => ({
+        ...(typeof search.place === "string" && search.place ? { place: search.place } : {}),
+        ...(typeof search.tag === "string" && search.tag ? { tag: search.tag } : {}),
+      }),
+    }),
     createRoute({
       getParentRoute: () => shellRoute,
       path: "/editor/$artworkId",

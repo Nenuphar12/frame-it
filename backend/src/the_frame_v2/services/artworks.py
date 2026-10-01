@@ -28,6 +28,7 @@ from the_frame_v2.db.models import (
     Layout,
     Photo,
     PhotoPendingMeta,
+    PhotoTag,
     Tag,
 )
 from the_frame_v2.domain import composition as composition_solver
@@ -46,6 +47,7 @@ from the_frame_v2.errors import ProblemError, not_found
 from the_frame_v2.ids import utcnow
 from the_frame_v2.imaging.assets import catalog
 from the_frame_v2.services import recipes, search, templates
+from the_frame_v2.services import tags as tags_service
 
 MAX_SNAPSHOTS = 20
 MAX_LIMIT = 500
@@ -184,6 +186,40 @@ def tags_for(session: Session, artwork_ids: Sequence[str]) -> dict[str, list[Tag
     return result
 
 
+def inherited_tags_for(session: Session, artwork_ids: Sequence[str]) -> dict[str, list[Tag]]:
+    """artwork id → the tags it carries through its live photos and not on its own, by name.
+
+    An artwork's effective tags are its own plus these (docs/organization.md §1): read, never
+    copied, so tagging a photo later tags every artwork made of it.
+    """
+    result: dict[str, list[Tag]] = {i: [] for i in artwork_ids}
+    if not artwork_ids:
+        return result
+    own = set(
+        session.execute(
+            select(ArtworkTag.artwork_id, ArtworkTag.tag_id).where(
+                ArtworkTag.artwork_id.in_(artwork_ids)
+            )
+        ).tuples()
+    )
+    rows = session.execute(
+        select(ArtworkPhoto.artwork_id, Tag)
+        .join(PhotoTag, PhotoTag.photo_id == ArtworkPhoto.photo_id)
+        .join(Photo, Photo.id == ArtworkPhoto.photo_id)
+        .join(Tag, Tag.id == PhotoTag.tag_id)
+        .where(ArtworkPhoto.artwork_id.in_(artwork_ids), Photo.deleted_at.is_(None))
+        .order_by(Tag.name)
+    )
+    seen: set[tuple[str, str]] = set()
+    for artwork_id, tag in rows:
+        key = (artwork_id, tag.id)
+        if key in own or key in seen:
+            continue
+        seen.add(key)
+        result[artwork_id].append(tag)
+    return result
+
+
 def _check_slot_count(recipe: Recipe, photo_count: int, name: str) -> None:
     """A layout holds exactly its recipe's cells; fewer photos leave placeholders, more is a 422."""
     if recipe.count < photo_count:
@@ -265,7 +301,8 @@ def create_artwork(
     nothing at all) starts from the catalogue and the Settings defaults. Hand-built documents are
     still reachable — the Advanced editor detaches the block (docs/simple-editor.md §5).
 
-    Photos leave the inbox; their pending upload metadata (favorite, collections) is applied once.
+    The photos' pending upload metadata (favorite, collections) is applied once. The photos stay
+    in the inbox until an artwork using them is marked ready (docs/organization.md §6).
     """
     if layout_id is not None and composition is not None:
         raise ProblemError(
@@ -309,9 +346,8 @@ def create_artwork(
     session.flush()
     store_document(session, artwork, doc)
     _apply_pending_meta(session, artwork, list(photos))
-    for photo in photos.values():
-        if photo.inbox_state == "inbox":
-            photo.inbox_state = "processed"
+    # The photos stay in the inbox: they leave it when an artwork using them is marked ready
+    # (`mark_ready`), so an abandoned draft never makes a photo disappear from the to-do list.
     return artwork
 
 
@@ -523,8 +559,12 @@ def update_artwork(
         known = set(session.scalars(select(Tag.id).where(Tag.id.in_(unique))))
         if len(known) != len(unique):
             raise ProblemError(422, "unknown_tag", "Unknown tag")
+        before = set(
+            session.scalars(select(ArtworkTag.tag_id).where(ArtworkTag.artwork_id == artwork.id))
+        )
         session.execute(delete(ArtworkTag).where(ArtworkTag.artwork_id == artwork.id))
         session.add_all(ArtworkTag(artwork_id=artwork.id, tag_id=t) for t in unique)
+        tags_service.touch(session, [t for t in unique if t not in before])
     artwork.updated_at = utcnow()
     session.flush()
     search.index_artwork(session, artwork)
@@ -532,7 +572,12 @@ def update_artwork(
 
 
 def mark_ready(session: Session, artwork_id: str) -> Artwork:
-    """Explicit validation: a complete, valid document becomes displayable (`ready`)."""
+    """Explicit validation: a complete, valid document becomes `ready` — *done*.
+
+    Its photos leave the inbox here, and only here (docs/organization.md §6): creating a draft
+    keeps them in it, and nothing ever puts them back — not going back to draft, not trashing the
+    artwork. A dismissed photo stays dismissed.
+    """
     artwork = get_artwork(session, artwork_id)
     doc = document_of(artwork)
     check_references(session, doc)
@@ -540,6 +585,12 @@ def mark_ready(session: Session, artwork_id: str) -> Artwork:
         raise ProblemError(422, "artwork_incomplete", "The artwork has empty slots")
     artwork.status = "ready"
     artwork.updated_at = utcnow()
+    photo_ids = doc.photo_ids()
+    if photo_ids:
+        for photo in session.scalars(
+            select(Photo).where(Photo.id.in_(set(photo_ids)), Photo.inbox_state == "inbox")
+        ):
+            photo.inbox_state = "processed"
     return artwork
 
 

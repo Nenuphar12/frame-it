@@ -97,11 +97,14 @@
       "failed": "Failed",
       "rejected": "Rejected"
     },
-    "from": "from {{device}}"
+    "from": "from {{device}}",
+    "tagBatch_one": "Tag this photo…",
+    "tagBatch_other": "Tag these {{count}} photos…",
+    "tagBatchHint": "Add or remove tags on every photo this batch landed on, duplicates included"
   },
   "inbox": {
-    "subtitle_one": "{{count}} photo waiting to become an artwork",
-    "subtitle_other": "{{count}} photos waiting to become artworks",
+    "subtitle_one": "{{count}} photo waiting for a finished artwork",
+    "subtitle_other": "{{count}} photos waiting for a finished artwork",
     "selected_one": "{{count}} selected",
     "selected_other": "{{count}} selected",
     "createArtworks": "Create artworks",
@@ -110,8 +113,14 @@
     "selectAll": "Select all",
     "clearSelection": "Clear selection",
     "emptyTitle": "Inbox zero",
-    "emptyDescription": "New photos sent from your phone or dropped here will wait in the inbox until you turn them into artworks.",
-    "createArtworksHint": "Turn the selected photos into artworks with a frame style and a layout"
+    "emptyDescription": "New photos sent from your phone or dropped here wait in the inbox until an artwork using them is marked ready.",
+    "createArtworksHint": "Turn the selected photos into artworks with a frame style and a layout",
+    "dismissHint": "Take them off this list, keep them in the library (D)",
+    "delete": "Delete",
+    "deleteHint": "Move to the trash (Delete) — you can undo it",
+    "draftBadge": "Draft",
+    "draftHint_one": "A draft artwork uses this photo: open it",
+    "draftHint_other": "{{count}} draft artworks use this photo: open the first"
   },
   "photos": {
     "count_one": "{{count}} photo",
@@ -148,7 +157,8 @@
       "lens": "Lens",
       "colorProfile": "Color profile",
       "imported": "Imported",
-      "inbox": "Status"
+      "inbox": "Status",
+      "drafts": "Drafts"
     },
     "inboxState": {
       "inbox": "In inbox",
@@ -164,7 +174,11 @@
     },
     "loadMore": "Load more",
     "filterByTag": "Filter by tag",
-    "allTags": "All tags"
+    "allTags": "All tags",
+    "backToInbox": "Back to inbox",
+    "backToInboxHint": "Put the selected photos back on the inbox's to-do list",
+    "backToInboxToast": "Back in the inbox.",
+    "openDraft": "Open draft {{n}}"
   },
   "tags": {
     "placeholder": "Add tags…",
@@ -184,9 +198,45 @@
     "deleteTitle": "Delete “{{name}}”?",
     "deleteHint": "It is removed from {{photos}} photo(s) and {{artworks}} artwork(s). Nothing else is deleted.",
     "emptyTitle": "No tags yet",
-    "emptyDescription": "Tags are created from the photo drawer, the editor or the phone upload page.",
+    "emptyDescription": "Tags are created from the photo drawer, the tag menu (T) on any selection, the editor or the phone upload page.",
     "none": "No tag",
-    "edit": "Edit tags"
+    "edit": "Edit tags",
+    "deleteInheritedHint_one": "{{count}} more artwork carries it through its photos and loses it too.",
+    "deleteInheritedHint_other": "{{count}} more artworks carry it through their photos and lose it too.",
+    "other": "Other",
+    "otherHint": "Tags with no category",
+    "recent": "Recent",
+    "menuPlaceholder": "Find or create a tag…",
+    "tagSelection": "Tag…",
+    "createAndAdd": "Create “{{name}}” and add it",
+    "inheritedHint": "From its photos: the artwork carries this tag because one of its photos has it. Remove it from the photo.",
+    "inheritedFrom": "From its photos ({{names}}): remove it from the photo to remove it here.",
+    "inheritedNotListed": "Tags an artwork gets from its photos are not listed here: change them on the photos.",
+    "done": "Done",
+    "doneHint": "Close the tag editor (Esc)",
+    "tabTags": "Tags",
+    "category": "Category",
+    "categoryOf": "Category of {{name}}",
+    "categoryColor": "Category colour",
+    "newCategory": "New category",
+    "newCategoryPlaceholder": "New category…",
+    "renameCategory": "Rename the category",
+    "deleteCategory": "Delete the category",
+    "deleteCategoryTitle": "Delete the category “{{name}}”?",
+    "deleteCategoryHint_one": "Its {{count}} tag is kept and moves to “Other”.",
+    "deleteCategoryHint_other": "Its {{count}} tags are kept and move to “Other”.",
+    "emptyCategory": "No tag in this category yet: pick it from a tag's category menu.",
+    "moveSelected_one": "Move {{count}} tag to",
+    "moveSelected_other": "Move {{count}} tags to",
+    "clearSelection": "Clear the tag selection",
+    "select": "Select",
+    "selectTag": "Select {{name}}",
+    "selectCategory": "Select every tag in {{name}}",
+    "ownColor": "Its own colour (otherwise its category's)",
+    "deleteUnused_one": "Delete {{count}} unused tag",
+    "deleteUnused_other": "Delete {{count}} unused tags",
+    "unusedHint": "Tags no photo and no artwork carry — not even one in the trash.",
+    "artworkCountHint": "{{own}} tagged directly, {{inherited}} through their photos"
   },
   "devices": {
     "subtitle": "Browsers allowed to use this library",
@@ -438,7 +488,6 @@
     "toggleReady": "Mark ready / back to draft",
     "duplicate": "Duplicate",
     "trash": "Delete",
-    "confirmTrash": "Click again to delete",
     "next": "Next artwork",
     "previous": "Previous artwork",
     "viewerHint": "Server render at TV resolution. Arrow keys switch artworks.",
@@ -483,7 +532,13 @@
     "noFavoritesTitle": "No favorites yet",
     "noFavoritesDescription": "Click the heart on an artwork to keep it here.",
     "focusSearch": "Search artworks",
-    "openHint": "Click to select · double-click to open · E to edit"
+    "openHint": "Click to select · double-click to open · E to edit",
+    "readyHint": "Done: mark it ready — its photos leave the inbox (Enter)",
+    "backToDraftHint": "Back to draft — its photos stay out of the inbox (Enter)",
+    "statusHints": {
+      "draft": "Draft: still being worked on — its photos stay in the inbox",
+      "ready": "Ready: done — its photos left the inbox"
+    }
   },
   "editor": {
     "tabs": {
@@ -691,7 +746,7 @@
     },
     "info": {
       "title": "Artwork title",
-      "fromPhotos": "From the photos:"
+      "fromPhotos": "From its photos:"
     },
     "history": {
       "revertToOpened": "Revert to when opened",
@@ -962,7 +1017,18 @@
       "trashHint": "They go to the trash in the same batch, so restoring brings everything back at once.",
       "empty_slots": "Keep them, empty the slots",
       "emptyHint": "The artworks go back to draft with an empty slot; the change is snapshotted."
-    }
+    },
+    "moved": "Moved to the trash",
+    "undo": "Undo",
+    "restoredToast": "Restored from the trash.",
+    "photoCount_one": "{{count}} photo",
+    "photoCount_other": "{{count}} photos",
+    "artworkCount_one": "{{count}} artwork",
+    "artworkCount_other": "{{count}} artworks",
+    "emptiedCount_one": "{{count}} artwork kept with an empty slot",
+    "emptiedCount_other": "{{count}} artworks kept with an empty slot",
+    "emptiedHint": "Each one's history can bring the photo back into its slot",
+    "confirmKeys": "Confirm with"
   },
   "archive": {
     "pageSubtitle": "Back the library up, move it to another computer, or pull finished images out.",
@@ -1050,7 +1116,8 @@
       "swatch": "Swatches",
       "setting": "Preferences",
       "library": "Library archive",
-      "renders": "Rendered images"
+      "renders": "Rendered images",
+      "tag_category": "Tag categories"
     },
     "and": " and "
   },
@@ -1221,5 +1288,20 @@
       "leftOurs_other": "{{count}} images sent before are still on the TV.",
       "moved": "The TV moved to {{host}}: its address was updated."
     }
+  },
+  "places": {
+    "title": "Places",
+    "subtitle": "Where your photos were taken, from their location",
+    "emptyTitle": "No place yet",
+    "emptyDescription": "Places come from the photos' GPS position. Android's photo picker removes it: send from LocalSend or the file picker to keep it.",
+    "unplaced_one": "{{count}} photo has no location.",
+    "unplaced_other": "{{count}} photos have no location.",
+    "unnamed": "Unknown",
+    "photoCount_one": "{{count}} photo",
+    "photoCount_other": "{{count}} photos",
+    "artworkCount_one": "{{count}} artwork",
+    "artworkCount_other": "{{count}} artworks",
+    "expand": "Show the places in {{name}}",
+    "collapse": "Hide the places in {{name}}"
   }
 }

@@ -281,6 +281,13 @@
             "title": "Id",
             "type": "string"
           },
+          "inherited_tags": {
+            "items": {
+              "$ref": "#/components/schemas/TagOut"
+            },
+            "title": "Inherited Tags",
+            "type": "array"
+          },
           "is_incomplete": {
             "title": "Is Incomplete",
             "type": "boolean"
@@ -611,6 +618,13 @@
             "title": "Id",
             "type": "string"
           },
+          "inherited_tags": {
+            "items": {
+              "$ref": "#/components/schemas/TagOut"
+            },
+            "title": "Inherited Tags",
+            "type": "array"
+          },
           "is_incomplete": {
             "title": "Is Incomplete",
             "type": "boolean"
@@ -770,6 +784,40 @@
           "updated_at"
         ],
         "title": "ArtworkSummaryOut",
+        "type": "object"
+      },
+      "ArtworkTagsIn": {
+        "properties": {
+          "add": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Add",
+            "type": "array"
+          },
+          "artwork_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Artwork Ids",
+            "type": "array"
+          },
+          "remove": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Remove",
+            "type": "array"
+          }
+        },
+        "required": [
+          "artwork_ids"
+        ],
+        "title": "ArtworkTagsIn",
         "type": "object"
       },
       "ArtworkUpdateIn": {
@@ -4535,6 +4583,13 @@
             ],
             "title": "Camera Model"
           },
+          "draft_artwork_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Draft Artwork Ids",
+            "type": "array"
+          },
           "file_size": {
             "title": "File Size",
             "type": "integer"
@@ -4745,6 +4800,40 @@
         "title": "PhotoPageOut",
         "type": "object"
       },
+      "PhotoTagsIn": {
+        "properties": {
+          "add": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Add",
+            "type": "array"
+          },
+          "photo_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Photo Ids",
+            "type": "array"
+          },
+          "remove": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Remove",
+            "type": "array"
+          }
+        },
+        "required": [
+          "photo_ids"
+        ],
+        "title": "PhotoTagsIn",
+        "type": "object"
+      },
       "PhotoUpdateIn": {
         "properties": {
           "inbox_state": {
@@ -4780,6 +4869,58 @@
           }
         },
         "title": "PhotoUpdateIn",
+        "type": "object"
+      },
+      "PlaceOut": {
+        "description": "One level of the Places view: a country, a region in it, or a place in that region.",
+        "properties": {
+          "artwork_count": {
+            "title": "Artwork Count",
+            "type": "integer"
+          },
+          "children": {
+            "items": {
+              "$ref": "#/components/schemas/PlaceOut"
+            },
+            "title": "Children",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "photo_count": {
+            "title": "Photo Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "photo_count",
+          "artwork_count"
+        ],
+        "title": "PlaceOut",
+        "type": "object"
+      },
+      "PlacesOut": {
+        "properties": {
+          "countries": {
+            "items": {
+              "$ref": "#/components/schemas/PlaceOut"
+            },
+            "title": "Countries",
+            "type": "array"
+          },
+          "unplaced_photos": {
+            "title": "Unplaced Photos",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "countries",
+          "unplaced_photos"
+        ],
+        "title": "PlacesOut",
         "type": "object"
       },
       "PurgeIn": {
@@ -5452,8 +5593,117 @@
         "title": "SystemInfo",
         "type": "object"
       },
+      "TagCategoryCreateIn": {
+        "properties": {
+          "color": {
+            "anyOf": [
+              {
+                "maxLength": 9,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "name": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "TagCategoryCreateIn",
+        "type": "object"
+      },
+      "TagCategoryOut": {
+        "properties": {
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "number"
+          },
+          "tag_count": {
+            "default": 0,
+            "title": "Tag Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "color",
+          "position"
+        ],
+        "title": "TagCategoryOut",
+        "type": "object"
+      },
+      "TagCategoryUpdateIn": {
+        "properties": {
+          "color": {
+            "anyOf": [
+              {
+                "maxLength": 9,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "TagCategoryUpdateIn",
+        "type": "object"
+      },
       "TagCreateIn": {
         "properties": {
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
           "name": {
             "maxLength": 64,
             "minLength": 1,
@@ -5488,6 +5738,17 @@
       },
       "TagOut": {
         "properties": {
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
           "color": {
             "anyOf": [
               {
@@ -5518,6 +5779,17 @@
       },
       "TagUpdateIn": {
         "properties": {
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
           "color": {
             "anyOf": [
               {
@@ -5554,6 +5826,17 @@
             "title": "Artwork Count",
             "type": "integer"
           },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
           "color": {
             "anyOf": [
               {
@@ -5569,9 +5852,26 @@
             "title": "Id",
             "type": "string"
           },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          },
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "own_artwork_count": {
+            "default": 0,
+            "title": "Own Artwork Count",
+            "type": "integer"
           },
           "photo_count": {
             "title": "Photo Count",
@@ -5585,6 +5885,36 @@
           "photo_count"
         ],
         "title": "TagWithCount",
+        "type": "object"
+      },
+      "TagsCategorizeIn": {
+        "description": "Move many tags into one category (null \u21d2 \"Other\").",
+        "properties": {
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "tag_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Tag Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "tag_ids"
+        ],
+        "title": "TagsCategorizeIn",
         "type": "object"
       },
       "TemplateApplicationOut": {
@@ -6510,6 +6840,48 @@
         ]
       }
     },
+    "/api/v1/artworks/tags": {
+      "post": {
+        "description": "Add and remove **own** tags on many artworks (additive: other tags are left alone).\n\nAn inherited tag belongs to a photo: `remove` cannot take it off an artwork. `count` = the\nlive artworks it applied to.",
+        "operationId": "tag_artworks_api_v1_artworks_tags_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArtworkTagsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Tag Artworks",
+        "tags": [
+          "artworks"
+        ]
+      }
+    },
     "/api/v1/artworks/{artwork_id}": {
       "delete": {
         "description": "Move to trash (restore and purge: `/trash`, docs/organization.md \u00a75).",
@@ -7122,7 +7494,7 @@
     },
     "/api/v1/artworks/{artwork_id}/validate": {
       "post": {
-        "description": "Mark as ready (displayable). 422 `artwork_incomplete` / `invalid_document` otherwise.",
+        "description": "Mark as ready \u2014 done: its photos leave the inbox (docs/organization.md \u00a76).\n\n422 `artwork_incomplete` / `invalid_document` otherwise.",
         "operationId": "validate_artwork_api_v1_artworks__artwork_id__validate_post",
         "parameters": [
           {
@@ -9336,6 +9708,7 @@
     },
     "/api/v1/inbox/restore": {
       "post": {
+        "description": "Back to the inbox \u2014 from anywhere: processed, dismissed (docs/organization.md \u00a76).",
         "operationId": "restore_to_inbox_api_v1_inbox_restore_post",
         "requestBody": {
           "content": {
@@ -10333,6 +10706,48 @@
         ]
       }
     },
+    "/api/v1/photos/tags": {
+      "post": {
+        "description": "Add and remove tags on many photos at once (additive: other tags are left alone).\n\n`count` = the live photos it applied to. 422 `unknown_tag`, or `tag_conflict` when one tag is\nboth added and removed.",
+        "operationId": "tag_photos_api_v1_photos_tags_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhotoTagsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Tag Photos",
+        "tags": [
+          "photos"
+        ]
+      }
+    },
     "/api/v1/photos/{photo_id}": {
       "get": {
         "operationId": "get_photo_api_v1_photos__photo_id__get",
@@ -10587,6 +11002,28 @@
         "summary": "Photo Thumb",
         "tags": [
           "photos"
+        ]
+      }
+    },
+    "/api/v1/places": {
+      "get": {
+        "description": "Where the photos were taken \u2014 country \u2192 region \u2192 place \u2014 derived from their metadata.",
+        "operationId": "list_places_api_v1_places_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlacesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Places",
+        "tags": [
+          "library"
         ]
       }
     },
@@ -10916,8 +11353,168 @@
         ]
       }
     },
+    "/api/v1/tag-categories": {
+      "get": {
+        "description": "Categories in their order; a tag with no category is \"Other\" (not listed here).",
+        "operationId": "list_tag_categories_api_v1_tag_categories_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TagCategoryOut"
+                  },
+                  "title": "Response List Tag Categories Api V1 Tag Categories Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Tag Categories",
+        "tags": [
+          "library"
+        ]
+      },
+      "post": {
+        "description": "409 `category_exists` when the name (case-insensitive) is taken.",
+        "operationId": "create_tag_category_api_v1_tag_categories_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagCategoryCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagCategoryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Tag Category",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/api/v1/tag-categories/{category_id}": {
+      "delete": {
+        "description": "Delete a category; its tags stay and become \"Other\". `count` = tags that moved.",
+        "operationId": "delete_tag_category_api_v1_tag_categories__category_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "category_id",
+            "required": true,
+            "schema": {
+              "title": "Category Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Tag Category",
+        "tags": [
+          "library"
+        ]
+      },
+      "patch": {
+        "operationId": "update_tag_category_api_v1_tag_categories__category_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "category_id",
+            "required": true,
+            "schema": {
+              "title": "Category Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagCategoryUpdateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagCategoryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Tag Category",
+        "tags": [
+          "library"
+        ]
+      }
+    },
     "/api/v1/tags": {
       "get": {
+        "description": "`usage` (most used first), `recent` (last attached first \u2014 the picker) or `name`.",
         "operationId": "list_tags_api_v1_tags_get",
         "parameters": [
           {
@@ -10947,6 +11544,21 @@
               "minimum": 1,
               "title": "Limit",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "usage",
+              "enum": [
+                "usage",
+                "recent",
+                "name"
+              ],
+              "title": "Sort",
+              "type": "string"
             }
           }
         ],
@@ -11022,6 +11634,96 @@
         ]
       }
     },
+    "/api/v1/tags/categorize": {
+      "post": {
+        "description": "Move many tags into one category at once (`category_id: null` \u21d2 \"Other\").",
+        "operationId": "categorize_tags_api_v1_tags_categorize_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagsCategorizeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Categorize Tags",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/api/v1/tags/delete-unused": {
+      "post": {
+        "description": "Delete every tag `GET /tags/unused` lists.",
+        "operationId": "delete_unused_tags_api_v1_tags_delete_unused_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Delete Unused Tags",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/api/v1/tags/unused": {
+      "get": {
+        "description": "Tags attached to nothing at all \u2014 trashed photos and artworks count as a use.",
+        "operationId": "list_unused_tags_api_v1_tags_unused_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TagOut"
+                  },
+                  "title": "Response List Unused Tags Api V1 Tags Unused Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Unused Tags",
+        "tags": [
+          "library"
+        ]
+      }
+    },
     "/api/v1/tags/{tag_id}": {
       "delete": {
         "operationId": "delete_tag_api_v1_tags__tag_id__delete",
@@ -11057,7 +11759,7 @@
         ]
       },
       "patch": {
-        "description": "Rename or recolour. 409 `tag_exists` when the name is taken (merge instead).",
+        "description": "Rename, recolour, or move to a category. 409 `tag_exists` when the name is taken.",
         "operationId": "update_tag_api_v1_tags__tag_id__patch",
         "parameters": [
           {

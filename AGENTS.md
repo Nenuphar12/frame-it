@@ -9,7 +9,7 @@
 Self-hosted web app to prepare pictures for a 4K art-mode TV (Samsung The Frame, 3840×2160): phone uploads in
 full quality over the LAN, pixel-perfect framing/compositions, collections, export/import.
 
-- **Current state (2026-09-24): Phases 0–11 done** — foundations, device auth &
+- **Current state (2026-10-01): Phases 0–12 done, plus the follow-ups below** — foundations, device auth &
   pairing, resumable uploads, LocalSend receiver, ingest, Photos + Inbox UI, phone upload page; artwork
   document + geometry (Python/TS mirrored), pyvips renderer, built-in styles/layouts, artworks API;
   **editor** (Konva canvas, crop/placement/locks with the constraint solver, colour tools, alternatives,
@@ -54,7 +54,6 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
   **`the_frame_v2 service install`** (systemd user unit / launchd agent); docs (user guide,
   README, `CONTRIBUTING.md`, `NOTICE.md`); a **security review** (`docs/security.md`) with clean
   `pip-audit`/`pnpm audit` runs. Licence: **MIT**; the name stays the placeholder by decision.
-- **Next: nothing planned.** `docs/PLAN.md` §16 keeps the open questions (the rename above all).
 - **Phase 12 (2026-09-25, `docs/tv-display.md`)**: **display on the TV** — a `tv/` client for the
   Frame's art channel (pairing on the remote-control channel, upload/delete/select/slideshow) with
   a `FakeTv` that encodes the firmware's real behaviour; `display_targets` + `display_target_items`
@@ -78,7 +77,18 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
   the last result kept on the target; cached foreign/ours counts; *In order | Shuffle*; **Show on
   the TV** from the viewer and the editor too. Migration `0010` (`position` nullable = ours but out
   of the set). `THE_FRAME_V2_FAKE_TV=1` drives it all without a TV.
-- **Next: nothing planned.** Not yet verified on hardware: deleting foreign photos, whether the
+- **Tags, inbox & ready (2026-10-01, `docs/organization.md` §1, §5, §6)**: an artwork **carries
+  its photos' tags** (read, never copied: the `tag` filter clause, smart collections, FTS and the
+  counts see own ∪ inherited; `inherited_tags` in the API, shown dashed); **bulk tagging**
+  (`POST /photos/tags`, `POST /artworks/tags`, additive; the tri-state `TagMenu`, `t` on every
+  selection, *Tag these N photos…* in the upload tray); **tag categories** (migration `0011`:
+  `tag_categories`, `tags.category_id` / `last_used_at`, "recent" first in the picker, the Tags
+  page grouped by category, unused-tag clean-up, a derived **Places** tab — no Places tag) that
+  travel in the archive; the **inbox rule** — a photo leaves the inbox only when an artwork using
+  it is marked **ready** (one-way; Draft badge on the tile, *Back to inbox* by hand); and the
+  **trash acts, then offers Undo** (the cascade dialog only when artworks use the photos).
+- **Next: nothing planned** (`docs/PLAN.md` §16 keeps the open questions, the rename above
+  all). Not yet verified on hardware: deleting foreign photos, whether the
   pairing token survives a TV power cut (hence "pair again" in the UI), discovery on the real LAN,
   following a TV that moved, and a "Don't change" push.
 - Verified by the user on real hardware (2026-09-17): Android uploads (both pickers keep full quality but
@@ -119,7 +129,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `…/context.py` | `AppContext` service container (`app.state.ctx`) |
 | `…/api/` | Thin routers + `schemas.py` (Pydantic API models = OpenAPI source) + `deps.py` (auth deps); `templates.py` = styles/layouts CRUD, usage, push update, template files; `library.py` = tags + collections + `POST /filters/validate`; `trash.py` = preview/trash/restore/purge; `archive.py` = exports + imports; `jobs.py` = the activity centre (list/retry/dismiss) |
 | `…/auth/` | `principal.py` (cookie/localhost → role), `middleware.py` (Host/CSRF/headers), `ratelimit.py` |
-| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos`, `tags`, `geocode`, `artworks` (create/save/snapshots), `render` (cache, jobs, region), `templates` (presets, CRUD, template files, artwork defaults; the artwork-writing half — apply/push update — is in `artworks`), `recipes` (the bundled composition catalogue, no DB), `colors` (photo palette, swatches, curated presets), `library` (the filter compiler + the artwork listing), `collections` (tree, items, smart filters), `tags` (rename/merge/delete), `search` (FTS index), `trash` (soft delete, cascade, restore, purge), `archive_export` (the `.tfarchive` writer + the rendered-image ZIP), `archive_import` (receive, validate, classify), `archive_apply` (the import transaction and its id maps), `display` (display targets: pair, status, and the push that mirrors a set onto a TV), `jobs_admin` (what failed, and running it again) |
+| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos` (incl. the batch meta of an upload, duplicates too), `tags` (bulk tagging, categories, unused, the own/inherited counts), `places` (the derived country → region → place view), `geocode`, `artworks` (create/save/snapshots), `render` (cache, jobs, region), `templates` (presets, CRUD, template files, artwork defaults; the artwork-writing half — apply/push update — is in `artworks`), `recipes` (the bundled composition catalogue, no DB), `colors` (photo palette, swatches, curated presets), `library` (the filter compiler + the artwork listing), `collections` (tree, items, smart filters), `search` (FTS index, versioned: `INDEX_VERSION`), `trash` (soft delete, cascade, restore, purge), `archive_export` (the `.tfarchive` writer + the rendered-image ZIP), `archive_import` (receive, validate, classify), `archive_apply` (the import transaction and its id maps), `display` (display targets: pair, status, and the push that mirrors a set onto a TV), `jobs_admin` (what failed, and running it again) |
 | `…/domain/` | PURE: `document` (artwork document v1 + the `composition` block + reference checks), `geometry`, `quality` (tiers), `placement`, `constraints` (editor solver §7.3), `alternatives` (§7.6), `arrange` (align/distribute/new slot, §7.7), `composition` (recipe trees, the parametric solver and `apply` = what it writes into a document, `docs/simple-editor.md` §3), `templates` (style/layout docs, `restyle`/`relayout`/save-as, `build_composition_document`), `filters` (the library filter AST, `docs/data-model.md` §5.2), `archive` (the archive's records, file layout and member-name safety, `docs/archive-format.md`) |
 | `…/imaging/` | `sniff` (magic bytes), `decode` (the only pixel access), `metadata` (EXIF/ICC), `fingerprint` (hash ignoring EXIF), `capabilities`, `render` (the renderer), `palette` (OKLab k-means), `assets` (fonts/textures catalog) |
 | `…/assets/` | `geonames/`, `fonts/` (OFL, `scripts/build_fonts.py`), `textures/` (CC0, `scripts/generate_textures.py`), `presets/` (built-in styles/layouts + `recipes.json`) |
@@ -140,7 +150,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `frontend/src/editor/` | `EditorPage.tsx` (layout, shortcuts, review queue), `store.ts` (working document, undo/redo on Immer patches, autosave + conflicts), `operations.ts` (pure document mutations: how a change propagates), `actions.ts` (what the UI calls), `TvPreview.tsx` |
 | `…/editor/canvas/` | `EditorStage.tsx` (Konva stage, one pointer pipeline for every gesture, overlays), `SlotNode.tsx` (bands, photo, shadows), `CaptionNode.tsx`, `SelectionOverlay.tsx` (outlines + transform handles), `hit.ts` (rotation-aware hit tests, handle maths), `texture.ts`, `fonts.ts`, `useOrientedImage.ts` |
 | `…/editor/panels/` | `SimplePanel` (the parametric editor, §6.2) + `RecipePicker` (schemas drawn by the solver), `SlotsPanel` (z-order, add/remove, photos), `PhotoPicker`, `ArrangePanel` (align/distribute), `CaptionsPanel`, `FramingPanel`, `StylePanel`, `ColorField` (picker + swatches + palette + presets), `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`, `ShadowFields` (shared with the template editor), `Controls` |
-| `frontend/src/features/` | `display/` (the TV page + "Show on the TV"), `activity/` (failed jobs + retry), `archive/` (export dialog, import report + policies), `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, grid, viewer, create dialog), `templates/` (page, editors, push update, `.tf*.json` files), `library/` (the filter AST + chip bar), `collections/` (page, tree, create/edit dialog), `trash/` (page + the cascade dialog), `tags/` (picker + manager page), `devices/`, `auth/`, `mobile/` (upload + read-only browse), `settings/`, `localsend/` (the editor lives in `src/editor/`, not here) |
+| `frontend/src/features/` | `display/` (the TV page + "Show on the TV"), `activity/` (failed jobs + retry), `archive/` (export dialog, import report + policies), `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, grid, viewer, create dialog), `templates/` (page, editors, push update, `.tf*.json` files), `library/` (the filter AST + chip bar), `collections/` (page, tree, create/edit dialog), `trash/` (page, the cascade dialog, `useTrashWithUndo` / `useDeletePhotos`), `tags/` (picker, the tri-state `TagMenu`, category grouping, the manager page + `PlacesView`), `devices/`, `auth/`, `mobile/` (upload + read-only browse), `settings/`, `localsend/` (the editor lives in `src/editor/`, not here) |
 | `…/features/display/` | `DisplayPage` (TV cards, scanning Add-TV dialog, Send = dry run then confirm), `ShowOnTvDialog` (dry-run numbers, collapsed rotation, drafts, foreign checkbox only when there are some), `SlideshowSettings` (interval incl. "Don't change", *In order \| Shuffle*), `PushTray` (sidebar progress + summary toast), `pushStore.ts` (`display.progress` outside React), `summary.ts` (result/phase sentences) |
 | `frontend/src/shared/` | UI primitives (`ui/`, incl. `Toaster.tsx`), `toast.ts` (the store, outside React), `problem.ts` (`problemMessage`), `format.ts`, `cn.ts`, `dnd.ts` (the MIME types our own drags carry) |
 | `frontend/src/i18n/` | i18next setup; strings in `locales/en/common.json` |

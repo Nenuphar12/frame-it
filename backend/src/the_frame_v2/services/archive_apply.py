@@ -9,7 +9,8 @@ an artwork document, a collection's parent, a smart collection's filter and ever
 be rewritten. Writing rows as they were read would make that impossible, so the passes run in
 reference order and each one fills the map the next ones read.
 
-Order: tags → photos → templates → swatches → artworks → collections → links → settings. Originals
+Order: tag categories → tags → photos → templates → swatches → artworks → collections → links →
+settings. Originals
 are copied to their content-addressed path before the rows that name them (invariant 1); an artwork
 that is overwritten is snapshotted `pre_import` first, and that snapshot *is* the undo.
 """
@@ -39,6 +40,7 @@ from the_frame_v2.db.models import (
     Setting,
     Swatch,
     Tag,
+    TagCategory,
 )
 from the_frame_v2.domain import archive
 from the_frame_v2.errors import ProblemError
@@ -58,6 +60,7 @@ from the_frame_v2.services.archive_import import (
     remapped_filter,
     row_of,
     set_failed,
+    tag_category,
 )
 
 log = logging.getLogger(__name__)
@@ -123,6 +126,7 @@ def apply_import(ctx: AppContext, import_id: str, policies: Policies) -> ApplyRe
     written = _Written()
     try:
         with ctx.db.session() as session:
+            _apply_tag_categories(session, staged, policies, maps, result)
             _apply_tags(session, staged, policies, maps, result)
             _apply_photos(ctx, session, staged, policies, maps, result)
             _apply_templates(session, staged, policies, maps, result)
@@ -144,6 +148,63 @@ def apply_import(ctx: AppContext, import_id: str, policies: Policies) -> ApplyRe
     return result
 
 
+def _apply_tag_categories(
+    session: Session,
+    staged: StagedArchive,
+    policies: Policies,
+    maps: IdMaps,
+    result: ApplyResult,
+) -> None:
+    """Categories are matched like tags — by name — and written before the tags that name them."""
+    entity = archive.TAG_CATEGORIES
+    by_name = {row.name.casefold(): row for row in session.scalars(select(TagCategory))}
+    for record in staged.rows(entity.kind):
+        assert isinstance(record, archive.TagCategoryRecord)
+        match = by_name.get(record.name.casefold())
+        if match is not None:  # the same name is the same category: merge, never duplicate
+            maps.put(entity.kind, record.id, match.id)
+            result.bump(result.skipped, entity.kind)
+            continue
+        existing = session.get(TagCategory, record.id)
+        if existing is None:
+            category = TagCategory(
+                id=record.id,
+                name=record.name,
+                color=record.color,
+                position=record.position,
+                created_at=record.created_at,
+            )
+            session.add(category)
+            by_name[record.name.casefold()] = category
+            maps.put(entity.kind, record.id, record.id)
+            result.bump(result.created, entity.kind)
+            continue
+        # Same id, another name: the policy decides.
+        policy = policies.for_entry(entity.kind, record.id)
+        if policy == "take_theirs":
+            existing.name, existing.color = record.name, record.color
+            by_name[record.name.casefold()] = existing
+            maps.put(entity.kind, record.id, existing.id)
+            result.bump(result.updated, entity.kind)
+        elif policy == "keep_both":
+            name = _unique_name(archive.imported_name(record.name), by_name)
+            category = TagCategory(
+                id=new_id(),
+                name=name,
+                color=record.color,
+                position=record.position,
+                created_at=record.created_at,
+            )
+            session.add(category)
+            by_name[name.casefold()] = category
+            maps.put(entity.kind, record.id, category.id)
+            result.bump(result.created, entity.kind)
+        else:
+            maps.put(entity.kind, record.id, existing.id)
+            result.bump(result.skipped, entity.kind)
+    session.flush()
+
+
 def _apply_tags(
     session: Session,
     staged: StagedArchive,
@@ -155,15 +216,21 @@ def _apply_tags(
     by_name = {row.name.casefold(): row for row in session.scalars(select(Tag))}
     for record in staged.rows(entity.kind):
         assert isinstance(record, archive.TagRecord)
+        category_id = tag_category(session, record, maps)
         match = by_name.get(record.name.casefold())
-        if match is not None:  # a tag is its name: merge rather than duplicate
+        if match is not None:  # a tag is its name: merge rather than duplicate (and keep ours —
+            # its category included: the report called it `matched`, i.e. nothing is written)
             maps.put(entity.kind, record.id, match.id)
             result.bump(result.skipped, entity.kind)
             continue
         existing = session.get(Tag, record.id)
         if existing is None:
             tag = Tag(
-                id=record.id, name=record.name, color=record.color, created_at=record.created_at
+                id=record.id,
+                name=record.name,
+                color=record.color,
+                category_id=category_id,
+                created_at=record.created_at,
             )
             session.add(tag)
             by_name[record.name.casefold()] = tag
@@ -174,12 +241,19 @@ def _apply_tags(
         policy = policies.for_entry(entity.kind, record.id)
         if policy == "take_theirs":
             existing.name, existing.color = record.name, record.color
+            existing.category_id = category_id
             by_name[record.name.casefold()] = existing
             maps.put(entity.kind, record.id, existing.id)
             result.bump(result.updated, entity.kind)
         elif policy == "keep_both":
             name = _unique_name(archive.imported_name(record.name), by_name)
-            tag = Tag(id=new_id(), name=name, color=record.color, created_at=record.created_at)
+            tag = Tag(
+                id=new_id(),
+                name=name,
+                color=record.color,
+                category_id=category_id,
+                created_at=record.created_at,
+            )
             session.add(tag)
             by_name[name.casefold()] = tag
             maps.put(entity.kind, record.id, tag.id)
@@ -570,6 +644,9 @@ def _apply_tag_links(
                 photo = session.get(Photo, owner)
                 if photo is not None:
                     search.index_photo(session, photo)
+        if owner_kind == archive.PHOTOS.kind:
+            # An artwork carries its photos' tags: the ones made of these photos re-index too.
+            search.index_artworks_using(session, touched)
 
 
 def _apply_settings(

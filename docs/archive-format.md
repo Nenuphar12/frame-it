@@ -23,8 +23,8 @@ manifest.json          { "format": "the_frame_v2.archive", "format_version": 1, 
                          "created_at": "…", "scope": "full" | "partial", "document_schema": 1,
                          "counts": {…}, "includes_renders": false, "render_key": "1:…" }
 data/photos.jsonl  artworks.jsonl  artwork_tags.jsonl  photo_tags.jsonl  tags.jsonl
-     collections.jsonl  collection_items.jsonl  frame_styles.jsonl  layouts.jsonl
-     swatches.jsonl  settings.json
+     tag_categories.jsonl  collections.jsonl  collection_items.jsonl  frame_styles.jsonl
+     layouts.jsonl  swatches.jsonl  settings.json
 originals/<sha256>.<ext>         stored uncompressed (already-compressed formats)
 renders/<artwork_id>.png         optional
 checksums.sha256                 every file except itself, `<digest>  <path>`
@@ -32,6 +32,11 @@ checksums.sha256                 every file except itself, `<digest>  <path>`
 
 - One JSON object per line, UTF-8, keys sorted; the JSON Schemas in `docs/schemas/archive/` are the
   reference, and unknown fields are ignored on read so a later minor version stays readable.
+- **Tag categories** (`tag_categories.jsonl`, and `category_id` on a tag record) were added within
+  `format_version` 1 because they are optional both ways: a missing file reads as no categories
+  and a missing `category_id` as "Other", so an archive written before them imports unchanged,
+  and an older reader ignores both. A full archive carries every category (an empty one is still
+  the user's); a partial one carries the categories of the tags it holds.
 - **Excluded**: devices, pairing/setup codes, upload sessions, jobs, snapshots, LocalSend senders,
   the FTS index, `artwork_photos` and photo hash aliases (all derived or local), and `cache/`.
   **Built-in** styles and layouts are part of the app — they are seeded on both sides, so exporting
@@ -78,7 +83,9 @@ checksums.sha256                 every file except itself, `<digest>  <path>`
 
    Identity is not "same id" alone: a **photo is its bytes** (matched by SHA-256, merged copies
    included — and a local photo that sat in the trash comes back), a **tag is its name**
-   (case-insensitive, so tags merge instead of duplicating), and a **built-in template** is never
+   (case-insensitive, so tags merge instead of duplicating) — and so is a **tag category**, so the
+   seeded People / Events / Themes of two libraries match instead of doubling; a matched tag keeps
+   its local category (`matched` writes nothing) — and a **built-in template** is never
    overwritten. `identical` ignores every timestamp, the trash batch and an artwork's
    `document_version`: a no-op save on one side is not a conflict.
 4. **Policies** — `POST /imports/{id}/apply` takes a `default`, per-kind overrides and per-item
@@ -91,8 +98,9 @@ checksums.sha256                 every file except itself, `<digest>  <path>`
 
    A photo is the exception: `take_theirs` on two different images sharing an id cannot mean
    anything (originals are content-addressed), so it behaves as `keep_both`.
-5. **Apply** — one transaction, in reference order: tags → photos → templates → swatches →
-   artworks → collections → collection items → tag links → settings. Originals are copied to
+5. **Apply** — one transaction, in reference order: tag categories → tags → photos → templates →
+   swatches → artworks → collections → collection items → tag links → settings. Photo tag links
+   re-index the artworks made of those photos (they carry the photos' tags). Originals are copied to
    `originals/<sha[:2]>/<sha256>.<ext>` first, idempotently by hash (invariant 1). Every id an
    archive carries travels through one set of maps, so an artwork document's `photo_id`s, a
    collection's `parent_id` and `cover_artwork_id`, a **smart collection's filter** (it names tags

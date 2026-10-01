@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 
 import type { ArtworkSummary } from "@/api/client";
-import { useArtworkActions, useTrashActions } from "@/api/queries";
+import { useArtworkActions } from "@/api/queries";
 import { useRegisterCommands, type Command } from "@/app/commands";
+import { useTrashWithUndo } from "@/features/trash/useTrashWithUndo";
 
 interface GridCommandsInput {
   /** The rows currently shown, in order — the selection is read against them. */
@@ -13,6 +14,8 @@ interface GridCommandsInput {
   openEditor: (id: string) => void;
   /** Opens the add-to-collection menu anchored on the page's own button. */
   openCollectionMenu: () => void;
+  /** Opens the tag menu (`TagMenu`) anchored on the page's own button. */
+  openTagMenu?: () => void;
   /** Focus the page's search box, when it has one (a callback, not the ref: reading a ref inside
    * the memo is what the React Compiler lint forbids). */
   focusSearch?: () => void;
@@ -36,12 +39,14 @@ export function useArtworkGridCommands({
   clear,
   openEditor,
   openCollectionMenu,
+  openTagMenu,
   focusSearch,
   removeFromCollection,
   suspended = false,
 }: GridCommandsInput) {
   const { update } = useArtworkActions();
-  const { artworks: trashArtworks } = useTrashActions();
+  // The trash is reversible: `Delete` acts at once and the toast offers Undo (the batch).
+  const { trashArtworks } = useTrashWithUndo();
   const ids = useMemo(() => items.map((a) => a.id), [items]);
   const inOrder = useMemo(() => ids.filter((id) => selected.has(id)), [ids, selected]);
 
@@ -103,12 +108,23 @@ export function useArtworkGridCommands({
         shortcut: key("Delete"),
         run: () => {
           if (inOrder.length > 0) {
-            trashArtworks.mutate(inOrder);
+            void trashArtworks(inOrder);
             clear();
           }
         },
       },
     ];
+    if (openTagMenu) {
+      list.push({
+        id: "artworks.tag",
+        label: "tags.tagSelection",
+        group,
+        shortcut: key("t"),
+        run: () => {
+          if (inOrder.length > 0) openTagMenu();
+        },
+      });
+    }
     if (focusSearch) {
       list.push({
         id: "artworks.search",
@@ -142,6 +158,7 @@ export function useArtworkGridCommands({
     items,
     openCollectionMenu,
     openEditor,
+    openTagMenu,
     removeFromCollection,
     selectAll,
     selected,
