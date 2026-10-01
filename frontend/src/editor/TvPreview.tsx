@@ -2,7 +2,7 @@
 // simulated bezel and an optional matte overlay — how the artwork will actually look on the wall.
 // Uses the Fullscreen API, which works over plain HTTP (invariant 8).
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { artworkRenderUrl, artworkThumbUrl, type ArtworkSummary } from "@/api/client";
@@ -28,6 +28,15 @@ export function TvPreview({ artwork, ids = [], onNavigate, onClose }: TvPreviewP
   const index = ids.indexOf(artwork.id);
   const src = artworkRenderUrl(artwork, "jpg");
   const loaded = loadedSrc === src;
+  // The latest `onClose`, read by the effects below instead of being one of their dependencies.
+  // Callers pass an inline arrow, i.e. a new function on every render of the editor (autosave, a
+  // fresh render arriving over SSE…). As a dependency it re-ran the fullscreen effect: its cleanup
+  // left fullscreen, and the re-run's `fullscreenchange` listener read that as the user leaving and
+  // closed the preview — it opened, flickered and shut (remarks.md #4).
+  const closeRef = useRef(onClose);
+  useLayoutEffect(() => {
+    closeRef.current = onClose;
+  });
 
   const go = useCallback(
     (delta: number) => {
@@ -37,20 +46,21 @@ export function TvPreview({ artwork, ids = [], onNavigate, onClose }: TvPreviewP
     [ids, index, onNavigate],
   );
 
+  // Fullscreen for as long as the preview is mounted — once, whatever the parent re-renders.
   useEffect(() => {
     const element = root.current;
     if (element && !document.fullscreenElement) {
       void element.requestFullscreen?.().catch(() => undefined);
     }
     const onChange = () => {
-      if (!document.fullscreenElement) onClose();
+      if (!document.fullscreenElement) closeRef.current();
     };
     document.addEventListener("fullscreenchange", onChange);
     return () => {
       document.removeEventListener("fullscreenchange", onChange);
       if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
     };
-  }, [onClose]);
+  }, []);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -58,7 +68,7 @@ export function TvPreview({ artwork, ids = [], onNavigate, onClose }: TvPreviewP
       else if (event.key === "ArrowLeft") go(-1);
       else if (event.key === "b") setBezel((value) => (value + 1) % BEZELS.length);
       else if (event.key === "m") setMatte((value) => !value);
-      else if (event.key === "Escape") onClose();
+      else if (event.key === "Escape") closeRef.current();
       else return;
       event.preventDefault();
       // Captured before the command registry sees it: `Escape` closes the preview, it does not
@@ -67,7 +77,7 @@ export function TvPreview({ artwork, ids = [], onNavigate, onClose }: TvPreviewP
     };
     window.addEventListener("keydown", onKey, { capture: true });
     return () => window.removeEventListener("keydown", onKey, { capture: true });
-  }, [go, onClose]);
+  }, [go]);
 
   return (
     <div ref={root} className="fixed inset-0 z-[60] flex items-center justify-center bg-black">
