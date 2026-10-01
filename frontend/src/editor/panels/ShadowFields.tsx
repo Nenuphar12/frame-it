@@ -4,6 +4,8 @@
 // One component on purpose — a shadow edited in a template and a shadow edited on an artwork are
 // the same six numbers, and the style editor used to offer a subset (type and opacity), which read
 // as "a template cannot say that" rather than "we did not wire it up" (remarks.md #2).
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { EdgeShadow, Shadow } from "@/editor/core/document.ts";
@@ -72,6 +74,9 @@ const DEFAULT_EDGE_SHADOW: EdgeShadow = {
 /**
  * The frame's shadow on the artwork (`edge_shadow`, rendering-spec.md §8.1): the same five numbers
  * as a photo's shadow, without a kind — it is always cast inwards, from the edge of the screen.
+ *
+ * Folded by default: it is set once, usually by the style, so the panel shows one line saying
+ * whether there is one and keeps the switch and the numbers behind it (remarks.md).
  */
 export function EdgeShadowFields({
   shadow,
@@ -83,28 +88,42 @@ export function EdgeShadowFields({
   photoId?: string | null;
 }) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
   return (
-    <>
-      <Field label={t("editor.edgeShadow.label")}>
-        <Segmented
-          label={t("editor.edgeShadow.label")}
-          value={shadow ? "on" : "off"}
-          onChange={(value) => onChange(value === "on" ? DEFAULT_EDGE_SHADOW : null, null)}
-          options={[
-            { value: "off", label: t("common.off") },
-            { value: "on", label: t("common.on"), title: t("editor.edgeShadow.hint") },
-          ]}
-        />
-      </Field>
-      {shadow && (
-        <ShadowNumbers
-          shadow={shadow}
-          photoId={photoId}
-          prefix="edge-shadow"
-          onChange={(patch, group) => onChange({ ...shadow, ...patch }, group)}
-        />
+    <div className="rounded-md border border-border">
+      <button
+        type="button"
+        aria-expanded={open}
+        title={t("editor.edgeShadow.hint")}
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs"
+      >
+        {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+        <span className="text-muted">{t("editor.edgeShadow.label")}</span>
+        <span className="flex-1 text-right">{t(shadow ? "common.on" : "common.off")}</span>
+      </button>
+      {open && (
+        <div className="flex flex-col gap-2 border-t border-border px-2 py-2">
+          <Segmented
+            label={t("editor.edgeShadow.label")}
+            value={shadow ? "on" : "off"}
+            onChange={(value) => onChange(value === "on" ? DEFAULT_EDGE_SHADOW : null, null)}
+            options={[
+              { value: "off", label: t("common.off") },
+              { value: "on", label: t("common.on") },
+            ]}
+          />
+          {shadow && (
+            <ShadowNumbers
+              shadow={shadow}
+              photoId={photoId}
+              prefix="edge-shadow"
+              onChange={(patch, group) => onChange({ ...shadow, ...patch }, group)}
+            />
+          )}
+        </div>
       )}
-    </>
+    </div>
   );
 }
 

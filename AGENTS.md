@@ -106,7 +106,9 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
   style editor, combined in the built-in **Bevelled mat**. The render hash reads
   `render_identity()` and re-seeding the built-ins compares through the model, so a schema
   addition moves no cache, TV or outdated badge. `RENDERER_VERSION` 2 = rectangular shadows
-  from 1-D profiles (`_blurred_box`): a 4K render 1.3 → 1.0 s, 9 slots 4.7 → 3.5 s.
+  from 1-D profiles (`_blurred_box`): a 4K render 1.3 → 1.0 s, 9 slots 4.7 → 3.5 s; 3 = the
+  bevel shaded on all four faces (sides alike, bottom barely). The frame-shadow controls are
+  folded behind one line in every panel (`EdgeShadowFields`).
 - **Next: nothing planned** (`docs/PLAN.md` §16 keeps the open questions, the rename above
   all). Not yet verified on hardware: deleting foreign photos, whether the
   pairing token survives a TV power cut (hence "pair again" in the UI), discovery on the real LAN,

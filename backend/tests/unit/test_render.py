@@ -188,7 +188,7 @@ def test_a_bevelled_band_is_four_mitred_faces(tmp_path: Path) -> None:
     )
     image = render_document(doc, {"p": photo}.get).image
     face = {name: shade("#C0C0C0", amount) for name, amount in BEVEL_SHADES.items()}
-    assert face["top"] < face["left"] < rgb("#C0C0C0") < face["right"] < face["bottom"]
+    assert face["top"] < face["left"] == face["right"] < face["bottom"] < rgb("#C0C0C0")
     assert image(250, 295) == face["top"]
     assert image(250, 365) == face["bottom"]
     assert image(195, 330) == face["left"]

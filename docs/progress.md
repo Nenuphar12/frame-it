@@ -1,5 +1,31 @@
 # Progress log
 
+## 2026-10-02 — Bevel shades, folded frame shadow (renderer version 3)
+
+**The bevel is in shade on all four faces.** `BEVEL_SHADES` lit the right face (`+0.35`) and the
+bottom one (`+0.60`), which read as light coming from the left; the Frame's own matte is lit from
+straight above. Now top `−0.30`, left and right `−0.12`, bottom `−0.05` — the same in
+`imaging/render.py` and `editor/core/bevel.ts`, pinned by `conformance/geometry/render.json`
+(values checked by hand: `#EFF1EF` → 210/212/210 on the sides, 227/229/227 at the bottom). The
+shades are the renderer's, not the style's, so every bevel changes, not only the built-in
+*Bevelled mat*: the same document renders to different pixels, hence `RENDERER_VERSION` 3 — every
+render hash moves once (caches rebuilt on demand, the next TV push re-uploads the set). Only
+`bevelled_mat.png` regenerated. A pure black band now shows no bevel at all (there is nothing
+left to darken); any other colour does.
+
+**The frame shadow is folded.** `EdgeShadowFields` — one component for the Simple panel, the
+Advanced Style panel and the frame-style editor — is a single line, *Frame shadow · On/Off*, that
+opens onto the switch and the five numbers. Closed by default each time: it is set once, usually
+by the style.
+
+**Verified**: `make check` green (1147 backend tests). Driven in headless Chromium over CDP on a
+copy of the library, read back through the API: the line reads *Frame shadow · On* with no control
+under it, opens onto the switch and six inputs, *Off* saves `edge_shadow: null` and the line reads
+*Off*; picking *Bevelled mat* in Background saves the bevelled border, and the 4K render has
+167/169/167 on the top face, 210/212/210 on both sides and 227/229/227 at the bottom, on a
+238/240/238 mat. Not driven: the Advanced Style panel and the frame-style editor (the same
+component), and the canvas's own bevel (pinned by the conformance fixture).
+
 ## 2026-10-02 — Shadows from 1-D profiles (renderer version 2)
 
 The trick found for the frame's shadow applies to every rectangular shadow: "inside a rectangle"

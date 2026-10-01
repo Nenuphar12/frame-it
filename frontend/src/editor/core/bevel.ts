@@ -9,14 +9,14 @@ export type BevelFace = "top" | "left" | "right" | "bottom";
 
 /**
  * How each face is shaded: negative mixes the band colour towards black, positive towards white.
- * Light from above, slightly from the left — the top face (which looks down) is in shade, the
- * bottom one is lit.
+ * Light from above, straight on — the top face (which looks down) is the darkest, the two sides
+ * share one lighter shade and the bottom is barely shaded.
  */
 export const BEVEL_SHADES: Record<BevelFace, number> = {
   top: -0.3,
   left: -0.12,
-  right: 0.35,
-  bottom: 0.6,
+  right: -0.12,
+  bottom: -0.05,
 };
 
 /** `color` (`#RRGGBB`) mixed towards black (`amount < 0`) or white, rounded half up. */

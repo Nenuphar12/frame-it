@@ -32,17 +32,19 @@ from the_frame_v2.domain.geometry import CANVAS_HEIGHT, CANVAS_WIDTH, Rect, roun
 from the_frame_v2.imaging.assets import AssetCatalog, FontAsset, catalog
 from the_frame_v2.imaging.decode import DecodeError, load_srgb, pixel_count
 
-RENDERER_VERSION = "2"
+RENDERER_VERSION = "3"
 """Bump when the **same document** renders to different pixels. A new optional document field is
 not that: it changes the document, hence the hash, of the artworks that use it and of no other
 (`ArtworkDocument.render_identity`).
 
 2: the shadows of unrotated layers are built from 1-D profiles (`_blurred_box`) — within one
-rounding of the 2-D blur they replace, which is still a different pixel here and there."""
-BEVEL_SHADES = {"top": -0.30, "left": -0.12, "right": 0.35, "bottom": 0.60}
+rounding of the 2-D blur they replace, which is still a different pixel here and there.
+3: a bevel's right and bottom faces are in shade too (`BEVEL_SHADES`)."""
+BEVEL_SHADES = {"top": -0.30, "left": -0.12, "right": -0.12, "bottom": -0.05}
 """How a bevelled band shades its four faces (rendering-spec.md §8.1, step 3.5): a negative value
-mixes the band colour towards black, a positive one towards white. Light from above, slightly from
-the left — the cut edge of a mat window, as a Frame draws it."""
+mixes the band colour towards black, a positive one towards white. Light from above, straight on:
+the top face is the darkest, the two sides share one lighter shade and the bottom is barely
+shaded — the cut edge of a mat window, as a Frame draws it."""
 MIN_BLUR_AMPLITUDE = 0.005
 """Gaussian kernels are truncated below this amplitude (libvips' default 0.2 is visibly clipped)."""
 TEXT_MARKER = "|"

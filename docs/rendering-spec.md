@@ -18,10 +18,11 @@
       `rect.w × rect.h` (crop/embed 1px if rounding differs).
    5. Bands inner → outer: `embed` with band color (size grows by `2×width`). Layer = photo+bands, RGBA opaque.
       A band with `bevel: true` is the cut edge of a mat window instead of a flat colour: **four mitred
-      faces**, each one flat shade of the band's colour — top `−0.30`, left `−0.12`, right `+0.35`, bottom
-      `+0.60` (`BEVEL_SHADES`; negative mixes towards black, positive towards white, per channel
-      `floor(c + (target − c)·|k| + 0.5)`). Light from above, slightly from the left: the top face looks
-      down and is in shade, the bottom one is lit. A band pixel belongs to the face whose **outer** edge
+      faces**, each one flat shade of the band's colour — top `−0.30`, left and right `−0.12`, bottom
+      `−0.05` (`BEVEL_SHADES`; negative mixes towards black, positive towards white, per channel
+      `floor(c + (target − c)·|k| + 0.5)`). Light from above, straight on: the top face looks down and
+      is the darkest, the two sides share one lighter shade, the bottom is barely shaded. A band pixel
+      belongs to the face whose **outer** edge
       is nearest; on a diagonal the top or bottom face wins, so a mitre is one exact pixel staircase.
    6. **Inner shadow**: mask `m` = 255 outside layer rect / 0 inside (padded by `3σ+|offset|`), shift by offset,
       `gaussblur(σ = blur/2)`, crop back to layer rect, multiply by `opacity`, fill with shadow color, composite over layer.
@@ -70,7 +71,9 @@ whenever **the same document** renders to different pixels. A new optional docum
 them regenerate byte for byte. **Version 2** (2026-10-02) is the 1-D shadow profiles: the eight
 references still regenerate byte for byte, but over 448 recessed and 45 raised shadows at full size
 about one channel value in 50 million (recessed) and one in 3 million (raised) moves by 1/255 —
-invisible, and still "the same document, different pixels".
+invisible, and still "the same document, different pixels". **Version 3** (2026-10-02) is the
+bevel's shades: the right and bottom faces were lit (`+0.35`, `+0.60`) and are now in shade like
+the left one — only `bevelled_mat` regenerates.
 
 ### 8.2 Client preview parity (`editor/canvas/`)
 
