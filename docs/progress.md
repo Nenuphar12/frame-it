@@ -1,5 +1,31 @@
 # Progress log
 
+## 2026-10-01 — Collections and filters (remarks #11, #20, #24)
+
+**One way to create a collection** (#24): a single *New collection* button whose dialog starts with
+*Manual | Smart*, and **Save as smart collection** on Artworks and Favorites, which opens that
+dialog with the view in it — chips, search box (a `text` clause) and the Favorites pin. The FilterBar
+comment had promised it since Phase 9; nothing offered it.
+
+**Collection dates removed** (#11): stored, never displayed, never used, and confusing next to a smart
+filter's own `taken_at`. The dialog no longer shows or sends them; the columns stay, so archives
+still round-trip them.
+
+**`place near`** (#20): a point and a radius (≤ 1000 km) on the photos' GPS — "within 50 km of Kyoto"
+reaches Osaka, which `contains` never could. A bounding box (the exact spherical-cap span, wrapping
+at ±180°) keeps the exact distance, a Python function registered on each SQLite connection, to a few
+rows. The point is picked by name from the bundled GeoNames list (`GET /places/search`: prefix,
+accents ignored, `"paris, texas"`), the library's places first since the list has no population;
+a photo's drawer opens *Artworks within 10 km* of it. Photos without GPS can never match, so the
+chip says how many artworks that leaves out (`unlocated_artworks`). Checked: 80 000 random points
+inside random circles all fall in their box; tests cover the matching, the antimeridian and the
+picker.
+
+Measured in a browser on a copy of the dev library: typing "Vern" lists *Vernio, Tuscany, Italy —
+10 photos* first; picking it filters 33 artworks down to 12, the API's own count; saving the view
+gives a smart collection of the same 12; a `?near=` link and the drawer's link open the grid with
+the chip and its radius.
+
 ## 2026-10-01 — Two older bugs, found while checking the merge
 
 **Every tile of the Trash page was a broken image.** Both thumbnail routes looked their row up

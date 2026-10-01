@@ -68,7 +68,7 @@ export function CollectionsPage() {
   const [sort, setSort] = useState<ArtworkSort>("manual");
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Collection | null>(null);
-  const [creating, setCreating] = useState<"manual" | "smart" | null>(null);
+  const [creating, setCreating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Collection | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -135,7 +135,7 @@ export function CollectionsPage() {
         label: "collections.new",
         group: "commands.groups.library",
         shortcut: openId === null ? "Shift+N" : undefined,
-        run: () => setCreating("manual"),
+        run: () => setCreating(true),
       },
     ],
     [openId],
@@ -150,20 +150,11 @@ export function CollectionsPage() {
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => setCreating("manual")}
+            onClick={() => setCreating(true)}
             title={t("collections.new")}
             aria-label={t("collections.new")}
           >
             <FolderPlus size={15} />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setCreating("smart")}
-            title={t("collections.newSmart")}
-            aria-label={t("collections.newSmart")}
-          >
-            <Sparkles size={15} />
           </Button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
@@ -293,7 +284,7 @@ export function CollectionsPage() {
               title={t("collections.emptyTitle")}
               description={t("collections.emptyDescription")}
               action={
-                <Button variant="primary" onClick={() => setCreating("manual")}>
+                <Button variant="primary" onClick={() => setCreating(true)}>
                   {t("collections.new")}
                 </Button>
               }
@@ -354,11 +345,12 @@ export function CollectionsPage() {
         collectionIds={selected ? [selected.id] : []}
       />
       {/* New collections land at the top level by default; the dialog's own picker nests them
-          (a "+" next to the selected collection used to be the *only* way, remarks.md #4). */}
+          (a "+" next to the selected collection used to be the *only* way, remarks.md #4), and
+          its first choice is the kind — one button for both (remarks.md #24). */}
       <CollectionDialog
-        open={creating !== null}
-        onOpenChange={(open) => !open && setCreating(null)}
-        kind={creating ?? "manual"}
+        open={creating}
+        onOpenChange={setCreating}
+        kind="manual"
         parentId={null}
         onSaved={select}
       />

@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Download, PencilLine, Undo2, Wand2, X } from "lucide-react";
+import { Download, MapPin, PencilLine, Undo2, Wand2, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -20,6 +20,9 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
     </div>
   );
 }
+
+/** "Artworks near here" from a photo: a city-sized circle, widened from the chip if need be. */
+const NEAR_PHOTO_KM = 10;
 
 function place(photo: Photo): string | null {
   const parts = [photo.place_name, photo.place_admin1, photo.place_country].filter(Boolean);
@@ -103,7 +106,27 @@ export function PhotoDrawer({ photoId, onClose, onCreateArtwork }: PhotoDrawerPr
               {formatBytes(photo.file_size)} · {photo.mime}
             </Row>
             <Row label={t("photos.fields.taken")}>{formatCaptureTime(photo.taken_at)}</Row>
-            <Row label={t("photos.fields.place")}>{place(photo)}</Row>
+            <Row label={t("photos.fields.place")}>
+              {photo.gps_lat !== null && photo.gps_lon !== null ? (
+                <span className="flex flex-wrap items-center gap-x-2">
+                  {/* No place name within 50 km of the position: the position itself. */}
+                  {place(photo) ?? `${photo.gps_lat.toFixed(4)}, ${photo.gps_lon.toFixed(4)}`}
+                  {/* The `place near` clause, pre-filled: everything shot around here. */}
+                  <Link
+                    to="/artworks"
+                    search={{
+                      near: `${photo.gps_lat.toFixed(6)},${photo.gps_lon.toFixed(6)},${NEAR_PHOTO_KM}`,
+                      label: photo.place_name ?? place(photo) ?? undefined,
+                    }}
+                    className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
+                  >
+                    <MapPin size={12} /> {t("photos.artworksNearHere", { km: NEAR_PHOTO_KM })}
+                  </Link>
+                </span>
+              ) : (
+                place(photo)
+              )}
+            </Row>
             <Row label={t("photos.fields.camera")}>
               {[photo.camera_make, photo.camera_model].filter(Boolean).join(" ") || null}
             </Row>

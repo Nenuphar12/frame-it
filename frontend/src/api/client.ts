@@ -14,6 +14,7 @@ export type TagSort = NonNullable<
 export type TagCategory = Schemas["TagCategoryOut"];
 export type Places = Schemas["PlacesOut"];
 export type PlaceNode = Schemas["PlaceOut"];
+export type PlaceMatch = Schemas["PlaceMatchOut"];
 export type Collection = Schemas["CollectionOut"];
 export type CollectionKind = Collection["kind"];
 export type ArtworkSort = NonNullable<Schemas["ArtworkQueryIn"]["sort"]>;

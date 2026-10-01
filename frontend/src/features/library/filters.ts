@@ -34,9 +34,21 @@ export type ClauseOp =
   | "contains"
   | "match"
   | "gte"
-  | "lte";
+  | "lte"
+  | "near";
 
-export type FilterValue = string | number | boolean | string[];
+/**
+ * `place near`: a point and a radius. The label names the point for the chip (and for a smart
+ * collection shown later); the server never matches on it. Being picked, it has no point yet.
+ */
+export interface NearValue {
+  lat?: number;
+  lon?: number;
+  km: number;
+  label: string;
+}
+
+export type FilterValue = string | number | boolean | string[] | NearValue;
 
 export interface FilterClause {
   field: FilterField;
@@ -59,7 +71,7 @@ export const FIELD_OPS: Record<FilterField, ClauseOp[]> = {
   collection: ["in", "not_in"],
   taken_at: ["between", "before", "after"],
   created_at: ["between", "before", "after"],
-  place: ["contains"],
+  place: ["contains", "near"],
   title: ["contains"],
   worst_tier: ["in"],
   status: ["eq"],
@@ -82,6 +94,19 @@ export const CHIP_FIELDS: FilterField[] = [
 ];
 
 export const TIERS = ["native", "downscaled", "upscaled"] as const;
+
+/** The radii the `place near` chip offers, in km (the server accepts up to 1000). */
+export const NEAR_KM = [1, 5, 10, 25, 50, 100, 250, 500] as const;
+export const DEFAULT_NEAR_KM = 25;
+
+export function isNear(value: FilterValue): value is NearValue {
+  return typeof value === "object" && !Array.isArray(value);
+}
+
+/** "Near this point": what a photo's drawer and a `?near=` link open the grid with. */
+export function nearClause(lat: number, lon: number, km: number, label: string): FilterClause {
+  return { field: "place", op: "near", value: { lat, lon, km, label } };
+}
 
 export function defaultClause(field: FilterField): FilterClause {
   const op = FIELD_OPS[field][0]!;
@@ -109,6 +134,9 @@ export function defaultClause(field: FilterField): FilterClause {
 /** A clause the server would reject (an empty tag list, a half-typed date) is simply dropped. */
 export function isComplete(clause: FilterClause): boolean {
   const { value } = clause;
+  if (isNear(value)) {
+    return Number.isFinite(value.lat) && Number.isFinite(value.lon) && value.km > 0;
+  }
   if (Array.isArray(value)) {
     return value.length > 0 && value.every((v) => v !== "");
   }

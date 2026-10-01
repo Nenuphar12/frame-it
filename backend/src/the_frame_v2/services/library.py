@@ -10,6 +10,7 @@ Two clause families:
   `title`, `created_at`, `updated_at`, `collection`;
 - **photo properties** — `taken_at` and `place` hold when *some photo the artwork uses* matches,
   compiled as an EXISTS over `artwork_photos` (an artwork is only as old as its oldest photo);
+  `place near` reads the photos' GPS position rather than their place names;
 - **both** — `tag` reads the artwork's own tags *and* its live photos' (tag inheritance).
 
 `text` matches the FTS index (`services/search.py`).
@@ -36,7 +37,8 @@ from the_frame_v2.db.models import (
     PhotoTag,
     Tag,
 )
-from the_frame_v2.domain import filters
+from the_frame_v2.db.session import DISTANCE_FUNCTION
+from the_frame_v2.domain import filters, geo
 from the_frame_v2.domain.filters import Clause, Group
 from the_frame_v2.errors import ProblemError
 from the_frame_v2.services import collections, search
@@ -123,6 +125,8 @@ def _clause_sql(session: Session, clause: Clause, depth: int) -> ColumnElement[b
         return _date_sql(stamp, op, value)
     if field == "taken_at":
         return _photo_exists(_date_sql(Photo.taken_at, op, value))
+    if field == "place" and op == "near":
+        return _photo_exists(_near_sql(value))
     if field == "place":
         like = f"%{value}%"
         return _photo_exists(
@@ -144,6 +148,31 @@ def _clause_sql(session: Session, clause: Clause, depth: int) -> ColumnElement[b
         ids = search.search_ids(session, "artwork", str(value))
         return Artwork.id.in_(ids) if ids else _false()
     raise ProblemError(422, "invalid_filter", "Unsupported filter field", field)
+
+
+def _near_sql(value: dict[str, Any]) -> ColumnElement[bool]:
+    """A photo taken within `km` of the point. Photos without GPS never match.
+
+    A bounding box keeps the exact distance (`tf_distance_km`, `db/session.py`) to a handful of
+    rows; its longitude window wraps at ±180° so a circle across the antimeridian keeps both sides.
+    """
+    lat, lon, km = float(value["lat"]), float(value["lon"]), float(value["km"])
+    lat_lo, lat_hi, dlon = geo.bounding_box(lat, km)
+    lon_lo, lon_hi = lon - dlon, lon + dlon
+    in_lon: ColumnElement[bool]
+    if dlon >= 180:
+        in_lon = Photo.gps_lon.is_not(None)
+    elif lon_lo < -180:
+        in_lon = or_(Photo.gps_lon >= lon_lo + 360, Photo.gps_lon <= lon_hi)
+    elif lon_hi > 180:
+        in_lon = or_(Photo.gps_lon >= lon_lo, Photo.gps_lon <= lon_hi - 360)
+    else:
+        in_lon = Photo.gps_lon.between(lon_lo, lon_hi)
+    return and_(
+        Photo.gps_lat.between(lat_lo, lat_hi),
+        in_lon,
+        getattr(func, DISTANCE_FUNCTION)(Photo.gps_lat, Photo.gps_lon, lat, lon) <= km,
+    )
 
 
 def _carries(tag_ids: Sequence[str]) -> ColumnElement[bool]:

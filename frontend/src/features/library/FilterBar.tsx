@@ -2,20 +2,24 @@ import * as Popover from "@radix-ui/react-popover";
 import { Filter, Plus, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { useAllTags, useCollections } from "@/api/queries";
+import { useAllTags, useCollections, usePlaces } from "@/api/queries";
 import { TagOptions } from "@/features/tags/TagOptions";
 import { cn } from "@/shared/cn";
 import { Button } from "@/shared/ui/Button";
 
 import {
   CHIP_FIELDS,
+  DEFAULT_NEAR_KM,
   FIELD_OPS,
+  NEAR_KM,
   TIERS,
   defaultClause,
+  isNear,
   type ChipFilter,
   type FilterClause,
   type FilterField,
 } from "./filters";
+import { PlacePicker } from "./PlacePicker";
 
 interface FilterBarProps {
   chips: ChipFilter;
@@ -153,6 +157,33 @@ export function FilterBar({ chips, onChange, children }: FilterBarProps) {
           />
         );
       }
+      case "place": {
+        if (chip.op !== "near" || !isNear(chip.value)) break;
+        const near = chip.value;
+        return (
+          <>
+            <PlacePicker value={near} onChange={(value) => patch(index, { value })} />
+            <select
+              className={input}
+              aria-label={t("filters.nearRadius")}
+              value={near.km}
+              onChange={(event) =>
+                patch(index, { value: { ...near, km: Number(event.target.value) } })
+              }
+            >
+              {/* A radius saved by hand (the server takes up to 1000 km) stays selectable. */}
+              {[...new Set([...NEAR_KM, near.km])]
+                .sort((a, b) => a - b)
+                .map((km) => (
+                  <option key={km} value={km}>
+                    {t("filters.withinKm", { km })}
+                  </option>
+                ))}
+            </select>
+            <UnlocatedHint />
+          </>
+        );
+      }
       case "photo_count":
         return (
           <input
@@ -164,16 +195,16 @@ export function FilterBar({ chips, onChange, children }: FilterBarProps) {
             onChange={(event) => patch(index, { value: Number(event.target.value) })}
           />
         );
-      default:
-        return (
-          <input
-            className={cn(input, "w-32")}
-            value={String(chip.value)}
-            placeholder={t("filters.value")}
-            onChange={(event) => patch(index, { value: event.target.value })}
-          />
-        );
     }
+    // Free text: `place contains`, `title`.
+    return (
+      <input
+        className={cn(input, "w-32")}
+        value={String(chip.value)}
+        placeholder={t("filters.value")}
+        onChange={(event) => patch(index, { value: event.target.value })}
+      />
+    );
   };
 
   return (
@@ -191,7 +222,15 @@ export function FilterBar({ chips, onChange, children }: FilterBarProps) {
               value={chip.op}
               onChange={(event) => {
                 const op = event.target.value as FilterClause["op"];
-                const reset = op === "between" ? { value: ["", ""] } : {};
+                // The value changes shape with some operators: give it the new one, empty.
+                const reset =
+                  op === "between"
+                    ? { value: ["", ""] }
+                    : op === "near"
+                      ? { value: { km: DEFAULT_NEAR_KM, label: "" } }
+                      : chip.op === "near"
+                        ? { value: "" }
+                        : {};
                 patch(index, { op, ...reset });
               }}
             >
@@ -246,5 +285,21 @@ export function FilterBar({ chips, onChange, children }: FilterBarProps) {
       )}
       <div className="ml-auto flex items-center gap-2">{children}</div>
     </div>
+  );
+}
+
+/**
+ * `place near` reads the photos' GPS, which Android's photo picker strips: say how many artworks
+ * the clause can never match, rather than let them silently fall out of the results.
+ */
+function UnlocatedHint() {
+  const { t } = useTranslation();
+  const places = usePlaces();
+  const count = places.data?.unlocated_artworks ?? 0;
+  if (count === 0) return null;
+  return (
+    <span className="text-[11px] text-muted" title={t("filters.unlocatedHint")}>
+      {t("filters.unlocated", { count })}
+    </span>
   );
 }

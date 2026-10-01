@@ -1,3 +1,4 @@
+import { FolderPlus, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -11,6 +12,7 @@ import {
 } from "@/api/queries";
 import { FilterBar } from "@/features/library/FilterBar";
 import { toChips, toGroup, type ChipFilter, type FilterGroup } from "@/features/library/filters";
+import { cn } from "@/shared/cn";
 import { Button } from "@/shared/ui/Button";
 import { Dialog } from "@/shared/ui/Dialog";
 
@@ -32,9 +34,17 @@ interface CollectionDialogProps {
   collection?: Collection;
   /** Pre-selected parent for a new collection; `null` (the default) means the top level. */
   parentId?: string | null;
+  /** The kind a new collection starts as — the dialog lets the user switch it before saving. */
   kind: "manual" | "smart";
+  /** A new smart collection's filter to start from: "Save as smart collection" passes the view. */
+  initialChips?: ChipFilter;
   onSaved?: (id: string) => void;
 }
+
+const KINDS = [
+  { kind: "manual", icon: FolderPlus },
+  { kind: "smart", icon: Sparkles },
+] as const;
 
 const field = "w-full rounded-md border border-border bg-bg px-2.5 py-1.5 text-sm outline-none";
 
@@ -42,6 +52,10 @@ const field = "w-full rounded-md border border-border bg-bg px-2.5 py-1.5 text-s
  * Create or edit a collection. A smart one carries a filter, edited with the same chip bar as the
  * library — the AST it produces *is* what gets saved (docs/data-model.md §5.2), and the live
  * match count comes from `POST /filters/validate`, i.e. from the server that will run it.
+ *
+ * Manual or smart is chosen here, at creation (one "New collection" button, not one per kind);
+ * it cannot change afterwards — a manual collection's items and a smart one's filter do not
+ * convert into each other.
  */
 function CollectionForm({
   open,
@@ -49,6 +63,7 @@ function CollectionForm({
   collection,
   parentId = null,
   kind,
+  initialChips,
   onSaved,
 }: CollectionDialogProps) {
   const { t } = useTranslation();
@@ -58,13 +73,14 @@ function CollectionForm({
   const collections = useCollections();
   const [name, setName] = useState(collection?.name ?? "");
   const [description, setDescription] = useState(collection?.description ?? "");
-  const [dateStart, setDateStart] = useState(collection?.date_start ?? "");
-  const [dateEnd, setDateEnd] = useState(collection?.date_end ?? "");
   const [chips, setChips] = useState<ChipFilter>(() =>
-    toChips(collection?.filter as FilterGroup | null | undefined),
+    collection
+      ? toChips(collection.filter as FilterGroup | null | undefined)
+      : (initialChips ?? []),
   );
   const [parent, setParent] = useState<string>(collection?.parent_id ?? parentId ?? "");
-  const effectiveKind = collection?.kind ?? kind;
+  const [chosenKind, setChosenKind] = useState(kind);
+  const effectiveKind = collection?.kind ?? chosenKind;
   // A smart collection holds no children, and nothing may become its own descendant.
   const descendants = useMemo(
     () => (collection ? new Set(subtreeIds(collections.data ?? [], collection.id)) : new Set()),
@@ -74,7 +90,9 @@ function CollectionForm({
     (c) => c.kind === "manual" && !descendants.has(c.id),
   );
   const group = toGroup(chips);
-  const validation = useValidateFilter(effectiveKind === "smart" ? (group ?? emptyGroup) : undefined);
+  const validation = useValidateFilter(
+    effectiveKind === "smart" ? (group ?? emptyGroup) : undefined,
+  );
 
   const busy = create.isPending || update.isPending || move.isPending;
   const canSave = name.trim().length > 0 && !busy;
@@ -87,8 +105,6 @@ function CollectionForm({
         id: collection.id,
         name,
         description,
-        date_start: dateStart,
-        date_end: dateEnd,
         filter,
       });
       // Re-parenting is its own endpoint (it has to check cycles and pick a position).
@@ -113,14 +129,8 @@ function CollectionForm({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
-      title={t(
-        collection
-          ? "collections.edit"
-          : effectiveKind === "smart"
-            ? "collections.newSmart"
-            : "collections.new",
-      )}
-      description={effectiveKind === "smart" ? t("collections.smartHint") : undefined}
+      title={t(collection ? "collections.edit" : "collections.new")}
+      description={collection && effectiveKind === "smart" ? t("collections.smartHint") : undefined}
       className={effectiveKind === "smart" ? "w-[min(94vw,52rem)]" : undefined}
     >
       <form
@@ -130,6 +140,37 @@ function CollectionForm({
           void submit();
         }}
       >
+        {!collection && (
+          <div
+            className="grid grid-cols-2 gap-2"
+            role="radiogroup"
+            aria-label={t("collections.kind")}
+          >
+            {KINDS.map(({ kind: option, icon: Icon }) => (
+              <button
+                key={option}
+                type="button"
+                role="radio"
+                aria-checked={chosenKind === option}
+                onClick={() => setChosenKind(option)}
+                className={cn(
+                  "rounded-md border p-2.5 text-left",
+                  chosenKind === option
+                    ? "border-accent bg-accent/10"
+                    : "border-border-strong hover:bg-panel-2",
+                )}
+              >
+                <span className="flex items-center gap-1.5 text-sm font-medium">
+                  <Icon size={14} className={option === "smart" ? "text-accent" : "text-muted"} />
+                  {t(`collections.kinds.${option}`)}
+                </span>
+                <span className="mt-0.5 block text-xs text-muted">
+                  {t(`collections.kinds.${option}Hint`)}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
         <label className="block space-y-1">
           <span className="text-xs text-muted">{t("collections.name")}</span>
           <input
@@ -164,26 +205,6 @@ function CollectionForm({
             className={field}
           />
         </label>
-        <div className="flex gap-3">
-          <label className="flex-1 space-y-1">
-            <span className="text-xs text-muted">{t("collections.dateStart")}</span>
-            <input
-              type="date"
-              value={dateStart}
-              onChange={(event) => setDateStart(event.target.value)}
-              className={field}
-            />
-          </label>
-          <label className="flex-1 space-y-1">
-            <span className="text-xs text-muted">{t("collections.dateEnd")}</span>
-            <input
-              type="date"
-              value={dateEnd}
-              onChange={(event) => setDateEnd(event.target.value)}
-              className={field}
-            />
-          </label>
-        </div>
         {effectiveKind === "smart" && (
           <div className="space-y-1">
             <span className="text-xs text-muted">{t("collections.filter")}</span>

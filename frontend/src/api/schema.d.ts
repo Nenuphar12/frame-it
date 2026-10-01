@@ -1604,6 +1604,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/places/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Places
+         * @description Places of the offline dataset by name (accents and case ignored; `"paris, texas"` narrows
+         *     by region or country), the ones the library has photos at first — the `place near` picker.
+         */
+        get: operations["search_places_api_v1_places_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/presets/colors": {
         parameters: {
             query?: never;
@@ -3852,6 +3873,24 @@ export interface components {
             tag_ids?: string[] | null;
         };
         /**
+         * PlaceMatchOut
+         * @description A place of the offline dataset, for the `place near` picker.
+         */
+        PlaceMatchOut: {
+            /** Admin1 */
+            admin1: string;
+            /** Country */
+            country: string;
+            /** Lat */
+            lat: number;
+            /** Lon */
+            lon: number;
+            /** Name */
+            name: string;
+            /** Photo Count */
+            photo_count: number;
+        };
+        /**
          * PlaceOut
          * @description One level of the Places view: a country, a region in it, or a place in that region.
          */
@@ -3869,6 +3908,8 @@ export interface components {
         PlacesOut: {
             /** Countries */
             countries: components["schemas"]["PlaceOut"][];
+            /** Unlocated Artworks */
+            unlocated_artworks: number;
             /** Unplaced Photos */
             unplaced_photos: number;
         };
@@ -7646,6 +7687,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlacesOut"];
+                };
+            };
+        };
+    };
+    search_places_api_v1_places_search_get: {
+        parameters: {
+            query: {
+                q: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceMatchOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

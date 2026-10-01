@@ -10,6 +10,20 @@ from typing import Any
 from sqlalchemy import Engine, create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 
+from the_frame_v2.domain.geo import haversine_km
+
+DISTANCE_FUNCTION = "tf_distance_km"
+"""`tf_distance_km(lat1, lon1, lat2, lon2)`: great-circle km, NULL when a position is missing —
+what the `place near` filter clause compiles to (SQLite's own math functions are a build option)."""
+
+
+def _distance_km(
+    lat1: float | None, lon1: float | None, lat2: float | None, lon2: float | None
+) -> float | None:
+    if lat1 is None or lon1 is None or lat2 is None or lon2 is None:
+        return None
+    return haversine_km(lat1, lon1, lat2, lon2)
+
 
 def create_sqlite_engine(db_path: Path) -> Engine:
     engine = create_engine(
@@ -27,6 +41,7 @@ def create_sqlite_engine(db_path: Path) -> Engine:
         cur.execute("PRAGMA foreign_keys=ON")
         cur.execute("PRAGMA busy_timeout=30000")
         cur.close()
+        dbapi_conn.create_function(DISTANCE_FUNCTION, 4, _distance_km, deterministic=True)
 
     return engine
 

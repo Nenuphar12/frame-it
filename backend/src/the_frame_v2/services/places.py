@@ -6,7 +6,10 @@ nothing to keep in sync. This module only counts, per country → region → pla
 taken there and the live artworks using at least one of them (an artwork is "from Kyoto" when one
 of its photos is, the reading of the `place` filter clause).
 
-A photo without a position (Android's photo picker strips GPS) has no place: it is counted apart.
+A photo without a position (Android's photo picker strips GPS) has no place: it is counted apart,
+and so are the artworks none of whose photos has one — the `place near` filter can never match them.
+
+`search` is the `place near` picker: places of the offline dataset by name, the library's own first.
 """
 
 from __future__ import annotations
@@ -18,6 +21,7 @@ from sqlalchemy import distinct, func, select
 from sqlalchemy.orm import Session
 
 from the_frame_v2.db.models import Artwork, ArtworkPhoto, Photo
+from the_frame_v2.services.geocode import Geocoder
 
 
 @dataclass(slots=True)
@@ -32,6 +36,20 @@ class Place:
 class Places:
     countries: list[Place]
     unplaced_photos: int
+    unlocated_artworks: int
+    """Live artworks none of whose live photos has a GPS position."""
+
+
+@dataclass(frozen=True, slots=True)
+class PlaceMatch:
+    """A place of the offline dataset, and how many live photos the library has there."""
+
+    name: str
+    admin1: str
+    country: str
+    lat: float
+    lon: float
+    photo_count: int
 
 
 def _key(value: str | None) -> str:
@@ -100,4 +118,72 @@ def places(session: Session) -> Places:
     unplaced = int(
         session.scalar(select(func.count(Photo.id)).where(live, Photo.place_country.is_(None))) or 0
     )
-    return Places(countries, unplaced)
+    return Places(countries, unplaced, unlocated_artworks(session))
+
+
+def unlocated_artworks(session: Session) -> int:
+    """Live artworks with no live photo carrying a GPS position — out of reach of `place near`."""
+    located = (
+        select(ArtworkPhoto.artwork_id)
+        .join(Photo, Photo.id == ArtworkPhoto.photo_id)
+        .where(Photo.deleted_at.is_(None), Photo.gps_lat.is_not(None), Photo.gps_lon.is_not(None))
+    )
+    return int(
+        session.scalar(
+            select(func.count(Artwork.id)).where(
+                Artwork.deleted_at.is_(None), Artwork.id.not_in(located)
+            )
+        )
+        or 0
+    )
+
+
+SEARCH_CANDIDATES = 200
+
+
+def search(session: Session, geocoder: Geocoder, query: str, limit: int = 8) -> list[PlaceMatch]:
+    """Places named like `query`, the ones the library knows first.
+
+    The dataset has no population, so "Paris" alone is a tie between a dozen places. The library
+    breaks it: places where it has photos come first, then places in countries where it has
+    photos, then the geocoder's own order (exact names, then shorter ones).
+    """
+    candidates = geocoder.search(query, limit=SEARCH_CANDIDATES)
+    if not candidates:
+        return []
+    live = Photo.deleted_at.is_(None)
+    at_place = {
+        (row[0], _key(row[1]), _key(row[2])): int(row[3])
+        for row in session.execute(
+            select(Photo.place_name, Photo.place_admin1, Photo.place_country, func.count(Photo.id))
+            .where(live, Photo.place_name.in_({c.name for c in candidates}))
+            .group_by(Photo.place_name, Photo.place_admin1, Photo.place_country)
+        )
+    }
+    in_country = {
+        _key(row[0]): int(row[1])
+        for row in session.execute(
+            select(Photo.place_country, func.count(Photo.id))
+            .where(live, Photo.place_country.is_not(None))
+            .group_by(Photo.place_country)
+        )
+    }
+    ranked = sorted(
+        enumerate(candidates),
+        key=lambda item: (
+            -at_place.get((item[1].name, item[1].admin1, item[1].country), 0),
+            -in_country.get(item[1].country, 0),
+            item[0],
+        ),
+    )
+    return [
+        PlaceMatch(
+            name=place.name,
+            admin1=place.admin1,
+            country=place.country,
+            lat=place.lat,
+            lon=place.lon,
+            photo_count=at_place.get((place.name, place.admin1, place.country), 0),
+        )
+        for _, place in ranked[:limit]
+    ]

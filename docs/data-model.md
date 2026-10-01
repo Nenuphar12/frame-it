@@ -20,7 +20,7 @@ Soft delete via `deleted_at` (+ `trash_batch_id` to restore related items togeth
 | `artwork_photos` | artwork_id, slot_id, photo_id | Derived index for usage queries |
 | `artwork_tags` | artwork_id, tag_id | The artwork's **own** tags; index `(tag_id, artwork_id)` |
 | `artwork_snapshots` | id, artwork_id, document, document_version, reason (`opened`/`manual`/`pre_restore`/`pre_template_update`/`pre_import`), created_at | Keep last 20 per artwork |
-| `collections` | id, parent_id, name, description, date_start, date_end, cover_artwork_id, kind (`manual`/`smart`), filter (JSON AST, smart only), position (REAL, among siblings), created_at, updated_at | Cycle prevention on move; deletion is not trashed (artworks unaffected) |
+| `collections` | id, parent_id, name, description, date_start, date_end, cover_artwork_id, kind (`manual`/`smart`), filter (JSON AST, smart only), position (REAL, among siblings), created_at, updated_at | Cycle prevention on move; deletion is not trashed (artworks unaffected). `date_start`/`date_end` are kept for archives but no longer edited or shown (`docs/organization.md` §2) |
 | `collection_items` | collection_id, artwork_id, position (REAL) | Manual collections only; renormalize when gaps < 1e-9 |
 | `frame_styles` | id, name, revision, document (JSON), builtin, created_at, updated_at | Built-ins seeded at startup from `assets/presets/` (id `builtin-style-*`, revision + 1 when the preset changes) |
 | `layouts` | id, name, revision, document (JSON), slot_count, builtin, created_at, updated_at | |
@@ -67,6 +67,7 @@ One structure powers the library filter bar **and** smart collections:
   { "field": "collection", "op": "in",      "value": "<id>", "include_nested": true },
   { "field": "taken_at",   "op": "between", "value": ["2026-04-01", "2026-04-30"] },
   { "field": "place",      "op": "contains","value": "Kyoto" },
+  { "field": "place",      "op": "near",    "value": { "lat": 35.0116, "lon": 135.7681, "km": 50, "label": "Kyoto, Japan" } },
   { "field": "worst_tier", "op": "in",      "value": ["native", "downscaled"] },
   { "field": "status",     "op": "eq",      "value": "ready" },
   { "field": "text",       "op": "match",   "value": "temple" }

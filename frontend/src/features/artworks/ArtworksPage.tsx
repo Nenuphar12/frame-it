@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { Cast, FileArchive, Frame, Heart, Search, Trash2 } from "lucide-react";
+import { Cast, FileArchive, Frame, Heart, Search, Sparkles, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -7,12 +7,19 @@ import type { ArtworkSort } from "@/api/client";
 import { useArtworks, useBulkTags, type ArtworkFilter } from "@/api/queries";
 import { ExportDialog } from "@/features/archive/ExportDialog";
 import { AddToCollectionMenu } from "@/features/collections/AddToCollectionMenu";
+import { CollectionDialog } from "@/features/collections/CollectionDialog";
 import { ShowOnTvDialog } from "@/features/display/ShowOnTvDialog";
 import { FilterBar } from "@/features/library/FilterBar";
-import type { ChipFilter } from "@/features/library/filters";
+import {
+  isComplete,
+  nearClause,
+  type ChipFilter,
+  type FilterClause,
+} from "@/features/library/filters";
 import { useSelection } from "@/features/photos/useSelection";
 import { TagMenu } from "@/features/tags/TagMenu";
 import { useTrashWithUndo } from "@/features/trash/useTrashWithUndo";
+import { toast } from "@/shared/toast";
 import { Button } from "@/shared/ui/Button";
 import { EmptyState, PageHeader, Spinner } from "@/shared/ui/Misc";
 
@@ -27,16 +34,31 @@ interface ArtworksPageProps {
   favoritesOnly?: boolean;
 }
 
-/** A filter to open the grid with — from the Places view (`place`) or the Tags page (`tag`). */
+/**
+ * A filter to open the grid with — from the Places view (`place`), the Tags page (`tag`) or a
+ * photo's drawer (`near` = `lat,lon,km`, named by `label`).
+ */
 export interface ArtworksSearch {
   place?: string;
   tag?: string;
+  near?: string;
+  label?: string;
+}
+
+function nearFrom(linked: ArtworksSearch): FilterClause[] {
+  const [lat, lon, km] = (linked.near ?? "").split(",").map(Number);
+  if (lat === undefined || lon === undefined || km === undefined) return [];
+  if (![lat, lon, km].every(Number.isFinite)) return [];
+  return [nearClause(lat, lon, km, linked.label ?? "")];
 }
 
 function chipsFrom(linked: ArtworksSearch): ChipFilter {
   return [
-    ...(linked.place ? [{ field: "place" as const, op: "contains" as const, value: linked.place }] : []),
+    ...(linked.place
+      ? [{ field: "place" as const, op: "contains" as const, value: linked.place }]
+      : []),
     ...(linked.tag ? [{ field: "tag" as const, op: "has_any" as const, value: [linked.tag] }] : []),
+    ...nearFrom(linked),
   ];
 }
 
@@ -46,7 +68,7 @@ export function ArtworksPage({ favoritesOnly = false }: ArtworksPageProps) {
   // `/artworks?place=Kyoto` (or `?tag=<id>`) opens the grid with that chip already in the bar;
   // following another such link while the page is open replaces the chips with the new one.
   const linked: ArtworksSearch = useSearch({ strict: false });
-  const linkKey = `${linked.place ?? ""}\u001f${linked.tag ?? ""}`;
+  const linkKey = [linked.place, linked.tag, linked.near, linked.label].join("\u001f");
   const [chips, setChips] = useState<ChipFilter>(() => chipsFrom(linked));
   const [chipsFor, setChipsFor] = useState(linkKey);
   if (chipsFor !== linkKey) {
@@ -54,6 +76,7 @@ export function ArtworksPage({ favoritesOnly = false }: ArtworksPageProps) {
     setChips(chipsFrom(linked));
   }
   const [search, setSearch] = useState("");
+  const [savingSmart, setSavingSmart] = useState(false);
   const [sort, setSort] = useState<ArtworkSort>("created_desc");
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -67,6 +90,16 @@ export function ArtworksPage({ favoritesOnly = false }: ArtworksPageProps) {
     [chips, favoritesOnly, search, sort],
   );
   const artworks = useArtworks(filter);
+  /** The view as one filter AST: the chips, plus the search box and the Favorites pin as clauses
+   *  — what "Save as smart collection" stores, so the collection shows exactly this grid. */
+  const smartFilter = useMemo<ChipFilter>(
+    () => [
+      ...chips.filter(isComplete),
+      ...(search.trim() ? [{ field: "text", op: "match", value: search.trim() } as const] : []),
+      ...(favoritesOnly ? [{ field: "favorite", op: "eq", value: true } as const] : []),
+    ],
+    [chips, favoritesOnly, search],
+  );
   const items = useMemo(() => artworks.data?.pages.flatMap((p) => p.items) ?? [], [artworks.data]);
   const ids = useMemo(() => items.map((a) => a.id), [items]);
   const selection = useSelection(ids);
@@ -165,6 +198,12 @@ export function ArtworksPage({ favoritesOnly = false }: ArtworksPageProps) {
         }
       />
       <FilterBar chips={chips} onChange={setChips}>
+        {/* The view *is* a filter AST, so keeping it is a copy (docs/organization.md §2). */}
+        {smartFilter.length > 0 && (
+          <Button size="sm" variant="ghost" onClick={() => setSavingSmart(true)}>
+            <Sparkles size={14} /> {t("collections.saveAsSmart")}
+          </Button>
+        )}
         <select
           value={sort}
           onChange={(event) => setSort(event.target.value as ArtworkSort)}
@@ -219,11 +258,19 @@ export function ArtworksPage({ favoritesOnly = false }: ArtworksPageProps) {
       />
       {/* A partial archive of the selection (docs/archive-format.md §12.1) — the same dialog the
           Backup page opens for the whole library. */}
-      <ExportDialog
-        open={exporting}
-        onOpenChange={setExporting}
-        artworkIds={selectedInOrder}
+      <CollectionDialog
+        open={savingSmart}
+        onOpenChange={setSavingSmart}
+        kind="smart"
+        initialChips={smartFilter}
+        onSaved={(id) =>
+          toast.success("collections.savedSmart", {
+            label: "collections.open",
+            run: () => void navigate({ to: "/collections", search: { id } }),
+          })
+        }
       />
+      <ExportDialog open={exporting} onOpenChange={setExporting} artworkIds={selectedInOrder} />
     </div>
   );
 }

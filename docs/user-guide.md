@@ -206,6 +206,15 @@ Templates travel as `.tfstyle.json` / `.tflayout.json` files.
 - **Collections** nest, and you order their contents by hand (drag a card, drag onto the tree).
 - **Smart collections** store a filter instead of a list — their contents are whatever matches, so
   there is nothing to reorder and nothing to add by hand. An artwork leaves one by ceasing to match.
+  *New collection* (`Shift+N`) asks which kind first. The quickest way to make one is from a grid:
+  filter Artworks the way you want, then **Save as smart collection** — the search box and the
+  Favorites view are kept too.
+- **By location**: in the filter bar, *Place* → *near*, type a place (accents don't matter; "Paris,
+  Texas" picks among namesakes, and the places you have photos at come first) and pick a radius.
+  It uses the photos' GPS position, so "within 50 km of Kyoto" includes Osaka. Photos sent through
+  Android's photo picker have no position and are never found this way — the chip says how many
+  artworks that leaves out; *contains* still matches place names. From a photo's details, *Artworks
+  within 10 km* opens the same filter around it.
 - **Favourites** is the heart: `f` anywhere.
 - **Search** (`/`) covers titles, tags, place names and collection names.
 

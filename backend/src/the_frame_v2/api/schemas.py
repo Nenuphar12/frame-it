@@ -194,6 +194,20 @@ class PlacesOut(ApiModel):
     countries: list[PlaceOut]
     unplaced_photos: int
     """Live photos without a place (no GPS — e.g. Android's photo picker strips it)."""
+    unlocated_artworks: int
+    """Live artworks none of whose photos has a GPS position: `place near` never matches them."""
+
+
+class PlaceMatchOut(ApiModel):
+    """A place of the offline dataset, for the `place near` picker."""
+
+    name: str
+    admin1: str
+    country: str
+    lat: float
+    lon: float
+    photo_count: int
+    """Live photos the library has at this place (the picker lists those first)."""
 
 
 CollectionKind = Literal["manual", "smart"]

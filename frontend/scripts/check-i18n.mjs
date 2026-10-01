@@ -32,6 +32,7 @@ const DYNAMIC_PREFIXES = [
   "editor.captions.anchors",
   "filters.fields",
   "filters.ops",
+  "collections.kinds",
   "trash.cascade",
   "archive.state",
   "archive.importState",

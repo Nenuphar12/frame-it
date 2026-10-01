@@ -129,6 +129,19 @@ A collection's **parent is a field, not a gesture**: the create/edit dialog offe
 (`Top level` first, the collection's own subtree excluded), and the tree has a drop zone under it
 that re-parents to the top level. Nesting must never be the only direction available.
 
+**One way in, two kinds.** The Collections page has a single *New collection* button (`Shift+N`);
+the dialog's first choice is *Manual | Smart*, each with the line that tells them apart. The kind is
+fixed once saved — a manual collection's rows and a smart one's filter do not convert into each
+other. The most natural way to make a smart collection is from a grid, though: on Artworks and
+Favorites, **Save as smart collection** opens that dialog with the view already in it — the chips,
+the search box as a `text` clause, the Favorites pin as `favorite = true` — so the collection shows
+exactly the grid it was saved from. (A filter is a value, §3: saving it is a copy.)
+
+`date_start` / `date_end` (a description such as "1–15 April") are **no longer edited or shown**
+(2026-10-01): they were stored and displayed nowhere, and on a smart collection they competed with
+the filter's own `taken_at`. The columns stay, so archives still carry and restore them, and the
+API still accepts them; nothing in the app reads them.
+
 Rules the server enforces:
 
 - **cycles**: moving a collection inside its own subtree is 422 `collection_cycle` (the subtree
@@ -168,7 +181,7 @@ Filing artworks works from either end: drag cards onto a row in the tree or the 
 | `created_at`, `updated_at` | `between` `before` `after` | idem |
 | `collection` | `in` `not_in` (+ `include_nested`) | `collection_items`, or a smart collection's own filter |
 | `taken_at` | `between` `before` `after` | **a photo the artwork uses** (EXISTS over `artwork_photos`) |
-| `place` | `contains` | idem |
+| `place` | `contains` (city, region or country name) · `near` (GPS, below) | idem |
 | `text` | `match` | the FTS index (§4) |
 
 Bounds: 64 clauses, 4 levels, 200 values per clause. An empty group matches everything.
@@ -176,6 +189,23 @@ Bounds: 64 clauses, 4 levels, 200 values per clause. An empty group matches ever
 `taken_at` and `place` are the only clauses that leave the `artworks` table: an artwork is "from
 Kyoto" when one of its photos is, which is the reading a user expects and the only one a
 multi-photo artwork can support.
+
+**`place near`** — `{"lat", "lon", "km", "label"}`: a photo taken within `km` (≤ 1000) of the point.
+It reads the photos' **GPS position**, not their place names, so "within 50 km of Kyoto" reaches
+Osaka; the label only names the point for the chip. It compiles to a bounding box on
+`gps_lat`/`gps_lon` (the exact longitude span of a spherical cap, wrapping at ±180° so a circle
+across the antimeridian keeps both sides; every longitude near a pole) refined by an exact
+great-circle distance, `tf_distance_km`, a function `db/session.py` registers on each SQLite
+connection (SQLite's own math functions are a build option). A photo without GPS never matches —
+Android's photo picker strips it — so `GET /places` reports `unlocated_artworks` and the chip says
+how many artworks the clause cannot reach.
+
+The point is picked by name: `GET /places/search?q=` searches the bundled GeoNames list (the one the
+ingest geocoder uses) by prefix, accents and case ignored, `"paris, texas"` narrowing by region or
+country. The list has no population, so a name like "Paris" is a tie between a dozen places; the
+library breaks it — places it has photos at first, then places in countries it has photos in. The
+photo drawer's *Artworks within 10 km* opens the grid with such a chip
+(`/artworks?near=lat,lon,km&label=…`).
 
 Dates are `YYYY-MM-DD` (or a full ISO stamp) turned into aware UTC bounds; `between` takes the end
 day whole (`23:59:59.999999`).
@@ -269,7 +299,7 @@ rule were not changed retroactively: photos already `processed` stay so, drafts 
 | Place | What |
 |---|---|
 | Sidebar | the collection tree under the library links; a row opens *that* collection (`/collections?id=…`), and dropping artworks on one files them |
-| Artworks / Favorites | the filter bar (chips), search, sort, multi-select, *Add to collection*, the tag menu (`t`), *Move to trash* (with Undo); `/artworks?place=…` / `?tag=<id>` open it with that chip |
+| Artworks / Favorites | the filter bar (chips, incl. *Place near* with the place picker), search, sort, *Save as smart collection*, multi-select, *Add to collection*, the tag menu (`t`), *Move to trash* (with Undo); `/artworks?place=…` / `?tag=<id>` / `?near=lat,lon,km&label=…` open it with that chip |
 | Collections page | tree with drag-and-drop (re-parent, reorder, drop-to-top-level), a parent picker in the dialog, sort picker, include-nested toggle (only where there *are* children), manual ordering by dragging a card, *Add artworks* |
 | Artwork viewer | two rows — what it is and what you can do to it, then where it is filed: manual collections as plain badges, smart ones in accent with a sparkle (read-only), its own tags (editable in place — *Done* or `Esc` closes the editor, and moving to another artwork does too) and its photos' tags, dashed |
 | Tags page | grouped by category: rename / recolour / delete a category, add one; per tag rename, own colour, category, merge, delete, counts (the artwork count links to the filtered grid); select tags to move them to a category; *Delete N unused tags*; a **Places** tab |

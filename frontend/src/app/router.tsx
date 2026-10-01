@@ -31,6 +31,8 @@ interface CollectionsSearch {
   id?: string;
 }
 
+const NEAR_LINK = /^-?\d+(\.\d+)?,-?\d+(\.\d+)?,\d+(\.\d+)?$/;
+
 const shellRoute = createRoute({ getParentRoute: () => rootRoute, id: "shell", component: Shell });
 
 const page = (path: string, component: () => React.ReactNode) =>
@@ -52,6 +54,11 @@ const routeTree = rootRoute.addChildren([
       validateSearch: (search: Record<string, unknown>): ArtworksSearch => ({
         ...(typeof search.place === "string" && search.place ? { place: search.place } : {}),
         ...(typeof search.tag === "string" && search.tag ? { tag: search.tag } : {}),
+        // `near=lat,lon,km` — three numbers or nothing (a hand-edited link must not break the grid).
+        ...(typeof search.near === "string" && NEAR_LINK.test(search.near)
+          ? { near: search.near }
+          : {}),
+        ...(typeof search.label === "string" && search.label ? { label: search.label } : {}),
       }),
     }),
     createRoute({

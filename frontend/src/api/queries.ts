@@ -485,6 +485,17 @@ export function usePlaces() {
   });
 }
 
+/** The `place near` picker: places of the offline dataset by name, the library's own first. */
+export function usePlaceSearch(q: string) {
+  return useQuery({
+    queryKey: ["places-search", q] as const,
+    queryFn: () => unwrap(api.GET("/api/v1/places/search", { params: { query: { q } } })),
+    enabled: q.length > 0,
+    staleTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
+  });
+}
+
 // ---- trash (docs/organization.md §5) ------------------------------------------------------------
 
 export function useTrash(enabled = true) {

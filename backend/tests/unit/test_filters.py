@@ -43,6 +43,8 @@ def test_every_field_declares_its_operators() -> None:
         {"field": "worst_tier", "op": "in", "value": ["glorious"]},
         {"field": "photo_count", "op": "eq", "value": -1},
         {"field": "place", "op": "contains", "value": "  "},
+        {"field": "place", "op": "near", "value": "Kyoto"},
+        {"field": "place", "op": "near", "value": {"lat": 0, "lon": 0, "km": 1001}},
         {"field": "tag", "op": "has_any", "value": []},
     ],
 )

@@ -6,7 +6,8 @@ say*; turning it into SQL is `services/library.py`, which is the only place that
 A node is either a **group** (`and` / `or` / `not` over sub-nodes) or a **clause** (`field`, `op`,
 `value`). Clauses name artwork columns (`favorite`, `status`, `worst_tier`, …) or, for `taken_at`
 and `place`, a property of *a photo the artwork uses* — those compile to an EXISTS over
-`artwork_photos`.
+`artwork_photos`. `place` reads the place *names* (`contains`) or the GPS position (`near`: within
+`km` of a point, `{"lat", "lon", "km", "label"}` — the label is what the chip shows, never matched).
 """
 
 from __future__ import annotations
@@ -52,9 +53,12 @@ ClauseOp = Literal[
     "match",
     "gte",
     "lte",
+    "near",
 ]
 
 TIERS = ("native", "downscaled", "upscaled")
+MAX_NEAR_KM = 1000
+"""Beyond this a radius is a continent, which the place names already say better."""
 STATUSES = ("draft", "ready")
 
 #: Operators each field accepts; the first one is what the UI offers by default.
@@ -65,7 +69,7 @@ FIELD_OPS: dict[str, tuple[ClauseOp, ...]] = {
     "taken_at": ("between", "before", "after"),
     "created_at": ("between", "before", "after"),
     "updated_at": ("between", "before", "after"),
-    "place": ("contains",),
+    "place": ("contains", "near"),
     "title": ("contains",),
     "worst_tier": ("in",),
     "status": ("eq", "in"),
@@ -134,7 +138,36 @@ class Clause(BaseModel):
         return self
 
 
+def _number(value: Any, name: str, low: float, high: float) -> float:
+    if not isinstance(value, int | float) or isinstance(value, bool) or not low <= value <= high:
+        raise FilterError(f"place near: {name} must be within [{low:g}, {high:g}]")
+    return float(value)
+
+
+def _checked_near(value: Any) -> dict[str, Any]:
+    """`{"lat", "lon", "km", "label"}`: a point and a radius; the label only names the point."""
+    if not isinstance(value, Mapping):
+        raise FilterError('place near: expected {"lat", "lon", "km"}')
+    extra = set(value) - {"lat", "lon", "km", "label"}
+    if extra:
+        raise FilterError(f"place near: unexpected {', '.join(sorted(extra))}")
+    label = value.get("label", "")
+    if not isinstance(label, str):
+        raise FilterError("place near: label must be text")
+    km = _number(value.get("km"), "km", 0, MAX_NEAR_KM)
+    if km <= 0:
+        raise FilterError("place near: km must be above 0")
+    return {
+        "lat": round(_number(value.get("lat"), "lat", -90, 90), 6),
+        "lon": round(_number(value.get("lon"), "lon", -180, 180), 6),
+        "km": km,
+        "label": label.strip()[:200],
+    }
+
+
 def _checked_value(field: str, op: ClauseOp, value: Any) -> Any:
+    if field == "place" and op == "near":
+        return _checked_near(value)
     if field in _ID_FIELDS:
         return _check_ids(field, value)
     if field in _BOOL_FIELDS:

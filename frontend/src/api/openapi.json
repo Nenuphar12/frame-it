@@ -4871,6 +4871,45 @@
         "title": "PhotoUpdateIn",
         "type": "object"
       },
+      "PlaceMatchOut": {
+        "description": "A place of the offline dataset, for the `place near` picker.",
+        "properties": {
+          "admin1": {
+            "title": "Admin1",
+            "type": "string"
+          },
+          "country": {
+            "title": "Country",
+            "type": "string"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "photo_count": {
+            "title": "Photo Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "admin1",
+          "country",
+          "lat",
+          "lon",
+          "photo_count"
+        ],
+        "title": "PlaceMatchOut",
+        "type": "object"
+      },
       "PlaceOut": {
         "description": "One level of the Places view: a country, a region in it, or a place in that region.",
         "properties": {
@@ -4911,6 +4950,10 @@
             "title": "Countries",
             "type": "array"
           },
+          "unlocated_artworks": {
+            "title": "Unlocated Artworks",
+            "type": "integer"
+          },
           "unplaced_photos": {
             "title": "Unplaced Photos",
             "type": "integer"
@@ -4918,7 +4961,8 @@
         },
         "required": [
           "countries",
-          "unplaced_photos"
+          "unplaced_photos",
+          "unlocated_artworks"
         ],
         "title": "PlacesOut",
         "type": "object"
@@ -11022,6 +11066,67 @@
           }
         },
         "summary": "List Places",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/api/v1/places/search": {
+      "get": {
+        "description": "Places of the offline dataset by name (accents and case ignored; `\"paris, texas\"` narrows\nby region or country), the ones the library has photos at first \u2014 the `place near` picker.",
+        "operationId": "search_places_api_v1_places_search_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 8,
+              "maximum": 20,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PlaceMatchOut"
+                  },
+                  "title": "Response Search Places Api V1 Places Search Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search Places",
         "tags": [
           "library"
         ]

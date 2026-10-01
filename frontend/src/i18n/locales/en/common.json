@@ -178,7 +178,8 @@
     "backToInbox": "Back to inbox",
     "backToInboxHint": "Put the selected photos back on the inbox's to-do list",
     "backToInboxToast": "Back in the inbox.",
-    "openDraft": "Open draft {{n}}"
+    "openDraft": "Open draft {{n}}",
+    "artworksNearHere": "Artworks within {{km}} km"
   },
   "tags": {
     "placeholder": "Add tags…",
@@ -942,17 +943,24 @@
       "contains": "contains",
       "match": "matches",
       "gte": "at least",
-      "lte": "at most"
-    }
+      "lte": "at most",
+      "near": "near"
+    },
+    "nearPlace": "Place",
+    "nearPlaceholder": "Type a place…",
+    "nearSearching": "Searching…",
+    "nearNoMatch": "No place by that name",
+    "nearRadius": "Radius",
+    "withinKm": "within {{km}} km",
+    "unlocated_one": "{{count}} artwork has no location",
+    "unlocated_other": "{{count}} artworks have no location",
+    "unlocatedHint": "None of their photos carries a GPS position (Android's photo picker removes it — LocalSend and the Files picker keep it), so a place filter can never find them."
   },
   "collections": {
     "new": "New collection",
-    "newSmart": "New smart collection",
     "edit": "Edit collection",
     "name": "Name",
     "description": "Description",
-    "dateStart": "From",
-    "dateEnd": "To",
     "filter": "Filter",
     "smartHint": "A smart collection is a saved filter: its artworks are found, not added.",
     "matches_one": "Matches {{count}} artwork",
@@ -989,7 +997,17 @@
     "removeFromCollection": "Remove from this collection",
     "removeHint": "Takes them out of this collection (Backspace). The artworks are not deleted.",
     "smartReadOnly": "Smart collection: its artworks come from its filter, so they cannot be reordered or removed by hand.",
-    "smartMember": "Matched by this smart collection's filter"
+    "smartMember": "Matched by this smart collection's filter",
+    "kind": "Kind",
+    "kinds": {
+      "manual": "Manual",
+      "manualHint": "You add the artworks and choose their order.",
+      "smart": "Smart",
+      "smartHint": "A saved filter: the artworks that match it, always up to date."
+    },
+    "saveAsSmart": "Save as smart collection",
+    "savedSmart": "Smart collection created.",
+    "open": "Open"
   },
   "trash": {
     "summary": "{{photos}} photo(s), {{artworks}} artwork(s) · purged after {{days}} days",

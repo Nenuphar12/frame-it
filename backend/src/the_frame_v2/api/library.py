@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from fastapi import APIRouter, Query, Response
 from sqlalchemy.orm import Session
 
@@ -16,6 +18,7 @@ from the_frame_v2.api.schemas import (
     CountOut,
     FilterValidateIn,
     FilterValidateOut,
+    PlaceMatchOut,
     PlaceOut,
     PlacesOut,
     TagCategoryCreateIn,
@@ -194,8 +197,24 @@ def list_places(_: Uploader, session: DbSession) -> PlacesOut:
     """Where the photos were taken — country → region → place — derived from their metadata."""
     found = places_service.places(session)
     return PlacesOut(
-        countries=[_place_out(c) for c in found.countries], unplaced_photos=found.unplaced_photos
+        countries=[_place_out(c) for c in found.countries],
+        unplaced_photos=found.unplaced_photos,
+        unlocated_artworks=found.unlocated_artworks,
     )
+
+
+@router.get("/places/search")
+def search_places(
+    _: Uploader,
+    ctx: Ctx,
+    session: DbSession,
+    q: Annotated[str, Query(min_length=1, max_length=100)],
+    limit: Annotated[int, Query(ge=1, le=20)] = 8,
+) -> list[PlaceMatchOut]:
+    """Places of the offline dataset by name (accents and case ignored; `"paris, texas"` narrows
+    by region or country), the ones the library has photos at first — the `place near` picker."""
+    found = places_service.search(session, ctx.geocoder, q, limit)
+    return [PlaceMatchOut.model_validate(match, from_attributes=True) for match in found]
 
 
 # ---- collections --------------------------------------------------------------------------------
