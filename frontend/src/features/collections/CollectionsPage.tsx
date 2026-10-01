@@ -86,10 +86,13 @@ export function CollectionsPage() {
   // silently returning a different list, so the fallback happens here, visibly, in the picker.
   const manualOrder = isManual && !includeNested;
   const effectiveSort: ArtworkSort = sort === "manual" && !manualOrder ? "created_desc" : sort;
+  // Nothing to list until a collection is picked, so no request at all: a placeholder id used to
+  // ask the server for a collection that does not exist, and log a 404 on every visit.
   const artworks = useArtworks(
     selected
       ? { collection_id: selected.id, include_nested: includeNested, sort: effectiveSort }
-      : { collection_id: "none" },
+      : {},
+    { enabled: Boolean(selected) },
   );
   const found = useMemo<ArtworkSummary[]>(
     () => (selected ? (artworks.data?.pages.flatMap((p) => p.items) ?? []) : []),

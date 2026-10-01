@@ -11,6 +11,11 @@ hash — instead of empty slots. Renders, proxies and originals of trashed items
 (`test_the_trash_shows_thumbnails_until_the_purge`, which fails on the previous code). Measured
 after the fix: 21 of 21 thumbnails load, no failed request, with the render cache cleared first.
 
+**The Collections page asked for a collection named "none".** With nothing selected it still ran
+its artwork query, with `collection_id: "none"` as a placeholder, and the server answered 404 on
+every visit. `useArtworks` takes `enabled` now and the page sends nothing until a collection is
+picked; measured: no failed request on `/collections`.
+
 ## 2026-10-01 — TV follow-ups (remarks.md TV-1…6, "ready" on the wall)
 
 Spec: `docs/tv-display.md` (rewritten). Migration `0010` (`32545e54fd09`).

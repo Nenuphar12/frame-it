@@ -609,7 +609,7 @@ export function useLocalSendDeviceActions() {
  * One page of artworks. Everything goes through `POST /artworks/query`: the filter bar sends an
  * AST, and a smart collection *is* one, so both take the same path as a plain list.
  */
-export function useArtworks(filter: ArtworkFilter) {
+export function useArtworks(filter: ArtworkFilter, options: { enabled?: boolean } = {}) {
   const { chips, ...rest } = filter;
   const body = {
     ...rest,
@@ -628,6 +628,7 @@ export function useArtworks(filter: ArtworkFilter) {
     initialPageParam: null as string | null,
     getNextPageParam: (last) => last.next_cursor,
     placeholderData: keepPreviousData,
+    enabled: options.enabled ?? true,
   });
 }
 
