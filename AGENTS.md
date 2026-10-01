@@ -103,9 +103,10 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
 - **Rendering & styles (2026-10-01, `docs/rendering-spec.md` §8.1, §8.4)**: `edge_shadow` — the
   frame's shadow, the inner shadow of the whole canvas drawn **last** — and `bevel` on a band or
   on `composition.border` (four mitred, shaded faces); both in frame styles, both panels and the
-  style editor, combined in the built-in **Bevelled mat**. No `RENDERER_VERSION` bump: old
-  documents render byte for byte. The render hash reads `render_identity()` and re-seeding the
-  built-ins compares through the model, so a schema addition moves no cache, TV or outdated badge.
+  style editor, combined in the built-in **Bevelled mat**. The render hash reads
+  `render_identity()` and re-seeding the built-ins compares through the model, so a schema
+  addition moves no cache, TV or outdated badge. `RENDERER_VERSION` 2 = rectangular shadows
+  from 1-D profiles (`_blurred_box`): a 4K render 1.3 → 1.0 s, 9 slots 4.7 → 3.5 s.
 - **Next: nothing planned** (`docs/PLAN.md` §16 keeps the open questions, the rename above
   all). Not yet verified on hardware: deleting foreign photos, whether the
   pairing token survives a TV power cut (hence "pair again" in the UI), discovery on the real LAN,

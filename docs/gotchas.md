@@ -53,9 +53,12 @@ These bite whatever you are working on.
   old references untouched.
 - A bevel's shades live twice, like the texture formula: `BEVEL_SHADES`/`shade` in
   `imaging/render.py` and `editor/core/bevel.ts`, pinned by `conformance/geometry/render.json`.
-  The frame's shadow is the inner shadow of the whole canvas — on the canvas too (`InnerShadow`)
-  — but the server builds it from two 1-D profiles (`_edge_shadow`): a 2-D blur of 3840×2160
-  costs seconds. A test holds the two within one rounding; change them together.
+  The frame's shadow is the inner shadow of the whole canvas, on the server and on the canvas
+  (`InnerShadow`).
+- **A rectangle's shadow is two 1-D blurs, not a 2-D one** (`_blurred_box`): recessed shadows, the
+  frame's, and the raised shadow of an *unrotated* layer. A 2-D blur of 3840×2160 costs 0.3–7 s
+  depending on the radius. Only a rotated layer's raised shadow needs the real thing — pass
+  `rotated` honestly, the tests compare the two paths within one rounding.
 - A render holds **every decoded original at once** (pyvips is lazy: nothing is released until the image is
   written, and the 512 MB LRU bounds what is kept *between* renders). Measured: 9 slots of 24 MP peak at
   2.3 GB. `MAX_RENDER_PIXELS` refuses more, counted from the file headers, as `render_too_large`.

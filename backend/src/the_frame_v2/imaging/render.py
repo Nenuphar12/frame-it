@@ -32,10 +32,13 @@ from the_frame_v2.domain.geometry import CANVAS_HEIGHT, CANVAS_WIDTH, Rect, roun
 from the_frame_v2.imaging.assets import AssetCatalog, FontAsset, catalog
 from the_frame_v2.imaging.decode import DecodeError, load_srgb, pixel_count
 
-RENDERER_VERSION = "1"
+RENDERER_VERSION = "2"
 """Bump when the **same document** renders to different pixels. A new optional document field is
 not that: it changes the document, hence the hash, of the artworks that use it and of no other
-(`ArtworkDocument.render_identity`)."""
+(`ArtworkDocument.render_identity`).
+
+2: the shadows of unrotated layers are built from 1-D profiles (`_blurred_box`) — within one
+rounding of the 2-D blur they replace, which is still a different pixel here and there."""
 BEVEL_SHADES = {"top": -0.30, "left": -0.12, "right": 0.35, "bottom": 0.60}
 """How a bevelled band shades its four faces (rendering-spec.md §8.1, step 3.5): a negative value
 mixes the band colour towards black, a positive one towards white. Light from above, slightly from
@@ -319,27 +322,67 @@ def _bevel(image: Any, width: int, band: Band) -> Any:
     return frame.insert(image, width, width)
 
 
+def _blurred_box(
+    width: int, height: int, box: tuple[int, int, int, int], sigma: float, crop: Rect | None = None
+) -> Any:
+    """A box of 1 on a `width × height` field of 0, Gaussian-blurred: float, in [0, 1].
+
+    "Inside a rectangle" is the product of a row and a column, and a Gaussian blur keeps that
+    product — so two 1-D blurs and a multiplication give what a 2-D blur of the whole field gives,
+    to within a rounding (`tests/unit/test_render.py`). A full-canvas blur costs 0.3 s at
+    `blur = 28` and 7 s at 200; this costs milliseconds whatever the radius. `box` is
+    `(left, top, w, h)`; `crop` keeps only that part of the field.
+    """
+    left, top, box_w, box_h = box
+    row = pyvips.Image.black(width, 1).draw_rect(255, left, 0, box_w, 1, fill=True)
+    column = pyvips.Image.black(1, height).draw_rect(255, 0, top, 1, box_h, fill=True)
+    across, down = _blur(row, sigma) / 255, _blur(column, sigma) / 255
+    if crop is not None:
+        across = across.crop(crop.x, 0, crop.w, 1)
+        down = down.crop(0, crop.y, 1, crop.h)
+        width, height = crop.w, crop.h
+    return across.replicate(1, height) * down.replicate(width, 1)
+
+
 def _inner_shadow(layer: Any, shadow: Shadow, scale: float) -> Any:
-    """Recessed look: blurred inverse mask, shifted by the offset, drawn over photo and bands."""
+    """Recessed look: blurred inverse mask, shifted by the offset, drawn over photo and bands.
+
+    The mask is 255 outside the layer and 0 inside: one minus a blurred box (`_blurred_box`).
+    """
     sigma = shadow.blur * scale / 2
     ox, oy = _scaled(shadow.offset_x, scale), _scaled(shadow.offset_y, scale)
     pad = math.ceil(3 * sigma) + max(abs(ox), abs(oy)) + 1
     width, height = layer.width, layer.height
-    mask = pyvips.Image.black(width + 2 * pad, height + 2 * pad) + 255
-    mask = mask.draw_rect(0, pad + ox, pad + oy, width, height, fill=True)
-    alpha = _blur(mask, sigma).crop(pad, pad, width, height) * shadow.opacity
+    inside = _blurred_box(
+        width + 2 * pad,
+        height + 2 * pad,
+        (pad + ox, pad + oy, width, height),
+        sigma,
+        Rect(pad, pad, width, height),
+    )
+    alpha = (1 - inside) * (255 * shadow.opacity)
     return layer.composite2(
         _colored_alpha(alpha, shadow.color), "over", compositing_space="srgb"
     ).cast("uchar")
 
 
-def _drop_shadow(canvas: Any, layer: Any, x: int, y: int, shadow: Shadow, scale: float) -> Any:
-    """Raised look: the layer's (rotated) alpha, blurred and offset, drawn onto the mat."""
+def _drop_shadow(
+    canvas: Any, layer: Any, x: int, y: int, shadow: Shadow, scale: float, *, rotated: bool
+) -> Any:
+    """Raised look: the layer's alpha, blurred and offset, drawn onto the mat.
+
+    An unrotated layer is an opaque rectangle, so its blurred alpha is a blurred box; a rotated
+    one has a real alpha band (a tilted rectangle with soft edges) and takes the 2-D blur.
+    """
     sigma = shadow.blur * scale / 2
     ox, oy = _scaled(shadow.offset_x, scale), _scaled(shadow.offset_y, scale)
     pad = math.ceil(3 * sigma) + 1
-    alpha = layer.extract_band(3).embed(pad, pad, layer.width + 2 * pad, layer.height + 2 * pad)
-    alpha = _blur(alpha, sigma) * shadow.opacity
+    width, height = layer.width + 2 * pad, layer.height + 2 * pad
+    if rotated:
+        alpha = _blur(layer.extract_band(3).embed(pad, pad, width, height), sigma) * shadow.opacity
+    else:
+        box = (pad, pad, layer.width, layer.height)
+        alpha = _blurred_box(width, height, box, sigma) * (255 * shadow.opacity)
     return _over(canvas, _colored_alpha(alpha, shadow.color), x - pad + ox, y - pad + oy)
 
 
@@ -373,34 +416,21 @@ def _draw_slot(canvas: Any, slot: Slot, photo: Any, scale: float) -> Any:
         left, top = cx - layer.width / 2, cy - layer.height / 2
         layer, x, y = _rotate(layer, left, top, (cx, cy), slot.rotation)
     if shadow is not None and shadow.type == "drop" and shadow.opacity > 0:
-        canvas = _drop_shadow(canvas, layer, x, y, shadow, scale)
+        canvas = _drop_shadow(canvas, layer, x, y, shadow, scale, rotated=slot.rotation != 0)
     return _over(canvas, layer, x, y)
 
 
 def _edge_shadow(canvas: Any, shadow: EdgeShadow, scale: float) -> Any:
-    """The frame's shadow: the inner shadow of the whole canvas, over everything already drawn.
-
-    Same mask as `_inner_shadow` — 255 outside the canvas, 0 inside, shifted, blurred — computed
-    from two 1-D profiles instead of a 2-D blur: "inside a rectangle" is a product of a row and a
-    column, and a Gaussian blur keeps that product. A full-canvas blur cost 1.1 s per render at
-    `blur = 60` and 7 s at 200; this costs a few milliseconds and agrees to within a rounding
-    (`test_the_edge_shadow_is_the_inner_shadow_of_the_canvas`).
-    """
-    sigma = shadow.blur * scale / 2
-    ox, oy = _scaled(shadow.offset_x, scale), _scaled(shadow.offset_y, scale)
-    pad = math.ceil(3 * sigma) + max(abs(ox), abs(oy)) + 1
-    width, height = canvas.width, canvas.height
-    row = pyvips.Image.black(width + 2 * pad, 1).draw_rect(255, pad + ox, 0, width, 1, fill=True)
-    column = pyvips.Image.black(1, height + 2 * pad).draw_rect(
-        255, 0, pad + oy, 1, height, fill=True
+    """The frame's shadow: the inner shadow of the whole canvas, over everything already drawn."""
+    as_inner = Shadow(
+        type="inner",
+        offset_x=shadow.offset_x,
+        offset_y=shadow.offset_y,
+        blur=shadow.blur,
+        color=shadow.color,
+        opacity=shadow.opacity,
     )
-    inside_x = _blur(row, sigma).crop(pad, 0, width, 1) / 255
-    inside_y = _blur(column, sigma).crop(0, pad, 1, height) / 255
-    inside = inside_x.replicate(1, height) * inside_y.replicate(width, 1)
-    alpha = (1 - inside) * (255 * shadow.opacity)
-    return canvas.composite2(
-        _colored_alpha(alpha, shadow.color), "over", compositing_space="srgb"
-    ).cast("uchar")
+    return _inner_shadow(canvas, as_inner, scale)
 
 
 def text_width(markup: str, font_path: str, description: str, spacing_px: float) -> int:

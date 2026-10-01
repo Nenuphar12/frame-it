@@ -1,5 +1,25 @@
 # Progress log
 
+## 2026-10-02 — Shadows from 1-D profiles (renderer version 2)
+
+The trick found for the frame's shadow applies to every rectangular shadow: "inside a rectangle"
+is the product of a row and a column, a Gaussian blur keeps that product, so two 1-D blurs and a
+multiplication replace a 2-D blur of the layer (`_blurred_box`). Recessed shadows always qualify
+(they are cast before the rotation); a raised one does when its slot is not rotated, and keeps the
+2-D blur otherwise, its alpha being a tilted rectangle.
+
+Measured (`scripts/bench_render.py`, same machine, before → after): single slot 4K PNG warm
+1.32 → 0.97 s and cold 1.96 → 1.38 s; 6-slot collage 3.36 → 2.57 s; 9-slot 4.72 → 3.52 s, with
+peak RSS 2 190 → 1 645 MB (the 2-D blurs' float buffers). The shadow alone, on a 3000×2000 slot:
+recessed 0.28 → 0.05 s, raised 0.57 → 0.08 s.
+
+**`RENDERER_VERSION` is now 2**, with the user's agreement: all eight golden references regenerate
+byte for byte, but at full size the two paths are not bit-identical — over 448 recessed shadows
+96 channel values out of 4.7 billion differ, over 45 raised ones 138 out of 373 million, each by
+1/255. Invisible, yet the same document no longer gives exactly the same pixels, which is what the
+version is for. Consequence, once: every artwork re-renders on first view and the next push
+re-uploads the set to the TV.
+
 ## 2026-10-01 — Docs: written with AI (remark #6)
 
 The README says, near the top, how the project was made: nearly all of it written by Claude Code

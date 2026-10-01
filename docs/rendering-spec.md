@@ -26,11 +26,16 @@
    6. **Inner shadow**: mask `m` = 255 outside layer rect / 0 inside (padded by `3σ+|offset|`), shift by offset,
       `gaussblur(σ = blur/2)`, crop back to layer rect, multiply by `opacity`, fill with shadow color, composite over layer.
       Gaussian kernels are truncated at amplitude 0.005 (libvips' default 0.2 visibly clips shadows).
+      **Computed from two 1-D profiles** (`_blurred_box`): "inside a rectangle" is the product of a row
+      and a column and a Gaussian blur keeps that product, so the mask is `1 − blur(row) × blur(column)`
+      — the 2-D blur's result to within one rounding, at a cost that no longer grows with the radius.
    7. **Rotation** (≠0): affine rotation of the premultiplied RGBA layer around the rect centre, bicubic,
       transparent background, rendered directly on the canvas pixel grid (pixel centres at +0.5, so no
       rounding of the position; 90°/180° rotations are exact).
    8. **Drop shadow**: alpha of (rotated) layer, padded, `gaussblur(σ = blur/2)`, × opacity, colored,
-      composited onto canvas at layer position + offset.
+      composited onto canvas at layer position + offset. An **unrotated** layer is an opaque rectangle,
+      so its blurred alpha is the same blurred box as in step 6; only a rotated layer, whose alpha is a
+      tilted rectangle, takes the 2-D blur.
    9. Composite layer onto canvas: unrotated at `(rect.x − Σbands, rect.y − Σbands)`; rotated at the integer
       bounding box of step 7. Parts outside the canvas are clipped.
    All compositing: mode `over`, `compositing_space = srgb` (matches Canvas2D).
@@ -49,10 +54,8 @@
    the offset, `gaussblur(σ = blur/2)`, × opacity, coloured, composited over — and it is drawn **last**,
    over photos and captions: a photo that fills the screen is shaded like the mat, as under a real
    frame. The offset is the light's direction (`offset_y > 0` darkens the top edge and clears the
-   bottom one). Skipped at `opacity = 0`. Implemented from **two 1-D profiles**: "inside a rectangle"
-   is the product of a row and a column and a Gaussian blur keeps that product, so the mask is
-   `1 − blur(row) × blur(column)` — within one rounding of the 2-D blur (tested), at a few
-   milliseconds instead of 1.1 s per render at `blur = 60` (7 s at 200).
+   bottom one). Skipped at `opacity = 0`. As a 2-D blur of the whole canvas this cost 1.1 s per render
+   at `blur = 60` and 7 s at 200; from the 1-D profiles of step 3.6, a few milliseconds.
 6. Flatten to 3 bands uchar; assert 3840×2160.
 7. **Outputs**: PNG master (compression 6, embedded sRGB ICC); JPEG derivative on demand
    (`Q = jpeg_quality`, `subsample_mode = off`, `optimize_coding = true`, strip metadata except sRGB ICC).
@@ -64,7 +67,10 @@ needed region is computed (a region render is bit-identical to the same area of 
 scaled; golden tests use 0.25). `RENDERER_VERSION` (`imaging/render.py`) is part of the render hash: bump it
 whenever **the same document** renders to different pixels. A new optional document field is not that
 (§8.4): the bevel and the edge shadow were added without a bump, and the six references that predate
-them regenerate byte for byte.
+them regenerate byte for byte. **Version 2** (2026-10-02) is the 1-D shadow profiles: the eight
+references still regenerate byte for byte, but over 448 recessed and 45 raised shadows at full size
+about one channel value in 50 million (recessed) and one in 3 million (raised) moves by 1/255 —
+invisible, and still "the same document, different pixels".
 
 ### 8.2 Client preview parity (`editor/canvas/`)
 
@@ -144,6 +150,18 @@ Re-measured 2026-09-24 (phase 11), the same script now reporting peak RSS alongs
 | region 512², cold | 0.56 s | 657 MB | +12 MB |
 | 6-slot collage + shadows, cold | 3.22 s | 1 551 MB | +894 MB |
 | 9-slot collage + shadows, cold | 4.68 s | 2 270 MB | +719 MB |
+
+Re-measured 2026-10-02, after the shadows moved to 1-D profiles (renderer version 2):
+
+| Case | Time | Peak RSS |
+|---|---|---|
+| single slot 4K PNG, cold | 1.96 → **1.38 s** | 703 → 660 MB |
+| single slot 4K PNG, warm | 1.32 → **0.97 s** | — |
+| 6-slot collage + shadows, cold | 3.36 → **2.57 s** | 1 592 → 1 282 MB |
+| 9-slot collage + shadows, cold | 4.72 → **3.52 s** | 2 190 → 1 645 MB |
+
+The shadow itself, without decoding or PNG encoding: recessed 0.28 → 0.05 s and raised 0.57 →
+0.08 s on a single 3000×2000 slot. The memory drop is the float buffers of the 2-D blurs.
 
 **Memory is the binding constraint, not time.** pyvips builds a lazy pipeline, so every decoded
 original stays resident until the image is written: the 512 MB LRU bounds what is *kept between*

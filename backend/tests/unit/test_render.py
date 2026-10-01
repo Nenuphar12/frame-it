@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,9 @@ from the_frame_v2.domain.geometry import Rect
 from the_frame_v2.imaging.decode import load_srgb
 from the_frame_v2.imaging.render import (
     BEVEL_SHADES,
+    _blur,
+    _colored_alpha,
+    _drop_shadow,
     _edge_shadow,
     _inner_shadow,
     decoded_originals,
@@ -238,21 +242,50 @@ def test_the_edge_shadow_falls_from_the_frame_onto_everything(uhd: Path) -> None
     )
 
 
-@pytest.mark.parametrize(
-    "edge",
-    [
-        {"offset_x": 0, "offset_y": 10, "blur": 60, "color": "#000000", "opacity": 0.22},
-        {"offset_x": -30, "offset_y": 45, "blur": 24, "color": "#402000", "opacity": 0.8},
-        {"offset_x": 7, "offset_y": 0, "blur": 0, "color": "#000000", "opacity": 1.0},
-    ],
-)
-def test_the_edge_shadow_is_the_inner_shadow_of_the_canvas(edge: dict[str, Any]) -> None:
-    """The two 1-D profiles the edge shadow is built from give the 2-D blur's pixels (§8.1)."""
-    canvas = (pyvips.Image.black(960, 540, bands=3) + [200, 180, 160]).cast("uchar")
-    canvas = canvas.copy(interpretation="srgb").bandjoin_const(255)
-    fast = _edge_shadow(canvas, EdgeShadow(**edge), 1.0)
-    reference = _inner_shadow(canvas, Shadow(type="inner", **edge), 1.0)
+SHADOW_SHAPES = [
+    {"offset_x": 0, "offset_y": 10, "blur": 60, "color": "#000000", "opacity": 0.22},
+    {"offset_x": -30, "offset_y": 45, "blur": 24, "color": "#402000", "opacity": 0.8},
+    {"offset_x": 7, "offset_y": 0, "blur": 0, "color": "#000000", "opacity": 1.0},
+    {"offset_x": 0, "offset_y": 6, "blur": 28, "color": "#000000", "opacity": 0.45},
+]
+
+
+def _layer(width: int, height: int) -> Any:
+    image = (pyvips.Image.black(width, height, bands=3) + [200, 180, 160]).cast("uchar")
+    return image.copy(interpretation="srgb").bandjoin_const(255)
+
+
+@pytest.mark.parametrize("shape", SHADOW_SHAPES)
+def test_an_inner_shadow_is_the_2d_blur_of_its_mask(shape: dict[str, Any]) -> None:
+    """`_blurred_box` — two 1-D profiles — against the 2-D blur the spec describes (§8.1, 3.6)."""
+    layer = _layer(640, 360)
+    shadow = Shadow(type="inner", **shape)
+    sigma = shadow.blur / 2
+    pad = math.ceil(3 * sigma) + max(abs(shadow.offset_x), abs(shadow.offset_y)) + 1
+    mask = pyvips.Image.black(640 + 2 * pad, 360 + 2 * pad) + 255
+    mask = mask.draw_rect(0, pad + shadow.offset_x, pad + shadow.offset_y, 640, 360, fill=True)
+    alpha = _blur(mask, sigma).crop(pad, pad, 640, 360) * shadow.opacity
+    reference = layer.composite2(
+        _colored_alpha(alpha, shadow.color), "over", compositing_space="srgb"
+    ).cast("uchar")
+    fast = _inner_shadow(layer, shadow, 1.0)
     assert (fast.cast("int") - reference.cast("int")).abs().max() <= 1
+    # the frame's shadow is the same thing with the canvas as the layer
+    edge = _edge_shadow(layer, EdgeShadow(**shape), 1.0)
+    assert pixels(edge) == pixels(fast)
+
+
+@pytest.mark.parametrize("shape", SHADOW_SHAPES)
+def test_a_drop_shadow_takes_the_fast_path_only_for_a_plain_rectangle(
+    shape: dict[str, Any],
+) -> None:
+    """An unrotated layer's alpha is a box, so both paths must give the same shadow (3.8)."""
+    canvas = _layer(900, 600)
+    layer = _layer(400, 240)
+    shadow = Shadow(type="drop", **shape)
+    slow = _drop_shadow(canvas, layer, 250, 180, shadow, 1.0, rotated=True)
+    fast = _drop_shadow(canvas, layer, 250, 180, shadow, 1.0, rotated=False)
+    assert (fast.cast("int") - slow.cast("int")).abs().max() <= 1
 
 
 def test_caption_sits_on_its_baseline() -> None:
