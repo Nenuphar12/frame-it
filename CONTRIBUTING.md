@@ -8,6 +8,17 @@ is a real list and most of what is on it was decided on purpose.
 kept current with the code, and it carries the invariants; the subsystem-specific gotchas — the things
 that are not obvious from reading a file — are in [`docs/gotchas.md`](docs/gotchas.md).
 
+## AI-assisted work
+
+This codebase was written almost entirely by an AI coding agent under the maintainer's direction
+(see *Written with AI* in the [README](README.md)), and AI-assisted contributions are welcome on
+the same terms as any other: **you answer for what you submit.** Concretely:
+
+- say so — a `Co-Authored-By:` trailer on the commit is the convention here;
+- run `make check`, then verify the behaviour yourself (in a browser for UI work, on a copy of a
+  real library for anything that touches stored data);
+- write down what you did **not** verify, in `docs/progress.md`, the way the existing entries do.
+
 ## Getting set up
 
 Requirements: Python 3.14 + [uv](https://docs.astral.sh/uv/), Node 22+ + pnpm, and a libvips with
@@ -60,8 +71,10 @@ make conformance                       # the TypeScript half of the geometry fix
 make golden-update                     # after an intended pixel change — review the PNGs!
 ```
 
-A renderer pixel change also means bumping `RENDERER_VERSION`; an asset change means bumping the
-manifest `version`.
+The **same document** rendering to different pixels means bumping `RENDERER_VERSION`; an asset
+change means bumping the manifest `version`. A new optional document field needs neither — but it
+must be listed in `_LATER_DEFAULTS` (`domain/document.py`), or every artwork's render hash changes
+and the whole library is re-rendered and re-sent to the TV (`docs/gotchas.md`).
 
 ## Commits and pull requests
 

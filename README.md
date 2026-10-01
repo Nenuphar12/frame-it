@@ -14,17 +14,44 @@ open question — see [`docs/PLAN.md`](docs/PLAN.md) §16.)*
 <sup>What comes out: one 3840×2160 file. Demo photos from [Unsplash](https://unsplash.com) —
 credits in [NOTICE.md](NOTICE.md).</sup>
 
+## Written with AI
+
+Nearly all of this project — the code, the tests and the documentation — was written by an AI
+coding agent, [Claude Code](https://claude.com/claude-code), from my specifications. I decided
+what to build, questioned the designs and tested the features in the running app. **I did not
+review the code line by line.**
+
+What I checked myself, on real hardware:
+
+- uploads from an Android phone in full quality, through both of Android's pickers;
+- the Docker image: build, run, and the library surviving a restart;
+- my own TV, a 2025 Frame (`TQ55LS03FAUXXC`): pairing, uploading, selecting a picture, the
+  slideshow.
+
+What has not been tried on hardware yet is listed in [AGENTS.md](AGENTS.md) (*Purpose & status*).
+What stands in for a line-by-line review is `make check`: about 1 100 backend tests, the geometry
+rules written twice (Python and TypeScript) and compared on shared fixtures, and a few reference
+images. That is evidence, not a guarantee: read the code before you rely on it for anything that
+matters, and keep your own copy of your photos.
+
+Commits made by the agent carry a `Co-Authored-By: Claude` trailer since October 2026; the earlier
+history was written the same way, without one.
+
 ## What it does
 
 - **Phone uploads in full quality** over the LAN — resumable, deduplicated, no cloud. Pair a device
   by scanning a QR code, or send from [LocalSend](https://localsend.org) to keep GPS and filenames
   that Android's picker would otherwise strip.
 - **A framing editor that keeps the geometry honest.** Pick an arrangement, then drag the outer
-  margin, the gaps and the format: the layout re-solves so it stays even. A badge tells you at every
+  margin, the gaps, the format — or the divisions between the photos themselves, on the canvas:
+  the layout re-solves so it stays even. A badge tells you at every
   moment whether a photo is **native**, **downscaled** or **upscaled**, and a per-photo lock stops
   the editor from ever stretching a picture behind your back.
 - **A server-rendered loupe and TV preview**, so what you judge is the real output rather than the
   canvas's approximation.
+- **Frame styles**: mats with a paper, linen or canvas weave, borders (flat, or bevelled like the
+  cut edge of a real mat), recessed or raised shadows, a caption, and the soft shadow a frame
+  casts on the picture.
 - **Collections, smart collections, tags, favourites, search and a 30-day trash** where what was
   deleted together is restored together.
 - **Export and import**: finished JPEGs/PNGs laid out by collection, or a `.tfarchive` backup that
@@ -39,9 +66,10 @@ credits in [NOTICE.md](NOTICE.md).</sup>
 ![The editor: three photos on a linen mat, the Simple panel open on the right](docs/images/editor.png)
 
 **The editor.** Everything in the right-hand panel re-solves the layout as you drag it — the
-arrangement, the outer margin, the gap, the format, the mat, the border. The selected photo is the
-bright one; the badge under the zoom slider reads *Downscaled 70%*, and the button beside it snaps
-that photo to *Native 100%*. The strip along the bottom is the review queue.
+arrangement, the outer margin, the gap, the format, the mat, the border — and the gaps between the
+photos are handles on the canvas. The badge under the zoom slider reads *Downscaled 73%*, and the
+button beside it snaps the selected photo to *Native 100%*. The strip along the bottom is the
+review queue.
 
 |  |  |
 |---|---|
@@ -55,10 +83,11 @@ what happened to each file — including the ones the library already had.
 
 ## Status
 
-**Phases 0–11 of [the plan](docs/PLAN.md) are implemented** — foundations, device pairing, uploads,
+**Phases 0–12 of [the plan](docs/PLAN.md) are implemented** — foundations, device pairing, uploads,
 ingest, the artwork document and renderer, the editor, parametric compositions, templates,
-organization, export/import, and the hardening pass. The name and a few §16 questions are the
-remaining open items.
+organization, export/import, the hardening pass and sending to the TV — plus a round of
+improvements from daily use ([`docs/progress.md`](docs/progress.md) is the log). The name and a
+few §16 questions are the remaining open items.
 
 ## Quick start
 

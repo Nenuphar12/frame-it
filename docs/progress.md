@@ -1,5 +1,25 @@
 # Progress log
 
+## 2026-10-01 — Docs: written with AI (remark #6)
+
+The README says, near the top, how the project was made: nearly all of it written by Claude Code
+from the user's specifications, the user deciding what to build and testing it in the running
+app, **not** reviewing the code line by line — and what was checked on real hardware (Android
+uploads through both pickers, the Docker image, pairing / uploading / selecting / the slideshow on
+the user's 2025 Frame). The wording of the user's own part is the user's choice, asked rather
+than assumed. `CONTRIBUTING.md` gained *AI-assisted work*: welcome, on the terms that you answer
+for what you submit, say so with a `Co-Authored-By:` trailer, verify the behaviour yourself and
+write down what you did not.
+
+Stale lines fixed on the way: the README's status (phases 0–12 and the follow-ups), its feature
+list (frame styles, dragging the divisions), the editor caption — which still said "the selected
+photo is the bright one" — and CONTRIBUTING's renderer rule (a bump is for the same document
+rendering differently; a new optional field goes in `_LATER_DEFAULTS` instead).
+
+`docs/images/editor.png` was retaken (headless Chromium, 1600×900, a copy of the dev library with
+only the Unsplash demo artworks left as drafts so the review strip shows nothing personal): the
+old one showed two photos faded behind the selected one, which the editor no longer does.
+
 ## 2026-10-01 — Rendering and styles (remarks #8, #15)
 
 The reference photos of the Frame's own matte (`tmp_frame_style_example/`) show three things: an

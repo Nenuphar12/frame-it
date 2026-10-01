@@ -110,6 +110,8 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
   all). Not yet verified on hardware: deleting foreign photos, whether the
   pairing token survives a TV power cut (hence "pair again" in the UI), discovery on the real LAN,
   following a TV that moved, and a "Don't change" push.
+- **Written with AI, and said so** (`README.md` *Written with AI*, `CONTRIBUTING.md`): keep the
+  README's "checked on real hardware" list in step with the one below.
 - Verified by the user on real hardware (2026-09-17): Android uploads (both pickers keep full quality but
   Android zeroes GPS → no place; see `docs/research/phone-uploads.md`), Docker image build/run/persistence.
 
