@@ -14,7 +14,7 @@ This codebase was written almost entirely by an AI coding agent under the mainta
 (see *Written with AI* in the [README](README.md)), and AI-assisted contributions are welcome on
 the same terms as any other: **you answer for what you submit.** Concretely:
 
-- say so — a `Co-Authored-By:` trailer on the commit is the convention here;
+- say so in the pull request description (commits here carry no `Co-Authored-By:` trailer);
 - run `make check`, then verify the behaviour yourself (in a browser for UI work, on a copy of a
   real library for anything that touches stored data);
 - write down what you did **not** verify, in `docs/progress.md`, the way the existing entries do.

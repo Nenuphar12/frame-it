@@ -28,7 +28,7 @@ app, **not** reviewing the code line by line — and what was checked on real ha
 uploads through both pickers, the Docker image, pairing / uploading / selecting / the slideshow on
 the user's 2025 Frame). The wording of the user's own part is the user's choice, asked rather
 than assumed. `CONTRIBUTING.md` gained *AI-assisted work*: welcome, on the terms that you answer
-for what you submit, say so with a `Co-Authored-By:` trailer, verify the behaviour yourself and
+for what you submit, say so in the pull request, verify the behaviour yourself and
 write down what you did not.
 
 Stale lines fixed on the way: the README's status (phases 0–12 and the follow-ups), its feature

@@ -34,8 +34,7 @@ rules written twice (Python and TypeScript) and compared on shared fixtures, and
 images. That is evidence, not a guarantee: read the code before you rely on it for anything that
 matters, and keep your own copy of your photos.
 
-Commits made by the agent carry a `Co-Authored-By: Claude` trailer since October 2026; the earlier
-history was written the same way, without one.
+The git history does not mark which commits the agent wrote: assume all of them.
 
 ## What it does
 

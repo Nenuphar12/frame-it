@@ -256,7 +256,8 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 - Tests: API tests use `local` (trusted localhost client) and `pair(local, role)` for LAN devices; jobs run
   synchronously with `ctx_of(client).jobs.run_pending_sync()`.
 - TypeScript: strict, no `any`, `@/` alias to `src/`, one component per file when it exports hooks.
-- Commits: Conventional Commits.
+- Commits: Conventional Commits, and **no `Co-Authored-By:` trailer** — how the project was made
+  is said once, in the README (*Written with AI*), not on every commit.
 
 ## Where specs live
 
