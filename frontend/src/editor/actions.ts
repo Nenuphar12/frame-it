@@ -98,6 +98,15 @@ export const setTexture = (id: string | null, strength: number, group: string | 
   edit((doc) => ops.setTexture(doc, id, strength), group);
 
 /**
+ * The frame's shadow on the artwork. Part of the look, like the mat: the block never writes it
+ * (§3.7), so it neither detaches nor re-solves.
+ */
+export const setEdgeShadow = (
+  shadow: EditorDocument["edge_shadow"],
+  group: string | null = "edge-shadow",
+) => edit((doc) => ops.setEdgeShadow(doc, shadow), group);
+
+/**
  * Re-dress the artwork in a frame style: mat, shadow, border and caption typography.
  *
  * The document change is a normal undoable edit; `templateId` (when the style came from the

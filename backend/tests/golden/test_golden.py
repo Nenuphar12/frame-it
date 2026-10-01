@@ -1,6 +1,6 @@
 """Golden images (very light, docs/PLAN.md §13.4).
 
-Six references at canvas scale 0.25 plus one at full size. Tolerances: mean absolute error ≤ 0.5 and max
+Seven references at canvas scale 0.25 plus one at full size. Tolerances: mean absolute error ≤ 0.5 and max
 channel difference ≤ 8 (≤ 32 inside caption boxes). Regenerate after an intended rendering change with
 `make golden-update`, look at the new PNGs, and bump `RENDERER_VERSION`.
 """
@@ -200,6 +200,45 @@ CASES: dict[str, tuple[float, dict[str, Any]]] = {
                     },
                 ),
             ],
+        },
+    ),
+    "bevelled_mat": (
+        0.25,
+        {
+            "placement": "fit_in_mat",
+            "mat": {"color": "#EFF1EF", "texture": {"id": "canvas-01", "strength": 0.3}},
+            "margins": {"top": 300, "right": 340, "bottom": 300, "left": 340},
+            "slots": [
+                _slot(
+                    "s1",
+                    "land",
+                    (750, 300, 2340, 1560),
+                    (0, 0, 1500, 1000),
+                    bands=[{"width": 12, "color": "#EFF1EF", "bevel": True}],
+                )
+            ],
+            "edge_shadow": {
+                "offset_x": 0,
+                "offset_y": 10,
+                "blur": 60,
+                "color": "#000000",
+                "opacity": 0.22,
+            },
+        },
+    ),
+    "edge_shadow_full_bleed": (
+        0.25,
+        {
+            "placement": "manual",
+            "mat": {"color": "#000000"},
+            "slots": [_slot("s1", "uhd", (0, 0, 3840, 2160), (0, 0, 3840, 2160))],
+            "edge_shadow": {
+                "offset_x": 24,
+                "offset_y": 40,
+                "blur": 160,
+                "color": "#1A0E00",
+                "opacity": 0.6,
+            },
         },
     ),
     "caption": (

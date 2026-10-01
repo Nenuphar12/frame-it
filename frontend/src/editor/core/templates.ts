@@ -17,6 +17,7 @@ import type {
   DocCaption,
   DocMargins,
   DocSlot,
+  EdgeShadow,
   EditorDocument,
   Mat,
   Shadow,
@@ -38,6 +39,8 @@ export interface StyleDocument {
   margins: DocMargins;
   slot_defaults: SlotDefaults;
   caption_defaults: CaptionStyle;
+  /** The frame's shadow on the artwork (`EditorDocument.edge_shadow`); part of the look. */
+  edge_shadow: EdgeShadow | null;
 }
 
 /** A layout document: the `composition` block minus the caption's text and `detached`. */
@@ -94,7 +97,9 @@ export function styleOfDocument(doc: EditorDocument): StyleDocument {
   const block = doc.composition;
   let bands: Band[] = [];
   if (block !== null && !block.detached) {
-    if (block.border !== null) bands = [{ width: block.border.width, color: block.border.color }];
+    if (block.border !== null) {
+      bands = [{ width: block.border.width, color: block.border.color, bevel: block.border.bevel }];
+    }
   } else if (slot !== null) {
     bands = slot.bands.map((band) => ({ ...band }));
   }
@@ -116,6 +121,7 @@ export function styleOfDocument(doc: EditorDocument): StyleDocument {
           letter_spacing: caption.letter_spacing,
         }
       : { ...DEFAULT_CAPTION_STYLE },
+    edge_shadow: doc.edge_shadow ? { ...doc.edge_shadow } : null,
   };
 }
 
@@ -134,7 +140,7 @@ function dressedCaption(caption: DocCaption, defaults: CaptionStyle): DocCaption
 }
 
 /**
- * Re-dress `doc` in `style` — mat, shadow, band, caption typography — keeping its layout.
+ * Re-dress `doc` in `style` — mat, shadows, band, caption typography — keeping its layout.
  *
  * The style's `margins` are deliberately left out: under a composition the block owns them (§3.7),
  * and re-dressing must never move a photo the user placed. The band becomes `composition.border`
@@ -159,13 +165,21 @@ export function restyle(
     color: style.mat.color,
     texture: style.mat.texture ? { ...style.mat.texture } : null,
   };
-  if (!attached || block === null) return { ...doc, mat, slots, captions };
+  const edge_shadow = style.edge_shadow ? { ...style.edge_shadow } : null;
+  if (!attached || block === null) return { ...doc, mat, slots, captions, edge_shadow };
   const band = defaults.bands[0];
   const restyled: Composition = {
     ...block,
-    border: band ? { width: Math.max(1, band.width), color: band.color } : null,
+    border: band ? { width: Math.max(1, band.width), color: band.color, bevel: band.bevel } : null,
   };
-  const dressed: EditorDocument = { ...doc, mat, composition: restyled, slots, captions };
+  const dressed: EditorDocument = {
+    ...doc,
+    mat,
+    composition: restyled,
+    slots,
+    captions,
+    edge_shadow,
+  };
   if (recipe === null) return dressed;
   return applyComposition(
     dressed,

@@ -716,7 +716,11 @@ def apply(
     sizes = [photo_sizes.get(slot.photo_id or "") for slot in doc.slots]
     cells = solve(recipe, composition, sizes, style.size, canvas)
     border = (
-        Band(width=composition.border.width, color=composition.border.color)
+        Band(
+            width=composition.border.width,
+            color=composition.border.color,
+            bevel=composition.border.bevel,
+        )
         if composition.border
         else None
     )
@@ -736,4 +740,5 @@ def apply(
         composition=composition.model_copy(deep=True),
         slots=slots,
         captions=_derived_caption(doc, composition, style, margins, canvas),
+        edge_shadow=doc.edge_shadow.model_copy() if doc.edge_shadow else None,
     )

@@ -7,7 +7,7 @@ import * as actions from "@/editor/actions";
 import type { DocSlot, EditorDocument } from "@/editor/core/document.ts";
 import { ColorField } from "./ColorField";
 import { Field, NumberField, PanelSection, PercentField, Slider } from "./Controls";
-import { ShadowFields } from "./ShadowFields";
+import { EdgeShadowFields, ShadowFields } from "./ShadowFields";
 
 const MAX_BANDS = 3;
 
@@ -60,6 +60,11 @@ export function StylePanel({ doc, slot }: { doc: EditorDocument; slot: DocSlot |
             />
           </Field>
         )}
+        <EdgeShadowFields
+          shadow={doc.edge_shadow}
+          photoId={photoId}
+          onChange={(next, group) => actions.setEdgeShadow(next, group)}
+        />
       </PanelSection>
 
       {slot && (
@@ -70,7 +75,9 @@ export function StylePanel({ doc, slot }: { doc: EditorDocument; slot: DocSlot |
               <button
                 type="button"
                 className="inline-flex items-center gap-1 text-[11px] text-muted hover:text-text"
-                onClick={() => actions.setBands([...slot.bands, { width: 12, color: "#FFFFFF" }])}
+                onClick={() =>
+                  actions.setBands([...slot.bands, { width: 12, color: "#FFFFFF", bevel: false }])
+                }
               >
                 <Plus size={12} /> {t("editor.bands.add")}
               </button>
@@ -99,6 +106,23 @@ export function StylePanel({ doc, slot }: { doc: EditorDocument; slot: DocSlot |
                   actions.setBands(slot.bands.map((b, i) => (i === index ? { ...b, color } : b)))
                 }
               />
+              <button
+                type="button"
+                aria-pressed={band.bevel}
+                title={t("editor.bands.bevelHint")}
+                className={
+                  band.bevel
+                    ? "rounded border border-accent px-1 text-[10px] text-accent"
+                    : "rounded border border-border px-1 text-[10px] text-muted hover:text-text"
+                }
+                onClick={() =>
+                  actions.setBands(
+                    slot.bands.map((b, i) => (i === index ? { ...b, bevel: !b.bevel } : b)),
+                  )
+                }
+              >
+                {t("editor.bands.bevel")}
+              </button>
               <button
                 type="button"
                 aria-label={t("common.remove")}

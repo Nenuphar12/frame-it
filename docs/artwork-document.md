@@ -29,7 +29,9 @@ exposed through OpenAPI → TS types. **Array order = z-order (first is back-mos
         "crop_ratio": "original"                        // original | free | "16:9" | "4:3" | "3:2" | "1:1" | "w:h"
       },
       "quality_lock": "no_upscale",                     // native | no_upscale | free
-      "bands": [ { "width": 12, "color": "#FFFFFF" } ], // inner → outer, max 3, width ≥ 1
+      "bands": [ { "width": 12, "color": "#FFFFFF", "bevel": false } ],
+                                                        // inner → outer, max 3, width ≥ 1; bevel = the cut edge
+                                                        // of a mat window, four shaded faces (rendering-spec §8.1)
       "shadow": { "type": "inner", "offset_x": 0, "offset_y": 6, "blur": 24, "color": "#000000", "opacity": 0.35 }
                                                         // null | type inner|drop; blur ∈ [0,200]; opacity ∈ [0,1]
     }
@@ -38,7 +40,9 @@ exposed through OpenAPI → TS types. **Array order = z-order (first is back-mos
     { "id": "c_01", "text": "Kyoto — April 2026", "font": "cormorant-garamond", "weight": 500,
       "size": 48, "color": "#3A3A3A", "letter_spacing": 0.02,
       "x": 1920, "y": 2040, "anchor": "middle", "rotation": 0 }   // (x,y) = baseline anchor point
-  ]
+  ],
+  "edge_shadow": null     // or { "offset_x": 0, "offset_y": 10, "blur": 60, "color": "#000000", "opacity": 0.22 }:
+                          // the frame's shadow on the artwork — the inner shadow of the whole canvas, drawn last
 }
 ```
 
@@ -67,10 +71,15 @@ adds a slot with `NEW_SLOT_FRACTION` of the available area at the photo's aspect
 `placement` to `manual` as soon as a second slot exists. A slot without a photo carries `quality_lock = free`
 and a crop the size of its rect (a placeholder); filling it takes `no_upscale` back.
 
+**Adding an optional field** (no `schema` bump): give it a default that renders as before, and list it
+in `_LATER_DEFAULTS` so `render_identity()` leaves it out at that default — otherwise every artwork's
+render hash changes (`rendering-spec.md` §8.4). `composition.weights`, `caption.align`, `bevel` and
+`edge_shadow` were all added this way.
+
 **Evolution**: `schema` bumps require a pure migration function `migrate_vN_to_vN+1` in both `domain/document.py`
 and archive import; documents are migrated on read and persisted on next save.
 
-**Frame style document**: `{ mat, margins, slot_defaults: { bands, shadow, quality_lock }, caption_defaults: { font, weight, size, color, letter_spacing } }`.
+**Frame style document**: `{ mat, margins, slot_defaults: { bands, shadow, quality_lock }, caption_defaults: { font, weight, size, color, letter_spacing }, edge_shadow }`.
 **Layout document**: `{ slots: [{ id, rect, rotation, quality_lock, fill_mode: "fill"|"fit" }], captions: [{ id, placeholder, x, y, anchor, rotation }] }`.
 Layout rects are designed for the full canvas.
 

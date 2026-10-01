@@ -39,6 +39,7 @@ from the_frame_v2.domain.document import (
     CompositionGutter,
     CropSpec,
     DocModel,
+    EdgeShadow,
     HexColor,
     MarginsSpec,
     Mat,
@@ -81,6 +82,8 @@ class FrameStyleDocument(DocModel):
     margins: MarginsSpec = Field(default_factory=MarginsSpec)
     slot_defaults: SlotDefaults = Field(default_factory=SlotDefaults)
     caption_defaults: CaptionDefaults = Field(default_factory=CaptionDefaults)
+    edge_shadow: EdgeShadow | None = None
+    """The frame's shadow on the artwork (`ArtworkDocument.edge_shadow`); part of the look."""
 
 
 class LayoutDocument(DocModel):
@@ -205,6 +208,7 @@ def _with(
         composition=composition if composition is not None else doc.composition,
         slots=list(slots if slots is not None else doc.slots),
         captions=list(captions if captions is not None else doc.captions),
+        edge_shadow=doc.edge_shadow.model_copy() if doc.edge_shadow else None,
     )
 
 
@@ -214,7 +218,7 @@ def restyle(
     recipe: Recipe | None,
     photo_sizes: Mapping[str, Size],
 ) -> ArtworkDocument:
-    """Re-dress `doc` in `style` — mat, shadow, band, caption typography — keeping its layout.
+    """Re-dress `doc` in `style` — mat, shadows, band, caption typography — keeping its layout.
 
     The style's `margins` are deliberately left out: under a composition the block owns them
     (§3.7), and re-dressing must never move a photo the user placed. The band becomes
@@ -228,6 +232,9 @@ def restyle(
     block = doc.composition
     attached = block is not None and not block.detached
     defaults = style.slot_defaults
+    doc = doc.model_copy(
+        update={"edge_shadow": style.edge_shadow.model_copy() if style.edge_shadow else None}
+    )
     slots = [_dressed_slot(slot, defaults, bands=not attached) for slot in doc.slots]
     captions = [_dressed_caption(caption, style.caption_defaults) for caption in doc.captions]
     mat = style.mat.model_copy(deep=True)
@@ -236,7 +243,9 @@ def restyle(
     band = defaults.bands[0] if defaults.bands else None
     restyled = block.model_copy(deep=True)
     restyled.border = (
-        CompositionBorder(width=max(1, band.width), color=band.color) if band else None
+        CompositionBorder(width=max(1, band.width), color=band.color, bevel=band.bevel)
+        if band
+        else None
     )
     dressed = _with(doc, mat=mat, composition=restyled, slots=slots, captions=captions)
     if recipe is None:
@@ -269,7 +278,9 @@ def style_of_document(doc: ArtworkDocument) -> FrameStyleDocument:
     bands: list[Band] = []
     if block is not None and not block.detached:
         if block.border is not None:
-            bands = [Band(width=block.border.width, color=block.border.color)]
+            bands = [
+                Band(width=block.border.width, color=block.border.color, bevel=block.border.bevel)
+            ]
     elif slot is not None:
         bands = [band.model_copy() for band in slot.bands]
     caption = doc.captions[0] if doc.captions else None
@@ -291,6 +302,7 @@ def style_of_document(doc: ArtworkDocument) -> FrameStyleDocument:
             if caption
             else CaptionDefaults()
         ),
+        edge_shadow=doc.edge_shadow.model_copy() if doc.edge_shadow else None,
     )
 
 
@@ -321,7 +333,9 @@ def build_composition_document(
     block = composition.model_copy(deep=True)
     band = style.slot_defaults.bands[0] if style.slot_defaults.bands else None
     if block.border is None and band is not None:
-        block.border = CompositionBorder(width=max(1, band.width), color=band.color)
+        block.border = CompositionBorder(
+            width=max(1, band.width), color=band.color, bevel=band.bevel
+        )
     canvas = Rect(0, 0, CANVAS.w, CANVAS.h)
     slots: list[Slot] = []
     for index, photo in enumerate(photos):
@@ -337,6 +351,7 @@ def build_composition_document(
         margins=style.margins.model_copy(),
         composition=block,
         slots=[_dressed_slot(slot, style.slot_defaults, bands=False) for slot in slots],
+        edge_shadow=style.edge_shadow.model_copy() if style.edge_shadow else None,
     )
     sizes = {photo.id: photo.size for photo in photos if photo is not None}
     return apply(skeleton, recipe, sizes, caption_style(style))

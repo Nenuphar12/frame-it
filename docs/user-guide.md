@@ -153,6 +153,10 @@ Open an artwork with `e` or a double-click. Two panels:
     centred or flush with the photos' left or right edge.
   - Every slider has a field next to it: type the value when dragging is not precise enough.
   - Selecting a photo no longer dims the others. Click the mat (or press `Escape`) to deselect.
+  - The **border** can be *Flat* or a **Bevel** — the cut edge of a mat window, shaded as if lit
+    from above, in any colour you like (*Use the mat's colour* gives the classic look) — and **Frame shadow** (in Background) adds the soft shadow a frame casts on the
+    picture from the edge of the screen. Keep it light: the TV's own frame casts one too. The
+    built-in **Bevelled mat** style combines both, close to the mat the TV draws itself.
 - **Advanced ᴮᴱᵀᴬ** lets you place every photo by hand — free-form move, resize, rotate, overlap,
   align and distribute. Anything you do there **detaches** the artwork from its arrangement: the
   sliders stop driving it, because your placement is now the truth.

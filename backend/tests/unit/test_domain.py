@@ -319,3 +319,83 @@ def test_builtin_presets_are_valid(name: str) -> None:
     assert len(set(ids)) == len(ids)
     for item in items:
         model.model_validate(item["document"])
+
+
+# ---- the render hash and fields added later ----------------------------------------------------
+def _legacy_identity() -> dict[str, Any]:
+    """A document as schema 1 first shipped it: none of the fields added since."""
+    return {
+        "schema": 1,
+        "canvas": {"width": 3840, "height": 2160},
+        "mat": {"color": "#F2EFE8", "texture": None},
+        "placement": "manual",
+        "margins": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0,
+            "linked": False,
+            "mirror_x": False,
+            "mirror_y": False,
+        },
+        "composition": {
+            "recipe": "single",
+            "balance": None,
+            "outer": {"x": 120, "y": 120},
+            "gutter": {"x": 80, "y": 80},
+            "format": "fill",
+            "cell_formats": [],
+            "border": {"width": 12, "color": "#FFFFFF"},
+            "caption": {"text": "", "place": "none"},
+            "detached": False,
+        },
+        "slots": [
+            {
+                "id": "s1",
+                "photo_id": "p",
+                "rect": {"x": 0, "y": 0, "w": 300, "h": 200},
+                "rotation": 0.0,
+                "source": {
+                    "orient": {"rotate": 0, "flip_h": False},
+                    "crop": {"x": 0, "y": 0, "w": 300, "h": 200},
+                    "crop_ratio": "3:2",
+                },
+                "quality_lock": "free",
+                "bands": [{"width": 12, "color": "#FFFFFF"}],
+                "shadow": None,
+            }
+        ],
+        "captions": [],
+    }
+
+
+def test_the_render_identity_ignores_fields_a_document_does_not_use() -> None:
+    """A field added to the schema must not change the hash of the artworks that do not use it:
+    that would throw every cached render away and re-upload the whole set to the TV."""
+    legacy = _legacy_identity()
+    doc = parse_document(legacy)
+    assert doc.canonical() != legacy  # today's canonical form carries the newer fields…
+    assert doc.render_identity() == legacy  # …the hash input is the one it always was
+
+
+@pytest.mark.parametrize(
+    ("path", "value"),
+    [
+        (("edge_shadow",), {"offset_x": 0, "offset_y": 8, "blur": 40, "opacity": 0.2}),
+        (("composition", "weights"), [[2, 1]]),
+        (("composition", "caption", "align"), "left"),
+        (("composition", "border", "bevel"), True),
+        (("slots", 0, "bands", 0, "bevel"), True),
+    ],
+)
+def test_the_render_identity_changes_when_a_newer_field_is_used(
+    path: tuple[str | int, ...], value: Any
+) -> None:
+    raw = _legacy_identity()
+    raw["composition"]["recipe"] = "two-side-by-side"  # a recipe with a split, for `weights`
+    plain = parse_document(raw).render_identity()
+    target: Any = raw
+    for key in path[:-1]:
+        target = target[key]
+    target[path[-1]] = value
+    assert parse_document(raw).render_identity() != plain

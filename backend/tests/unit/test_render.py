@@ -8,10 +8,18 @@ from typing import Any
 import pytest
 import pyvips
 
-from the_frame_v2.domain.document import ArtworkDocument
+from the_frame_v2.domain.document import ArtworkDocument, EdgeShadow, Shadow
 from the_frame_v2.domain.geometry import Rect
 from the_frame_v2.imaging.decode import load_srgb
-from the_frame_v2.imaging.render import decoded_originals, render_document, rgb
+from the_frame_v2.imaging.render import (
+    BEVEL_SHADES,
+    _edge_shadow,
+    _inner_shadow,
+    decoded_originals,
+    render_document,
+    rgb,
+    shade,
+)
 
 
 def synthetic(path: Path, width: int, height: int) -> Path:
@@ -163,6 +171,88 @@ def test_shadows_darken_expected_sides(tmp_path: Path) -> None:
     assert drop(1200, 1210)[0] < mat[0] - 20  # below the slot: shadow on the mat
     assert drop(1200, 790) == mat  # above: nothing
     assert drop(1200, 1000) == [255, 255, 255]
+
+
+def test_a_bevelled_band_is_four_mitred_faces(tmp_path: Path) -> None:
+    """Each face one flat shade of the band's colour; the top and bottom ones own the mitres."""
+    photo = synthetic(tmp_path / "p.png", 100, 60)
+    doc = single(
+        (100, 60),
+        rect={"x": 200, "y": 300, "w": 100, "h": 60},
+        quality_lock="native",
+        bands=[{"width": 10, "color": "#C0C0C0", "bevel": True}],
+    )
+    image = render_document(doc, {"p": photo}.get).image
+    face = {name: shade("#C0C0C0", amount) for name, amount in BEVEL_SHADES.items()}
+    assert face["top"] < face["left"] < rgb("#C0C0C0") < face["right"] < face["bottom"]
+    assert image(250, 295) == face["top"]
+    assert image(250, 365) == face["bottom"]
+    assert image(195, 330) == face["left"]
+    assert image(305, 330) == face["right"]
+    # the corners: on the diagonal and above it the top face, below it the side one
+    assert image(193, 293) == face["top"]
+    assert image(194, 293) == face["top"]
+    assert image(193, 294) == face["left"]
+    assert image(306, 293) == face["top"]
+    assert image(193, 366) == face["bottom"]
+    assert image(306, 365) == face["right"]
+    # the band grows outwards: the photo is where it was, the mat starts 10 px out
+    assert image(200, 300) == load_srgb(photo)(0, 0)
+    assert image(189, 330) == rgb("#F2EFE8")
+
+
+def test_a_flat_band_is_unchanged_by_the_bevel_option(tmp_path: Path) -> None:
+    photo = synthetic(tmp_path / "p.png", 100, 60)
+    rect = {"x": 200, "y": 300, "w": 100, "h": 60}
+    plain = single((100, 60), rect=rect, bands=[{"width": 10, "color": "#C0C0C0"}])
+    explicit = single(
+        (100, 60), rect=rect, bands=[{"width": 10, "color": "#C0C0C0", "bevel": False}]
+    )
+    resolve = {"p": photo}.get
+    assert pixels(render_document(plain, resolve).image) == pixels(
+        render_document(explicit, resolve).image
+    )
+
+
+def test_the_edge_shadow_falls_from_the_frame_onto_everything(uhd: Path) -> None:
+    """The inner shadow of the whole canvas, drawn last: it darkens a full-bleed photo too."""
+    base = single((3840, 2160), quality_lock="native")
+    edge = {"offset_x": 0, "offset_y": 12, "blur": 40, "color": "#000000", "opacity": 0.5}
+    shaded = ArtworkDocument.model_validate({**base.canonical(), "edge_shadow": edge})
+    resolve = {"p": uhd}.get
+    plain, dark = render_document(base, resolve).image, render_document(shaded, resolve).image
+    for x in (400, 1920, 3400):
+        assert sum(dark(x, 2)) < sum(plain(x, 2)) * 0.7  # the top edge, under the frame
+        assert dark(x, 1080) == plain(x, 1080)  # the middle of the picture is untouched
+    # light from above: the bottom edge keeps far more of its light than the top one
+    top = sum(dark(1920, 1)) / sum(plain(1920, 1))
+    bottom = sum(dark(1920, 2158)) / sum(plain(1920, 2158))
+    assert bottom > top + 0.2
+    # an invisible shadow costs nothing and changes nothing
+    off = ArtworkDocument.model_validate(
+        {**base.canonical(), "edge_shadow": {**edge, "opacity": 0}}
+    )
+    region = Rect(0, 0, 600, 300)
+    assert pixels(render_document(off, resolve, region=region).image) == pixels(
+        render_document(base, resolve, region=region).image
+    )
+
+
+@pytest.mark.parametrize(
+    "edge",
+    [
+        {"offset_x": 0, "offset_y": 10, "blur": 60, "color": "#000000", "opacity": 0.22},
+        {"offset_x": -30, "offset_y": 45, "blur": 24, "color": "#402000", "opacity": 0.8},
+        {"offset_x": 7, "offset_y": 0, "blur": 0, "color": "#000000", "opacity": 1.0},
+    ],
+)
+def test_the_edge_shadow_is_the_inner_shadow_of_the_canvas(edge: dict[str, Any]) -> None:
+    """The two 1-D profiles the edge shadow is built from give the 2-D blur's pixels (§8.1)."""
+    canvas = (pyvips.Image.black(960, 540, bands=3) + [200, 180, 160]).cast("uchar")
+    canvas = canvas.copy(interpretation="srgb").bandjoin_const(255)
+    fast = _edge_shadow(canvas, EdgeShadow(**edge), 1.0)
+    reference = _inner_shadow(canvas, Shadow(type="inner", **edge), 1.0)
+    assert (fast.cast("int") - reference.cast("int")).abs().max() <= 1
 
 
 def test_caption_sits_on_its_baseline() -> None:

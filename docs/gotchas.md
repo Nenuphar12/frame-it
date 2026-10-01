@@ -39,6 +39,23 @@ These bite whatever you are working on.
 - libvips gotchas: trigonometric ops use **degrees**; `gaussblur` default `min_ampl=0.2` clips (use 0.005);
   `Image.text` is cropped to ink (offsets in `xoffset`/`yoffset`); `affine` pixel centres need the ±0.5
   `idx/odx` offsets (see `_rotate`); `find_load` is not exposed by pyvips (sniff instead).
+- **A new optional document field goes in `_LATER_DEFAULTS`** (`domain/document.py`). The render
+  hash is recomputed from the stored document through today's schema, so a field that merely
+  *appears* in the canonical dump changes every artwork's hash: every cached render is dropped and
+  the next push re-uploads the whole set to the TV (it remembers `(artwork, render_hash)`).
+  `render_identity()` leaves such a field out at its default. `composition.weights` and
+  `caption.align` shipped without it for a few hours and did exactly that.
+- **Compare a stored template through the model, not as raw JSON** (`_same_template`): seeding
+  the built-ins after a schema addition otherwise bumps every `revision` and flags each artwork
+  made from one as outdated.
+- **`RENDERER_VERSION` is for "the same document now renders differently"**, not for a new field:
+  prove it by regenerating the goldens (`make golden-update`) and checking `git status` shows the
+  old references untouched.
+- A bevel's shades live twice, like the texture formula: `BEVEL_SHADES`/`shade` in
+  `imaging/render.py` and `editor/core/bevel.ts`, pinned by `conformance/geometry/render.json`.
+  The frame's shadow is the inner shadow of the whole canvas — on the canvas too (`InnerShadow`)
+  — but the server builds it from two 1-D profiles (`_edge_shadow`): a 2-D blur of 3840×2160
+  costs seconds. A test holds the two within one rounding; change them together.
 - A render holds **every decoded original at once** (pyvips is lazy: nothing is released until the image is
   written, and the 512 MB LRU bounds what is kept *between* renders). Measured: 9 slots of 24 MP peak at
   2.3 GB. `MAX_RENDER_PIXELS` refuses more, counted from the file headers, as `render_too_large`.
@@ -70,6 +87,9 @@ These bite whatever you are working on.
   callback).
 - `0.4 * 100` is `40.00000000000001`: a percent field's bounds are **rounded**, not `ceil`ed, or a
   balance of 40 % becomes untypable (`PercentField`).
+- A test server you started is yours to stop **by pid** (`ss -ltnp | grep :<port>`): a second one
+  on the same port fails to bind and the *old build* keeps answering, which reads as "my change
+  did nothing".
 - CDP test tabs each hold an SSE connection: six of them exhaust Chrome's per-host limit and the
   seventh page never loads. Close a tab (`/json/close/<id>`) when a check is done.
 - Editor number fields keep the typed text while focused (`panels/Controls.tsx`) and never snap it — the §7.5

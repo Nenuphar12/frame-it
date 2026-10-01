@@ -155,6 +155,32 @@ export function Slider({
   );
 }
 
+/**
+ * Flat or bevelled: how a band meets the mat (rendering-spec.md §8.1). One control for the Simple
+ * panel's border, the Advanced bands and the template editors.
+ */
+export function BevelChoice({
+  bevel,
+  onChange,
+  labels,
+}: {
+  bevel: boolean;
+  onChange: (bevel: boolean) => void;
+  labels: { label: string; flat: string; bevel: string };
+}) {
+  return (
+    <Segmented
+      label={labels.label}
+      value={bevel ? "bevel" : "flat"}
+      onChange={(value) => onChange(value === "bevel")}
+      options={[
+        { value: "flat", label: labels.flat },
+        { value: "bevel", label: labels.bevel },
+      ]}
+    />
+  );
+}
+
 export interface SegmentOption<T extends string> {
   value: T;
   label: string;

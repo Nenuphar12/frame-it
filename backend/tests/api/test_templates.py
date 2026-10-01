@@ -9,9 +9,12 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 
 from tests.api.test_artworks import API, create, photo
-from tests.conftest import pair
+from tests.conftest import ctx_of, pair
+from the_frame_v2.db.models import FrameStyle, Layout
+from the_frame_v2.services import templates
 
 STYLE_DOC: dict[str, Any] = {
     "mat": {"color": "#101010", "texture": None},
@@ -184,7 +187,9 @@ def test_apply_template_to_one_artwork(local: TestClient) -> None:
     assert body["document"]["mat"]["color"] == "#101010"
     assert body["document"]["composition"]["format"] == "1:1"
     # the style's band became the block's border, so the solver owns the bands (§3)
-    assert body["document"]["slots"][0]["bands"] == [{"width": 16, "color": "#FFFFFF"}]
+    assert body["document"]["slots"][0]["bands"] == [
+        {"width": 16, "color": "#FFFFFF", "bevel": False}
+    ]
     assert body["document_version"] == artwork["document_version"] + 1
 
     # …and the change is undoable: a `pre_template_update` snapshot was taken first.
@@ -289,3 +294,60 @@ def test_templates_are_admin_only(local: TestClient) -> None:
         uploader.post(f"{API}/layouts", json={"name": "x", "document": LAYOUT_DOC}).status_code
         == 403
     )
+
+
+def test_a_schema_addition_does_not_outdate_the_builtins(local: TestClient) -> None:
+    """A built-in stored before an optional field existed says the same thing without that key:
+    seeding again must not call it a new revision — every artwork made from it would be flagged
+    outdated, for a push update that changes nothing."""
+    ctx = ctx_of(local)
+    with ctx.db.session() as session:
+        style = session.get(FrameStyle, "builtin-style-linen")
+        layout = session.scalars(select(Layout).where(Layout.builtin)).first()
+        assert style is not None and layout is not None
+        layout_id = layout.id
+        revisions = (style.revision, layout.revision)
+        # as an older version of the app wrote them: without the fields added since
+        old_style = {k: v for k, v in style.document.items() if k != "edge_shadow"}
+        old_style["slot_defaults"] = {
+            **old_style["slot_defaults"],
+            "bands": [
+                {"width": b["width"], "color": b["color"]}
+                for b in style.document["slot_defaults"]["bands"]
+            ],
+        }
+        style.document = old_style
+        layout.document = {
+            k: v for k, v in layout.document.items() if k not in ("weights", "caption_align")
+        }
+    with ctx.db.session() as session:
+        templates.seed_builtins(session)
+    with ctx.db.session() as session:
+        style = session.get(FrameStyle, "builtin-style-linen")
+        layout = session.get(Layout, layout_id)
+        assert style is not None and layout is not None
+        assert (style.revision, layout.revision) == revisions
+        assert "edge_shadow" in style.document and "weights" in layout.document  # rewritten
+        # a real change to a preset still is a new revision
+        style.document = {**style.document, "mat": {"color": "#123456", "texture": None}}
+    with ctx.db.session() as session:
+        templates.seed_builtins(session)
+    with ctx.db.session() as session:
+        style = session.get(FrameStyle, "builtin-style-linen")
+        assert style is not None and style.revision == revisions[0] + 1
+
+
+def test_the_bevelled_mat_builds_a_bevelled_artwork(local: TestClient) -> None:
+    """The built-in that looks like a Frame's own matte: a bevel around the photo, a frame shadow."""
+    styles = {s["id"]: s for s in local.get(f"{API}/frame-styles").json()}
+    style = styles["builtin-style-bevelled-mat"]["document"]
+    assert style["slot_defaults"]["bands"] == [{"width": 12, "color": "#EFF1EF", "bevel": True}]
+    assert style["edge_shadow"]["opacity"] == 0.22
+
+    artwork = create(local, [photo(local, 2000, 1500)], style_id="builtin-style-bevelled-mat")
+    document = artwork["document"]
+    assert document["composition"]["border"] == {"width": 12, "color": "#EFF1EF", "bevel": True}
+    assert document["slots"][0]["bands"] == [{"width": 12, "color": "#EFF1EF", "bevel": True}]
+    assert document["edge_shadow"] == style["edge_shadow"]
+    render = local.get(f"{API}/artworks/{artwork['id']}/render.png")
+    assert render.status_code == 200

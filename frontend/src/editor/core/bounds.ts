@@ -35,7 +35,14 @@ export function withValue(composition: Composition, key: SliderKey, value: numbe
     case "border":
       return {
         ...composition,
-        border: value <= 0 ? null : { width: value, color: composition.border?.color ?? "#FFFFFF" },
+        border:
+          value <= 0
+            ? null
+            : {
+                width: value,
+                color: composition.border?.color ?? "#FFFFFF",
+                bevel: composition.border?.bevel ?? false,
+              },
       };
   }
 }

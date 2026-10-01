@@ -4,8 +4,9 @@
 // Konva already scales `shadowBlur`/`shadowOffset` by the absolute scale and the pixel ratio, so
 // drop shadows take document units unchanged. The inner shadow has no canvas equivalent and is
 // drawn as a clipped ring — see `InnerShadow` below.
-import { Group, Image as KonvaImage, Rect, Shape } from "react-konva";
+import { Group, Image as KonvaImage, Line, Rect, Shape } from "react-konva";
 
+import { bevelFaces } from "@/editor/core/bevel.ts";
 import { bandWidth, type DocSlot, type Shadow } from "@/editor/core/document.ts";
 import type { Size } from "@/editor/core/geometry.ts";
 import { useOrientedImage } from "./useOrientedImage.ts";
@@ -66,6 +67,19 @@ export function SlotNode({ slot, source, dimmed = false }: SlotNodeProps) {
         // Outermost first: each band is a filled rect that the inner bands and the photo cover.
         const from = slot.bands.length - 1 - index;
         const grow = slot.bands.slice(0, from + 1).reduce((total, b) => total + b.width, 0);
+        const band = slot.bands[from];
+        if (band?.bevel) {
+          // The cut edge of a mat window: four mitred faces, shaded like the renderer's (§8.1).
+          const outer = {
+            x: -rect.w / 2 - grow,
+            y: -rect.h / 2 - grow,
+            w: rect.w + 2 * grow,
+            h: rect.h + 2 * grow,
+          };
+          return bevelFaces(outer, band.width, band.color).map((face) => (
+            <Line key={`${from}-${face.face}`} points={face.points} closed fill={face.fill} />
+          ));
+        }
         return (
           <Rect
             key={from}
@@ -122,8 +136,11 @@ interface InnerShadowProps {
  *
  * Canvas shadow offsets ignore the current transform (S3), so the offset is scaled and rotated
  * into device space by hand; the server applies it in the slot's frame, before rotation.
+ *
+ * Also the frame's shadow on the artwork (`edge_shadow`): the same thing, with the whole canvas
+ * as the layer.
  */
-function InnerShadow({ shadow, x, y, w, h }: InnerShadowProps) {
+export function InnerShadow({ shadow, x, y, w, h }: InnerShadowProps) {
   return (
     <Shape
       listening={false}

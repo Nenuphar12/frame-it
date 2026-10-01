@@ -682,7 +682,12 @@
     "bands": {
       "add": "Add",
       "none": "No band around the photo.",
-      "color": "Band colour"
+      "color": "Band colour",
+      "edge": "Edge",
+      "flat": "Flat",
+      "bevel": "Bevel",
+      "bevelHint": "Draw this band as the cut edge of a mat: four mitred faces, shaded from its colour",
+      "matchMat": "Use the mat's colour"
     },
     "shadow": {
       "label": "Shadow",
@@ -864,6 +869,10 @@
       "around": "Same days or place",
       "all": "All photos",
       "aroundEmpty": "Nothing else was taken around this photo. Show all photos to pick from the whole library."
+    },
+    "edgeShadow": {
+      "label": "Frame shadow",
+      "hint": "The soft shadow a frame casts on the picture, from the edge of the screen. Keep it light: the TV's own frame casts one too."
     }
   },
   "recipes": {

@@ -9,8 +9,14 @@ import { type LayoutDocumentApi, type StyleDocumentApi } from "@/api/client";
 import { useRecipes } from "@/api/queries";
 import { ColorField } from "@/editor/panels/ColorField";
 import { RecipePicker } from "@/editor/panels/RecipePicker";
-import { ShadowFields } from "@/editor/panels/ShadowFields";
-import { Field, NumberField, Segmented, Slider } from "@/editor/panels/Controls";
+import { EdgeShadowFields, ShadowFields } from "@/editor/panels/ShadowFields";
+import {
+  BevelChoice,
+  Field,
+  NumberField,
+  Segmented,
+  Slider,
+} from "@/editor/panels/Controls";
 import { Button } from "@/shared/ui/Button";
 import { Dialog } from "@/shared/ui/Dialog";
 import { Spinner } from "@/shared/ui/Misc";
@@ -167,7 +173,8 @@ export function StyleEditorDialog({
                 patch({
                   slot_defaults: {
                     ...defaults,
-                    bands: value === "on" ? [band ?? { width: 12, color: "#FFFFFF" }] : [],
+                    bands:
+                      value === "on" ? [band ?? { width: 12, color: "#FFFFFF", bevel: false }] : [],
                   },
                 })
               }
@@ -205,6 +212,24 @@ export function StyleEditorDialog({
                   }
                 />
               </Field>
+              <Field label={t("editor.bands.edge")}>
+                <BevelChoice
+                  bevel={band.bevel ?? false}
+                  labels={{
+                    label: t("editor.bands.edge"),
+                    flat: t("editor.bands.flat"),
+                    bevel: t("editor.bands.bevel"),
+                  }}
+                  onChange={(bevel) =>
+                    patch({
+                      slot_defaults: {
+                        ...defaults,
+                        bands: [{ ...band, bevel }],
+                      },
+                    })
+                  }
+                />
+              </Field>
             </>
           )}
           {/*
@@ -214,6 +239,10 @@ export function StyleEditorDialog({
           <ShadowFields
             shadow={shadow}
             onChange={(next) => patch({ slot_defaults: { ...defaults, shadow: next } })}
+          />
+          <EdgeShadowFields
+            shadow={document.edge_shadow ?? null}
+            onChange={(next) => patch({ edge_shadow: next })}
           />
           {caption && (
             <>
@@ -368,7 +397,8 @@ export function LayoutEditorDialog({
               ]}
               onChange={(value) =>
                 patch({
-                  border: value === "on" ? (border ?? { width: 18, color: "#FFFFFF" }) : null,
+                  border:
+                    value === "on" ? (border ?? { width: 18, color: "#FFFFFF", bevel: false }) : null,
                 })
               }
             />

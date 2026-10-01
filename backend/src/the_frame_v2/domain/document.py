@@ -136,6 +136,9 @@ class SourceSpec(DocModel):
 class Band(DocModel):
     width: int = Field(ge=1, le=1000)
     color: HexColor
+    bevel: bool = False
+    """Drawn as the cut edge of a mat window: four mitred faces shaded from `color`, the top and
+    left ones in shade, the bottom and right ones lit (rendering-spec.md §8.1, step 3.5)."""
 
 
 class Shadow(DocModel):
@@ -145,6 +148,21 @@ class Shadow(DocModel):
     blur: float = Field(default=0, ge=0, le=200)
     color: HexColor = "#000000"
     opacity: float = Field(default=0.35, ge=0, le=1)
+
+
+class EdgeShadow(DocModel):
+    """The shadow the TV's frame casts onto the artwork (rendering-spec.md §8.1, step 5).
+
+    An inner shadow of the whole canvas, drawn last — it falls on a photo that fills the screen
+    just as a real frame's would. The offset is the light's direction: `offset_y > 0` darkens the
+    top edge and leaves the bottom one clear.
+    """
+
+    offset_x: int = Field(default=0, ge=-500, le=500)
+    offset_y: int = Field(default=0, ge=-500, le=500)
+    blur: float = Field(default=0, ge=0, le=200)
+    color: HexColor = "#000000"
+    opacity: float = Field(default=0.25, ge=0, le=1)
 
 
 class Slot(DocModel):
@@ -219,6 +237,8 @@ class CompositionGutter(DocModel):
 class CompositionBorder(DocModel):
     width: int = Field(ge=1, le=200)
     color: HexColor = "#FFFFFF"
+    bevel: bool = False
+    """The border is a mat bevel rather than a flat band (`Band.bevel`)."""
 
 
 class CompositionCaption(DocModel):
@@ -289,6 +309,8 @@ class ArtworkDocument(DocModel):
     slots: list[Slot] = Field(default_factory=list, max_length=MAX_SLOTS)
     """Array order = z-order (first is back-most)."""
     captions: list[Caption] = Field(default_factory=list, max_length=MAX_CAPTIONS)
+    edge_shadow: EdgeShadow | None = None
+    """The frame's shadow on the artwork, drawn over everything else; absent = none."""
 
     @model_validator(mode="after")
     def _document_rules(self) -> ArtworkDocument:
@@ -313,6 +335,50 @@ class ArtworkDocument(DocModel):
 
     def canonical(self) -> dict[str, Any]:
         return self.model_dump(mode="json", by_alias=True)
+
+    def render_identity(self) -> dict[str, Any]:
+        """The canonical document as the **render hash** reads it.
+
+        Optional fields added after schema 1 shipped are left out while they hold their default,
+        so a document that does not use a feature hashes exactly as it did before the feature
+        existed. Without this, adding any defaulted field changes every artwork's hash: the whole
+        render cache is thrown away and the next push re-uploads the whole set to the TV, for
+        pictures whose pixels did not change. A field added to the document later belongs in
+        `_LATER_DEFAULTS` — unless the same document is now meant to render differently, which is
+        what `RENDERER_VERSION` is for.
+        """
+        data = self.canonical()
+        _drop_defaults(data, _LATER_DEFAULTS)
+        return data
+
+
+_LATER_DEFAULTS: dict[str, Any] = {
+    "edge_shadow": None,
+    "composition": {
+        "weights": [],
+        "caption": {"align": "center"},
+        "border": {"bevel": False},
+    },
+    "slots": [{"bands": [{"bevel": False}]}],
+}
+"""Fields added to schema 1 after it shipped, with the default each one is omitted at
+(`render_identity`). A dict descends into an object, a one-item list into every item of a list."""
+
+
+def _drop_defaults(data: Any, defaults: Any) -> None:
+    if isinstance(defaults, list):
+        for item in data if isinstance(data, list) else []:
+            _drop_defaults(item, defaults[0])
+        return
+    if not isinstance(data, dict):
+        return
+    for key, default in defaults.items():
+        if key not in data:
+            continue
+        if isinstance(default, dict) or (isinstance(default, list) and default):
+            _drop_defaults(data[key], default)
+        elif data[key] == default:
+            del data[key]
 
 
 # ---- references (need library data) -------------------------------------------------------------

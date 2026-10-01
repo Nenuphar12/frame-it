@@ -33,6 +33,7 @@ from the_frame_v2.domain.constraints import SlotState
 from the_frame_v2.domain.document import Composition, parse_document
 from the_frame_v2.domain.geometry import Margins, Orient, Rect, Size
 from the_frame_v2.domain.quality import SlotGeometry
+from the_frame_v2.imaging import render
 from the_frame_v2.services import recipes as recipe_catalog
 
 FIXTURES = Path(__file__).resolve().parents[3] / "conformance" / "geometry"
@@ -286,6 +287,10 @@ FUNCTIONS: dict[str, tuple[Callable[..., Any], dict[str, Callable[[Any], Any]]]]
     ),
     "templates_style_of_document": (_style_of, {"doc": lambda v: v}),
     "templates_layout_of_document": (_layout_of, {"doc": lambda v: v}),
+    "bevel_shade": (
+        lambda color, face: render.shade(color, render.BEVEL_SHADES[face]),
+        {"color": str, "face": str},
+    ),
     "composition_split_weights": (
         composition.split_weights,
         {"recipe": _recipe, "composition": _composition},
@@ -408,6 +413,7 @@ def _comp(
     cell_formats: list[str | None] | None = None,
     weights: list[list[float] | None] | None = None,
     align: str = "center",
+    bevel: bool = False,
 ) -> dict[str, Any]:
     """A complete composition block: fixtures carry every field (the TS mirror has no defaults)."""
     return {
@@ -418,7 +424,9 @@ def _comp(
         "gutter": {"x": gutter[0], "y": gutter[1]},
         "format": fmt,
         "cell_formats": cell_formats or [],
-        "border": None if border is None else {"width": border, "color": "#FFFFFF"},
+        "border": (
+            None if border is None else {"width": border, "color": "#FFFFFF", "bevel": bevel}
+        ),
         "caption": {
             "text": "" if caption == "none" else "Kyoto - April 2026",
             "place": caption,
@@ -523,7 +531,7 @@ def _doc_slot(
             "crop_ratio": "3:2",
         },
         "quality_lock": "free",
-        "bands": [{"width": 9, "color": "#000000"}],
+        "bands": [{"width": 9, "color": "#000000", "bevel": False}],
         "shadow": (
             {
                 "type": "drop",
@@ -539,10 +547,14 @@ def _doc_slot(
     }
 
 
+EDGE_SHADOW = {"offset_x": 0, "offset_y": 10, "blur": 60, "color": "#000000", "opacity": 0.22}
+
+
 def _doc(
     comp: dict[str, Any],
     slots: list[dict[str, Any]],
     captions: list[dict[str, Any]] | None = None,
+    edge_shadow: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """A complete document: fixtures carry every field (the TS mirror has no defaults)."""
     return {
@@ -562,6 +574,7 @@ def _doc(
         "composition": comp,
         "slots": slots,
         "captions": captions or [],
+        "edge_shadow": edge_shadow,
     }
 
 
@@ -588,6 +601,8 @@ def _style(
     band: int | None,
     shadow: bool,
     size: int,
+    bevel: bool = False,
+    edge_shadow: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """A complete frame style document (fixtures carry every field: the TS mirror has none)."""
     return {
@@ -602,7 +617,9 @@ def _style(
             "mirror_y": False,
         },
         "slot_defaults": {
-            "bands": [] if band is None else [{"width": band, "color": "#FFFFFF"}],
+            "bands": (
+                [] if band is None else [{"width": band, "color": "#FFFFFF", "bevel": bevel}]
+            ),
             "shadow": (
                 {
                     "type": "inner",
@@ -624,12 +641,16 @@ def _style(
             "color": "#222222",
             "letter_spacing": 0.05,
         },
+        "edge_shadow": edge_shadow,
     }
 
 
 STYLES = {
     "banded": _style(color="#101010", band=18, shadow=True, size=72),
     "plain": _style(color="#FFFFFF", band=None, shadow=False, size=40),
+    "bevelled": _style(
+        color="#EFF1EF", band=12, shadow=False, size=48, bevel=True, edge_shadow=EDGE_SHADOW
+    ),
 }
 
 
@@ -654,7 +675,9 @@ def _layout(
         "gutter": {"x": gutter[0], "y": gutter[1]},
         "format": fmt,
         "cell_formats": [],
-        "border": None if border is None else {"width": border, "color": "#FFFFFF"},
+        "border": (
+            None if border is None else {"width": border, "color": "#FFFFFF", "bevel": False}
+        ),
         "caption_place": caption_place,
         "caption_align": caption_align,
     }
@@ -687,6 +710,12 @@ SAVE_AS_DOCS = {
         _comp("three-hero-left", caption="above", align="left", weights=[None, [3, 1]]),
         [_doc_slot(0, "p1"), _doc_slot(1, "p2"), _doc_slot(2, "p3")],
         [],
+    ),
+    "bevelled": _doc(
+        _comp("two-side-by-side", border=12, bevel=True),
+        [_doc_slot(0, "p1"), _doc_slot(1, "p2")],
+        [],
+        EDGE_SHADOW,
     ),
 }
 
@@ -1602,6 +1631,21 @@ CASES: dict[str, list[tuple[str, str, dict[str, Any]]]] = {
             for align in ("left", "right")
         ],
         (
+            "apply writes a bevelled border and keeps the frame shadow",
+            "composition_apply",
+            {
+                "doc": _doc(
+                    _comp("two-side-by-side", border=12, bevel=True),
+                    [_doc_slot(0, "p1"), _doc_slot(1, "p2")],
+                    [],
+                    EDGE_SHADOW,
+                ),
+                "recipe": "two-side-by-side",
+                "photo_sizes": SIZES_3,
+                "caption": None,
+            },
+        ),
+        (
             "apply per-split weights",
             "composition_apply",
             {
@@ -1840,6 +1884,11 @@ CASES: dict[str, list[tuple[str, str, dict[str, Any]]]] = {
             for fmt in ("fill", "original", "3:2", "2:3", "1:1", "16:9")
         ],
     ],
+    "render.json": [
+        (f"bevel {face} of {color}", "bevel_shade", {"color": color, "face": face})
+        for color in ("#EFF1EF", "#FFFFFF", "#000000", "#3B3024", "#7F8081")
+        for face in ("top", "left", "right", "bottom")
+    ],
     "templates.json": [
         *[
             (
@@ -1867,6 +1916,21 @@ CASES: dict[str, list[tuple[str, str, dict[str, Any]]]] = {
             for attached in (True, False)
             for caption in ("none", "below")
         ],
+        (
+            "restyle takes away a frame shadow the style does not have",
+            "templates_restyle",
+            {
+                "doc": _doc(
+                    _comp("two-side-by-side", border=12, bevel=True),
+                    [_doc_slot(0, "p1"), _doc_slot(1, "p2")],
+                    [],
+                    EDGE_SHADOW,
+                ),
+                "style": STYLES["plain"],
+                "recipe": "two-side-by-side",
+                "photo_sizes": SIZES_3,
+            },
+        ),
         (
             "restyle without a recipe leaves the geometry alone",
             "templates_restyle",

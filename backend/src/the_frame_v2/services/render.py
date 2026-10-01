@@ -85,7 +85,7 @@ def inputs_for(
     rows = session.execute(stmt).all() if ids else []
     originals = {row.id: ctx.storage.original_path(row.sha256, row.ext) for row in rows}
     shas = [row.sha256 for row in rows]
-    return RenderInputs(artwork_id, doc, originals, render_hash(doc.canonical(), shas))
+    return RenderInputs(artwork_id, doc, originals, render_hash(doc.render_identity(), shas))
 
 
 def artwork_inputs(ctx: AppContext, artwork_id: str, *, trashed_ok: bool = False) -> RenderInputs:

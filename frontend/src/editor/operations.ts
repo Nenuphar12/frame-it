@@ -195,6 +195,11 @@ export function setTexture(doc: EditorDocument, id: string | null, strength: num
   doc.mat.texture = id === null ? null : { id, strength };
 }
 
+/** The frame's shadow on the artwork; `null` removes it. Never a free-form edit (§3.7). */
+export function setEdgeShadow(doc: EditorDocument, shadow: EditorDocument["edge_shadow"]): void {
+  doc.edge_shadow = shadow;
+}
+
 /** Fill in a style document's optional fields, falling back to the artwork's own look. */
 function normalizeStyle(style: StyleDocument, doc: EditorDocument): CoreStyle {
   const mat = style.mat;
@@ -208,10 +213,11 @@ function normalizeStyle(style: StyleDocument, doc: EditorDocument): CoreStyle {
     },
     margins: style.margins ?? doc.margins,
     slot_defaults: {
-      bands: (defaults?.bands ?? []).map((band) => ({ ...band })),
+      bands: (defaults?.bands ?? []).map((band) => ({ ...band, bevel: band.bevel ?? false })),
       shadow: defaults?.shadow ? { ...defaults.shadow } : null,
       quality_lock: defaults?.quality_lock ?? "no_upscale",
     },
+    edge_shadow: style.edge_shadow ? { ...style.edge_shadow } : null,
     caption_defaults: {
       font: typography?.font ?? caption.font,
       weight: typography?.weight ?? caption.weight,
@@ -232,7 +238,7 @@ function normalizeLayout(layout: LayoutApiDocument): CoreLayout {
     gutter: { x: layout.gutter?.x ?? 80, y: layout.gutter?.y ?? 80 },
     format: layout.format ?? "fill",
     cell_formats: [...(layout.cell_formats ?? [])],
-    border: layout.border ? { ...layout.border } : null,
+    border: layout.border ? { ...layout.border, bevel: layout.border.bevel ?? false } : null,
     caption_place: layout.caption_place ?? "none",
     caption_align: layout.caption_align ?? "center",
   };
@@ -246,6 +252,7 @@ function replaceDocument(doc: EditorDocument, next: EditorDocument): void {
   doc.composition = next.composition;
   doc.slots = next.slots;
   doc.captions = next.captions;
+  doc.edge_shadow = next.edge_shadow;
 }
 
 /**
@@ -492,6 +499,7 @@ export function setBands(slot: DocSlot, bands: DocSlot["bands"]): void {
   slot.bands = bands.slice(0, 3).map((band) => ({
     width: Math.max(1, Math.round(band.width)),
     color: band.color,
+    bevel: band.bevel,
   }));
 }
 

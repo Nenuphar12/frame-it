@@ -74,6 +74,20 @@
           "quality_lock": "no_upscale"
         }
       }
+    },
+    {
+      "id": "builtin-style-bevelled-mat",
+      "name": "Bevelled mat",
+      "document": {
+        "mat": { "color": "#EFF1EF", "texture": { "id": "canvas-01", "strength": 0.3 } },
+        "margins": { "top": 300, "right": 340, "bottom": 300, "left": 340, "linked": false },
+        "slot_defaults": {
+          "bands": [{ "width": 12, "color": "#EFF1EF", "bevel": true }],
+          "shadow": null,
+          "quality_lock": "no_upscale"
+        },
+        "edge_shadow": { "offset_x": 0, "offset_y": 10, "blur": 60, "color": "#000000", "opacity": 0.22 }
+      }
     }
   ]
 }

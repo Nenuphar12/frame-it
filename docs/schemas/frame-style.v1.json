@@ -3,6 +3,11 @@
     "Band": {
       "additionalProperties": false,
       "properties": {
+        "bevel": {
+          "default": false,
+          "title": "Bevel",
+          "type": "boolean"
+        },
         "color": {
           "pattern": "^#[0-9A-Fa-f]{6}$",
           "title": "Color",
@@ -60,6 +65,48 @@
         }
       },
       "title": "CaptionDefaults",
+      "type": "object"
+    },
+    "EdgeShadow": {
+      "additionalProperties": false,
+      "description": "The shadow the TV's frame casts onto the artwork (rendering-spec.md \u00a78.1, step 5).\n\nAn inner shadow of the whole canvas, drawn last \u2014 it falls on a photo that fills the screen\njust as a real frame's would. The offset is the light's direction: `offset_y > 0` darkens the\ntop edge and leaves the bottom one clear.",
+      "properties": {
+        "blur": {
+          "default": 0,
+          "maximum": 200,
+          "minimum": 0,
+          "title": "Blur",
+          "type": "number"
+        },
+        "color": {
+          "default": "#000000",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Color",
+          "type": "string"
+        },
+        "offset_x": {
+          "default": 0,
+          "maximum": 500,
+          "minimum": -500,
+          "title": "Offset X",
+          "type": "integer"
+        },
+        "offset_y": {
+          "default": 0,
+          "maximum": 500,
+          "minimum": -500,
+          "title": "Offset Y",
+          "type": "integer"
+        },
+        "opacity": {
+          "default": 0.25,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Opacity",
+          "type": "number"
+        }
+      },
+      "title": "EdgeShadow",
       "type": "object"
     },
     "MarginsSpec": {
@@ -254,6 +301,17 @@
   "properties": {
     "caption_defaults": {
       "$ref": "#/$defs/CaptionDefaults"
+    },
+    "edge_shadow": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EdgeShadow"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "margins": {
       "$ref": "#/$defs/MarginsSpec"

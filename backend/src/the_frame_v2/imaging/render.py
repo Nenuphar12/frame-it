@@ -20,12 +20,26 @@ from xml.sax.saxutils import escape
 
 import pyvips
 
-from the_frame_v2.domain.document import ArtworkDocument, Caption, Shadow, Slot
+from the_frame_v2.domain.document import (
+    ArtworkDocument,
+    Band,
+    Caption,
+    EdgeShadow,
+    Shadow,
+    Slot,
+)
 from the_frame_v2.domain.geometry import CANVAS_HEIGHT, CANVAS_WIDTH, Rect, round_half_even
 from the_frame_v2.imaging.assets import AssetCatalog, FontAsset, catalog
 from the_frame_v2.imaging.decode import DecodeError, load_srgb, pixel_count
 
 RENDERER_VERSION = "1"
+"""Bump when the **same document** renders to different pixels. A new optional document field is
+not that: it changes the document, hence the hash, of the artworks that use it and of no other
+(`ArtworkDocument.render_identity`)."""
+BEVEL_SHADES = {"top": -0.30, "left": -0.12, "right": 0.35, "bottom": 0.60}
+"""How a bevelled band shades its four faces (rendering-spec.md §8.1, step 3.5): a negative value
+mixes the band colour towards black, a positive one towards white. Light from above, slightly from
+the left — the cut edge of a mat window, as a Frame draws it."""
 MIN_BLUR_AMPLITUDE = 0.005
 """Gaussian kernels are truncated below this amplitude (libvips' default 0.2 is visibly clipped)."""
 TEXT_MARKER = "|"
@@ -277,6 +291,34 @@ def _force_size(image: Any, width: int, height: int) -> Any:
     return image
 
 
+def shade(color: str, amount: float) -> list[int]:
+    """`color` mixed towards black (`amount < 0`) or white (`amount > 0`), rounded half up."""
+    target = 255 if amount > 0 else 0
+    share = abs(amount)
+    return [math.floor(c + (target - c) * share + 0.5) for c in rgb(color)]
+
+
+def _bevel(image: Any, width: int, band: Band) -> Any:
+    """`image` grown by a bevelled band: four mitred faces, each one flat shade of `band.color`.
+
+    A band pixel belongs to the face whose **outer** edge is nearest. On a diagonal (two edges
+    equally near) the top or bottom face wins, so the mitre is one exact pixel staircase and the
+    client can draw the same four trapezoids.
+    """
+    full_w, full_h = image.width + 2 * width, image.height + 2 * width
+    xyz = pyvips.Image.xyz(full_w, full_h)
+    left, top = xyz[0], xyz[1]
+    right, bottom = (full_w - 1) - left, (full_h - 1) - top
+    side = (left < right).ifthenelse(left, right)
+    faces = (left < right).ifthenelse(
+        shade(band.color, BEVEL_SHADES["left"]), shade(band.color, BEVEL_SHADES["right"])
+    )
+    faces = (bottom <= side).ifthenelse(shade(band.color, BEVEL_SHADES["bottom"]), faces)
+    faces = (top <= side).ifthenelse(shade(band.color, BEVEL_SHADES["top"]), faces)
+    frame = faces.cast("uchar").copy(interpretation="srgb")
+    return frame.insert(image, width, width)
+
+
 def _inner_shadow(layer: Any, shadow: Shadow, scale: float) -> Any:
     """Recessed look: blurred inverse mask, shifted by the offset, drawn over photo and bands."""
     sigma = shadow.blur * scale / 2
@@ -306,14 +348,17 @@ def _draw_slot(canvas: Any, slot: Slot, photo: Any, scale: float) -> Any:
     band_total = 0
     for band in slot.bands:
         width = max(1, _scaled(band.width, scale))
-        image = image.embed(
-            width,
-            width,
-            image.width + 2 * width,
-            image.height + 2 * width,
-            extend="background",
-            background=rgb(band.color),
-        )
+        if band.bevel:
+            image = _bevel(image, width, band)
+        else:
+            image = image.embed(
+                width,
+                width,
+                image.width + 2 * width,
+                image.height + 2 * width,
+                extend="background",
+                background=rgb(band.color),
+            )
         band_total += width
     layer = image.bandjoin_const(255).copy(interpretation="srgb")
     shadow = slot.shadow
@@ -330,6 +375,32 @@ def _draw_slot(canvas: Any, slot: Slot, photo: Any, scale: float) -> Any:
     if shadow is not None and shadow.type == "drop" and shadow.opacity > 0:
         canvas = _drop_shadow(canvas, layer, x, y, shadow, scale)
     return _over(canvas, layer, x, y)
+
+
+def _edge_shadow(canvas: Any, shadow: EdgeShadow, scale: float) -> Any:
+    """The frame's shadow: the inner shadow of the whole canvas, over everything already drawn.
+
+    Same mask as `_inner_shadow` — 255 outside the canvas, 0 inside, shifted, blurred — computed
+    from two 1-D profiles instead of a 2-D blur: "inside a rectangle" is a product of a row and a
+    column, and a Gaussian blur keeps that product. A full-canvas blur cost 1.1 s per render at
+    `blur = 60` and 7 s at 200; this costs a few milliseconds and agrees to within a rounding
+    (`test_the_edge_shadow_is_the_inner_shadow_of_the_canvas`).
+    """
+    sigma = shadow.blur * scale / 2
+    ox, oy = _scaled(shadow.offset_x, scale), _scaled(shadow.offset_y, scale)
+    pad = math.ceil(3 * sigma) + max(abs(ox), abs(oy)) + 1
+    width, height = canvas.width, canvas.height
+    row = pyvips.Image.black(width + 2 * pad, 1).draw_rect(255, pad + ox, 0, width, 1, fill=True)
+    column = pyvips.Image.black(1, height + 2 * pad).draw_rect(
+        255, 0, pad + oy, 1, height, fill=True
+    )
+    inside_x = _blur(row, sigma).crop(pad, 0, width, 1) / 255
+    inside_y = _blur(column, sigma).crop(0, pad, 1, height) / 255
+    inside = inside_x.replicate(1, height) * inside_y.replicate(width, 1)
+    alpha = (1 - inside) * (255 * shadow.opacity)
+    return canvas.composite2(
+        _colored_alpha(alpha, shadow.color), "over", compositing_space="srgb"
+    ).cast("uchar")
 
 
 def text_width(markup: str, font_path: str, description: str, spacing_px: float) -> int:
@@ -404,6 +475,8 @@ def render_document(
         canvas, box = _draw_caption(canvas, caption, scale, assets)
         if box is not None:
             boxes.append(box)
+    if doc.edge_shadow is not None and doc.edge_shadow.opacity > 0:
+        canvas = _edge_shadow(canvas, doc.edge_shadow, scale)
     image = canvas.extract_band(0, n=3).cast("uchar").copy(interpretation="srgb")
     assert (image.width, image.height) == (width, height)
     if region is not None:

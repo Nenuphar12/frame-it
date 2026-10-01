@@ -94,15 +94,18 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
   `db/session.py`), the point picked by name through `GET /places/search` (offline GeoNames, the
   library's places first), *Artworks within 10 km* from a photo, `unlocated_artworks` said aloud.
 - **Editor, Simple mode (2026-10-01, `docs/simple-editor.md` §3.4, §3.7, §6.2, §6.5)**:
-  `composition.weights` — per-split proportions under Fill, splits in depth-first order (`balance`
-  stays the root wherever the recipe declares one; `weights_shape` when an entry does not fit the
-  recipe) — driven by **dragging the gaps on the canvas** (snap to ½, ⅓, golden; double-click
-  resets) and by **Width / Height** of the selected photo; `composition.caption.align` (flush with
-  the block's printed edge) and the caption's whole typography in the Simple panel; a photo
-  chip's `⋯` (**Replace photo…**, Remove) and **Add photo**, the picker opening on
-  `GET /photos?around=<id>` (same 3 days or 10 km); a typed field on every slider; a selected
-  photo no longer dims the others (only while dragged), the mat and `Escape` deselect. Layouts
-  carry `weights` and `caption_align`. No migration, no renderer change.
+  `composition.weights` — per-split proportions under Fill, depth-first (`balance` stays the root
+  where the recipe declares one; `weights_shape` otherwise) — set by **dragging the gaps on the
+  canvas** or by the selected photo's **Width / Height**; `caption.align` and the caption's whole
+  typography; a chip's `⋯` (**Replace photo…**, Remove) and **Add photo**, the picker opening on
+  `GET /photos?around=<id>`; a typed field on every slider; a selected photo dims the others only
+  while dragged, the mat and `Escape` deselect. Layouts carry `weights` and `caption_align`.
+- **Rendering & styles (2026-10-01, `docs/rendering-spec.md` §8.1, §8.4)**: `edge_shadow` — the
+  frame's shadow, the inner shadow of the whole canvas drawn **last** — and `bevel` on a band or
+  on `composition.border` (four mitred, shaded faces); both in frame styles, both panels and the
+  style editor, combined in the built-in **Bevelled mat**. No `RENDERER_VERSION` bump: old
+  documents render byte for byte. The render hash reads `render_identity()` and re-seeding the
+  built-ins compares through the model, so a schema addition moves no cache, TV or outdated badge.
 - **Next: nothing planned** (`docs/PLAN.md` §16 keeps the open questions, the rename above
   all). Not yet verified on hardware: deleting foreign photos, whether the
   pairing token survives a TV power cut (hence "pair again" in the UI), discovery on the real LAN,
@@ -158,11 +161,11 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `…/service.py` | Generates this machine's systemd unit / launchd plist (`the_frame_v2 service`) |
 | `…/assets/geonames/` | Offline place dataset (built by `scripts/build_geonames.py`, CC BY 4.0) |
 | `backend/tests/` | `unit/`, `api/`, `golden/` (reference PNGs in `refs/`); fixtures & helpers in `conftest.py` (`make_jpeg`, `pair`, `upload_bytes`) |
-| `conformance/geometry/` | Shared JSON fixtures: Python domain ↔ `frontend/src/editor/core` |
+| `conformance/geometry/` | Shared JSON fixtures: Python domain ↔ `frontend/src/editor/core` (`render.json`: the two renderer constants the canvas mirrors) |
 | `scripts/` | `build_geonames.py`, `build_fonts.py`, `generate_textures.py`, `bench_render.py` (time **and** peak RSS), `bench_library.py` (§8.6 budgets), `seed_library.py`, `render_parity/` (S3 page), `tv_probe.py` (S5 spike: probes the Frame's art channel, `--fake` self-tests it without hardware — `docs/research/tv-display.md`) |
 | `frontend/src/api/` | `client.ts` (openapi-fetch + `ApiError`), `queries.ts` (TanStack Query hooks), `events.ts` (SSE), generated `schema.d.ts` |
 | `frontend/src/app/` | `router.tsx`, `AuthGate.tsx` (role routing), `Shell.tsx` (sidebar), `commands.ts` (shortcuts/palette registry), `theme.ts` |
-| `frontend/src/editor/core/` | PURE TS mirror of `domain/` (`geometry`, `quality`, `placement`, `constraints`, `alternatives`, `arrange`, `composition`, `templates`) + `snapping.ts`, `bounds.ts` and `splits.ts` (client-only: the gaps of a Fill layout, a drag in shares, a cell's row/column) and `document.ts` (the document with every optional field filled in); relative imports with `.ts` extension (run by Node in `scripts/conformance.ts`) |
+| `frontend/src/editor/core/` | PURE TS mirror of `domain/` (`geometry`, `quality`, `placement`, `constraints`, `alternatives`, `arrange`, `composition`, `templates`, `bevel` = the renderer's bevel shades) + `snapping.ts`, `bounds.ts` and `splits.ts` (client-only: the gaps of a Fill layout, a drag in shares, a cell's row/column) and `document.ts` (the document with every optional field filled in); relative imports with `.ts` extension (run by Node in `scripts/conformance.ts`) |
 | `frontend/src/editor/` | `EditorPage.tsx` (layout, shortcuts, review queue), `store.ts` (working document, undo/redo on Immer patches, autosave + conflicts), `operations.ts` (pure document mutations: how a change propagates), `actions.ts` (what the UI calls), `TvPreview.tsx` |
 | `…/editor/canvas/` | `EditorStage.tsx` (Konva stage, one pointer pipeline for every gesture, overlays), `SlotNode.tsx` (bands, photo, shadows), `CaptionNode.tsx`, `SelectionOverlay.tsx` (outlines + transform handles), `hit.ts` (rotation-aware hit tests, handle maths), `texture.ts`, `fonts.ts`, `useOrientedImage.ts` |
 | `…/editor/panels/` | `SimplePanel` (the parametric editor, §6.2) + `RecipePicker` (schemas drawn by the solver), `SlotsPanel` (z-order, add/remove, photos), `PhotoPicker`, `ArrangePanel` (align/distribute), `CaptionsPanel` + `CaptionTypography` (shared with Simple), `FramingPanel`, `StylePanel`, `ColorField` (picker + swatches + palette + presets), `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`, `ShadowFields` (shared with the template editor), `Controls` (`NumberField`, `PercentField`: every slider has a typed twin) |
@@ -271,8 +274,10 @@ whatever you are touching before you touch it.** These few bite whatever you are
 
 - Geometry change ⇒ change Python **and** TS, add a case to `CASES` in `tests/unit/test_conformance.py`,
   regenerate fixtures, check the new expected values by hand.
-- Any renderer pixel change ⇒ bump `RENDERER_VERSION` (render hash) and `make golden-update`; asset file changes ⇒
-  bump the manifest `version`. Golden sources are PNG (JPEG encoders differ between libvips builds).
+- The **same document** rendering to different pixels ⇒ bump `RENDERER_VERSION` (render hash) and
+  `make golden-update`; asset file changes ⇒ bump the manifest `version`. Golden sources are PNG.
+- A **new optional document field** ⇒ no bump, but list it in `_LATER_DEFAULTS` (`domain/document.py`)
+  or every artwork's render hash changes: caches dropped, the whole set re-uploaded to the TV.
 - Alembic autogenerate proposes dropping the FTS5 `search_index*` tables: delete those lines by hand.
 - **Editor performance is a correctness issue**: one React render + canvas redraw per mouse event makes the tab
   unresponsive for tens of seconds (the event queue outruns the renderer). Crop dragging, stage panning and the

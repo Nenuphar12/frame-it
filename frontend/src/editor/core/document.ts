@@ -31,6 +31,17 @@ export interface DocMargins extends Margins {
 export interface Band {
   width: number;
   color: string;
+  /** Drawn as the cut edge of a mat window: four mitred, shaded faces (rendering-spec.md §8.1). */
+  bevel: boolean;
+}
+
+/** The shadow the TV's frame casts onto the artwork: an inner shadow of the whole canvas. */
+export interface EdgeShadow {
+  offset_x: number;
+  offset_y: number;
+  blur: number;
+  color: string;
+  opacity: number;
 }
 
 export interface Shadow {
@@ -77,6 +88,8 @@ export interface EditorDocument {
   composition: Composition | null;
   slots: DocSlot[];
   captions: DocCaption[];
+  /** The frame's shadow on the artwork, drawn over everything else; null = none. */
+  edge_shadow: EdgeShadow | null;
 }
 
 /** Fill in the optional fields of a `composition` block so edits never have to guess a default. */
@@ -89,7 +102,7 @@ export function normalizeComposition(raw: NonNullable<ApiDocument["composition"]
     gutter: { x: raw.gutter?.x ?? 80, y: raw.gutter?.y ?? 80 },
     format: raw.format ?? "fill",
     cell_formats: [...(raw.cell_formats ?? [])],
-    border: raw.border ? { ...raw.border } : null,
+    border: raw.border ? { ...raw.border, bevel: raw.border.bevel ?? false } : null,
     caption: {
       text: raw.caption?.text ?? "",
       place: raw.caption?.place ?? "none",
@@ -137,10 +150,11 @@ export function normalizeDocument(raw: ApiDocument): EditorDocument {
         crop_ratio: slot.source.crop_ratio,
       },
       quality_lock: slot.quality_lock,
-      bands: (slot.bands ?? []).map((band) => ({ ...band })),
+      bands: (slot.bands ?? []).map((band) => ({ ...band, bevel: band.bevel ?? false })),
       shadow: slot.shadow ? { ...slot.shadow } : null,
     })),
     captions: (raw.captions ?? []).map((caption) => ({ ...caption })),
+    edge_shadow: raw.edge_shadow ? { ...raw.edge_shadow } : null,
   };
 }
 

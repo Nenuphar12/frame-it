@@ -1,5 +1,70 @@
 # Progress log
 
+## 2026-10-01 — Rendering and styles (remarks #8, #15)
+
+The reference photos of the Frame's own matte (`tmp_frame_style_example/`) show three things: an
+off-white mat with a fine weave (we had it), a **bevel** around the photo window with 45° corners,
+and a **soft shadow cast by the frame** onto the mat, strongest under the top edge. The last two
+are new.
+
+**The frame's shadow** (#8): `edge_shadow` on the document — offset, blur, colour, opacity. It is
+the existing inner shadow with the whole canvas as the layer, drawn **last**, so it falls on a
+photo that fills the screen the way a real frame's does; the offset is the light's direction.
+**The bevel**: `bevel` on a band (and on `composition.border`): four mitred faces, each one flat
+shade of the band's colour, top and left in shade, bottom and right lit. Both are part of a frame
+style, edited in the Simple panel (Background → Frame shadow, Border → Flat | Bevel), the Advanced
+panel and the style editor, and drawn by the canvas and the template cards. A bevel keeps the
+border's own colour — a white or dark core under a coloured mat is as real as one cut from the
+mat — and *Use the mat's colour* is one click away when the two differ.
+
+**Bevelled mat** (#15), a seventh built-in: cool white canvas mat, a 12 px bevel in the mat's own
+colour, a light frame shadow (10 px down, blur 60, 22 %) — deliberately subtle, since the TV's
+real frame casts its own.
+
+The frame's shadow is not computed the way a photo's is. A full-canvas Gaussian blur cost 1.1 s
+per render at `blur = 60` and 6.9 s at 200 — against a 2 s budget for the whole picture. "Inside
+a rectangle" is the product of a row and a column, and a blur keeps that product, so the mask
+comes from two 1-D profiles: 0.13 s and 0.19 s on top of the same render, within one rounding of
+the 2-D result (`test_the_edge_shadow_is_the_inner_shadow_of_the_canvas`). The photos' own
+recessed shadows could use the same identity; they do not yet, because that would move existing
+pixels by a rounding and so needs the version bump this change avoids.
+
+**No `RENDERER_VERSION` bump.** The rule is "the same document renders differently", and no
+existing document does: `make golden-update` regenerated the six older references byte for byte
+(`git status` shows only the two new ones, `bevelled_mat` and `edge_shadow_full_bleed`).
+
+**Two regressions of the previous entry, found here and fixed.** Adding `weights` and
+`caption.align` had two side effects nobody asked for, and the two new fields would have repeated
+them:
+
+- *Every artwork's render hash changed.* The hash is recomputed from the stored document through
+  today's schema, so a defaulted field appearing in the canonical dump is enough. Every cached
+  render would be redone and — a TV remembers `(artwork, render_hash)` — the whole set uploaded
+  again. The hash now reads `render_identity()`: the canonical document minus the fields added
+  after schema 1 shipped, while they hold their default. Checked on the dev library: 0 of 33
+  stored hashes matched before the fix; after it, the 12 pictures recorded on the TV are all
+  still current (the 9 artworks that do not match were last rendered in September, before
+  earlier schema changes, or by the server while the regression was live).
+- *Every built-in layout got a new revision.* Seeding compared raw JSON, so a re-serialised
+  preset counted as an edit; the six built-in styles — 49 artworks made from them here — would
+  have been flagged outdated next. Seeding and the template editors now compare through the model
+  (`_same_template`). On the dev library the built-in layouts had already gone from one revision
+  to the next; no artwork refers to one, so nothing shows it.
+
+Conformance: 420 cases (was 392) — `bevel`/`edge_shadow` through `apply`, `restyle` and save-as,
+and the 20 shades of `render.json`, which pin `BEVEL_SHADES` in both languages. The 254 older
+composition and template cases are unchanged apart from the two new keys.
+
+Driven in headless Chromium over CDP on a copy of the dev library: picking *Bevelled mat* in the
+Simple panel stores `border {12, #EFF1EF, bevel}`, the bands and the frame shadow; the four bevel
+faces read **the same RGB on the canvas and in the server render** (167,169,167 · 210,212,210 ·
+245,246,245 · 249,249,249), the mat under the top edge 210 against the server's 205, mid-mat 235
+against 234; Frame shadow *Off* stores `null`, *On* the default, opacity typed 40 → 0.4; *Flat*
+and *Bevel* flip the border without detaching and without touching its colour (a white 20 px
+border stays `#FFFFFF` as a bevel; *Use the mat's colour* sets `#F7F7F4` and then disappears); the Templates page
+draws the new card with its four polygons and its shadow filter. Not driven: the Advanced panel's
+per-band Bevel button and the style editor's two new controls (typecheck and lint only).
+
 ## 2026-10-01 — The Simple editor (remarks #9, #10, #14, #16, #18)
 
 **A division you can move** (#18). Under Fill a photo has no size of its own — it has a share of its

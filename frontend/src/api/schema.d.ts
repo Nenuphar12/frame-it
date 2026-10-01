@@ -2221,6 +2221,7 @@ export interface components {
             /** Captions */
             captions?: components["schemas"]["Caption"][];
             composition?: components["schemas"]["Composition"] | null;
+            edge_shadow?: components["schemas"]["EdgeShadow"] | null;
             margins?: components["schemas"]["MarginsSpec"];
             mat?: components["schemas"]["Mat"];
             /**
@@ -2427,6 +2428,11 @@ export interface components {
         };
         /** Band */
         Band: {
+            /**
+             * Bevel
+             * @default false
+             */
+            bevel: boolean;
             /** Color */
             color: string;
             /** Width */
@@ -2696,6 +2702,11 @@ export interface components {
         };
         /** CompositionBorder */
         CompositionBorder: {
+            /**
+             * Bevel
+             * @default false
+             */
+            bevel: boolean;
             /**
              * Color
              * @default #FFFFFF
@@ -3133,6 +3144,41 @@ export interface components {
             slideshow_ordered?: boolean | null;
         };
         /**
+         * EdgeShadow
+         * @description The shadow the TV's frame casts onto the artwork (rendering-spec.md §8.1, step 5).
+         *
+         *     An inner shadow of the whole canvas, drawn last — it falls on a photo that fills the screen
+         *     just as a real frame's would. The offset is the light's direction: `offset_y > 0` darkens the
+         *     top edge and leaves the bottom one clear.
+         */
+        EdgeShadow: {
+            /**
+             * Blur
+             * @default 0
+             */
+            blur: number;
+            /**
+             * Color
+             * @default #000000
+             */
+            color: string;
+            /**
+             * Offset X
+             * @default 0
+             */
+            offset_x: number;
+            /**
+             * Offset Y
+             * @default 0
+             */
+            offset_y: number;
+            /**
+             * Opacity
+             * @default 0.25
+             */
+            opacity: number;
+        };
+        /**
          * ExportOut
          * @description An export job. The file is downloadable once `state` is `done`.
          */
@@ -3254,6 +3300,7 @@ export interface components {
          */
         FrameStyleDocument: {
             caption_defaults?: components["schemas"]["CaptionDefaults"];
+            edge_shadow?: components["schemas"]["EdgeShadow"] | null;
             margins?: components["schemas"]["MarginsSpec"];
             mat?: components["schemas"]["Mat"];
             slot_defaults?: components["schemas"]["SlotDefaults"];

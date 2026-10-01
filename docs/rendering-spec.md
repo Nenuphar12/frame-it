@@ -17,6 +17,12 @@
    4. If not native: `resize(hscale = rect.w/crop.w, vscale = rect.h/crop.h, kernel = lanczos3)`; force exact
       `rect.w × rect.h` (crop/embed 1px if rounding differs).
    5. Bands inner → outer: `embed` with band color (size grows by `2×width`). Layer = photo+bands, RGBA opaque.
+      A band with `bevel: true` is the cut edge of a mat window instead of a flat colour: **four mitred
+      faces**, each one flat shade of the band's colour — top `−0.30`, left `−0.12`, right `+0.35`, bottom
+      `+0.60` (`BEVEL_SHADES`; negative mixes towards black, positive towards white, per channel
+      `floor(c + (target − c)·|k| + 0.5)`). Light from above, slightly from the left: the top face looks
+      down and is in shade, the bottom one is lit. A band pixel belongs to the face whose **outer** edge
+      is nearest; on a diagonal the top or bottom face wins, so a mitre is one exact pixel staircase.
    6. **Inner shadow**: mask `m` = 255 outside layer rect / 0 inside (padded by `3σ+|offset|`), shift by offset,
       `gaussblur(σ = blur/2)`, crop back to layer rect, multiply by `opacity`, fill with shadow color, composite over layer.
       Gaussian kernels are truncated at amplitude 0.005 (libvips' default 0.2 visibly clips shadows).
@@ -38,8 +44,17 @@
    Fonts (OFL, `scripts/build_fonts.py`): Cormorant Garamond, EB Garamond (400–700), Inter (300–700, optical size
    32), Josefin Sans (300, 400, 600, 700), as static instances with unique family names `TF <id> <weight>`
    so system fonts never interfere. The same files are served to the editor (`GET /fonts/{id}/{weight}.ttf`).
-5. Flatten to 3 bands uchar; assert 3840×2160.
-6. **Outputs**: PNG master (compression 6, embedded sRGB ICC); JPEG derivative on demand
+5. **Edge shadow** (optional, `edge_shadow`): the shadow the TV's frame casts onto the artwork. It is
+   step 3.6 with **the whole canvas as the layer** — mask 255 outside the canvas / 0 inside, shifted by
+   the offset, `gaussblur(σ = blur/2)`, × opacity, coloured, composited over — and it is drawn **last**,
+   over photos and captions: a photo that fills the screen is shaded like the mat, as under a real
+   frame. The offset is the light's direction (`offset_y > 0` darkens the top edge and clears the
+   bottom one). Skipped at `opacity = 0`. Implemented from **two 1-D profiles**: "inside a rectangle"
+   is the product of a row and a column and a Gaussian blur keeps that product, so the mask is
+   `1 − blur(row) × blur(column)` — within one rounding of the 2-D blur (tested), at a few
+   milliseconds instead of 1.1 s per render at `blur = 60` (7 s at 200).
+6. Flatten to 3 bands uchar; assert 3840×2160.
+7. **Outputs**: PNG master (compression 6, embedded sRGB ICC); JPEG derivative on demand
    (`Q = jpeg_quality`, `subsample_mode = off`, `optimize_coding = true`, strip metadata except sRGB ICC).
 
 Region renders (loupe) use the same pipeline and `crop` at the end — libvips evaluates on demand, so only the
@@ -47,7 +62,9 @@ needed region is computed (a region render is bit-identical to the same area of 
 
 `scale ≠ 1` renders the document on a proportionally smaller canvas (geometry, bands, blur and font sizes
 scaled; golden tests use 0.25). `RENDERER_VERSION` (`imaging/render.py`) is part of the render hash: bump it
-whenever output pixels change.
+whenever **the same document** renders to different pixels. A new optional document field is not that
+(§8.4): the bevel and the edge shadow were added without a bump, and the six references that predate
+them regenerate byte for byte.
 
 ### 8.2 Client preview parity (`editor/canvas/`)
 
@@ -56,6 +73,8 @@ whenever output pixels change.
 | Photos | Proxy (2560 long edge), drawn with Konva image + crop attrs | Only resampling differs |
 | Texture | Build tinted tile via ImageData with the exact formula, use as pattern | Exact |
 | Bands | Rects | Exact |
+| Bevelled band | Four closed polygons (`editor/core/bevel.ts`, the same shades — pinned by `conformance/geometry/render.json`) | Faces exact; the mitre is anti-aliased on the canvas, a pixel staircase on the server |
+| Edge shadow | The inner-shadow ring with the canvas as the layer, drawn after the captions | Measured: 5/255 at the very edge, 1/255 mid-mat |
 | Drop shadow | Canvas `shadowBlur = blur × stageScale` (canvas blur = 2σ), offsets × stageScale | S3: max diff 3/255 |
 | Inner shadow | Clip to the layer rect, even-odd ring **around** it casts the shadow (its own ink is clipped away); offset scaled and rotated into device space by hand | S3: max diff 3/255 |
 | Captions | Same font files via `@font-face`, Konva Text; shift by `spacing/2` (middle) or `spacing` (end): canvas also spaces after the last glyph | S3: ink boxes ±2 px; TV preview uses server render |
@@ -82,7 +101,13 @@ compensation offset is needed at all.
 
 ### 8.4 Render cache & jobs
 
-- `render_hash = sha256(canonical_json(document) + renderer_version + sorted(photo sha256s) + asset versions)`.
+- `render_hash = sha256(json(document.render_identity()) + renderer_version + sorted(photo sha256s) + asset versions)`.
+  `render_identity()` is the canonical document **minus the optional fields added after schema 1
+  shipped, while they hold their default** (`_LATER_DEFAULTS` in `domain/document.py`). The hash is
+  recomputed from the stored document on every read, so hashing the plain canonical form made any
+  schema addition change every artwork's hash: the whole render cache thrown away and, since a TV
+  remembers `(artwork, render_hash)`, the whole set uploaded again — for pixels that had not moved.
+  A document that does not use a feature now hashes as it did before the feature existed.
 - Files: `cache/renders/<artwork_id>/<render_hash>.png` (master), `.jpg` and `.thumb-{256,768}.webp` (derived on
   demand). Render endpoints render synchronously when the file is missing; responses carry `X-Render-Hash`
   and are cached forever when requested with `?v=<render_hash>`.

@@ -27,6 +27,11 @@
     "CompositionBorder": {
       "additionalProperties": false,
       "properties": {
+        "bevel": {
+          "default": false,
+          "title": "Bevel",
+          "type": "boolean"
+        },
         "color": {
           "default": "#FFFFFF",
           "pattern": "^#[0-9A-Fa-f]{6}$",

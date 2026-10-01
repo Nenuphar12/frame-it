@@ -5,6 +5,7 @@
 // actually does. A style is a *look*, so its card is a mat with one framed photo rect on it.
 import { useId } from "react";
 
+import { bevelFaces } from "@/editor/core/bevel.ts";
 import { solve, type Composition, type Recipe } from "@/editor/core/composition.ts";
 import type { Shadow } from "@/editor/core/document.ts";
 import { CANVAS, type Rect } from "@/editor/core/geometry.ts";
@@ -22,7 +23,7 @@ function block(layout: LayoutDocumentApi): Composition {
     gutter: { x: layout.gutter?.x ?? 80, y: layout.gutter?.y ?? 80 },
     format: layout.format ?? "fill",
     cell_formats: [...(layout.cell_formats ?? [])],
-    border: layout.border ? { ...layout.border } : null,
+    border: layout.border ? { ...layout.border, bevel: layout.border.bevel ?? false } : null,
     caption: {
       text: "",
       place: layout.caption_place ?? "none",
@@ -51,12 +52,14 @@ export function LayoutPreview({
       {cells.map((cell) => (
         <g key={cell.id}>
           {border && (
-            <rect
-              x={cell.rect.x - border.width}
-              y={cell.rect.y - border.width}
-              width={cell.rect.w + 2 * border.width}
-              height={cell.rect.h + 2 * border.width}
-              fill={border.color}
+            <BandShape
+              outer={{
+                x: cell.rect.x - border.width,
+                y: cell.rect.y - border.width,
+                w: cell.rect.w + 2 * border.width,
+                h: cell.rect.h + 2 * border.width,
+              }}
+              band={border}
             />
           )}
           <rect
@@ -84,6 +87,26 @@ export function LayoutPreview({
         />
       )}
     </svg>
+  );
+}
+
+/** A band around a photo: flat, or the four shaded faces of a bevel (rendering-spec.md §8.1). */
+function BandShape({
+  outer,
+  band,
+}: {
+  outer: Rect;
+  band: { width: number; color: string; bevel?: boolean };
+}) {
+  if (!band.bevel) {
+    return <rect x={outer.x} y={outer.y} width={outer.w} height={outer.h} fill={band.color} />;
+  }
+  return (
+    <>
+      {bevelFaces(outer, band.width, band.color).map((face) => (
+        <polygon key={face.face} points={face.points.join(" ")} fill={face.fill} />
+      ))}
+    </>
   );
 }
 
@@ -144,6 +167,7 @@ export function StylePreview({ style }: { style: StyleDocumentApi }) {
   const mat = style.mat?.color ?? "#F2EFE8";
   const band = style.slot_defaults?.bands?.[0];
   const shadow = style.slot_defaults?.shadow ?? null;
+  const edge = style.edge_shadow ?? null;
   const margins = style.margins ?? { top: 280, right: 300, bottom: 320, left: 300 };
   const x = margins.left;
   const y = margins.top;
@@ -160,23 +184,31 @@ export function StylePreview({ style }: { style: StyleDocumentApi }) {
           <stop offset="100%" stopColor="#c2b8a8" />
         </linearGradient>
         {shadow && <ShadowFilter id={`${uid}-shadow`} shadow={shadow} rect={layer} />}
-      </defs>
-      <rect x={0} y={0} width={CANVAS.w} height={CANVAS.h} fill={mat} />
-      <g filter={shadow ? `url(#${uid}-shadow)` : undefined}>
-        {band && (
-          <rect x={layer.x} y={layer.y} width={layer.w} height={layer.h} fill={band.color} />
+        {edge && (
+          <ShadowFilter
+            id={`${uid}-edge`}
+            shadow={{ type: "inner", ...edge }}
+            rect={{ x: 0, y: 0, w: CANVAS.w, h: CANVAS.h }}
+          />
         )}
-        <rect x={x} y={y} width={w} height={h} fill={`url(#${uid}-photo)`} />
+      </defs>
+      {/* The frame's shadow is the inner shadow of the whole picture: it wraps everything. */}
+      <g filter={edge ? `url(#${uid}-edge)` : undefined}>
+        <rect x={0} y={0} width={CANVAS.w} height={CANVAS.h} fill={mat} />
+        <g filter={shadow ? `url(#${uid}-shadow)` : undefined}>
+          {band && <BandShape outer={layer} band={band} />}
+          <rect x={x} y={y} width={w} height={h} fill={`url(#${uid}-photo)`} />
+        </g>
+        <rect
+          x={CANVAS.w * 0.38}
+          y={CANVAS.h - margins.bottom + Math.min(90, margins.bottom / 3)}
+          width={CANVAS.w * 0.24}
+          height={54}
+          rx={27}
+          fill={style.caption_defaults?.color ?? "#3A3A3A"}
+          opacity={0.55}
+        />
       </g>
-      <rect
-        x={CANVAS.w * 0.38}
-        y={CANVAS.h - margins.bottom + Math.min(90, margins.bottom / 3)}
-        width={CANVAS.w * 0.24}
-        height={54}
-        rx={27}
-        fill={style.caption_defaults?.color ?? "#3A3A3A"}
-        opacity={0.55}
-      />
     </svg>
   );
 }

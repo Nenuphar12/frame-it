@@ -65,6 +65,8 @@ export interface Recipe {
 export interface CompositionBorder {
   width: number;
   color: string;
+  /** The border is a mat bevel rather than a flat band (`Band.bevel`). */
+  bevel: boolean;
 }
 
 export interface CompositionCaption {
@@ -675,7 +677,11 @@ export function applyComposition(
     slot.photo_id === null ? null : (photoSizes[slot.photo_id] ?? null);
   const cells = solve(recipe, composition, doc.slots.map(sizeOf), style.size, canvas);
   const border: Band | null = composition.border
-    ? { width: composition.border.width, color: composition.border.color }
+    ? {
+        width: composition.border.width,
+        color: composition.border.color,
+        bevel: composition.border.bevel,
+      }
     : null;
   const slots = doc.slots
     .map((slot, index) => {

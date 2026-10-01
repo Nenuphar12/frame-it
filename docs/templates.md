@@ -17,7 +17,7 @@ Two kinds, deliberately independent (`PLAN.md` §4):
 
 | | holds | owns in the document |
 |---|---|---|
-| **Frame style** | mat, margins, slot decorations, caption typography | `mat`, each slot's `shadow`, the border, the captions' font/size/colour |
+| **Frame style** | mat, margins, slot decorations, caption typography, the frame's shadow | `mat`, each slot's `shadow`, the border (flat or bevelled), the captions' font/size/colour, `edge_shadow` |
 | **Layout** | a recipe and its parameters | `composition` (recipe, balance, weights, outer, gutter, format, cell formats, border, caption side and alignment) |
 
 ## 2. A layout is a recipe and its parameters
@@ -94,7 +94,9 @@ it just is not something creation produces any more.
 
 An artwork records the templates it came from (`origin_style_id/revision`,
 `origin_layout_id/revision`). It is **outdated** when its recorded revision is below the template's
-current one — editing a template bumps `revision` only when the *document* changes, so a rename
+current one — editing a template bumps `revision` only when the *document* changes (compared **as
+today's schema reads it**: a template stored before an optional field existed says the same thing
+without that key, and re-seeding the built-ins after a schema addition is not an edit), so a rename
 never makes anything outdated.
 
 - `POST /artworks/{id}/apply-template` — re-dress and/or re-lay out one artwork server-side: a

@@ -50,6 +50,7 @@ const NEW_STYLE = {
     color: "#3A3A3A",
     letter_spacing: 0.02,
   },
+  edge_shadow: null,
 };
 
 const NEW_LAYOUT = {

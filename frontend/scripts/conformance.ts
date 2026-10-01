@@ -6,6 +6,7 @@ import { join } from "node:path";
 
 import * as alternatives from "../src/editor/core/alternatives.ts";
 import * as arrange from "../src/editor/core/arrange.ts";
+import * as bevel from "../src/editor/core/bevel.ts";
 import * as composition from "../src/editor/core/composition.ts";
 import * as constraints from "../src/editor/core/constraints.ts";
 import * as geometry from "../src/editor/core/geometry.ts";
@@ -136,6 +137,7 @@ const FUNCTIONS: Record<string, Fn> = {
     ),
   templates_style_of_document: (x) => coreTemplates.styleOfDocument(a(x, "doc")),
   templates_layout_of_document: (x) => coreTemplates.layoutOfDocument(a(x, "doc")),
+  bevel_shade: (x) => bevel.shade(a(x, "color"), bevel.BEVEL_SHADES[a<bevel.BevelFace>(x, "face")]),
   composition_split_weights: (x) =>
     composition.splitWeights(recipe(a(x, "recipe")), a(x, "composition")),
   composition_block_area: (x) => composition.blockArea(a(x, "composition"), a(x, "caption_size")),

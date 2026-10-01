@@ -48,6 +48,24 @@ def _slot_count(document: LayoutDocument) -> int:
     return recipe.count if recipe else 1
 
 
+def _same_template(
+    model: type[FrameStyleDocument] | type[LayoutDocument],
+    stored: Mapping[str, Any],
+    document: Mapping[str, Any],
+) -> bool:
+    """`stored` says what `document` says, read by today's schema.
+
+    A template stored before an optional field existed lacks that key, yet it describes the same
+    look: re-serialising it must not count as an edit. Comparing the raw JSON did, so every schema
+    addition bumped every built-in's `revision` and flagged each artwork made from one as
+    outdated — with a push update that would have changed nothing.
+    """
+    try:
+        return bool(model.model_validate(dict(stored)).model_dump(mode="json") == document)
+    except ValidationError:
+        return False
+
+
 def seed_builtins(session: Session) -> None:
     for item in _presets("frame_styles.json", "styles"):
         document = FrameStyleDocument.model_validate(item["document"]).model_dump(mode="json")
@@ -56,8 +74,12 @@ def seed_builtins(session: Session) -> None:
             session.add(
                 FrameStyle(id=item["id"], name=item["name"], document=document, builtin=True)
             )
-        elif style.document != document or style.name != item["name"]:
+        elif style.name != item["name"] or not _same_template(
+            FrameStyleDocument, style.document, document
+        ):
             style.document, style.name, style.revision = document, item["name"], style.revision + 1
+        elif style.document != document:
+            style.document = document  # the same look, written with today's keys
     for item in _presets("layouts.json", "layouts"):
         layout_doc = LayoutDocument.model_validate(item["document"])
         document = layout_doc.model_dump(mode="json")
@@ -72,9 +94,13 @@ def seed_builtins(session: Session) -> None:
                     builtin=True,
                 )
             )
-        elif layout.document != document or layout.name != item["name"]:
+        elif layout.name != item["name"] or not _same_template(
+            LayoutDocument, layout.document, document
+        ):
             layout.document, layout.name = document, item["name"]
             layout.slot_count, layout.revision = _slot_count(layout_doc), layout.revision + 1
+        elif layout.document != document:
+            layout.document = document
 
 
 # ---- lookups ------------------------------------------------------------------------------------
@@ -208,8 +234,9 @@ def update_style(
         style.name = _clean_name(name)
     if document is not None:
         new = parse_style(document).model_dump(mode="json")
-        if new != style.document:
-            style.document, style.revision = new, style.revision + 1
+        if not _same_template(FrameStyleDocument, style.document, new):
+            style.revision += 1
+        style.document = new
     style.updated_at = utcnow()
     return style
 
@@ -228,9 +255,9 @@ def update_layout(
     if document is not None:
         parsed = parse_layout(document)
         new = parsed.model_dump(mode="json")
-        if new != layout.document:
-            layout.document, layout.revision = new, layout.revision + 1
-            layout.slot_count = _slot_count(parsed)
+        if not _same_template(LayoutDocument, layout.document, new):
+            layout.revision += 1
+        layout.document, layout.slot_count = new, _slot_count(parsed)
     layout.updated_at = utcnow()
     return layout
 

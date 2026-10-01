@@ -218,6 +218,16 @@
               }
             ]
           },
+          "edge_shadow": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EdgeShadow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "margins": {
             "$ref": "#/components/schemas/MarginsSpec"
           },
@@ -934,6 +944,11 @@
       "Band": {
         "additionalProperties": false,
         "properties": {
+          "bevel": {
+            "default": false,
+            "title": "Bevel",
+            "type": "boolean"
+          },
           "color": {
             "pattern": "^#[0-9A-Fa-f]{6}$",
             "title": "Color",
@@ -1611,6 +1626,11 @@
       "CompositionBorder": {
         "additionalProperties": false,
         "properties": {
+          "bevel": {
+            "default": false,
+            "title": "Bevel",
+            "type": "boolean"
+          },
           "color": {
             "default": "#FFFFFF",
             "pattern": "^#[0-9A-Fa-f]{6}$",
@@ -2922,6 +2942,48 @@
         "title": "DisplayTargetUpdateIn",
         "type": "object"
       },
+      "EdgeShadow": {
+        "additionalProperties": false,
+        "description": "The shadow the TV's frame casts onto the artwork (rendering-spec.md \u00a78.1, step 5).\n\nAn inner shadow of the whole canvas, drawn last \u2014 it falls on a photo that fills the screen\njust as a real frame's would. The offset is the light's direction: `offset_y > 0` darkens the\ntop edge and leaves the bottom one clear.",
+        "properties": {
+          "blur": {
+            "default": 0,
+            "maximum": 200.0,
+            "minimum": 0.0,
+            "title": "Blur",
+            "type": "number"
+          },
+          "color": {
+            "default": "#000000",
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "title": "Color",
+            "type": "string"
+          },
+          "offset_x": {
+            "default": 0,
+            "maximum": 500.0,
+            "minimum": -500.0,
+            "title": "Offset X",
+            "type": "integer"
+          },
+          "offset_y": {
+            "default": 0,
+            "maximum": 500.0,
+            "minimum": -500.0,
+            "title": "Offset Y",
+            "type": "integer"
+          },
+          "opacity": {
+            "default": 0.25,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Opacity",
+            "type": "number"
+          }
+        },
+        "title": "EdgeShadow",
+        "type": "object"
+      },
       "ExportOut": {
         "description": "An export job. The file is downloadable once `state` is `done`.",
         "properties": {
@@ -3191,6 +3253,16 @@
         "properties": {
           "caption_defaults": {
             "$ref": "#/components/schemas/CaptionDefaults"
+          },
+          "edge_shadow": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EdgeShadow"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "margins": {
             "$ref": "#/components/schemas/MarginsSpec"

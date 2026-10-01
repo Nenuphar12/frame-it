@@ -34,7 +34,7 @@ import {
   type Point,
 } from "./hit.ts";
 import { HANDLE_HIT_PX, HANDLE_PX, ROTATE_DISTANCE_PX, SelectionOverlay } from "./SelectionOverlay";
-import { SlotNode } from "./SlotNode.tsx";
+import { InnerShadow, SlotNode } from "./SlotNode.tsx";
 import { cachedTile, tileKey, tintedTile } from "./texture.ts";
 
 export interface StageView {
@@ -661,6 +661,16 @@ export function EditorStage({
             {doc.captions.map((item) => (
               <CaptionNode key={item.id} caption={item} hidden={editing?.id === item.id} />
             ))}
+            {/* The frame's shadow falls on everything, photos included: it is drawn last (§8.1). */}
+            {doc.edge_shadow && doc.edge_shadow.opacity > 0 && (
+              <InnerShadow
+                shadow={{ type: "inner", ...doc.edge_shadow }}
+                x={0}
+                y={0}
+                w={width}
+                h={height}
+              />
+            )}
           </Layer>
           <Layer listening={false}>
             {doc.placement === "fit_in_mat" && (

@@ -41,10 +41,18 @@ import { Button } from "@/shared/ui/Button";
 import { Dialog } from "@/shared/ui/Dialog";
 import { CaptionTypography } from "./CaptionTypography";
 import { ColorField } from "./ColorField";
-import { Field, IconButton, NumberField, PanelSection, PercentField, Slider } from "./Controls";
+import {
+  BevelChoice,
+  Field,
+  IconButton,
+  NumberField,
+  PanelSection,
+  PercentField,
+  Slider,
+} from "./Controls";
 import { SlotQualityBadge } from "./QualityBadge";
 import { RecipePicker, RecipeSchema } from "./RecipePicker";
-import { ShadowFields } from "./ShadowFields";
+import { EdgeShadowFields, ShadowFields } from "./ShadowFields";
 
 /** The ratio chips of §6.2, in the order they are shown. `fill` and `original` are not ratios. */
 const RATIOS = ["1:1", "5:4", "4:3", "3:2", "16:9"] as const;
@@ -247,7 +255,11 @@ function AttachedPanel({
           border:
             clamped <= 0
               ? null
-              : { width: clamped, color: block.border?.color ?? DEFAULT_BORDER_COLOR },
+              : {
+                  width: clamped,
+                  color: block.border?.color ?? DEFAULT_BORDER_COLOR,
+                  bevel: block.border?.bevel ?? false,
+                },
         },
         "composition-border",
       );
@@ -445,6 +457,12 @@ function AttachedPanel({
             photoId={doc.slots.find((slot) => slot.photo_id)?.photo_id ?? null}
           />
         </Field>
+        {/* The frame's shadow belongs to the background: it falls from the edge of the screen. */}
+        <EdgeShadowFields
+          shadow={doc.edge_shadow}
+          photoId={doc.slots.find((slot) => slot.photo_id)?.photo_id ?? null}
+          onChange={(next, group) => actions.setEdgeShadow(next, group)}
+        />
       </PanelSection>
 
       <PanelSection title={t("editor.simple.border")}>
@@ -470,7 +488,13 @@ function AttachedPanel({
               color={block.border.color}
               onChange={(color) =>
                 actions.setComposition(
-                  { border: { width: block.border?.width ?? 1, color } },
+                  {
+                    border: {
+                      width: block.border?.width ?? 1,
+                      color,
+                      bevel: block.border?.bevel ?? false,
+                    },
+                  },
                   "composition-border-color",
                 )
               }
@@ -479,6 +503,47 @@ function AttachedPanel({
             />
           </Field>
         )}
+        {block.border && (
+          <Field label={t("editor.bands.edge")}>
+            <BevelChoice
+              bevel={block.border.bevel}
+              labels={{
+                label: t("editor.bands.edge"),
+                flat: t("editor.bands.flat"),
+                bevel: t("editor.bands.bevel"),
+              }}
+              // The colour stays the border's own: a bevel is often cut from the mat, but a white
+              // or a dark core under a coloured mat is just as real. Matching is one click below.
+              onChange={(bevel) =>
+                actions.setComposition({
+                  border: {
+                    width: block.border?.width ?? 1,
+                    color: block.border?.color ?? DEFAULT_BORDER_COLOR,
+                    bevel,
+                  },
+                })
+              }
+            />
+          </Field>
+        )}
+        {block.border?.bevel &&
+          block.border.color.toUpperCase() !== doc.mat.color.toUpperCase() && (
+            <button
+              type="button"
+              className="self-start text-[11px] text-muted hover:text-text"
+              onClick={() =>
+                actions.setComposition({
+                  border: {
+                    width: block.border?.width ?? 1,
+                    color: doc.mat.color,
+                    bevel: true,
+                  },
+                })
+              }
+            >
+              {t("editor.bands.matchMat")}
+            </button>
+          )}
       </PanelSection>
 
       {/*

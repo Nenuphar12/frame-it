@@ -205,6 +205,7 @@ export function replaceDocument(document: EditorDocument): void {
     doc.composition = document.composition;
     doc.slots = document.slots;
     doc.captions = document.captions;
+    doc.edge_shadow = document.edge_shadow;
   });
 }
 

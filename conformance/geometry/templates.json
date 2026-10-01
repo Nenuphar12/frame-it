@@ -41,7 +41,8 @@
             "cell_formats": [],
             "border": {
               "width": 24,
-              "color": "#FFFFFF"
+              "color": "#FFFFFF",
+              "bevel": false
             },
             "caption": {
               "text": "",
@@ -78,7 +79,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -110,7 +112,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": {
@@ -149,13 +152,15 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
             }
           ],
-          "captions": []
+          "captions": [],
+          "edge_shadow": null
         },
         "style": {
           "mat": {
@@ -178,7 +183,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -197,7 +203,8 @@
             "size": 72,
             "color": "#222222",
             "letter_spacing": 0.05
-          }
+          },
+          "edge_shadow": null
         },
         "recipe": "three-hero-left",
         "photo_sizes": {
@@ -254,7 +261,8 @@
           "cell_formats": [],
           "border": {
             "width": 18,
-            "color": "#FFFFFF"
+            "color": "#FFFFFF",
+            "bevel": false
           },
           "caption": {
             "text": "",
@@ -291,7 +299,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -330,7 +339,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -369,7 +379,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -382,7 +393,8 @@
             }
           }
         ],
-        "captions": []
+        "captions": [],
+        "edge_shadow": null
       }
     },
     {
@@ -425,7 +437,8 @@
             "cell_formats": [],
             "border": {
               "width": 24,
-              "color": "#FFFFFF"
+              "color": "#FFFFFF",
+              "bevel": false
             },
             "caption": {
               "text": "Kyoto - April 2026",
@@ -462,7 +475,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -494,7 +508,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": {
@@ -533,7 +548,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -553,7 +569,8 @@
               "anchor": "start",
               "rotation": 3.5
             }
-          ]
+          ],
+          "edge_shadow": null
         },
         "style": {
           "mat": {
@@ -576,7 +593,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -595,7 +613,8 @@
             "size": 72,
             "color": "#222222",
             "letter_spacing": 0.05
-          }
+          },
+          "edge_shadow": null
         },
         "recipe": "three-hero-left",
         "photo_sizes": {
@@ -652,7 +671,8 @@
           "cell_formats": [],
           "border": {
             "width": 18,
-            "color": "#FFFFFF"
+            "color": "#FFFFFF",
+            "bevel": false
           },
           "caption": {
             "text": "Kyoto - April 2026",
@@ -689,7 +709,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -728,7 +749,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -767,7 +789,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -794,7 +817,8 @@
             "anchor": "middle",
             "rotation": 0.0
           }
-        ]
+        ],
+        "edge_shadow": null
       }
     },
     {
@@ -837,7 +861,8 @@
             "cell_formats": [],
             "border": {
               "width": 24,
-              "color": "#FFFFFF"
+              "color": "#FFFFFF",
+              "bevel": false
             },
             "caption": {
               "text": "",
@@ -874,7 +899,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -906,7 +932,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": {
@@ -945,13 +972,15 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
             }
           ],
-          "captions": []
+          "captions": [],
+          "edge_shadow": null
         },
         "style": {
           "mat": {
@@ -974,7 +1003,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -993,7 +1023,8 @@
             "size": 72,
             "color": "#222222",
             "letter_spacing": 0.05
-          }
+          },
+          "edge_shadow": null
         },
         "recipe": "three-hero-left",
         "photo_sizes": {
@@ -1050,7 +1081,8 @@
           "cell_formats": [],
           "border": {
             "width": 24,
-            "color": "#FFFFFF"
+            "color": "#FFFFFF",
+            "bevel": false
           },
           "caption": {
             "text": "",
@@ -1087,7 +1119,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -1126,7 +1159,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -1165,7 +1199,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -1178,7 +1213,8 @@
             }
           }
         ],
-        "captions": []
+        "captions": [],
+        "edge_shadow": null
       }
     },
     {
@@ -1221,7 +1257,8 @@
             "cell_formats": [],
             "border": {
               "width": 24,
-              "color": "#FFFFFF"
+              "color": "#FFFFFF",
+              "bevel": false
             },
             "caption": {
               "text": "Kyoto - April 2026",
@@ -1258,7 +1295,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -1290,7 +1328,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": {
@@ -1329,7 +1368,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -1349,7 +1389,8 @@
               "anchor": "start",
               "rotation": 3.5
             }
-          ]
+          ],
+          "edge_shadow": null
         },
         "style": {
           "mat": {
@@ -1372,7 +1413,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -1391,7 +1433,8 @@
             "size": 72,
             "color": "#222222",
             "letter_spacing": 0.05
-          }
+          },
+          "edge_shadow": null
         },
         "recipe": "three-hero-left",
         "photo_sizes": {
@@ -1448,7 +1491,8 @@
           "cell_formats": [],
           "border": {
             "width": 24,
-            "color": "#FFFFFF"
+            "color": "#FFFFFF",
+            "bevel": false
           },
           "caption": {
             "text": "Kyoto - April 2026",
@@ -1485,7 +1529,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -1524,7 +1569,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -1563,7 +1609,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -1590,7 +1637,8 @@
             "anchor": "start",
             "rotation": 3.5
           }
-        ]
+        ],
+        "edge_shadow": null
       }
     },
     {
@@ -1633,7 +1681,8 @@
             "cell_formats": [],
             "border": {
               "width": 24,
-              "color": "#FFFFFF"
+              "color": "#FFFFFF",
+              "bevel": false
             },
             "caption": {
               "text": "",
@@ -1670,7 +1719,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -1702,7 +1752,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": {
@@ -1741,13 +1792,15 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
             }
           ],
-          "captions": []
+          "captions": [],
+          "edge_shadow": null
         },
         "style": {
           "mat": {
@@ -1777,7 +1830,8 @@
             "size": 40,
             "color": "#222222",
             "letter_spacing": 0.05
-          }
+          },
+          "edge_shadow": null
         },
         "recipe": "three-hero-left",
         "photo_sizes": {
@@ -1923,7 +1977,8 @@
             "shadow": null
           }
         ],
-        "captions": []
+        "captions": [],
+        "edge_shadow": null
       }
     },
     {
@@ -1966,7 +2021,8 @@
             "cell_formats": [],
             "border": {
               "width": 24,
-              "color": "#FFFFFF"
+              "color": "#FFFFFF",
+              "bevel": false
             },
             "caption": {
               "text": "Kyoto - April 2026",
@@ -2003,7 +2059,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -2035,7 +2092,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": {
@@ -2074,7 +2132,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -2094,7 +2153,8 @@
               "anchor": "start",
               "rotation": 3.5
             }
-          ]
+          ],
+          "edge_shadow": null
         },
         "style": {
           "mat": {
@@ -2124,7 +2184,8 @@
             "size": 40,
             "color": "#222222",
             "letter_spacing": 0.05
-          }
+          },
+          "edge_shadow": null
         },
         "recipe": "three-hero-left",
         "photo_sizes": {
@@ -2284,7 +2345,8 @@
             "anchor": "middle",
             "rotation": 0.0
           }
-        ]
+        ],
+        "edge_shadow": null
       }
     },
     {
@@ -2327,7 +2389,8 @@
             "cell_formats": [],
             "border": {
               "width": 24,
-              "color": "#FFFFFF"
+              "color": "#FFFFFF",
+              "bevel": false
             },
             "caption": {
               "text": "",
@@ -2364,7 +2427,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -2396,7 +2460,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": {
@@ -2435,13 +2500,15 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
             }
           ],
-          "captions": []
+          "captions": [],
+          "edge_shadow": null
         },
         "style": {
           "mat": {
@@ -2471,7 +2538,8 @@
             "size": 40,
             "color": "#222222",
             "letter_spacing": 0.05
-          }
+          },
+          "edge_shadow": null
         },
         "recipe": "three-hero-left",
         "photo_sizes": {
@@ -2528,7 +2596,8 @@
           "cell_formats": [],
           "border": {
             "width": 24,
-            "color": "#FFFFFF"
+            "color": "#FFFFFF",
+            "bevel": false
           },
           "caption": {
             "text": "",
@@ -2620,7 +2689,8 @@
             "shadow": null
           }
         ],
-        "captions": []
+        "captions": [],
+        "edge_shadow": null
       }
     },
     {
@@ -2663,7 +2733,8 @@
             "cell_formats": [],
             "border": {
               "width": 24,
-              "color": "#FFFFFF"
+              "color": "#FFFFFF",
+              "bevel": false
             },
             "caption": {
               "text": "Kyoto - April 2026",
@@ -2700,7 +2771,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -2732,7 +2804,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": {
@@ -2771,7 +2844,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -2791,7 +2865,8 @@
               "anchor": "start",
               "rotation": 3.5
             }
-          ]
+          ],
+          "edge_shadow": null
         },
         "style": {
           "mat": {
@@ -2821,7 +2896,8 @@
             "size": 40,
             "color": "#222222",
             "letter_spacing": 0.05
-          }
+          },
+          "edge_shadow": null
         },
         "recipe": "three-hero-left",
         "photo_sizes": {
@@ -2878,7 +2954,8 @@
           "cell_formats": [],
           "border": {
             "width": 24,
-            "color": "#FFFFFF"
+            "color": "#FFFFFF",
+            "bevel": false
           },
           "caption": {
             "text": "Kyoto - April 2026",
@@ -2984,7 +3061,1863 @@
             "anchor": "start",
             "rotation": 3.5
           }
-        ]
+        ],
+        "edge_shadow": null
+      }
+    },
+    {
+      "name": "restyle bevelled attached=True caption=none",
+      "fn": "templates_restyle",
+      "input": {
+        "doc": {
+          "schema": 1,
+          "canvas": {
+            "width": 3840,
+            "height": 2160
+          },
+          "mat": {
+            "color": "#F2EFE8",
+            "texture": null
+          },
+          "placement": "manual",
+          "margins": {
+            "top": 7,
+            "right": 7,
+            "bottom": 7,
+            "left": 7,
+            "linked": true,
+            "mirror_x": true,
+            "mirror_y": true
+          },
+          "composition": {
+            "recipe": "three-hero-left",
+            "balance": null,
+            "weights": [],
+            "outer": {
+              "x": 120,
+              "y": 120
+            },
+            "gutter": {
+              "x": 80,
+              "y": 80
+            },
+            "format": "3:2",
+            "cell_formats": [],
+            "border": {
+              "width": 24,
+              "color": "#FFFFFF",
+              "bevel": false
+            },
+            "caption": {
+              "text": "",
+              "place": "none",
+              "align": "center"
+            },
+            "detached": false
+          },
+          "slots": [
+            {
+              "id": "c1",
+              "photo_id": "p1",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1500,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 1200,
+                  "y": 800,
+                  "w": 3000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000",
+                  "bevel": false
+                }
+              ],
+              "shadow": null
+            },
+            {
+              "id": "c2",
+              "photo_id": "p2",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 750,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 1500,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000",
+                  "bevel": false
+                }
+              ],
+              "shadow": {
+                "type": "drop",
+                "offset_x": 8,
+                "offset_y": 8,
+                "blur": 20,
+                "color": "#000000",
+                "opacity": 0.4
+              }
+            },
+            {
+              "id": "c3",
+              "photo_id": "p3",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1000,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 500,
+                  "y": 500,
+                  "w": 2000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000",
+                  "bevel": false
+                }
+              ],
+              "shadow": null
+            }
+          ],
+          "captions": [],
+          "edge_shadow": null
+        },
+        "style": {
+          "mat": {
+            "color": "#EFF1EF",
+            "texture": {
+              "id": "linen-01",
+              "strength": 0.5
+            }
+          },
+          "margins": {
+            "top": 200,
+            "right": 200,
+            "bottom": 260,
+            "left": 200,
+            "linked": false,
+            "mirror_x": false,
+            "mirror_y": false
+          },
+          "slot_defaults": {
+            "bands": [
+              {
+                "width": 12,
+                "color": "#FFFFFF",
+                "bevel": true
+              }
+            ],
+            "shadow": null,
+            "quality_lock": "no_upscale"
+          },
+          "caption_defaults": {
+            "font": "inter",
+            "weight": 400,
+            "size": 48,
+            "color": "#222222",
+            "letter_spacing": 0.05
+          },
+          "edge_shadow": {
+            "offset_x": 0,
+            "offset_y": 10,
+            "blur": 60,
+            "color": "#000000",
+            "opacity": 0.22
+          }
+        },
+        "recipe": "three-hero-left",
+        "photo_sizes": {
+          "p1": {
+            "w": 6000,
+            "h": 4000
+          },
+          "p2": {
+            "w": 3000,
+            "h": 4000
+          },
+          "p3": {
+            "w": 4000,
+            "h": 4000
+          }
+        }
+      },
+      "expected": {
+        "schema": 1,
+        "canvas": {
+          "width": 3840,
+          "height": 2160
+        },
+        "mat": {
+          "color": "#EFF1EF",
+          "texture": {
+            "id": "linen-01",
+            "strength": 0.5
+          }
+        },
+        "placement": "manual",
+        "margins": {
+          "top": 279,
+          "right": 120,
+          "bottom": 279,
+          "left": 120,
+          "linked": false,
+          "mirror_x": false,
+          "mirror_y": false
+        },
+        "composition": {
+          "recipe": "three-hero-left",
+          "balance": null,
+          "weights": [],
+          "outer": {
+            "x": 120,
+            "y": 120
+          },
+          "gutter": {
+            "x": 80,
+            "y": 80
+          },
+          "format": "3:2",
+          "cell_formats": [],
+          "border": {
+            "width": 12,
+            "color": "#FFFFFF",
+            "bevel": true
+          },
+          "caption": {
+            "text": "",
+            "place": "none",
+            "align": "center"
+          },
+          "detached": false
+        },
+        "slots": [
+          {
+            "id": "c1",
+            "photo_id": "p1",
+            "rect": {
+              "x": 132,
+              "y": 291,
+              "w": 2367,
+              "h": 1578
+            },
+            "rotation": 0.0,
+            "source": {
+              "orient": {
+                "rotate": 0,
+                "flip_h": false
+              },
+              "crop": {
+                "x": 1200,
+                "y": 800,
+                "w": 3000,
+                "h": 2000
+              },
+              "crop_ratio": "3:2"
+            },
+            "quality_lock": "no_upscale",
+            "bands": [
+              {
+                "width": 12,
+                "color": "#FFFFFF",
+                "bevel": true
+              }
+            ],
+            "shadow": null
+          },
+          {
+            "id": "c2",
+            "photo_id": "p2",
+            "rect": {
+              "x": 2603,
+              "y": 291,
+              "w": 1105,
+              "h": 737
+            },
+            "rotation": 0.0,
+            "source": {
+              "orient": {
+                "rotate": 0,
+                "flip_h": false
+              },
+              "crop": {
+                "x": 0,
+                "y": 500,
+                "w": 1500,
+                "h": 1000
+              },
+              "crop_ratio": "1105:737"
+            },
+            "quality_lock": "no_upscale",
+            "bands": [
+              {
+                "width": 12,
+                "color": "#FFFFFF",
+                "bevel": true
+              }
+            ],
+            "shadow": null
+          },
+          {
+            "id": "c3",
+            "photo_id": "p3",
+            "rect": {
+              "x": 2603,
+              "y": 1132,
+              "w": 1105,
+              "h": 737
+            },
+            "rotation": 0.0,
+            "source": {
+              "orient": {
+                "rotate": 0,
+                "flip_h": false
+              },
+              "crop": {
+                "x": 500,
+                "y": 833,
+                "w": 2000,
+                "h": 1334
+              },
+              "crop_ratio": "1105:737"
+            },
+            "quality_lock": "no_upscale",
+            "bands": [
+              {
+                "width": 12,
+                "color": "#FFFFFF",
+                "bevel": true
+              }
+            ],
+            "shadow": null
+          }
+        ],
+        "captions": [],
+        "edge_shadow": {
+          "offset_x": 0,
+          "offset_y": 10,
+          "blur": 60.0,
+          "color": "#000000",
+          "opacity": 0.22
+        }
+      }
+    },
+    {
+      "name": "restyle bevelled attached=True caption=below",
+      "fn": "templates_restyle",
+      "input": {
+        "doc": {
+          "schema": 1,
+          "canvas": {
+            "width": 3840,
+            "height": 2160
+          },
+          "mat": {
+            "color": "#F2EFE8",
+            "texture": null
+          },
+          "placement": "manual",
+          "margins": {
+            "top": 7,
+            "right": 7,
+            "bottom": 7,
+            "left": 7,
+            "linked": true,
+            "mirror_x": true,
+            "mirror_y": true
+          },
+          "composition": {
+            "recipe": "three-hero-left",
+            "balance": null,
+            "weights": [],
+            "outer": {
+              "x": 120,
+              "y": 120
+            },
+            "gutter": {
+              "x": 80,
+              "y": 80
+            },
+            "format": "3:2",
+            "cell_formats": [],
+            "border": {
+              "width": 24,
+              "color": "#FFFFFF",
+              "bevel": false
+            },
+            "caption": {
+              "text": "Kyoto - April 2026",
+              "place": "below",
+              "align": "center"
+            },
+            "detached": false
+          },
+          "slots": [
+            {
+              "id": "c1",
+              "photo_id": "p1",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1500,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 1200,
+                  "y": 800,
+                  "w": 3000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000",
+                  "bevel": false
+                }
+              ],
+              "shadow": null
+            },
+            {
+              "id": "c2",
+              "photo_id": "p2",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 750,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 1500,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000",
+                  "bevel": false
+                }
+              ],
+              "shadow": {
+                "type": "drop",
+                "offset_x": 8,
+                "offset_y": 8,
+                "blur": 20,
+                "color": "#000000",
+                "opacity": 0.4
+              }
+            },
+            {
+              "id": "c3",
+              "photo_id": "p3",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1000,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 500,
+                  "y": 500,
+                  "w": 2000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000",
+                  "bevel": false
+                }
+              ],
+              "shadow": null
+            }
+          ],
+          "captions": [
+            {
+              "id": "legacy",
+              "text": "Kyoto - April 2026",
+              "font": "inter",
+              "weight": 600,
+              "size": 31,
+              "color": "#101010",
+              "letter_spacing": -0.01,
+              "x": 10,
+              "y": 10,
+              "anchor": "start",
+              "rotation": 3.5
+            }
+          ],
+          "edge_shadow": null
+        },
+        "style": {
+          "mat": {
+            "color": "#EFF1EF",
+            "texture": {
+              "id": "linen-01",
+              "strength": 0.5
+            }
+          },
+          "margins": {
+            "top": 200,
+            "right": 200,
+            "bottom": 260,
+            "left": 200,
+            "linked": false,
+            "mirror_x": false,
+            "mirror_y": false
+          },
+          "slot_defaults": {
+            "bands": [
+              {
+                "width": 12,
+                "color": "#FFFFFF",
+                "bevel": true
+              }
+            ],
+            "shadow": null,
+            "quality_lock": "no_upscale"
+          },
+          "caption_defaults": {
+            "font": "inter",
+            "weight": 400,
+            "size": 48,
+            "color": "#222222",
+            "letter_spacing": 0.05
+          },
+          "edge_shadow": {
+            "offset_x": 0,
+            "offset_y": 10,
+            "blur": 60,
+            "color": "#000000",
+            "opacity": 0.22
+          }
+        },
+        "recipe": "three-hero-left",
+        "photo_sizes": {
+          "p1": {
+            "w": 6000,
+            "h": 4000
+          },
+          "p2": {
+            "w": 3000,
+            "h": 4000
+          },
+          "p3": {
+            "w": 4000,
+            "h": 4000
+          }
+        }
+      },
+      "expected": {
+        "schema": 1,
+        "canvas": {
+          "width": 3840,
+          "height": 2160
+        },
+        "mat": {
+          "color": "#EFF1EF",
+          "texture": {
+            "id": "linen-01",
+            "strength": 0.5
+          }
+        },
+        "placement": "manual",
+        "margins": {
+          "top": 203,
+          "right": 120,
+          "bottom": 355,
+          "left": 120,
+          "linked": false,
+          "mirror_x": false,
+          "mirror_y": false
+        },
+        "composition": {
+          "recipe": "three-hero-left",
+          "balance": null,
+          "weights": [],
+          "outer": {
+            "x": 120,
+            "y": 120
+          },
+          "gutter": {
+            "x": 80,
+            "y": 80
+          },
+          "format": "3:2",
+          "cell_formats": [],
+          "border": {
+            "width": 12,
+            "color": "#FFFFFF",
+            "bevel": true
+          },
+          "caption": {
+            "text": "Kyoto - April 2026",
+            "place": "below",
+            "align": "center"
+          },
+          "detached": false
+        },
+        "slots": [
+          {
+            "id": "c1",
+            "photo_id": "p1",
+            "rect": {
+              "x": 132,
+              "y": 215,
+              "w": 2367,
+              "h": 1578
+            },
+            "rotation": 0.0,
+            "source": {
+              "orient": {
+                "rotate": 0,
+                "flip_h": false
+              },
+              "crop": {
+                "x": 1200,
+                "y": 800,
+                "w": 3000,
+                "h": 2000
+              },
+              "crop_ratio": "3:2"
+            },
+            "quality_lock": "no_upscale",
+            "bands": [
+              {
+                "width": 12,
+                "color": "#FFFFFF",
+                "bevel": true
+              }
+            ],
+            "shadow": null
+          },
+          {
+            "id": "c2",
+            "photo_id": "p2",
+            "rect": {
+              "x": 2603,
+              "y": 215,
+              "w": 1105,
+              "h": 737
+            },
+            "rotation": 0.0,
+            "source": {
+              "orient": {
+                "rotate": 0,
+                "flip_h": false
+              },
+              "crop": {
+                "x": 0,
+                "y": 500,
+                "w": 1500,
+                "h": 1000
+              },
+              "crop_ratio": "1105:737"
+            },
+            "quality_lock": "no_upscale",
+            "bands": [
+              {
+                "width": 12,
+                "color": "#FFFFFF",
+                "bevel": true
+              }
+            ],
+            "shadow": null
+          },
+          {
+            "id": "c3",
+            "photo_id": "p3",
+            "rect": {
+              "x": 2603,
+              "y": 1056,
+              "w": 1105,
+              "h": 737
+            },
+            "rotation": 0.0,
+            "source": {
+              "orient": {
+                "rotate": 0,
+                "flip_h": false
+              },
+              "crop": {
+                "x": 500,
+                "y": 833,
+                "w": 2000,
+                "h": 1334
+              },
+              "crop_ratio": "1105:737"
+            },
+            "quality_lock": "no_upscale",
+            "bands": [
+              {
+                "width": 12,
+                "color": "#FFFFFF",
+                "bevel": true
+              }
+            ],
+            "shadow": null
+          }
+        ],
+        "captions": [
+          {
+            "id": "legacy",
+            "text": "Kyoto - April 2026",
+            "font": "inter",
+            "weight": 400,
+            "size": 48,
+            "color": "#222222",
+            "letter_spacing": 0.05,
+            "x": 1920,
+            "y": 2018,
+            "anchor": "middle",
+            "rotation": 0.0
+          }
+        ],
+        "edge_shadow": {
+          "offset_x": 0,
+          "offset_y": 10,
+          "blur": 60.0,
+          "color": "#000000",
+          "opacity": 0.22
+        }
+      }
+    },
+    {
+      "name": "restyle bevelled attached=False caption=none",
+      "fn": "templates_restyle",
+      "input": {
+        "doc": {
+          "schema": 1,
+          "canvas": {
+            "width": 3840,
+            "height": 2160
+          },
+          "mat": {
+            "color": "#F2EFE8",
+            "texture": null
+          },
+          "placement": "manual",
+          "margins": {
+            "top": 7,
+            "right": 7,
+            "bottom": 7,
+            "left": 7,
+            "linked": true,
+            "mirror_x": true,
+            "mirror_y": true
+          },
+          "composition": {
+            "recipe": "three-hero-left",
+            "balance": null,
+            "weights": [],
+            "outer": {
+              "x": 120,
+              "y": 120
+            },
+            "gutter": {
+              "x": 80,
+              "y": 80
+            },
+            "format": "3:2",
+            "cell_formats": [],
+            "border": {
+              "width": 24,
+              "color": "#FFFFFF",
+              "bevel": false
+            },
+            "caption": {
+              "text": "",
+              "place": "none",
+              "align": "center"
+            },
+            "detached": true
+          },
+          "slots": [
+            {
+              "id": "c1",
+              "photo_id": "p1",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1500,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 1200,
+                  "y": 800,
+                  "w": 3000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000",
+                  "bevel": false
+                }
+              ],
+              "shadow": null
+            },
+            {
+              "id": "c2",
+              "photo_id": "p2",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 750,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 1500,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000",
+                  "bevel": false
+                }
+              ],
+              "shadow": {
+                "type": "drop",
+                "offset_x": 8,
+                "offset_y": 8,
+                "blur": 20,
+                "color": "#000000",
+                "opacity": 0.4
+              }
+            },
+            {
+              "id": "c3",
+              "photo_id": "p3",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1000,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 500,
+                  "y": 500,
+                  "w": 2000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000",
+                  "bevel": false
+                }
+              ],
+              "shadow": null
+            }
+          ],
+          "captions": [],
+          "edge_shadow": null
+        },
+        "style": {
+          "mat": {
+            "color": "#EFF1EF",
+            "texture": {
+              "id": "linen-01",
+              "strength": 0.5
+            }
+          },
+          "margins": {
+            "top": 200,
+            "right": 200,
+            "bottom": 260,
+            "left": 200,
+            "linked": false,
+            "mirror_x": false,
+            "mirror_y": false
+          },
+          "slot_defaults": {
+            "bands": [
+              {
+                "width": 12,
+                "color": "#FFFFFF",
+                "bevel": true
+              }
+            ],
+            "shadow": null,
+            "quality_lock": "no_upscale"
+          },
+          "caption_defaults": {
+            "font": "inter",
+            "weight": 400,
+            "size": 48,
+            "color": "#222222",
+            "letter_spacing": 0.05
+          },
+          "edge_shadow": {
+            "offset_x": 0,
+            "offset_y": 10,
+            "blur": 60,
+            "color": "#000000",
+            "opacity": 0.22
+          }
+        },
+        "recipe": "three-hero-left",
+        "photo_sizes": {
+          "p1": {
+            "w": 6000,
+            "h": 4000
+          },
+          "p2": {
+            "w": 3000,
+            "h": 4000
+          },
+          "p3": {
+            "w": 4000,
+            "h": 4000
+          }
+        }
+      },
+      "expected": {
+        "schema": 1,
+        "canvas": {
+          "width": 3840,
+          "height": 2160
+        },
+        "mat": {
+          "color": "#EFF1EF",
+          "texture": {
+            "id": "linen-01",
+            "strength": 0.5
+          }
+        },
+        "placement": "manual",
+        "margins": {
+          "top": 7,
+          "right": 7,
+          "bottom": 7,
+          "left": 7,
+          "linked": true,
+          "mirror_x": true,
+          "mirror_y": true
+        },
+        "composition": {
+          "recipe": "three-hero-left",
+          "balance": null,
+          "weights": [],
+          "outer": {
+            "x": 120,
+            "y": 120
+          },
+          "gutter": {
+            "x": 80,
+            "y": 80
+          },
+          "format": "3:2",
+          "cell_formats": [],
+          "border": {
+            "width": 24,
+            "color": "#FFFFFF",
+            "bevel": false
+          },
+          "caption": {
+            "text": "",
+            "place": "none",
+            "align": "center"
+          },
+          "detached": true
+        },
+        "slots": [
+          {
+            "id": "c1",
+            "photo_id": "p1",
+            "rect": {
+              "x": 100,
+              "y": 100,
+              "w": 1500,
+              "h": 1000
+            },
+            "rotation": 12.5,
+            "source": {
+              "orient": {
+                "rotate": 0,
+                "flip_h": false
+              },
+              "crop": {
+                "x": 1200,
+                "y": 800,
+                "w": 3000,
+                "h": 2000
+              },
+              "crop_ratio": "3:2"
+            },
+            "quality_lock": "free",
+            "bands": [
+              {
+                "width": 12,
+                "color": "#FFFFFF",
+                "bevel": true
+              }
+            ],
+            "shadow": null
+          },
+          {
+            "id": "c2",
+            "photo_id": "p2",
+            "rect": {
+              "x": 100,
+              "y": 100,
+              "w": 750,
+              "h": 1000
+            },
+            "rotation": 12.5,
+            "source": {
+              "orient": {
+                "rotate": 0,
+                "flip_h": false
+              },
+              "crop": {
+                "x": 0,
+                "y": 0,
+                "w": 1500,
+                "h": 2000
+              },
+              "crop_ratio": "3:2"
+            },
+            "quality_lock": "free",
+            "bands": [
+              {
+                "width": 12,
+                "color": "#FFFFFF",
+                "bevel": true
+              }
+            ],
+            "shadow": null
+          },
+          {
+            "id": "c3",
+            "photo_id": "p3",
+            "rect": {
+              "x": 100,
+              "y": 100,
+              "w": 1000,
+              "h": 1000
+            },
+            "rotation": 12.5,
+            "source": {
+              "orient": {
+                "rotate": 0,
+                "flip_h": false
+              },
+              "crop": {
+                "x": 500,
+                "y": 500,
+                "w": 2000,
+                "h": 2000
+              },
+              "crop_ratio": "3:2"
+            },
+            "quality_lock": "free",
+            "bands": [
+              {
+                "width": 12,
+                "color": "#FFFFFF",
+                "bevel": true
+              }
+            ],
+            "shadow": null
+          }
+        ],
+        "captions": [],
+        "edge_shadow": {
+          "offset_x": 0,
+          "offset_y": 10,
+          "blur": 60.0,
+          "color": "#000000",
+          "opacity": 0.22
+        }
+      }
+    },
+    {
+      "name": "restyle bevelled attached=False caption=below",
+      "fn": "templates_restyle",
+      "input": {
+        "doc": {
+          "schema": 1,
+          "canvas": {
+            "width": 3840,
+            "height": 2160
+          },
+          "mat": {
+            "color": "#F2EFE8",
+            "texture": null
+          },
+          "placement": "manual",
+          "margins": {
+            "top": 7,
+            "right": 7,
+            "bottom": 7,
+            "left": 7,
+            "linked": true,
+            "mirror_x": true,
+            "mirror_y": true
+          },
+          "composition": {
+            "recipe": "three-hero-left",
+            "balance": null,
+            "weights": [],
+            "outer": {
+              "x": 120,
+              "y": 120
+            },
+            "gutter": {
+              "x": 80,
+              "y": 80
+            },
+            "format": "3:2",
+            "cell_formats": [],
+            "border": {
+              "width": 24,
+              "color": "#FFFFFF",
+              "bevel": false
+            },
+            "caption": {
+              "text": "Kyoto - April 2026",
+              "place": "below",
+              "align": "center"
+            },
+            "detached": true
+          },
+          "slots": [
+            {
+              "id": "c1",
+              "photo_id": "p1",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1500,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 1200,
+                  "y": 800,
+                  "w": 3000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000",
+                  "bevel": false
+                }
+              ],
+              "shadow": null
+            },
+            {
+              "id": "c2",
+              "photo_id": "p2",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 750,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 1500,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000",
+                  "bevel": false
+                }
+              ],
+              "shadow": {
+                "type": "drop",
+                "offset_x": 8,
+                "offset_y": 8,
+                "blur": 20,
+                "color": "#000000",
+                "opacity": 0.4
+              }
+            },
+            {
+              "id": "c3",
+              "photo_id": "p3",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1000,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 500,
+                  "y": 500,
+                  "w": 2000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000",
+                  "bevel": false
+                }
+              ],
+              "shadow": null
+            }
+          ],
+          "captions": [
+            {
+              "id": "legacy",
+              "text": "Kyoto - April 2026",
+              "font": "inter",
+              "weight": 600,
+              "size": 31,
+              "color": "#101010",
+              "letter_spacing": -0.01,
+              "x": 10,
+              "y": 10,
+              "anchor": "start",
+              "rotation": 3.5
+            }
+          ],
+          "edge_shadow": null
+        },
+        "style": {
+          "mat": {
+            "color": "#EFF1EF",
+            "texture": {
+              "id": "linen-01",
+              "strength": 0.5
+            }
+          },
+          "margins": {
+            "top": 200,
+            "right": 200,
+            "bottom": 260,
+            "left": 200,
+            "linked": false,
+            "mirror_x": false,
+            "mirror_y": false
+          },
+          "slot_defaults": {
+            "bands": [
+              {
+                "width": 12,
+                "color": "#FFFFFF",
+                "bevel": true
+              }
+            ],
+            "shadow": null,
+            "quality_lock": "no_upscale"
+          },
+          "caption_defaults": {
+            "font": "inter",
+            "weight": 400,
+            "size": 48,
+            "color": "#222222",
+            "letter_spacing": 0.05
+          },
+          "edge_shadow": {
+            "offset_x": 0,
+            "offset_y": 10,
+            "blur": 60,
+            "color": "#000000",
+            "opacity": 0.22
+          }
+        },
+        "recipe": "three-hero-left",
+        "photo_sizes": {
+          "p1": {
+            "w": 6000,
+            "h": 4000
+          },
+          "p2": {
+            "w": 3000,
+            "h": 4000
+          },
+          "p3": {
+            "w": 4000,
+            "h": 4000
+          }
+        }
+      },
+      "expected": {
+        "schema": 1,
+        "canvas": {
+          "width": 3840,
+          "height": 2160
+        },
+        "mat": {
+          "color": "#EFF1EF",
+          "texture": {
+            "id": "linen-01",
+            "strength": 0.5
+          }
+        },
+        "placement": "manual",
+        "margins": {
+          "top": 7,
+          "right": 7,
+          "bottom": 7,
+          "left": 7,
+          "linked": true,
+          "mirror_x": true,
+          "mirror_y": true
+        },
+        "composition": {
+          "recipe": "three-hero-left",
+          "balance": null,
+          "weights": [],
+          "outer": {
+            "x": 120,
+            "y": 120
+          },
+          "gutter": {
+            "x": 80,
+            "y": 80
+          },
+          "format": "3:2",
+          "cell_formats": [],
+          "border": {
+            "width": 24,
+            "color": "#FFFFFF",
+            "bevel": false
+          },
+          "caption": {
+            "text": "Kyoto - April 2026",
+            "place": "below",
+            "align": "center"
+          },
+          "detached": true
+        },
+        "slots": [
+          {
+            "id": "c1",
+            "photo_id": "p1",
+            "rect": {
+              "x": 100,
+              "y": 100,
+              "w": 1500,
+              "h": 1000
+            },
+            "rotation": 12.5,
+            "source": {
+              "orient": {
+                "rotate": 0,
+                "flip_h": false
+              },
+              "crop": {
+                "x": 1200,
+                "y": 800,
+                "w": 3000,
+                "h": 2000
+              },
+              "crop_ratio": "3:2"
+            },
+            "quality_lock": "free",
+            "bands": [
+              {
+                "width": 12,
+                "color": "#FFFFFF",
+                "bevel": true
+              }
+            ],
+            "shadow": null
+          },
+          {
+            "id": "c2",
+            "photo_id": "p2",
+            "rect": {
+              "x": 100,
+              "y": 100,
+              "w": 750,
+              "h": 1000
+            },
+            "rotation": 12.5,
+            "source": {
+              "orient": {
+                "rotate": 0,
+                "flip_h": false
+              },
+              "crop": {
+                "x": 0,
+                "y": 0,
+                "w": 1500,
+                "h": 2000
+              },
+              "crop_ratio": "3:2"
+            },
+            "quality_lock": "free",
+            "bands": [
+              {
+                "width": 12,
+                "color": "#FFFFFF",
+                "bevel": true
+              }
+            ],
+            "shadow": null
+          },
+          {
+            "id": "c3",
+            "photo_id": "p3",
+            "rect": {
+              "x": 100,
+              "y": 100,
+              "w": 1000,
+              "h": 1000
+            },
+            "rotation": 12.5,
+            "source": {
+              "orient": {
+                "rotate": 0,
+                "flip_h": false
+              },
+              "crop": {
+                "x": 500,
+                "y": 500,
+                "w": 2000,
+                "h": 2000
+              },
+              "crop_ratio": "3:2"
+            },
+            "quality_lock": "free",
+            "bands": [
+              {
+                "width": 12,
+                "color": "#FFFFFF",
+                "bevel": true
+              }
+            ],
+            "shadow": null
+          }
+        ],
+        "captions": [
+          {
+            "id": "legacy",
+            "text": "Kyoto - April 2026",
+            "font": "inter",
+            "weight": 400,
+            "size": 48,
+            "color": "#222222",
+            "letter_spacing": 0.05,
+            "x": 10,
+            "y": 10,
+            "anchor": "start",
+            "rotation": 3.5
+          }
+        ],
+        "edge_shadow": {
+          "offset_x": 0,
+          "offset_y": 10,
+          "blur": 60.0,
+          "color": "#000000",
+          "opacity": 0.22
+        }
+      }
+    },
+    {
+      "name": "restyle takes away a frame shadow the style does not have",
+      "fn": "templates_restyle",
+      "input": {
+        "doc": {
+          "schema": 1,
+          "canvas": {
+            "width": 3840,
+            "height": 2160
+          },
+          "mat": {
+            "color": "#F2EFE8",
+            "texture": null
+          },
+          "placement": "manual",
+          "margins": {
+            "top": 7,
+            "right": 7,
+            "bottom": 7,
+            "left": 7,
+            "linked": true,
+            "mirror_x": true,
+            "mirror_y": true
+          },
+          "composition": {
+            "recipe": "two-side-by-side",
+            "balance": null,
+            "weights": [],
+            "outer": {
+              "x": 120,
+              "y": 120
+            },
+            "gutter": {
+              "x": 80,
+              "y": 80
+            },
+            "format": "fill",
+            "cell_formats": [],
+            "border": {
+              "width": 12,
+              "color": "#FFFFFF",
+              "bevel": true
+            },
+            "caption": {
+              "text": "",
+              "place": "none",
+              "align": "center"
+            },
+            "detached": false
+          },
+          "slots": [
+            {
+              "id": "c1",
+              "photo_id": "p1",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1500,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 3000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000",
+                  "bevel": false
+                }
+              ],
+              "shadow": null
+            },
+            {
+              "id": "c2",
+              "photo_id": "p2",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1500,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 3000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000",
+                  "bevel": false
+                }
+              ],
+              "shadow": null
+            }
+          ],
+          "captions": [],
+          "edge_shadow": {
+            "offset_x": 0,
+            "offset_y": 10,
+            "blur": 60,
+            "color": "#000000",
+            "opacity": 0.22
+          }
+        },
+        "style": {
+          "mat": {
+            "color": "#FFFFFF",
+            "texture": {
+              "id": "linen-01",
+              "strength": 0.5
+            }
+          },
+          "margins": {
+            "top": 200,
+            "right": 200,
+            "bottom": 260,
+            "left": 200,
+            "linked": false,
+            "mirror_x": false,
+            "mirror_y": false
+          },
+          "slot_defaults": {
+            "bands": [],
+            "shadow": null,
+            "quality_lock": "no_upscale"
+          },
+          "caption_defaults": {
+            "font": "inter",
+            "weight": 400,
+            "size": 40,
+            "color": "#222222",
+            "letter_spacing": 0.05
+          },
+          "edge_shadow": null
+        },
+        "recipe": "two-side-by-side",
+        "photo_sizes": {
+          "p1": {
+            "w": 6000,
+            "h": 4000
+          },
+          "p2": {
+            "w": 3000,
+            "h": 4000
+          },
+          "p3": {
+            "w": 4000,
+            "h": 4000
+          }
+        }
+      },
+      "expected": {
+        "schema": 1,
+        "canvas": {
+          "width": 3840,
+          "height": 2160
+        },
+        "mat": {
+          "color": "#FFFFFF",
+          "texture": {
+            "id": "linen-01",
+            "strength": 0.5
+          }
+        },
+        "placement": "manual",
+        "margins": {
+          "top": 120,
+          "right": 120,
+          "bottom": 120,
+          "left": 120,
+          "linked": false,
+          "mirror_x": false,
+          "mirror_y": false
+        },
+        "composition": {
+          "recipe": "two-side-by-side",
+          "balance": null,
+          "weights": [],
+          "outer": {
+            "x": 120,
+            "y": 120
+          },
+          "gutter": {
+            "x": 80,
+            "y": 80
+          },
+          "format": "fill",
+          "cell_formats": [],
+          "border": null,
+          "caption": {
+            "text": "",
+            "place": "none",
+            "align": "center"
+          },
+          "detached": false
+        },
+        "slots": [
+          {
+            "id": "c1",
+            "photo_id": "p1",
+            "rect": {
+              "x": 120,
+              "y": 120,
+              "w": 1760,
+              "h": 1920
+            },
+            "rotation": 0.0,
+            "source": {
+              "orient": {
+                "rotate": 0,
+                "flip_h": false
+              },
+              "crop": {
+                "x": 0,
+                "y": 0,
+                "w": 3000,
+                "h": 3273
+              },
+              "crop_ratio": "11:12"
+            },
+            "quality_lock": "no_upscale",
+            "bands": [],
+            "shadow": null
+          },
+          {
+            "id": "c2",
+            "photo_id": "p2",
+            "rect": {
+              "x": 1960,
+              "y": 120,
+              "w": 1760,
+              "h": 1920
+            },
+            "rotation": 0.0,
+            "source": {
+              "orient": {
+                "rotate": 0,
+                "flip_h": false
+              },
+              "crop": {
+                "x": 0,
+                "y": 0,
+                "w": 3000,
+                "h": 3273
+              },
+              "crop_ratio": "11:12"
+            },
+            "quality_lock": "no_upscale",
+            "bands": [],
+            "shadow": null
+          }
+        ],
+        "captions": [],
+        "edge_shadow": null
       }
     },
     {
@@ -3027,7 +4960,8 @@
             "cell_formats": [],
             "border": {
               "width": 12,
-              "color": "#FFFFFF"
+              "color": "#FFFFFF",
+              "bevel": false
             },
             "caption": {
               "text": "",
@@ -3064,7 +4998,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -3096,13 +5031,15 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
             }
           ],
-          "captions": []
+          "captions": [],
+          "edge_shadow": null
         },
         "style": {
           "mat": {
@@ -3125,7 +5062,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -3144,7 +5082,8 @@
             "size": 72,
             "color": "#222222",
             "letter_spacing": 0.05
-          }
+          },
+          "edge_shadow": null
         },
         "recipe": null,
         "photo_sizes": {
@@ -3201,7 +5140,8 @@
           "cell_formats": [],
           "border": {
             "width": 18,
-            "color": "#FFFFFF"
+            "color": "#FFFFFF",
+            "bevel": false
           },
           "caption": {
             "text": "",
@@ -3238,7 +5178,8 @@
             "bands": [
               {
                 "width": 9,
-                "color": "#000000"
+                "color": "#000000",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -3277,7 +5218,8 @@
             "bands": [
               {
                 "width": 9,
-                "color": "#000000"
+                "color": "#000000",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -3290,7 +5232,8 @@
             }
           }
         ],
-        "captions": []
+        "captions": [],
+        "edge_shadow": null
       }
     },
     {
@@ -3333,7 +5276,8 @@
             "cell_formats": [],
             "border": {
               "width": 12,
-              "color": "#FFFFFF"
+              "color": "#FFFFFF",
+              "bevel": false
             },
             "caption": {
               "text": "Kyoto - April 2026",
@@ -3370,7 +5314,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -3402,7 +5347,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": {
@@ -3429,7 +5375,8 @@
               "anchor": "start",
               "rotation": 3.5
             }
-          ]
+          ],
+          "edge_shadow": null
         },
         "layout": {
           "recipe": "two-stacked",
@@ -3571,7 +5518,8 @@
             }
           }
         ],
-        "captions": []
+        "captions": [],
+        "edge_shadow": null
       }
     },
     {
@@ -3614,7 +5562,8 @@
             "cell_formats": [],
             "border": {
               "width": 12,
-              "color": "#FFFFFF"
+              "color": "#FFFFFF",
+              "bevel": false
             },
             "caption": {
               "text": "Kyoto - April 2026",
@@ -3651,7 +5600,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -3683,7 +5633,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": {
@@ -3710,7 +5661,8 @@
               "anchor": "start",
               "rotation": 3.5
             }
-          ]
+          ],
+          "edge_shadow": null
         },
         "layout": {
           "recipe": "two-side-by-side",
@@ -3728,7 +5680,8 @@
           "cell_formats": [],
           "border": {
             "width": 18,
-            "color": "#FFFFFF"
+            "color": "#FFFFFF",
+            "bevel": false
           },
           "caption_place": "below",
           "caption_align": "center"
@@ -3786,7 +5739,8 @@
           "cell_formats": [],
           "border": {
             "width": 18,
-            "color": "#FFFFFF"
+            "color": "#FFFFFF",
+            "bevel": false
           },
           "caption": {
             "text": "Kyoto - April 2026",
@@ -3823,7 +5777,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": null
@@ -3855,7 +5810,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -3882,7 +5838,8 @@
             "anchor": "middle",
             "rotation": 0.0
           }
-        ]
+        ],
+        "edge_shadow": null
       }
     },
     {
@@ -3925,7 +5882,8 @@
             "cell_formats": [],
             "border": {
               "width": 12,
-              "color": "#FFFFFF"
+              "color": "#FFFFFF",
+              "bevel": false
             },
             "caption": {
               "text": "Kyoto - April 2026",
@@ -3962,7 +5920,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -3994,7 +5953,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": {
@@ -4021,7 +5981,8 @@
               "anchor": "start",
               "rotation": 3.5
             }
-          ]
+          ],
+          "edge_shadow": null
         },
         "layout": {
           "recipe": "two-side-by-side",
@@ -4044,7 +6005,8 @@
           "cell_formats": [],
           "border": {
             "width": 18,
-            "color": "#FFFFFF"
+            "color": "#FFFFFF",
+            "bevel": false
           },
           "caption_place": "above",
           "caption_align": "right"
@@ -4107,7 +6069,8 @@
           "cell_formats": [],
           "border": {
             "width": 18,
-            "color": "#FFFFFF"
+            "color": "#FFFFFF",
+            "bevel": false
           },
           "caption": {
             "text": "Kyoto - April 2026",
@@ -4144,7 +6107,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": null
@@ -4176,7 +6140,8 @@
             "bands": [
               {
                 "width": 18,
-                "color": "#FFFFFF"
+                "color": "#FFFFFF",
+                "bevel": false
               }
             ],
             "shadow": {
@@ -4203,7 +6168,8 @@
             "anchor": "end",
             "rotation": 0.0
           }
-        ]
+        ],
+        "edge_shadow": null
       }
     },
     {
@@ -4280,7 +6246,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -4312,7 +6279,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -4332,7 +6300,8 @@
               "anchor": "start",
               "rotation": 3.5
             }
-          ]
+          ],
+          "edge_shadow": null
         },
         "layout": {
           "recipe": "two-stacked",
@@ -4473,7 +6442,8 @@
             "shadow": null
           }
         ],
-        "captions": []
+        "captions": [],
+        "edge_shadow": null
       }
     },
     {
@@ -4516,7 +6486,8 @@
             "cell_formats": [],
             "border": {
               "width": 18,
-              "color": "#FFFFFF"
+              "color": "#FFFFFF",
+              "bevel": false
             },
             "caption": {
               "text": "Kyoto - April 2026",
@@ -4553,7 +6524,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": {
@@ -4592,7 +6564,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -4612,7 +6585,8 @@
               "anchor": "start",
               "rotation": 3.5
             }
-          ]
+          ],
+          "edge_shadow": null
         }
       },
       "expected": {
@@ -4633,7 +6607,8 @@
           "bands": [
             {
               "width": 18,
-              "color": "#FFFFFF"
+              "color": "#FFFFFF",
+              "bevel": false
             }
           ],
           "shadow": {
@@ -4652,7 +6627,8 @@
           "size": 31,
           "color": "#101010",
           "letter_spacing": -0.01
-        }
+        },
+        "edge_shadow": null
       }
     },
     {
@@ -4729,7 +6705,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": {
@@ -4768,13 +6745,15 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
             }
           ],
-          "captions": []
+          "captions": [],
+          "edge_shadow": null
         }
       },
       "expected": {
@@ -4795,7 +6774,8 @@
           "bands": [
             {
               "width": 9,
-              "color": "#000000"
+              "color": "#000000",
+              "bevel": false
             }
           ],
           "shadow": {
@@ -4814,7 +6794,8 @@
           "size": 48,
           "color": "#3A3A3A",
           "letter_spacing": 0.02
-        }
+        },
+        "edge_shadow": null
       }
     },
     {
@@ -4897,7 +6878,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -4929,7 +6911,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -4961,13 +6944,15 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
             }
           ],
-          "captions": []
+          "captions": [],
+          "edge_shadow": null
         }
       },
       "expected": {
@@ -4995,6 +6980,176 @@
           "size": 48,
           "color": "#3A3A3A",
           "letter_spacing": 0.02
+        },
+        "edge_shadow": null
+      }
+    },
+    {
+      "name": "style of a document (bevelled)",
+      "fn": "templates_style_of_document",
+      "input": {
+        "doc": {
+          "schema": 1,
+          "canvas": {
+            "width": 3840,
+            "height": 2160
+          },
+          "mat": {
+            "color": "#F2EFE8",
+            "texture": null
+          },
+          "placement": "manual",
+          "margins": {
+            "top": 7,
+            "right": 7,
+            "bottom": 7,
+            "left": 7,
+            "linked": true,
+            "mirror_x": true,
+            "mirror_y": true
+          },
+          "composition": {
+            "recipe": "two-side-by-side",
+            "balance": null,
+            "weights": [],
+            "outer": {
+              "x": 120,
+              "y": 120
+            },
+            "gutter": {
+              "x": 80,
+              "y": 80
+            },
+            "format": "fill",
+            "cell_formats": [],
+            "border": {
+              "width": 12,
+              "color": "#FFFFFF",
+              "bevel": true
+            },
+            "caption": {
+              "text": "",
+              "place": "none",
+              "align": "center"
+            },
+            "detached": false
+          },
+          "slots": [
+            {
+              "id": "c1",
+              "photo_id": "p1",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1500,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 3000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000",
+                  "bevel": false
+                }
+              ],
+              "shadow": null
+            },
+            {
+              "id": "c2",
+              "photo_id": "p2",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1500,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 3000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000",
+                  "bevel": false
+                }
+              ],
+              "shadow": null
+            }
+          ],
+          "captions": [],
+          "edge_shadow": {
+            "offset_x": 0,
+            "offset_y": 10,
+            "blur": 60,
+            "color": "#000000",
+            "opacity": 0.22
+          }
+        }
+      },
+      "expected": {
+        "mat": {
+          "color": "#F2EFE8",
+          "texture": null
+        },
+        "margins": {
+          "top": 7,
+          "right": 7,
+          "bottom": 7,
+          "left": 7,
+          "linked": true,
+          "mirror_x": true,
+          "mirror_y": true
+        },
+        "slot_defaults": {
+          "bands": [
+            {
+              "width": 12,
+              "color": "#FFFFFF",
+              "bevel": true
+            }
+          ],
+          "shadow": null,
+          "quality_lock": "no_upscale"
+        },
+        "caption_defaults": {
+          "font": "cormorant-garamond",
+          "weight": 500,
+          "size": 48,
+          "color": "#3A3A3A",
+          "letter_spacing": 0.02
+        },
+        "edge_shadow": {
+          "offset_x": 0,
+          "offset_y": 10,
+          "blur": 60.0,
+          "color": "#000000",
+          "opacity": 0.22
         }
       }
     },
@@ -5038,7 +7193,8 @@
             "cell_formats": [],
             "border": {
               "width": 18,
-              "color": "#FFFFFF"
+              "color": "#FFFFFF",
+              "bevel": false
             },
             "caption": {
               "text": "Kyoto - April 2026",
@@ -5075,7 +7231,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": {
@@ -5114,7 +7271,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -5134,7 +7292,8 @@
               "anchor": "start",
               "rotation": 3.5
             }
-          ]
+          ],
+          "edge_shadow": null
         }
       },
       "expected": {
@@ -5153,7 +7312,8 @@
         "cell_formats": [],
         "border": {
           "width": 18,
-          "color": "#FFFFFF"
+          "color": "#FFFFFF",
+          "bevel": false
         },
         "caption_place": "below",
         "caption_align": "center"
@@ -5233,7 +7393,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": {
@@ -5272,13 +7433,15 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
             }
           ],
-          "captions": []
+          "captions": [],
+          "edge_shadow": null
         }
       },
       "expected": null
@@ -5363,7 +7526,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -5395,7 +7559,8 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
@@ -5427,13 +7592,15 @@
               "bands": [
                 {
                   "width": 9,
-                  "color": "#000000"
+                  "color": "#000000",
+                  "bevel": false
                 }
               ],
               "shadow": null
             }
           ],
-          "captions": []
+          "captions": [],
+          "edge_shadow": null
         }
       },
       "expected": {
@@ -5459,6 +7626,157 @@
         "border": null,
         "caption_place": "above",
         "caption_align": "left"
+      }
+    },
+    {
+      "name": "layout of a document (bevelled)",
+      "fn": "templates_layout_of_document",
+      "input": {
+        "doc": {
+          "schema": 1,
+          "canvas": {
+            "width": 3840,
+            "height": 2160
+          },
+          "mat": {
+            "color": "#F2EFE8",
+            "texture": null
+          },
+          "placement": "manual",
+          "margins": {
+            "top": 7,
+            "right": 7,
+            "bottom": 7,
+            "left": 7,
+            "linked": true,
+            "mirror_x": true,
+            "mirror_y": true
+          },
+          "composition": {
+            "recipe": "two-side-by-side",
+            "balance": null,
+            "weights": [],
+            "outer": {
+              "x": 120,
+              "y": 120
+            },
+            "gutter": {
+              "x": 80,
+              "y": 80
+            },
+            "format": "fill",
+            "cell_formats": [],
+            "border": {
+              "width": 12,
+              "color": "#FFFFFF",
+              "bevel": true
+            },
+            "caption": {
+              "text": "",
+              "place": "none",
+              "align": "center"
+            },
+            "detached": false
+          },
+          "slots": [
+            {
+              "id": "c1",
+              "photo_id": "p1",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1500,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 3000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000",
+                  "bevel": false
+                }
+              ],
+              "shadow": null
+            },
+            {
+              "id": "c2",
+              "photo_id": "p2",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1500,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 3000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000",
+                  "bevel": false
+                }
+              ],
+              "shadow": null
+            }
+          ],
+          "captions": [],
+          "edge_shadow": {
+            "offset_x": 0,
+            "offset_y": 10,
+            "blur": 60,
+            "color": "#000000",
+            "opacity": 0.22
+          }
+        }
+      },
+      "expected": {
+        "recipe": "two-side-by-side",
+        "balance": null,
+        "weights": [],
+        "outer": {
+          "x": 120,
+          "y": 120
+        },
+        "gutter": {
+          "x": 80,
+          "y": 80
+        },
+        "format": "fill",
+        "cell_formats": [],
+        "border": {
+          "width": 12,
+          "color": "#FFFFFF",
+          "bevel": true
+        },
+        "caption_place": "none",
+        "caption_align": "center"
       }
     }
   ]

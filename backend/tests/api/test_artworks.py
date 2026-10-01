@@ -498,7 +498,8 @@ def test_create_with_a_composition(local: TestClient) -> None:
     assert doc["placement"] == "manual" and doc["composition"]["format"] == "3:2"
     assert [s["photo_id"] for s in doc["slots"]] == ids
     # every cell carries the border as a band and none of them is rotated
-    assert all(s["bands"] == [{"width": 24, "color": "#FFFFFF"}] for s in doc["slots"])
+    band = {"width": 24, "color": "#FFFFFF", "bevel": False}
+    assert all(s["bands"] == [band] for s in doc["slots"])
     assert all(s["rotation"] == 0 for s in doc["slots"])
     # the hero is 3:2 like the two small cells (§3.5), to within the rounding of both edges
     for slot in doc["slots"]:
