@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shutil
 from typing import Any
 
 from fastapi.testclient import TestClient
@@ -454,6 +455,37 @@ def test_trash_listing_and_purge_frees_disk(local: TestClient) -> None:
     assert not original.exists()
     assert not ctx.storage.render_dir(artwork["id"]).exists()
     assert local.get(f"{API}/trash").json()["photo_total"] == 0
+
+
+def test_the_trash_shows_thumbnails_until_the_purge(local: TestClient) -> None:
+    """The trash page shows what it holds: thumbnails of trashed photos and artworks are served
+    (renders are not), a trashed artwork looks as it did — its photos were trashed with it — and
+    nothing is served once purged."""
+    photo_id = photo(local, 1200, 800)
+    artwork = create(local, [photo_id])
+    ctx = ctx_of(local)
+    ctx.jobs.run_pending_sync()
+    thumb = f"{API}/artworks/{artwork['id']}/thumb/256"
+    before = local.get(thumb)
+    assert before.status_code == 200
+    render_hash = before.headers["X-Render-Hash"]
+
+    local.post(f"{API}/trash/photos", json={"photo_ids": [photo_id]})  # takes the artwork along
+    assert local.get(f"{API}/artworks/{artwork['id']}").status_code == 404
+    assert local.get(f"{API}/artworks/{artwork['id']}/render.png").status_code == 404
+    trashed = local.get(thumb)
+    assert trashed.status_code == 200 and trashed.headers["X-Render-Hash"] == render_hash
+    assert local.get(f"{API}/photos/{photo_id}/thumb/256").status_code == 200
+    assert local.get(f"{API}/photos/{photo_id}/proxy").status_code == 404
+
+    # Rendered again from scratch (the cache is disposable): same photo, same render.
+    shutil.rmtree(ctx.storage.render_dir(artwork["id"]))
+    again = local.get(thumb)
+    assert again.status_code == 200 and again.headers["X-Render-Hash"] == render_hash
+
+    local.post(f"{API}/trash/purge", json={"all": True})
+    assert local.get(thumb).status_code == 404
+    assert local.get(f"{API}/photos/{photo_id}/thumb/256").status_code == 404
 
 
 def test_purge_respects_the_retention_window(local: TestClient) -> None:

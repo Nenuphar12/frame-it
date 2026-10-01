@@ -223,6 +223,12 @@ Deleting photos an artwork uses is a decision, so the API splits it in two:
 good with their originals, thumbnails, proxies, palettes and render caches. It runs daily
 (`JobQueue.schedule_every`, coalesced) and on demand — `all: true` empties the trash now.
 
+Until then the trash **shows what it holds**: the two thumbnail routes (`/photos/{id}/thumb/…`,
+`/artworks/{id}/thumb/…`) serve trashed rows too (`trashed_ok`), and nothing else does — renders,
+proxies and originals stay out of reach, as does every listing. A trashed artwork is rendered with
+the photos that were trashed with it (`render.inputs_for(…, with_trashed_photos=True)`), so its
+thumbnail is the render it had, same hash, rather than a frame of empty slots.
+
 Restoring puts a photo back and re-indexes it; nothing else about it changed (its import date, its
 tags, its artworks are untouched), which is the same promise as receiving a photo again
 (`docs/data-model.md`, *Photo copies*).

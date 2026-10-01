@@ -24,7 +24,7 @@ from the_frame_v2.context import AppContext
 from the_frame_v2.db.models import Artwork, Photo
 from the_frame_v2.domain.document import ArtworkDocument
 from the_frame_v2.domain.geometry import Rect
-from the_frame_v2.errors import ProblemError
+from the_frame_v2.errors import ProblemError, not_found
 from the_frame_v2.events import Event
 from the_frame_v2.ids import utcnow
 from the_frame_v2.imaging import render as renderer
@@ -69,33 +69,49 @@ class RenderInputs:
 
 
 def inputs_for(
-    ctx: AppContext, session: Session, doc: ArtworkDocument, artwork_id: str = ""
+    ctx: AppContext,
+    session: Session,
+    doc: ArtworkDocument,
+    artwork_id: str = "",
+    *,
+    with_trashed_photos: bool = False,
 ) -> RenderInputs:
+    """What a render of `doc` reads. A trashed photo is missing from it, unless the caller renders
+    a trashed artwork as it was (`with_trashed_photos`: its photos went to the trash with it)."""
     ids = doc.photo_ids()
-    rows = (
-        session.execute(
-            select(Photo.id, Photo.sha256, Photo.ext).where(
-                Photo.id.in_(set(ids)), Photo.deleted_at.is_(None)
-            )
-        ).all()
-        if ids
-        else []
-    )
+    stmt = select(Photo.id, Photo.sha256, Photo.ext).where(Photo.id.in_(set(ids)))
+    if not with_trashed_photos:
+        stmt = stmt.where(Photo.deleted_at.is_(None))
+    rows = session.execute(stmt).all() if ids else []
     originals = {row.id: ctx.storage.original_path(row.sha256, row.ext) for row in rows}
     shas = [row.sha256 for row in rows]
     return RenderInputs(artwork_id, doc, originals, render_hash(doc.canonical(), shas))
 
 
-def artwork_inputs(ctx: AppContext, artwork_id: str) -> RenderInputs:
+def artwork_inputs(ctx: AppContext, artwork_id: str, *, trashed_ok: bool = False) -> RenderInputs:
+    """`trashed_ok`: a trashed artwork too (the trash shows thumbnails until the purge), rendered
+    with the photos that were trashed with it — the render it had, same hash, not empty slots."""
     with ctx.db.session() as s:
-        artwork = artworks.get_artwork(s, artwork_id)
-        return inputs_for(ctx, s, artworks.document_of(artwork), artwork.id)
+        if not trashed_ok:
+            artwork = artworks.get_artwork(s, artwork_id)
+        else:
+            found = s.get(Artwork, artwork_id)
+            if found is None:
+                raise not_found("Artwork")
+            artwork = found
+        return inputs_for(
+            ctx,
+            s,
+            artworks.document_of(artwork),
+            artwork.id,
+            with_trashed_photos=artwork.deleted_at is not None,
+        )
 
 
 # ---- full renders -------------------------------------------------------------------------------
-def ensure_render(ctx: AppContext, artwork_id: str) -> RenderInputs:
+def ensure_render(ctx: AppContext, artwork_id: str, *, trashed_ok: bool = False) -> RenderInputs:
     """Render the artwork's current document unless its PNG master already exists."""
-    inputs = artwork_inputs(ctx, artwork_id)
+    inputs = artwork_inputs(ctx, artwork_id, trashed_ok=trashed_ok)
     target = ctx.storage.render_path(artwork_id, inputs.hash, "png")
     if target.exists():
         return inputs
@@ -151,9 +167,14 @@ def _mark_rendered(ctx: AppContext, inputs: RenderInputs) -> None:
         )
 
 
-def derivative(ctx: AppContext, artwork_id: str, kind: Derivative) -> tuple[Path, str]:
-    """Path of a render file (created on demand) and the render hash it belongs to."""
-    inputs = ensure_render(ctx, artwork_id)
+def derivative(
+    ctx: AppContext, artwork_id: str, kind: Derivative, *, trashed_ok: bool = False
+) -> tuple[Path, str]:
+    """Path of a render file (created on demand) and the render hash it belongs to.
+
+    `trashed_ok` lets a trashed artwork through — for its thumbnails in the trash, nothing else.
+    """
+    inputs = ensure_render(ctx, artwork_id, trashed_ok=trashed_ok)
     master = ctx.storage.render_path(artwork_id, inputs.hash, "png")
     if kind == "png":
         return master, inputs.hash

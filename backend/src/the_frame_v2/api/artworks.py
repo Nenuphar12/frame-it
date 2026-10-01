@@ -291,10 +291,18 @@ def restore_snapshot(
 
 # ---- renders ------------------------------------------------------------------------------------
 async def _render_file(
-    ctx: AppContext, artwork_id: str, kind: render.Derivative, media_type: str, v: str | None
+    ctx: AppContext,
+    artwork_id: str,
+    kind: render.Derivative,
+    media_type: str,
+    v: str | None,
+    *,
+    trashed_ok: bool = False,
 ) -> FileResponse:
     try:
-        path, render_hash = await run_in_threadpool(render.derivative, ctx, artwork_id, kind)
+        path, render_hash = await run_in_threadpool(
+            render.derivative, ctx, artwork_id, kind, trashed_ok=trashed_ok
+        )
     except RenderError as exc:
         raise ProblemError(422, exc.code, "Cannot render the artwork", str(exc)) from exc
     headers = {**(_IMMUTABLE if v == render_hash else _REVALIDATE), "X-Render-Hash": render_hash}
@@ -333,4 +341,6 @@ async def render_thumb(
     v: RenderVersion = None,
 ) -> FileResponse:
     kind: render.Derivative = "thumb-256" if size == "256" else "thumb-768"
-    return await _render_file(ctx, artwork_id, kind, "image/webp", v)
+    # Thumbnails only — a trashed artwork is shown in the trash until it is purged, but its
+    # renders are no longer downloadable.
+    return await _render_file(ctx, artwork_id, kind, "image/webp", v, trashed_ok=True)

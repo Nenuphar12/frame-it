@@ -122,9 +122,11 @@ def count_photos(session: Session, flt: PhotoFilter) -> int:
     return int(session.scalar(stmt) or 0)
 
 
-def get_photo(session: Session, photo_id: str) -> Photo:
+def get_photo(session: Session, photo_id: str, *, trashed_ok: bool = False) -> Photo:
+    """A photo of the library; `trashed_ok` also finds one in the trash (its files stay until the
+    purge, so the trash can show its thumbnail)."""
     photo = session.get(Photo, photo_id)
-    if photo is None or photo.deleted_at is not None:
+    if photo is None or (photo.deleted_at is not None and not trashed_ok):
         raise not_found("Photo")
     return photo
 

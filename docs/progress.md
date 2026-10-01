@@ -1,5 +1,16 @@
 # Progress log
 
+## 2026-10-01 — Two older bugs, found while checking the merge
+
+**Every tile of the Trash page was a broken image.** Both thumbnail routes looked their row up
+through the library's getters, which refuse trashed rows by design, so the trash could list what it
+held but not show it: on a copy of the dev library, 16 artworks and 5 photos, 21 × 404. The
+thumbnail routes (and only them) now accept a trashed row until the purge; a trashed artwork is
+rendered with the photos that went to the trash with it, which reproduces the render it had — same
+hash — instead of empty slots. Renders, proxies and originals of trashed items stay refused
+(`test_the_trash_shows_thumbnails_until_the_purge`, which fails on the previous code). Measured
+after the fix: 21 of 21 thumbnails load, no failed request, with the render cache cleared first.
+
 ## 2026-10-01 — TV follow-ups (remarks.md TV-1…6, "ready" on the wall)
 
 Spec: `docs/tv-display.md` (rewritten). Migration `0010` (`32545e54fd09`).

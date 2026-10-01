@@ -110,8 +110,10 @@ def update_photo(
     return out
 
 
-async def _derivative(ctx: Ctx, session: DbSession, photo_id: str, kind: str) -> FileResponse:
-    photo = photos.get_photo(session, photo_id)
+async def _derivative(
+    ctx: Ctx, session: DbSession, photo_id: str, kind: str, *, trashed_ok: bool = False
+) -> FileResponse:
+    photo = photos.get_photo(session, photo_id, trashed_ok=trashed_ok)
     path = (
         ctx.storage.proxy_path(photo.sha256)
         if kind == "proxy"
@@ -130,7 +132,8 @@ async def _derivative(ctx: Ctx, session: DbSession, photo_id: str, kind: str) ->
 async def photo_thumb(
     photo_id: str, size: Literal["256", "768"], _: Uploader, ctx: Ctx, session: DbSession
 ) -> FileResponse:
-    return await _derivative(ctx, session, photo_id, size)
+    # A trashed photo keeps its thumbnail until the purge: the trash shows what it holds.
+    return await _derivative(ctx, session, photo_id, size, trashed_ok=True)
 
 
 @router.get("/photos/{photo_id}/proxy", response_class=FileResponse)
