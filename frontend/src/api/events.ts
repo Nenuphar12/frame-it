@@ -79,6 +79,9 @@ type Listener<K extends EventName> = (data: ServerEvents[K]) => void;
 
 const listeners = new Map<EventName, Set<Listener<EventName>>>();
 
+/** At most one refetch of the derived counts (collection tree, tags) per this many ms. */
+const COUNTS_REFRESH_MS = 1000;
+
 /** Subscribe to a server event outside React (e.g. the upload store). Returns an unsubscribe. */
 export function onServerEvent<K extends EventName>(name: K, listener: Listener<K>): () => void {
   const set = listeners.get(name) ?? new Set();
@@ -98,6 +101,21 @@ export function useServerEvents(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
     const source = new EventSource(`${API_BASE}/events`);
+    // The tree's counts and the tag counts are derived from many artworks, and the editor saves
+    // every `AUTOSAVE_MS` while a slider moves: one refetch per burst is enough. The refetch runs
+    // after the first event of a burst, so it reads every change made until then; a later event
+    // schedules another one — the last change is never missed.
+    const timers = new Map<string, ReturnType<typeof setTimeout>>();
+    const invalidateSoon = (key: "collections" | "tags") => {
+      if (timers.has(key)) return;
+      timers.set(
+        key,
+        setTimeout(() => {
+          timers.delete(key);
+          void qc.invalidateQueries({ queryKey: [key] });
+        }, COUNTS_REFRESH_MS),
+      );
+    };
     const names: EventName[] = [
       "photo.ingested",
       "photo.ingest_failed",
@@ -123,8 +141,18 @@ export function useServerEvents(enabled: boolean) {
         }
         if (name === "entity.changed") {
           const entity = (data as ServerEvents["entity.changed"]).entity;
-          if (entity === "collection") void qc.invalidateQueries({ queryKey: ["collections"] });
+          // Smart collections match on an artwork's fields and tags, so a changed artwork or tag
+          // moves the tree's counts, and tag counts move with artworks (remarks.md #19). Every
+          // artwork write publishes this event — the editor's autosave included, hence the
+          // coalescing for artworks; a collection or a tag changes on a deliberate action.
+          if (entity === "collection" || entity === "tag") {
+            void qc.invalidateQueries({ queryKey: ["collections"] });
+          }
           if (entity === "tag") void qc.invalidateQueries({ queryKey: ["tags"] });
+          if (entity === "artwork") {
+            invalidateSoon("collections");
+            invalidateSoon("tags");
+          }
         }
         if (name === "photo.ingested" || name === "photo.updated") {
           void qc.invalidateQueries({ queryKey: ["photos"] });
@@ -139,6 +167,8 @@ export function useServerEvents(enabled: boolean) {
           void qc.invalidateQueries({ queryKey: ["photos"] });
           void qc.invalidateQueries({ queryKey: ["artworks"] });
           void qc.invalidateQueries({ queryKey: ["collections"] });
+          // Tag counts ignore trashed rows (docs/organization.md §1).
+          void qc.invalidateQueries({ queryKey: ["tags"] });
         }
         if (name === "display.pushed") {
           void qc.invalidateQueries({ queryKey: ["display"] });
@@ -153,6 +183,7 @@ export function useServerEvents(enabled: boolean) {
     return () => {
       handlers.forEach(([name, handler]) => source.removeEventListener(name, handler));
       source.close();
+      timers.forEach((timer) => clearTimeout(timer));
     };
   }, [enabled, qc]);
 }

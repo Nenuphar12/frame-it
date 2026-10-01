@@ -1,5 +1,25 @@
 # Progress log
 
+## 2026-10-01 — Two bugs from the remarks review (#4, #19)
+
+**The TV preview opened, flickered and closed (#4).** `EditorPage` passes `onClose` as an inline
+arrow, and `TvPreview`'s fullscreen effect listed it as a dependency, so every re-render of the
+editor (an autosave, the `artwork.rendered` that follows an edit) re-ran the effect: the cleanup
+left fullscreen, and the new effect's `fullscreenchange` listener read that as the user leaving.
+`TvPreview` now reads the latest `onClose` through a ref and enters fullscreen once per mount.
+Reproduced first on the previous build over CDP (P → open and fullscreen; an external
+`PATCH /artworks/{id}` → the editor refetches → closed), then fixed on the new one (still open
+and fullscreen after the same re-render; leaving fullscreen, `Escape` and `P` still close it).
+
+**A smart collection's count lagged behind its artworks (#19).** Artwork mutations and the SSE
+`entity.changed {artwork}` only refreshed the artwork lists; the tree's counts (`["collections"]`)
+and the tag counts (`["tags"]`) waited for their 30 s staleness. Both now refresh on any artwork
+change — at once for one's own action, at most once per second for SSE bursts (the editor saves
+every 800 ms while a slider moves) — and on tag changes and trash events. Measured on a copy of
+the dev library: adding the tag a smart collection filters on moved its sidebar count 13 → 14
+within a second (one `GET /collections`), and back to 13 on removal; before the fix, no request
+and the count stayed at 13.
+
 ## 2026-09-24 — Phase 11 (hardening & polish)
 
 **The performance pass found one thing, and it was worth the whole exercise.** `scripts/bench_library.py`
