@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
-import { API_BASE } from "./client";
+import { API_BASE, type DisplayProgress, type DisplayPushResult } from "./client";
 
 export interface IngestedEvent {
   photo_id: string;
@@ -60,18 +60,9 @@ export interface ServerEvents {
   "trash.purged": { photos: number; artworks: number; bytes: number };
   "trash.changed": { batch_id: string };
   /** A push finished: what went to the TV, and what it refused to delete on its own. */
-  "display.pushed": {
-    target_id: string;
-    uploaded: number;
-    reused: number;
-    deleted_ours: number;
-    deleted_foreign: number;
-    foreign_remaining: number;
-    total: number;
-    slideshow_minutes: number | null;
-    first_content_id: string | null;
-    warnings: string[];
-  };
+  "display.pushed": DisplayPushResult;
+  /** How far a push is (throttled): `queued` → `rendering` → `uploading` → `removing` → `starting`. */
+  "display.progress": DisplayProgress & { target_id: string };
 }
 
 type EventName = keyof ServerEvents;
@@ -131,6 +122,7 @@ export function useServerEvents(enabled: boolean) {
       "trash.changed",
       "trash.purged",
       "display.pushed",
+      "display.progress",
     ];
     const handlers = names.map((name) => {
       const handler = (message: MessageEvent<string>) => {
@@ -171,6 +163,10 @@ export function useServerEvents(enabled: boolean) {
           void qc.invalidateQueries({ queryKey: ["tags"] });
         }
         if (name === "display.pushed") {
+          void qc.invalidateQueries({ queryKey: ["display"] });
+        }
+        if (name === "job.failed" && (data as ServerEvents["job.failed"]).kind === "display.push") {
+          // The TV card shows the error and drops the progress it was showing.
           void qc.invalidateQueries({ queryKey: ["display"] });
         }
         if (name.startsWith("localsend.")) {

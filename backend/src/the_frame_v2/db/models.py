@@ -413,6 +413,18 @@ class DisplayTarget(Base):
     """new | ready | pushing | error"""
     last_error: Mapped[str | None] = mapped_column(String(64))
     """Problem code of the last failure (`tv_unreachable`, `tv_unauthorized`, …)."""
+    ours_count: Mapped[int | None] = mapped_column(Integer)
+    """Items on the TV this app uploaded, as of `checked_at` (cached: asking takes seconds)."""
+    foreign_count: Mapped[int | None] = mapped_column(Integer)
+    """Items in My Photos this app did not upload, as of `checked_at`."""
+    checked_at: Mapped[datetime | None]
+    """When the TV last answered a status probe, a plan or a push."""
+    last_result: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    """What the last push did (`PushResult.as_dict()`), so a reload still shows it."""
+    progress: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    """The running push: `{job_id, phase, done, total}`; NULL when none runs."""
+    image_clock: Mapped[datetime | None]
+    """Latest `image_date` written to this TV: the next upload is always dated after it."""
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
     last_pushed_at: Mapped[datetime | None]
     last_seen_at: Mapped[datetime | None]
@@ -423,7 +435,9 @@ class DisplayTargetItem(Base):
 
     The map is what makes a push idempotent (re-pushing uploads nothing) and what keeps the app
     honest: an item on the TV that is not in this table was not put there by us, and is never
-    deleted without the user saying so.
+    deleted without the user saying so. So a row lives exactly as long as its upload is on the
+    TV — it is written the moment an upload succeeds and removed only once the TV no longer holds
+    the item — whatever the set currently is.
     """
 
     __tablename__ = "display_target_items"
@@ -433,8 +447,10 @@ class DisplayTargetItem(Base):
     artwork_id: Mapped[str] = mapped_column(String(36))
     render_hash: Mapped[str] = mapped_column(String(64))
     content_id: Mapped[str] = mapped_column(String(64))
-    position: Mapped[int] = mapped_column(Integer, default=0)
-    """Index in the pushed set, 0 first — the order the TV was asked to play."""
+    position: Mapped[int | None] = mapped_column(Integer, default=None)
+    """Index in the current set, 0 first. NULL: ours, still on the TV, but no longer part of the
+    set — a "Don't change" push leaves everything else alone, and the next slideshow push
+    removes it."""
     uploaded_at: Mapped[datetime] = mapped_column(default=utcnow)
 
     __table_args__ = (

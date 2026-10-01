@@ -61,6 +61,12 @@ class Settings(BaseSettings):
     localsend_multicast_port: int = 53317
     localsend_alias: str | None = None
     localsend_approval_timeout_seconds: int = Field(default=120, ge=5, le=3600)
+    tv_scan_subnet: str | None = None
+    """The /24 to sweep for TVs (`192.168.1`). Default: the public URL's address, else this
+    host's — set it when neither is on the TV's network (Docker without a public URL)."""
+    fake_tv: bool = False
+    """Development only: talk to an in-memory `FakeTv` instead of real TVs (discovery, pairing,
+    pushes), so the TV pages can be driven in a browser without hardware. Never in production."""
 
     # ---- derived paths -------------------------------------------------------------------------
     @property

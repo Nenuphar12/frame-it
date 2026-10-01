@@ -36,6 +36,7 @@ import { Button } from "@/shared/ui/Button";
 import { Dialog } from "@/shared/ui/Dialog";
 import { Kbd, Spinner } from "@/shared/ui/Misc";
 import { problemMessage } from "@/shared/problem";
+import { ShowOnTvDialog } from "@/features/display/ShowOnTvDialog";
 import { EditorStage } from "./canvas/EditorStage";
 import * as actions from "./actions";
 import type { Side } from "./core/snapping.ts";
@@ -86,6 +87,8 @@ export function EditorPage() {
   const styles = useFrameStyles();
   const layouts = useLayouts();
   const [savingTemplate, setSavingTemplate] = useState<TemplateKind | null>(null);
+  /** "Show on the TV" for the artwork being edited (one artwork: "Don't change" by default). */
+  const [showingOnTv, setShowingOnTv] = useState(false);
 
   const photoIds = useMemo(
     () => [
@@ -454,9 +457,16 @@ export function EditorPage() {
         shortcut: "Shift+ArrowDown",
         run: nudge(0, 10),
       },
+      {
+        id: "editor.showOnTv",
+        label: "display.showOnTv",
+        group,
+        run: () => setShowingOnTv(true),
+      },
     ];
   }, [navigate, step, t, toggleFavorite, validateAndNext]);
-  useRegisterCommands(commands);
+  // While the TV dialog is open its own buttons own the keyboard (Enter would validate otherwise).
+  useRegisterCommands(showingOnTv ? [] : commands);
 
   if (artwork.error) {
     return (
@@ -711,6 +721,13 @@ export function EditorPage() {
           void actions.addSlot(photoId);
           setPicking(false);
         }}
+      />
+
+      <ShowOnTvDialog
+        open={showingOnTv}
+        onOpenChange={setShowingOnTv}
+        label={artwork.data.title || t("artworks.untitled")}
+        source={{ artwork_ids: [artwork.data.id] }}
       />
 
       {savingTemplate && (

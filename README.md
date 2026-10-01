@@ -2,7 +2,7 @@
 
 Prepare and curate pictures for a 4K art-mode TV (Samsung The Frame): send originals from your
 phone over Wi-Fi, frame them pixel-perfectly, group them in collections, export them as finished
-3840×2160 images.
+3840×2160 images or send them straight to the TV.
 
 Self-hosted, offline, one directory of files you own. *(Placeholder name; the rename is the last
 open question — see [`docs/PLAN.md`](docs/PLAN.md) §16.)*
@@ -29,9 +29,10 @@ credits in [NOTICE.md](NOTICE.md).</sup>
   deleted together is restored together.
 - **Export and import**: finished JPEGs/PNGs laid out by collection, or a `.tfarchive` backup that
   is a plain ZIP of JSON and your originals, with checksums. Importing shows a dry run first.
-
-Not in scope: talking to the TV. This app produces the image; you put it on the Frame the way you
-already do.
+- **Show it on the TV**: find the Frame on your network, pair it once, and send a collection or a
+  selection as an art-mode slideshow — or one artwork that stays on screen and leaves everything
+  else on the TV untouched. Nothing the app did not send is ever deleted without your say-so
+  ([`docs/tv-display.md`](docs/tv-display.md)).
 
 ## A look at it
 

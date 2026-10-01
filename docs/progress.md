@@ -1,5 +1,60 @@
 # Progress log
 
+## 2026-10-01 — TV follow-ups (remarks.md TV-1…6, "ready" on the wall)
+
+Spec: `docs/tv-display.md` (rewritten). Migration `0010` (`32545e54fd09`).
+
+**Finding the TV.** `tv/discovery.py` runs SSDP and a sweep of the /24 together (the probe's
+`--scan`, made a module); the /24 is the LAN's — `tv_scan_subnet`, else the public URL's address,
+else this host's, because inside Docker the host's own address is the bridge network. The Add-TV
+dialog scans as it opens and pre-selects the first Frame not yet added; the MAC it stores lets
+`_with_tv` find the TV again when DHCP moves it (the address is updated and the operation retried
+once, and the result says so).
+
+**"Don't change"** (`slideshow_minutes = 0`) shows the first artwork, stops the slideshow and
+**deletes nothing** — neither foreign photos nor our earlier uploads. It is what a single artwork
+starts with (viewer, editor command), and it is the reason the map had to change: "ours" can no
+longer mean "in the current set". `position` became nullable, and **a row now lives exactly as long
+as its upload is on the TV** (invariant 15). Building that exposed two existing bugs in the mirror
+push, both of which turned our own uploads into "photos this app did not send" — counted, warned
+about, offered for irreversible deletion: reordering a set deleted the old row when it re-uploaded,
+and a push failing half way rolled back the rows of the uploads that had reached the TV. Each upload
+is now recorded in its own transaction the moment the TV accepts it.
+
+**Order was wrong too.** Re-uploading one changed artwork in the middle of a set made it the
+TV's newest item, so it played first. `plan_push` now reuses only a *tail* of the set (each kept
+upload newer than the one after it) and re-uploads everything before the first position it cannot
+serve; uploads are dated past the target's `image_clock`, so two quick pushes never interleave.
+
+**Saying what will happen, then what happened.** `POST /display/targets/{id}/plan` is the same
+planner, executed nowhere: to send / already there / ours leaving or staying / foreign / drafts.
+"Show on the TV" asks it twice (the app's memory, instantly; then the TV) and shows *Also remove the
+N photos this app did not send* only when N ≥ 1, and only for a slideshow. The TV page's *Send*
+runs it first, so the foreign-photo confirmation no longer depends on having pressed *Check the TV*
+(it silently kept them before). The push publishes `display.progress` (throttled), shown in a
+sidebar tray on every page; `display.pushed` becomes a summary toast, and the result is kept on the
+target. The rotation (interval incl. "Don't change", *In order | Shuffle*) sits in a collapsed row
+of the dialog and is saved with the push. *Leave out N drafts* gives "ready" a job: ticked for a
+collection or filter, unticked for a hand-picked selection (`status: "ready"` now filters explicit
+lists too). A query over 200 artworks is refused rather than cut.
+
+Found while verifying: a push failing *before* the TV (an empty set) left the `queued` progress
+stored, so the tray would have waited forever after a reload — every failure path now clears it.
+
+**Verified in a browser** (headless Chromium over CDP, production build, `THE_FRAME_V2_FAKE_TV=1`,
+a copy of the dev library; results read back through the API), 55 checks: add a TV from the scan
+(recommended, pre-selected, MAC and model stored) and by address; pair; rotation saved; Show on the
+TV from a collection — dry-run numbers, the collapsed row, *Leave out 1 draft* (3 vs 4 artworks),
+the foreign checkbox with its count and gone in "Don't change"; a push whose tray went
+`Waiting → Preparing 1–3 of 3 → Sending 1–2 of 3` with a bar that only moved forward, then the
+summary toast; the TV page asking about the 3 foreign photos with no *Check the TV* first, and a
+re-push sending nothing; "Don't change" on one artwork from the viewer (1 sent, 3 of ours and 3
+foreign left on the TV, nothing deleted); a slideshow push back to the collection removing that one
+and, on request, the 3 foreign photos; after which the checkbox no longer appears.
+
+**Not verified on hardware**: discovery on the real LAN (SSDP and the sweep), following a TV that
+moved, a "Don't change" push (`select_image` + stop), and deleting foreign photos.
+
 ## 2026-10-01 — Two bugs from the remarks review (#4, #19)
 
 **The TV preview opened, flickered and closed (#4).** `EditorPage` passes `onClose` as an inline

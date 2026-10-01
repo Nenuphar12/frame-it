@@ -68,8 +68,19 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
   UI: a **TV** page (pair / re-pair, live status, interval) and **Show on the TV** on a collection
   or a grid selection, with the mirror warning and the confirmation before removing photos this app
   did not upload (`features/display/`).
-- **Next: nothing planned.** Not yet verified on hardware: deleting foreign photos, and whether the
-  pairing token survives a TV power cut (hence "pair again" in the UI).
+- **TV follow-ups (2026-10-01, `docs/tv-display.md`)**: **discovery** (`tv/discovery.py`: SSDP +
+  a sweep of the LAN's /24, `GET /display/discover`, the Add-TV dialog scans and recommends) and
+  **following a TV by MAC** when its address changes; **"Don't change"** (`slideshow_minutes = 0`:
+  show the first image, rotate nothing, **delete nothing**); a pure planner `plan_push` shared by the
+  push and the **dry run** (`POST /display/targets/{id}/plan` — what goes up, stays, leaves, whose,
+  and the drafts left out); **reuse only a tail** in slideshow mode so the TV's newest-first order
+  stays the set's; **live progress** (SSE `display.progress`, a sidebar tray, a summary toast) and
+  the last result kept on the target; cached foreign/ours counts; *In order | Shuffle*; **Show on
+  the TV** from the viewer and the editor too. Migration `0010` (`position` nullable = ours but out
+  of the set). `THE_FRAME_V2_FAKE_TV=1` drives it all without a TV.
+- **Next: nothing planned.** Not yet verified on hardware: deleting foreign photos, whether the
+  pairing token survives a TV power cut (hence "pair again" in the UI), discovery on the real LAN,
+  following a TV that moved, and a "Don't change" push.
 - Verified by the user on real hardware (2026-09-17): Android uploads (both pickers keep full quality but
   Android zeroes GPS → no place; see `docs/research/phone-uploads.md`), Docker image build/run/persistence.
 
@@ -90,6 +101,7 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
 | Export / import a library | `uv run the_frame_v2 export -o lib.tfarchive` · `uv run the_frame_v2 import lib.tfarchive --dry-run` |
 | Editor E2E against a copy of the library | `cp -r .dev-data /tmp/e2e && cd backend && THE_FRAME_V2_DATA_DIR=/tmp/e2e THE_FRAME_V2_PORT=8799 uv run the_frame_v2 serve`, then `cd frontend && THE_FRAME_V2_BACKEND=http://127.0.0.1:8799 pnpm dev --port 5199` |
 | Backend tests only | `cd backend && uv run pytest` (add `-k name`) |
+| TV pages without a TV | `THE_FRAME_V2_FAKE_TV=1 uv run the_frame_v2 serve` (one in-memory `FakeTv`; never reaches a real TV) · `uv run the_frame_v2 tv scan` lists the TVs on the LAN |
 | Regenerate API types + `docs/schemas/` (after any API/document schema change) | `make gen-api` |
 | Production build + serve | `make serve` (frontend built into `backend/src/the_frame_v2/static`) |
 | CLI | `uv run the_frame_v2 --help` (`serve`, `doctor`, `setup-code`, `openapi`, `schemas`, `db upgrade`, `cache clear`, `service`, `export`, `import`) |
@@ -111,7 +123,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `…/domain/` | PURE: `document` (artwork document v1 + the `composition` block + reference checks), `geometry`, `quality` (tiers), `placement`, `constraints` (editor solver §7.3), `alternatives` (§7.6), `arrange` (align/distribute/new slot, §7.7), `composition` (recipe trees, the parametric solver and `apply` = what it writes into a document, `docs/simple-editor.md` §3), `templates` (style/layout docs, `restyle`/`relayout`/save-as, `build_composition_document`), `filters` (the library filter AST, `docs/data-model.md` §5.2), `archive` (the archive's records, file layout and member-name safety, `docs/archive-format.md`) |
 | `…/imaging/` | `sniff` (magic bytes), `decode` (the only pixel access), `metadata` (EXIF/ICC), `fingerprint` (hash ignoring EXIF), `capabilities`, `render` (the renderer), `palette` (OKLab k-means), `assets` (fonts/textures catalog) |
 | `…/assets/` | `geonames/`, `fonts/` (OFL, `scripts/build_fonts.py`), `textures/` (CC0, `scripts/generate_textures.py`), `presets/` (built-in styles/layouts + `recipes.json`) |
-| `…/tv/` | Samsung Frame art channel: `client.py` (`TvClient` + `SamsungTvClient` over `samsungtvws`, pairing, `SLIDESHOW_MINUTES`), `fake.py` (`FakeTv` — the firmware's quirks, used by every test) |
+| `…/tv/` | Samsung Frame art channel: `client.py` (`TvClient` + `SamsungTvClient` over `samsungtvws`, pairing, `SLIDESHOW_MINUTES`, `normalize_mac`), `discovery.py` (SSDP + /24 sweep of `:8001/api/v2/`, `subnet_prefix`, `find_by_mac`), `fake.py` (`FakeTv` — the firmware's quirks, used by every test and by `THE_FRAME_V2_FAKE_TV`). The push itself is `services/display.py` (`plan_push` pure, `push`, `plan`, `_with_tv` = follow by MAC) |
 | `…/localsend/` | LocalSend v2 receiver: `app.py` (protocol routes, own TLS port), `discovery.py` (multicast), `identity.py` (cert/fingerprint), `client.py` (outgoing TLS), `runner.py` (lifespan); logic in `services/localsend.py`, admin API `api/localsend.py` |
 | `…/jobs/` | `queue.py` persistent in-process job queue (lanes, retries, coalescing); `gate.py` render concurrency |
 | `…/events.py` | Thread-safe SSE broker (`/api/v1/events`) |
@@ -129,6 +141,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `…/editor/canvas/` | `EditorStage.tsx` (Konva stage, one pointer pipeline for every gesture, overlays), `SlotNode.tsx` (bands, photo, shadows), `CaptionNode.tsx`, `SelectionOverlay.tsx` (outlines + transform handles), `hit.ts` (rotation-aware hit tests, handle maths), `texture.ts`, `fonts.ts`, `useOrientedImage.ts` |
 | `…/editor/panels/` | `SimplePanel` (the parametric editor, §6.2) + `RecipePicker` (schemas drawn by the solver), `SlotsPanel` (z-order, add/remove, photos), `PhotoPicker`, `ArrangePanel` (align/distribute), `CaptionsPanel`, `FramingPanel`, `StylePanel`, `ColorField` (picker + swatches + palette + presets), `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`, `ShadowFields` (shared with the template editor), `Controls` |
 | `frontend/src/features/` | `display/` (the TV page + "Show on the TV"), `activity/` (failed jobs + retry), `archive/` (export dialog, import report + policies), `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, grid, viewer, create dialog), `templates/` (page, editors, push update, `.tf*.json` files), `library/` (the filter AST + chip bar), `collections/` (page, tree, create/edit dialog), `trash/` (page + the cascade dialog), `tags/` (picker + manager page), `devices/`, `auth/`, `mobile/` (upload + read-only browse), `settings/`, `localsend/` (the editor lives in `src/editor/`, not here) |
+| `…/features/display/` | `DisplayPage` (TV cards, scanning Add-TV dialog, Send = dry run then confirm), `ShowOnTvDialog` (dry-run numbers, collapsed rotation, drafts, foreign checkbox only when there are some), `SlideshowSettings` (interval incl. "Don't change", *In order \| Shuffle*), `PushTray` (sidebar progress + summary toast), `pushStore.ts` (`display.progress` outside React), `summary.ts` (result/phase sentences) |
 | `frontend/src/shared/` | UI primitives (`ui/`, incl. `Toaster.tsx`), `toast.ts` (the store, outside React), `problem.ts` (`problemMessage`), `format.ts`, `cn.ts`, `dnd.ts` (the MIME types our own drags carry) |
 | `frontend/src/i18n/` | i18next setup; strings in `locales/en/common.json` |
 | `docs/` | Plan, specs, ADRs (`adr/`), research findings (`research/`), progress |
@@ -195,7 +208,10 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
     `MutationCache` in `main.tsx` raises a toast. A job that fails reaches `/activity` through `jobs.code`.
 15. A TV only loses what the user agreed to lose: the app deletes a `content_id` it did not
     upload **only** when the caller passed `allow_delete_foreign`, because the art channel cannot
-    give an image back (`docs/tv-display.md`).
+    give an image back (`docs/tv-display.md`). What makes "did not upload" true: **a
+    `display_target_items` row lives exactly as long as its upload is on the TV** — written in its
+    own transaction as soon as the TV accepts the upload, removed only once the TV no longer holds
+    it, never because the set changed. "Don't change" (`slideshow_minutes = 0`) deletes nothing.
 16. Colour is a token, never a literal, and a new pair must pass AA (4.5:1 for text, 3:1 for a control's
     boundary — `--color-border-strong`) in **both** themes.
 

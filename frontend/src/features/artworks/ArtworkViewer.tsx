@@ -1,5 +1,6 @@
 import * as RadixDialog from "@radix-ui/react-dialog";
 import {
+  Cast,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -28,6 +29,7 @@ import {
 } from "@/api/queries";
 import { useRegisterCommands, type Command } from "@/app/commands";
 import { AddToCollectionMenu } from "@/features/collections/AddToCollectionMenu";
+import { ShowOnTvDialog } from "@/features/display/ShowOnTvDialog";
 import { TagPicker } from "@/features/tags/TagPicker";
 import { Badge, Kbd, Spinner } from "@/shared/ui/Misc";
 import { Button } from "@/shared/ui/Button";
@@ -52,6 +54,7 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onEdit, onClose }: A
   const collections = useCollections();
   const [collectionMenuOpen, setCollectionMenuOpen] = useState(false);
   const [editingTags, setEditingTags] = useState(false);
+  const [showingOnTv, setShowingOnTv] = useState(false);
   const { update, validate, duplicate, trash } = useArtworkActions();
   const [confirmTrash, setConfirmTrash] = useState<string | null>(null);
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
@@ -143,11 +146,18 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onEdit, onClose }: A
         shortcut: "c",
         run: () => setCollectionMenuOpen(true),
       },
+      {
+        id: "artwork.showOnTv",
+        label: "display.showOnTv",
+        group: "commands.groups.artworks",
+        run: () => setShowingOnTv(true),
+      },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `go` only depends on ids/index
     [actions, data, ids, index, onEdit],
   );
-  useRegisterCommands(commands);
+  // The TV dialog is a modal of its own: the viewer's keys (Enter, Delete...) stand down meanwhile.
+  useRegisterCommands(showingOnTv ? [] : commands);
 
   const styleName = styles.data?.find((s) => s.id === data?.origin_style_id)?.name;
   const layoutName = layouts.data?.find((l) => l.id === data?.origin_layout_id)?.name;
@@ -267,6 +277,9 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onEdit, onClose }: A
                 <Button size="sm" variant="secondary" onClick={() => onEdit(data.id)}>
                   <Pencil size={14} /> {t("editor.open")} <Kbd>E</Kbd>
                 </Button>
+                <Button size="sm" variant="ghost" onClick={() => setShowingOnTv(true)}>
+                  <Cast size={14} /> {t("display.showOnTv")}
+                </Button>
                 <Button size="sm" variant="ghost" onClick={actions.duplicate}>
                   <Copy size={14} /> {t("artworks.duplicate")}
                 </Button>
@@ -362,6 +375,16 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onEdit, onClose }: A
                 )}
               </div>
             </div>
+          )}
+          {/* One artwork: the dialog starts at "Don't change" (it stays on screen, and nothing
+              else on the TV is touched, docs/tv-display.md). */}
+          {data && (
+            <ShowOnTvDialog
+              open={showingOnTv}
+              onOpenChange={setShowingOnTv}
+              label={data.title || t("artworks.untitled")}
+              source={{ artwork_ids: [data.id] }}
+            />
           )}
         </RadixDialog.Content>
       </RadixDialog.Portal>

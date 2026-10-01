@@ -81,6 +81,8 @@ class TvInfo:
     model: str | None = None
     model_code: str | None = None
     name: str | None = None
+    mac: str | None = None
+    """Wi-Fi MAC (`wifiMac`): what identifies the TV when DHCP gives it another address."""
     api_version: str | None = None
     frame_support: bool = False
     token_auth: bool = False
@@ -204,6 +206,7 @@ class SamsungTvClient:
             model=str(device.get("modelName") or "") or None,
             model_code=str(device.get("model") or "") or None,
             name=str(device.get("name") or "") or None,
+            mac=normalize_mac(device.get("wifiMac")),
             api_version=api_version,
             frame_support=str(device.get("FrameTVSupport", "")).lower() == "true",
             token_auth=str(device.get("TokenAuthSupport", "")).lower() == "true",
@@ -315,6 +318,14 @@ def pair_with_tv(host: str, timeout: float = 45.0) -> str:
     if not token:
         raise TvUnauthorizedError("the TV did not hand over a token — was the prompt accepted?")
     return token
+
+
+def normalize_mac(value: Any) -> str | None:
+    """`04:CB:…`, `04-cb-…` and `04cb…` are one TV: lower case, colon separated, or None."""
+    digits = "".join(ch for ch in str(value or "").lower() if ch in "0123456789abcdef")
+    if len(digits) != 12:
+        return None
+    return ":".join(digits[i : i + 2] for i in range(0, 12, 2))
 
 
 def _int_or_none(value: Any) -> int | None:

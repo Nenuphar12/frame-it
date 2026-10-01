@@ -15,6 +15,8 @@ works here is a push that works there.
 
 from __future__ import annotations
 
+import threading
+import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
@@ -29,6 +31,7 @@ from the_frame_v2.tv.client import (
     TvUnauthorizedError,
     TvUnreachableError,
 )
+from the_frame_v2.tv.discovery import DiscoveredTv
 
 
 @dataclass
@@ -37,8 +40,10 @@ class FakeTv:
 
     host: str = "192.0.2.10"
     token: str | None = "fake-token"  # noqa: S105 - a fake TV, not a secret
+    name: str = '55" The Frame'
     model: str = "QE55LS03FAU"
     model_code: str = "25_PTM_FTV"
+    mac: str = "02:00:5e:00:53:10"
     api_version: str = "5.0.1.0"
     reachable: bool = True
     authorized: bool = True
@@ -51,7 +56,12 @@ class FakeTv:
     current_content_id: str | None = None
     #: Every call made, in order — the push sequence is part of the contract.
     calls: list[str] = field(default_factory=list)
+    #: Seconds an upload takes (the real one takes 4 to 6 s): lets a browser check see progress.
+    upload_delay: float = 0.0
+    #: Fail every call after this many uploads (a TV going to sleep mid-push), None = never.
+    unreachable_after_uploads: int | None = None
     _next: int = 100
+    _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
     # ---- helpers used by tests ---------------------------------------------------------------
     def with_existing(self, count: int, *, category: str = MY_PICTURES) -> FakeTv:
@@ -74,6 +84,19 @@ class FakeTv:
     def my_ids(self) -> list[str]:
         return [i.content_id for i in self.items_ if i.category_id == MY_PICTURES]
 
+    def describe(self) -> DiscoveredTv:
+        """What this TV's REST endpoint would answer to a discovery sweep."""
+        return DiscoveredTv(
+            host=self.host,
+            name=self.name,
+            model=self.model,
+            model_code=self.model_code,
+            frame_support=True,
+            token_auth=True,
+            mac=self.mac,
+            power_state="on",
+        )
+
     def _guard(self) -> None:
         if not self.reachable:
             raise TvUnreachableError("fake TV is unreachable")
@@ -87,7 +110,8 @@ class FakeTv:
         return TvInfo(
             model=self.model,
             model_code=self.model_code,
-            name='55" The Frame',
+            name=self.name,
+            mac=self.mac,
             api_version=self.api_version,
             frame_support=True,
             token_auth=True,
@@ -108,22 +132,30 @@ class FakeTv:
 
     def upload(self, data: bytes, file_type: FileType, image_date: str | None = None) -> str:
         self._guard()
-        self._next += 1
-        content_id = f"MY_F{self._next:04d}"
-        self.calls.append(f"upload:{content_id}")
-        self.uploads[content_id] = bytes(data)
-        # Newest first, like the real one.
-        self.items_.insert(
-            0,
-            ArtItem(
-                content_id=content_id,
-                category_id=MY_PICTURES,
-                width=3840,
-                height=2160,
-                image_date=image_date or datetime.now(UTC).strftime("%Y:%m:%d %H:%M:%S"),
-                matte_id="none",
-            ),
-        )
+        if self.upload_delay:
+            time.sleep(self.upload_delay)
+        with self._lock:
+            self._next += 1
+            content_id = f"MY_F{self._next:04d}"
+            self.calls.append(f"upload:{content_id}")
+            self.uploads[content_id] = bytes(data)
+            # Newest first, like the real one.
+            self.items_.insert(
+                0,
+                ArtItem(
+                    content_id=content_id,
+                    category_id=MY_PICTURES,
+                    width=3840,
+                    height=2160,
+                    image_date=image_date or datetime.now(UTC).strftime("%Y:%m:%d %H:%M:%S"),
+                    matte_id="none",
+                ),
+            )
+            if (
+                self.unreachable_after_uploads is not None
+                and len(self.uploads) >= self.unreachable_after_uploads
+            ):
+                self.reachable = False
         return content_id
 
     def delete(self, content_ids: list[str]) -> None:
@@ -132,7 +164,8 @@ class FakeTv:
             return
         self.calls.append(f"delete:{','.join(content_ids)}")
         doomed = set(content_ids)
-        self.items_ = [i for i in self.items_ if i.content_id not in doomed]
+        with self._lock:
+            self.items_ = [i for i in self.items_ if i.content_id not in doomed]
         if self.current_content_id in doomed:
             self.current_content_id = self.items_[0].content_id if self.items_ else None
 

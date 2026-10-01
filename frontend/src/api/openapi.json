@@ -1846,6 +1846,89 @@
         "title": "DeviceUpdateIn",
         "type": "object"
       },
+      "DiscoveredTvOut": {
+        "properties": {
+          "frame_support": {
+            "title": "Frame Support",
+            "type": "boolean"
+          },
+          "host": {
+            "title": "Host",
+            "type": "string"
+          },
+          "mac": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mac"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "model_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Code"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "recommended": {
+            "default": false,
+            "title": "Recommended",
+            "type": "boolean"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id"
+          },
+          "token_auth": {
+            "title": "Token Auth",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "host",
+          "frame_support",
+          "token_auth"
+        ],
+        "title": "DiscoveredTvOut",
+        "type": "object"
+      },
       "DisplayCapabilitiesOut": {
         "description": "What this TV generation can do \u2014 measured, not assumed (`docs/tv-display.md`).",
         "properties": {
@@ -1870,6 +1953,11 @@
             "title": "Slideshow Minutes",
             "type": "array"
           },
+          "static_display": {
+            "default": true,
+            "title": "Static Display",
+            "type": "boolean"
+          },
           "thumbnails": {
             "default": false,
             "title": "Thumbnails",
@@ -1883,12 +1971,238 @@
         "title": "DisplayCapabilitiesOut",
         "type": "object"
       },
+      "DisplayDiscoverOut": {
+        "properties": {
+          "subnet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subnet"
+          },
+          "tvs": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoveredTvOut"
+            },
+            "title": "Tvs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "tvs"
+        ],
+        "title": "DisplayDiscoverOut",
+        "type": "object"
+      },
+      "DisplayPlanIn": {
+        "description": "A dry run: what pushing this source would do. Nothing on the TV changes.",
+        "properties": {
+          "check_tv": {
+            "default": true,
+            "title": "Check Tv",
+            "type": "boolean"
+          },
+          "slideshow_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slideshow Minutes"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DisplaySourceIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "DisplayPlanIn",
+        "type": "object"
+      },
+      "DisplayPlanOut": {
+        "properties": {
+          "already_there": {
+            "title": "Already There",
+            "type": "integer"
+          },
+          "drafts": {
+            "title": "Drafts",
+            "type": "integer"
+          },
+          "drafts_left_out": {
+            "title": "Drafts Left Out",
+            "type": "integer"
+          },
+          "foreign": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Foreign"
+          },
+          "foreign_checked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Foreign Checked At"
+          },
+          "mode": {
+            "enum": [
+              "slideshow",
+              "static"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "moved_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moved From"
+          },
+          "moved_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moved To"
+          },
+          "ours_left": {
+            "title": "Ours Left",
+            "type": "integer"
+          },
+          "ours_to_remove": {
+            "title": "Ours To Remove",
+            "type": "integer"
+          },
+          "set_count": {
+            "title": "Set Count",
+            "type": "integer"
+          },
+          "to_upload": {
+            "title": "To Upload",
+            "type": "integer"
+          },
+          "tv_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tv Error"
+          }
+        },
+        "required": [
+          "mode",
+          "set_count",
+          "to_upload",
+          "already_there",
+          "ours_to_remove",
+          "ours_left",
+          "drafts",
+          "drafts_left_out"
+        ],
+        "title": "DisplayPlanOut",
+        "type": "object"
+      },
+      "DisplayProgressOut": {
+        "description": "How far the running push is (`display.progress` carries the same, plus `target_id`).",
+        "properties": {
+          "done": {
+            "title": "Done",
+            "type": "integer"
+          },
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          },
+          "phase": {
+            "enum": [
+              "queued",
+              "rendering",
+              "uploading",
+              "removing",
+              "starting"
+            ],
+            "title": "Phase",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "job_id",
+          "phase",
+          "done",
+          "total"
+        ],
+        "title": "DisplayProgressOut",
+        "type": "object"
+      },
       "DisplayPushIn": {
         "properties": {
           "allow_delete_foreign": {
             "default": false,
             "title": "Allow Delete Foreign",
             "type": "boolean"
+          },
+          "slideshow_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slideshow Minutes"
+          },
+          "slideshow_ordered": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slideshow Ordered"
           }
         },
         "title": "DisplayPushIn",
@@ -1905,6 +2219,132 @@
           "job_id"
         ],
         "title": "DisplayPushOut",
+        "type": "object"
+      },
+      "DisplayPushResultOut": {
+        "description": "What a push did (`display.pushed` carries the same).",
+        "properties": {
+          "deleted_foreign": {
+            "title": "Deleted Foreign",
+            "type": "integer"
+          },
+          "deleted_ours": {
+            "title": "Deleted Ours",
+            "type": "integer"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "first_content_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Content Id"
+          },
+          "foreign_on_tv": {
+            "default": 0,
+            "title": "Foreign On Tv",
+            "type": "integer"
+          },
+          "foreign_remaining": {
+            "title": "Foreign Remaining",
+            "type": "integer"
+          },
+          "left_ours": {
+            "default": 0,
+            "title": "Left Ours",
+            "type": "integer"
+          },
+          "mode": {
+            "enum": [
+              "slideshow",
+              "static"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "moved_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moved From"
+          },
+          "moved_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moved To"
+          },
+          "reused": {
+            "title": "Reused",
+            "type": "integer"
+          },
+          "slideshow_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slideshow Minutes"
+          },
+          "target_id": {
+            "title": "Target Id",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "uploaded": {
+            "title": "Uploaded",
+            "type": "integer"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "target_id",
+          "mode",
+          "uploaded",
+          "reused",
+          "deleted_ours",
+          "deleted_foreign",
+          "foreign_remaining",
+          "total"
+        ],
+        "title": "DisplayPushResultOut",
         "type": "object"
       },
       "DisplaySourceIn": {
@@ -2011,6 +2451,17 @@
             "title": "Foreign",
             "type": "integer"
           },
+          "moved_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moved From"
+          },
           "my_pictures": {
             "title": "My Pictures",
             "type": "integer"
@@ -2062,6 +2513,30 @@
             "title": "Host",
             "type": "string"
           },
+          "mac": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mac"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
           "name": {
             "default": "",
             "maxLength": 128,
@@ -2104,10 +2579,33 @@
             ],
             "title": "Api Version"
           },
+          "checked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked At"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
             "type": "string"
+          },
+          "foreign_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Foreign Count"
           },
           "host": {
             "title": "Host",
@@ -2144,6 +2642,16 @@
             ],
             "title": "Last Pushed At"
           },
+          "last_result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DisplayPushResultOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "last_seen_at": {
             "anyOf": [
               {
@@ -2155,6 +2663,17 @@
               }
             ],
             "title": "Last Seen At"
+          },
+          "mac": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mac"
           },
           "model": {
             "anyOf": [
@@ -2171,13 +2690,39 @@
             "title": "Name",
             "type": "string"
           },
+          "ours_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ours Count"
+          },
           "paired": {
             "title": "Paired",
             "type": "boolean"
           },
+          "progress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DisplayProgressOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "render_format": {
             "title": "Render Format",
             "type": "string"
+          },
+          "set_count": {
+            "default": 0,
+            "title": "Set Count",
+            "type": "integer"
           },
           "slideshow_minutes": {
             "title": "Slideshow Minutes",
@@ -7284,6 +7829,28 @@
         ]
       }
     },
+    "/api/v1/display/discover": {
+      "get": {
+        "description": "Samsung TVs on the LAN (SSDP + a sweep of the /24), Frames first. Read-only, a few seconds.\n\nThe first Frame that is not added yet is `recommended`: what the Add-TV dialog pre-selects.",
+        "operationId": "discover_api_v1_display_discover_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisplayDiscoverOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Discover",
+        "tags": [
+          "display"
+        ]
+      }
+    },
     "/api/v1/display/targets": {
       "get": {
         "operationId": "list_targets_api_v1_display_targets_get",
@@ -7472,9 +8039,62 @@
         ]
       }
     },
+    "/api/v1/display/targets/{target_id}/plan": {
+      "post": {
+        "description": "Dry-run a push: how many images go up, stay, leave \u2014 and whose. Nothing changes on the TV.\n\nThe TV is asked what it holds (`check_tv`); when it does not answer, the numbers come from the\napp's own map and `tv_error` says why.",
+        "operationId": "plan_api_v1_display_targets__target_id__plan_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "target_id",
+            "required": true,
+            "schema": {
+              "title": "Target Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisplayPlanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisplayPlanOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Plan",
+        "tags": [
+          "display"
+        ]
+      }
+    },
     "/api/v1/display/targets/{target_id}/push": {
       "post": {
-        "description": "Queue a push. Uploading a set takes minutes, so the work happens in the `display` lane.",
+        "description": "Queue a push. Uploading a set takes minutes, so the work happens in the `display` lane.\n\n`slideshow_minutes` / `slideshow_ordered` are saved on the target first, so \"Show on the TV\"\nsets how the TV rotates and what it shows in one request.",
         "operationId": "push_api_v1_display_targets__target_id__push_post",
         "parameters": [
           {
@@ -7579,6 +8199,7 @@
     },
     "/api/v1/display/targets/{target_id}/status": {
       "get": {
+        "description": "Ask the TV now. Refreshes the cached counts \u2014 and follows the TV by MAC if it moved.",
         "operationId": "status_api_v1_display_targets__target_id__status_get",
         "parameters": [
           {

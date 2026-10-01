@@ -102,6 +102,8 @@ def build_context(settings: Settings) -> AppContext:
     jobs.register(archive_export.EXPORT_JOB, archive_export.export_job(ctx), lane="ingest")
     jobs.register(archive_import.STAGE_JOB, archive_import.stage_job(ctx), lane="ingest")
     jobs.register(display_service.PUSH_JOB, display_service.push_job(ctx), lane="display")
+    if settings.fake_tv:
+        use_fake_tv(ctx)
     jobs.register(archive_export.SWEEP_JOB, archive_export.sweep_job(ctx), lane="ingest")
     jobs.schedule_every(archive_export.SWEEP_JOB, archive_export.SWEEP_INTERVAL_SECONDS, {})
     with db.session() as s:
@@ -112,6 +114,22 @@ def build_context(settings: Settings) -> AppContext:
             if count:
                 log.info("search index rebuilt (%d entries)", count)
     return ctx
+
+
+def use_fake_tv(ctx: AppContext) -> None:
+    """`THE_FRAME_V2_FAKE_TV=1`: every TV is one in-memory `FakeTv` (development only).
+
+    Discovery finds it, pairing gets a token without a prompt, pushes go to it whatever address
+    a target has — so the TV pages can be driven in a browser with no hardware, and nothing ever
+    reaches a real TV. Uploads take a little time, like the real one, so progress is visible.
+    """
+    from the_frame_v2.tv import FakeTv
+
+    fake = FakeTv(upload_delay=0.8).with_existing(3)
+    ctx.tv_factory = lambda _target: fake
+    ctx.tv_discovery = lambda _prefix: [fake.describe()]
+    ctx.tv_pairer = lambda _host: "fake-token"
+    log.warning("THE_FRAME_V2_FAKE_TV is on: TVs are simulated in memory, none is contacted.")
 
 
 def announce_setup_code(ctx: AppContext) -> str | None:

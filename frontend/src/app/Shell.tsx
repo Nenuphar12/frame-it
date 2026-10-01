@@ -24,6 +24,7 @@ import { useTranslation } from "react-i18next";
 import { onServerEvent } from "@/api/events";
 import { useCollectionItems, useCollections, useJobs, useLibraryStats } from "@/api/queries";
 import { CollectionTree } from "@/features/collections/CollectionTree";
+import { PushTray } from "@/features/display/PushTray";
 import { GlobalDropZone } from "@/features/upload/DropZone";
 import { useFilePickers } from "@/features/upload/useFilePickers";
 import { LocalSendRequestDialog } from "@/features/localsend/LocalSendRequestDialog";
@@ -309,14 +310,20 @@ export function Shell() {
             <NavLink key={item.to} item={item} />
           ))}
         </div>
-        <div className="mt-auto space-y-0.5">
-          <NavLink item={{ to: "/m", label: t("nav.mobile"), icon: <Smartphone size={16} /> }} />
-          <button
-            onClick={() => setCheatSheetOpen(true)}
-            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm text-muted hover:bg-panel-2 hover:text-text"
-          >
-            <Keyboard size={16} /> {t("shortcuts.title")}
-          </button>
+        <div className="mt-auto space-y-3">
+          {/* A push to the TV takes minutes: it shows here, whatever page is open. */}
+          <PushTray />
+          <div className="space-y-0.5">
+            <NavLink
+              item={{ to: "/m", label: t("nav.mobile"), icon: <Smartphone size={16} /> }}
+            />
+            <button
+              onClick={() => setCheatSheetOpen(true)}
+              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm text-muted hover:bg-panel-2 hover:text-text"
+            >
+              <Keyboard size={16} /> {t("shortcuts.title")}
+            </button>
+          </div>
         </div>
       </nav>
       <main id="main" className="min-w-0 flex-1 overflow-hidden">

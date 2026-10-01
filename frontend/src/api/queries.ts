@@ -58,6 +58,8 @@ export const queryKeys = {
   displayTargets: ["display", "targets"] as const,
   displayStatus: (id: string) => ["display", "status", id] as const,
   displayCapabilities: ["display", "capabilities"] as const,
+  displayDiscover: ["display", "discover"] as const,
+  displayPlan: (id: string, body: unknown) => ["display", "plan", id, body] as const,
   templateUsage: (kind: TemplateKind, id: string) => ["templates", "usage", kind, id] as const,
   artworkDefaults: ["templates", "defaults"] as const,
   exports: ["archive", "exports"] as const,
@@ -1106,6 +1108,45 @@ export function useDisplayStatus(targetId: string | null) {
   });
 }
 
+/**
+ * The TVs on the LAN (SSDP + a sweep of the /24): a few seconds, read-only. Only runs while the
+ * Add-TV dialog is open, and again on "Scan again" (`refetch`).
+ */
+export function useDisplayDiscover(enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.displayDiscover,
+    queryFn: () => unwrap(api.GET("/api/v1/display/discover")),
+    enabled,
+    retry: false,
+    staleTime: 0,
+    gcTime: 0,
+  });
+}
+
+export type DisplayPlanRequest = Schemas["DisplayPlanIn"];
+
+/**
+ * A push's dry run: what goes up, stays and leaves, and whose. `check_tv: false` answers at once
+ * from the app's own map; `true` asks the TV (seconds) — the dialog shows the first while the
+ * second is on its way. A TV that does not answer is not an error here: `tv_error` says so.
+ */
+export function useDisplayPlan(targetId: string | null, body: DisplayPlanRequest, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.displayPlan(targetId ?? "", body),
+    queryFn: () =>
+      unwrap(
+        api.POST("/api/v1/display/targets/{target_id}/plan", {
+          params: { path: { target_id: targetId as string } },
+          body,
+        }),
+      ),
+    enabled: enabled && Boolean(targetId),
+    retry: false,
+    staleTime: 5_000,
+    placeholderData: keepPreviousData,
+  });
+}
+
 function useDisplayMutation<TVariables, TResult>(
   mutationFn: (variables: TVariables) => Promise<TResult>,
 ) {
@@ -1117,7 +1158,7 @@ function useDisplayMutation<TVariables, TResult>(
 }
 
 export function useDisplayActions() {
-  const create = useDisplayMutation((body: { name: string; host: string }) =>
+  const create = useDisplayMutation((body: Schemas["DisplayTargetIn"]) =>
     unwrap(api.POST("/api/v1/display/targets", { body })),
   );
   const update = useDisplayMutation(
@@ -1150,14 +1191,34 @@ export function useDisplayActions() {
       }),
     ),
   );
+  /** `slideshow_minutes` / `slideshow_ordered` are saved on the TV before the push is queued. */
   const push = useDisplayMutation(
-    ({ id, allowDeleteForeign }: { id: string; allowDeleteForeign: boolean }) =>
+    ({
+      id,
+      allowDeleteForeign,
+      ...settings
+    }: {
+      id: string;
+      allowDeleteForeign: boolean;
+      slideshow_minutes?: number;
+      slideshow_ordered?: boolean;
+    }) =>
       unwrap(
         api.POST("/api/v1/display/targets/{target_id}/push", {
           params: { path: { target_id: id } },
-          body: { allow_delete_foreign: allowDeleteForeign },
+          body: { allow_delete_foreign: allowDeleteForeign, ...settings },
         }),
       ),
   );
-  return { create, update, remove, pair, setSource, push };
+  /** A live dry run on demand (the TV page's "Send", which must know about foreign photos). */
+  const plan = useMutation({
+    mutationFn: ({ id, ...body }: { id: string } & DisplayPlanRequest) =>
+      unwrap(
+        api.POST("/api/v1/display/targets/{target_id}/plan", {
+          params: { path: { target_id: id } },
+          body,
+        }),
+      ),
+  });
+  return { create, update, remove, pair, setSource, push, plan };
 }

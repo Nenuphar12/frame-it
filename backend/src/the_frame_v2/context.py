@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from the_frame_v2.localsend.runner import LocalSendRunner
     from the_frame_v2.services.localsend import LocalSendHub
     from the_frame_v2.tv import TvClient
+    from the_frame_v2.tv.discovery import Discover
 
 
 @dataclass(slots=True)
@@ -37,3 +38,7 @@ class AppContext:
     """Set while the LocalSend receiver runs (app lifespan)."""
     tv_factory: Callable[[DisplayTarget], TvClient] | None = None
     """How `services/display.py` reaches a TV; tests put a `FakeTv` here."""
+    tv_discovery: Discover | None = None
+    """How TVs are found on the LAN (`tv/discovery.py`); tests and `fake_tv` replace it."""
+    tv_pairer: Callable[[str], str] | None = None
+    """host → token (`tv.pair_with_tv`, which needs the TV's prompt accepted); idem."""

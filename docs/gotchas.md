@@ -240,9 +240,36 @@ These bite whatever you are working on.
   control-boundary rule uses an attribute selector (`select[class]`, 0,1,1) to outrank ~90 `border-border`
   call sites without editing them.
 
+## TV display (phase 12)
+
+`docs/tv-display.md`, `docs/research/tv-display.md`.
+
+- **No TV at hand? `THE_FRAME_V2_FAKE_TV=1`** routes every target, discovery and pairing to one
+  in-memory `FakeTv` (three "foreign" photos, 0.8 s per upload). Its photos vanish on restart while
+  the map in the database stays — after a restart the next push sees the map's rows as gone and
+  re-uploads. Never commit a config with it on; it logs a warning at start.
+- **Never drop a `display_target_items` row because the set changed.** A row means "we uploaded it
+  and the TV still has it"; only a delete we made or the TV no longer listing it removes one. Each
+  upload is recorded in **its own** transaction straight after the TV accepts it, so a push that dies
+  half way does not roll back the record of what did reach the TV — otherwise those images come back
+  as "photos this app did not send", offered for irreversible deletion.
+- **Reuse only a tail in slideshow mode** (`plan_push`): new uploads are always the newest, so
+  re-uploading a middle image means re-uploading everything before it, or the TV plays it out of
+  order. "Don't change" has no order and may reuse anything.
+- `_with_tv` **commits the TV's new address from its own session** when it follows a TV by MAC.
+  SQLite has one writer: a caller must not have written in the request's session before calling it
+  (same reflex as `retry_job`), and must `session.refresh(target)` afterwards to see the new host.
+- `enqueue_push` stores `progress = queued` before the job runs, so **every** failure path of `push`
+  — including `empty_set` before the TV is reached — must clear it, or the tray waits forever after a
+  reload.
+
 ## Driving the app in a browser
 
 `docs/PLAN.md` §13.6.
+
+- CDP `Runtime.evaluate` with `returnByValue` serialises a **DOM element as `{}`** — falsy in Python,
+  so a poll that returns the element never succeeds. Return `!!element` (or a string, a number, an
+  array) from anything you wait on.
 
 - Driving this app over CDP: each open tab holds an SSE connection, so **six tabs exhaust the
   per-origin pool** and the next one renders an empty page — close tabs between runs;

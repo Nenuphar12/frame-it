@@ -40,6 +40,8 @@ const DYNAMIC_PREFIXES = [
   "archive.column",
   "activity.kinds",
   "activity.states",
+  "display.intervals",
+  "display.phases",
 ];
 
 const has = (key) => {

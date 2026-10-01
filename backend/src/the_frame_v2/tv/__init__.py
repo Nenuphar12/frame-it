@@ -15,13 +15,16 @@ from the_frame_v2.tv.client import (
     TvRejectedError,
     TvUnauthorizedError,
     TvUnreachableError,
+    normalize_mac,
     pair_with_tv,
 )
+from the_frame_v2.tv.discovery import DiscoveredTv
 from the_frame_v2.tv.fake import FakeTv
 
 __all__ = [
     "SLIDESHOW_MINUTES",
     "ArtItem",
+    "DiscoveredTv",
     "FakeTv",
     "SamsungTvClient",
     "TvClient",
@@ -30,5 +33,6 @@ __all__ = [
     "TvRejectedError",
     "TvUnauthorizedError",
     "TvUnreachableError",
+    "normalize_mac",
     "pair_with_tv",
 ]

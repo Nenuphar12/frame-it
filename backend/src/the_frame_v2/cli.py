@@ -380,6 +380,25 @@ def tv_add(
         typer.echo(f"{target.id}  {target.name}  {target.host}")
 
 
+@tv_app.command("scan")
+def tv_scan(data_dir: DataDir = None) -> None:
+    """Find Samsung TVs on the LAN (SSDP + a sweep of the /24). Read-only."""
+    from the_frame_v2.services import display
+
+    ctx = _display_ctx(data_dir)
+    with ctx.db.session() as s:
+        subnet, found = display.discover(ctx, s)
+    typer.echo(f"Scanned {subnet}.1-254" if subnet else "No LAN /24 known: SSDP only.")
+    if not found:
+        typer.echo("No TV answered — is it on the same network, and was it awake once?")
+    for f in found:
+        tv = f.tv
+        kind = "The Frame" if tv.frame_support else "Samsung TV"
+        added = f"  (added: {f.target_id})" if f.target_id else ""
+        label = f"{tv.name or '?'} — {tv.model or '?'} [{kind}]"
+        typer.echo(f"{tv.host:<16} {label} mac {tv.mac or '?'}{added}")
+
+
 @tv_app.command("list")
 def tv_list(data_dir: DataDir = None) -> None:
     """Every TV this library knows."""
@@ -393,9 +412,12 @@ def tv_list(data_dir: DataDir = None) -> None:
         for t in targets:
             paired = "paired" if t.token else "NOT PAIRED"
             shown = t.source_label or "no set"
-            typer.echo(
-                f"{t.id}  {t.name} ({t.host})  {paired}  {shown}  every {t.slideshow_minutes} min"
+            rotation = (
+                "don't change"
+                if display.is_static(t.slideshow_minutes)
+                else f"every {t.slideshow_minutes} min"
             )
+            typer.echo(f"{t.id}  {t.name} ({t.host})  {paired}  {shown}  {rotation}")
 
 
 @tv_app.command("pair")
@@ -409,7 +431,7 @@ def tv_pair(
     ctx = _display_ctx(data_dir)
     typer.echo("Accept the 'allow this device' prompt on the TV …")
     with ctx.db.session() as s:
-        target = display.pair(s, target_id)
+        target = display.pair(ctx, s, target_id)
         typer.echo(f"Paired with {target.name} ({target.host}).")
 
 
@@ -425,6 +447,8 @@ def tv_status(
     with ctx.db.session() as s:
         result = display.status(ctx, s, target_id)
     info = result.info
+    if result.moved:
+        typer.echo(f"The TV moved: {result.moved.old_host} -> {result.moved.new_host} (followed).")
     typer.echo(f"{info.name or '?'} — {info.model or '?'} (art API {info.api_version or '?'})")
     typer.echo(f"art mode: {'on' if info.art_mode else 'off'}")
     typer.echo(f"my photos: {info.my_pictures} ({result.ours} from this app, {result.foreign} not)")
@@ -443,14 +467,20 @@ def tv_push(
     ] = None,
     favorites: Annotated[bool, typer.Option("--favorites", help="Show the Favorites view")] = False,
     every: Annotated[
-        int | None, typer.Option("--every", help="Minutes between images (3, 15, 60, 720, 1440)")
+        int | None,
+        typer.Option(
+            "--every",
+            help="Minutes between images (3, 15, 60, 720, 1440), or 0: don't change — show the "
+            "first image and leave everything else on the TV untouched",
+        ),
     ] = None,
     shuffle: Annotated[bool, typer.Option("--shuffle", help="Shuffle instead of in order")] = False,
     yes_delete_others: Annotated[
         bool,
         typer.Option(
             "--yes-delete-others",
-            help="Delete photos on the TV this app did not upload (irreversible)",
+            help="Delete photos on the TV this app did not upload (irreversible; ignored with "
+            "--every 0, which deletes nothing)",
         ),
     ] = False,
     data_dir: DataDir = None,
@@ -477,7 +507,15 @@ def tv_push(
                 slideshow_minutes=every,
                 slideshow_ordered=False if shuffle else None,
             )
-    result = display.push(ctx, target_id, allow_delete_foreign=yes_delete_others)
+    phases = {"rendering": "Rendering", "uploading": "Uploading", "removing": "Removing"}
+
+    def report(phase: str, done: int, total: int) -> None:
+        if phase in phases and total and done == total:
+            typer.echo(f"{phases[phase]}: {done}/{total}")
+
+    result = display.push(ctx, target_id, allow_delete_foreign=yes_delete_others, report=report)
+    if result.moved_to:
+        typer.echo(f"The TV moved: {result.moved_from} -> {result.moved_to} (followed).")
     typer.echo(
         f"{result.total} artwork(s): {result.uploaded} uploaded, {result.reused} already there, "
         f"{result.deleted_ours} removed."
@@ -489,4 +527,12 @@ def tv_push(
             f"WARNING: {result.foreign_remaining} photo(s) on the TV are not part of this set and "
             "are still shown. Re-run with --yes-delete-others to remove them."
         )
-    typer.echo(f"Slideshow: every {result.slideshow_minutes} min.")
+    if result.static:
+        left = (
+            f" ({result.left_ours} image(s) sent before are still there)"
+            if result.left_ours
+            else ""
+        )
+        typer.echo(f"Showing the first image, no slideshow. Nothing else was touched{left}.")
+    else:
+        typer.echo(f"Slideshow: every {result.slideshow_minutes} min.")

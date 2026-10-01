@@ -3,8 +3,9 @@
 Everything you need to go from an empty library to a picture on the TV. If you are here to change
 the code, read [`AGENTS.md`](../AGENTS.md) instead.
 
-> This app prepares **files**. It does not talk to the TV: you put the finished 3840×2160 image on
-> the TV the way you already do (the SmartThings app, a USB stick, or whatever your Frame accepts).
+> This app prepares finished 3840×2160 images, and can put them on a Samsung Frame over the local
+> network (§7, *Showing it on the TV*). Files still work the way you already use them: the
+> SmartThings app, a USB stick, or whatever your Frame accepts.
 
 ---
 
@@ -219,6 +220,54 @@ uv run the_frame_v2 export -o library.tfarchive
 uv run the_frame_v2 export -o renders.zip --kind renders --format jpg
 uv run the_frame_v2 import library.tfarchive --dry-run
 ```
+
+### Showing it on the TV
+
+**TV** in the sidebar. The details, and why the TV behaves as it does, are in
+[`tv-display.md`](tv-display.md).
+
+1. **Add a TV.** The dialog looks for TVs on your network as it opens and pre-selects the first
+   Frame it has not seen before (*Recommended*). If yours is not listed, *Scan again*, or type its
+   address (on the TV: Settings → Support → About this TV). In Docker, set `THE_FRAME_V2_PUBLIC_URL`
+   (or `THE_FRAME_V2_TV_SCAN_SUBNET=192.168.1`) so the app looks on your network, not the
+   container's.
+2. **Pair it.** Turn the TV fully **on** (not art mode — it cannot draw its prompt there), press
+   *Pair*, and accept "allow this device" on the TV. A power cut can make the TV forget the app:
+   *Pair again* is the fix.
+3. **Show on the TV** — from a collection, a selection of artworks, or one artwork in the viewer
+   (or the editor's command palette). The dialog says, before anything happens, how many images
+   will be sent, how many are already on the TV, and what else is there.
+
+**Two ways to show.** *On the TV* in the dialog (and on the TV page) chooses:
+
+- **A slideshow** — every 3 minutes, 15 minutes, 1 hour, 12 hours or 24 hours (the only intervals
+  the Frame accepts), *In order* or *Shuffle*. The Frame's slideshow plays **everything** in its
+  My Photos, so the app makes My Photos *be* your set: images it sent before that are not part
+  of the set are removed. Photos the app did **not** send stay — and play between yours — unless
+  you tick *Also remove the N photos this app did not send*. That box only appears when there are
+  some, and the TV cannot give a deleted photo back, so keep a copy elsewhere first.
+- **Don't change** — the first artwork goes on screen and stays there; nothing rotates and
+  **nothing on the TV is deleted**, neither your earlier images nor anybody else's. It is what a
+  single artwork starts with. The images it leaves behind are still known to be yours: the next
+  slideshow push tidies them away.
+
+**Drafts.** When a collection holds artworks not yet marked ready, *Leave out N drafts* is ticked:
+only finished artworks go to the wall. Untick it to send them too (a hand-picked selection is
+sent as picked).
+
+**While it sends**, a line under the sidebar shows each step (preparing the images, sending them
+— 4–6 seconds each on the TV — then putting the first one on screen), on whatever page you are.
+A message then says what happened: how many were sent, how many were already there, how many were
+removed, and whether photos the app did not send are still playing. The TV page keeps that summary
+and how many foreign photos the TV last reported.
+
+**Sending the same set again** uploads nothing; changing one artwork re-sends only what its new
+position on the TV requires. If the router gives the TV a new address, the app finds it again by
+its network identity on the next send or *Check the TV*, and says so.
+
+The same from a terminal: `uv run the_frame_v2 tv scan`, `tv add <ip>`, `tv pair <id>`,
+`tv status <id>`, and `tv push <id> --collection <id> --every 15` (`--every 0` is *Don't change*,
+`--yes-delete-others` removes the photos the app did not send).
 
 ---
 

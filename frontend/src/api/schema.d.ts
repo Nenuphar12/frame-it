@@ -506,6 +506,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/display/discover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Discover
+         * @description Samsung TVs on the LAN (SSDP + a sweep of the /24), Frames first. Read-only, a few seconds.
+         *
+         *     The first Frame that is not added yet is `recommended`: what the Add-TV dialog pre-selects.
+         */
+        get: operations["discover_api_v1_display_discover_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/display/targets": {
         parameters: {
             query?: never;
@@ -564,6 +586,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/display/targets/{target_id}/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Plan
+         * @description Dry-run a push: how many images go up, stay, leave — and whose. Nothing changes on the TV.
+         *
+         *     The TV is asked what it holds (`check_tv`); when it does not answer, the numbers come from the
+         *     app's own map and `tv_error` says why.
+         */
+        post: operations["plan_api_v1_display_targets__target_id__plan_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/display/targets/{target_id}/push": {
         parameters: {
             query?: never;
@@ -576,6 +621,9 @@ export interface paths {
         /**
          * Push
          * @description Queue a push. Uploading a set takes minutes, so the work happens in the `display` lane.
+         *
+         *     `slideshow_minutes` / `slideshow_ordered` are saved on the target first, so "Show on the TV"
+         *     sets how the TV rotates and what it shows in one request.
          */
         post: operations["push_api_v1_display_targets__target_id__push_post"];
         delete?: never;
@@ -608,7 +656,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Status */
+        /**
+         * Status
+         * @description Ask the TV now. Refreshes the cached counts — and follows the TV by MAC if it moved.
+         */
         get: operations["status_api_v1_display_targets__target_id__status_get"];
         put?: never;
         post?: never;
@@ -2521,6 +2572,30 @@ export interface components {
             /** Role */
             role?: ("admin" | "uploader") | null;
         };
+        /** DiscoveredTvOut */
+        DiscoveredTvOut: {
+            /** Frame Support */
+            frame_support: boolean;
+            /** Host */
+            host: string;
+            /** Mac */
+            mac?: string | null;
+            /** Model */
+            model?: string | null;
+            /** Model Code */
+            model_code?: string | null;
+            /** Name */
+            name?: string | null;
+            /**
+             * Recommended
+             * @default false
+             */
+            recommended: boolean;
+            /** Target Id */
+            target_id?: string | null;
+            /** Token Auth */
+            token_auth: boolean;
+        };
         /**
          * DisplayCapabilitiesOut
          * @description What this TV generation can do — measured, not assumed (`docs/tv-display.md`).
@@ -2541,10 +2616,85 @@ export interface components {
             /** Slideshow Minutes */
             slideshow_minutes: number[];
             /**
+             * Static Display
+             * @default true
+             */
+            static_display: boolean;
+            /**
              * Thumbnails
              * @default false
              */
             thumbnails: boolean;
+        };
+        /** DisplayDiscoverOut */
+        DisplayDiscoverOut: {
+            /** Subnet */
+            subnet?: string | null;
+            /** Tvs */
+            tvs: components["schemas"]["DiscoveredTvOut"][];
+        };
+        /**
+         * DisplayPlanIn
+         * @description A dry run: what pushing this source would do. Nothing on the TV changes.
+         */
+        DisplayPlanIn: {
+            /**
+             * Check Tv
+             * @default true
+             */
+            check_tv: boolean;
+            /** Slideshow Minutes */
+            slideshow_minutes?: number | null;
+            source?: components["schemas"]["DisplaySourceIn"] | null;
+        };
+        /** DisplayPlanOut */
+        DisplayPlanOut: {
+            /** Already There */
+            already_there: number;
+            /** Drafts */
+            drafts: number;
+            /** Drafts Left Out */
+            drafts_left_out: number;
+            /** Foreign */
+            foreign?: number | null;
+            /** Foreign Checked At */
+            foreign_checked_at?: string | null;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "slideshow" | "static";
+            /** Moved From */
+            moved_from?: string | null;
+            /** Moved To */
+            moved_to?: string | null;
+            /** Ours Left */
+            ours_left: number;
+            /** Ours To Remove */
+            ours_to_remove: number;
+            /** Set Count */
+            set_count: number;
+            /** To Upload */
+            to_upload: number;
+            /** Tv Error */
+            tv_error?: string | null;
+        };
+        /**
+         * DisplayProgressOut
+         * @description How far the running push is (`display.progress` carries the same, plus `target_id`).
+         */
+        DisplayProgressOut: {
+            /** Done */
+            done: number;
+            /** Job Id */
+            job_id: string;
+            /**
+             * Phase
+             * @enum {string}
+             */
+            phase: "queued" | "rendering" | "uploading" | "removing" | "starting";
+            /** Total */
+            total: number;
         };
         /** DisplayPushIn */
         DisplayPushIn: {
@@ -2553,11 +2703,62 @@ export interface components {
              * @default false
              */
             allow_delete_foreign: boolean;
+            /** Slideshow Minutes */
+            slideshow_minutes?: number | null;
+            /** Slideshow Ordered */
+            slideshow_ordered?: boolean | null;
         };
         /** DisplayPushOut */
         DisplayPushOut: {
             /** Job Id */
             job_id: string;
+        };
+        /**
+         * DisplayPushResultOut
+         * @description What a push did (`display.pushed` carries the same).
+         */
+        DisplayPushResultOut: {
+            /** Deleted Foreign */
+            deleted_foreign: number;
+            /** Deleted Ours */
+            deleted_ours: number;
+            /** Finished At */
+            finished_at?: string | null;
+            /** First Content Id */
+            first_content_id?: string | null;
+            /**
+             * Foreign On Tv
+             * @default 0
+             */
+            foreign_on_tv: number;
+            /** Foreign Remaining */
+            foreign_remaining: number;
+            /**
+             * Left Ours
+             * @default 0
+             */
+            left_ours: number;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "slideshow" | "static";
+            /** Moved From */
+            moved_from?: string | null;
+            /** Moved To */
+            moved_to?: string | null;
+            /** Reused */
+            reused: number;
+            /** Slideshow Minutes */
+            slideshow_minutes?: number | null;
+            /** Target Id */
+            target_id: string;
+            /** Total */
+            total: number;
+            /** Uploaded */
+            uploaded: number;
+            /** Warnings */
+            warnings?: string[];
         };
         /**
          * DisplaySourceIn
@@ -2600,6 +2801,8 @@ export interface components {
             current_content_id?: string | null;
             /** Foreign */
             foreign: number;
+            /** Moved From */
+            moved_from?: string | null;
             /** My Pictures */
             my_pictures: number;
             /** Ours */
@@ -2619,6 +2822,10 @@ export interface components {
         DisplayTargetIn: {
             /** Host */
             host: string;
+            /** Mac */
+            mac?: string | null;
+            /** Model */
+            model?: string | null;
             /**
              * Name
              * @default
@@ -2634,11 +2841,15 @@ export interface components {
         DisplayTargetOut: {
             /** Api Version */
             api_version?: string | null;
+            /** Checked At */
+            checked_at?: string | null;
             /**
              * Created At
              * Format: date-time
              */
             created_at: string;
+            /** Foreign Count */
+            foreign_count?: number | null;
             /** Host */
             host: string;
             /** Id */
@@ -2649,16 +2860,27 @@ export interface components {
             last_error?: string | null;
             /** Last Pushed At */
             last_pushed_at?: string | null;
+            last_result?: components["schemas"]["DisplayPushResultOut"] | null;
             /** Last Seen At */
             last_seen_at?: string | null;
+            /** Mac */
+            mac?: string | null;
             /** Model */
             model?: string | null;
             /** Name */
             name: string;
+            /** Ours Count */
+            ours_count?: number | null;
             /** Paired */
             paired: boolean;
+            progress?: components["schemas"]["DisplayProgressOut"] | null;
             /** Render Format */
             render_format: string;
+            /**
+             * Set Count
+             * @default 0
+             */
+            set_count: number;
             /** Slideshow Minutes */
             slideshow_minutes: number;
             /** Slideshow Ordered */
@@ -5042,6 +5264,26 @@ export interface operations {
             };
         };
     };
+    discover_api_v1_display_discover_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisplayDiscoverOut"];
+                };
+            };
+        };
+    };
     list_targets_api_v1_display_targets_get: {
         parameters: {
             query?: never;
@@ -5177,6 +5419,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DisplayTargetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    plan_api_v1_display_targets__target_id__plan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                target_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DisplayPlanIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisplayPlanOut"];
                 };
             };
             /** @description Validation Error */

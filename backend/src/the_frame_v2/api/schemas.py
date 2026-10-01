@@ -864,13 +864,17 @@ class JobDismissAllOut(ApiModel):
 class DisplayTargetIn(BaseModel):
     name: str = Field(default="", max_length=128)
     host: str = Field(min_length=3, max_length=64)
+    mac: str | None = Field(default=None, max_length=32)
+    """From discovery: what recognises the TV when DHCP moves it."""
+    model: str | None = Field(default=None, max_length=128)
 
 
 class DisplayTargetUpdateIn(BaseModel):
     name: str | None = Field(default=None, max_length=128)
     host: str | None = Field(default=None, max_length=64)
     slideshow_minutes: int | None = None
-    """One of the intervals the TV accepts (`GET /display/capabilities`)."""
+    """0 = "Don't change" (show the first, rotate nothing, delete nothing), or one of the
+    intervals the TV accepts (`GET /display/capabilities`)."""
     slideshow_ordered: bool | None = None
     render_format: Literal["jpg", "png"] | None = None
 
@@ -883,6 +887,7 @@ class DisplaySourceIn(BaseModel):
     include_nested: bool = False
     favorite: bool | None = None
     status: str | None = None
+    """`"ready"` leaves the drafts out (for an explicit `artwork_ids` list too)."""
     sort: str = "created_desc"
     artwork_ids: list[str] = Field(default_factory=list, max_length=200)
     label: str | None = Field(default=None, max_length=256)
@@ -890,13 +895,54 @@ class DisplaySourceIn(BaseModel):
 
 class DisplayPushIn(BaseModel):
     allow_delete_foreign: bool = False
-    """Delete items on the TV this app did not upload. The UI asks first, every time."""
+    """Delete items on the TV this app did not upload. The UI asks first, every time. Ignored when
+    the target does not rotate (`slideshow_minutes = 0`): such a push deletes nothing."""
+    slideshow_minutes: int | None = None
+    """Saved on the target before the push is queued (same values as `PATCH`)."""
+    slideshow_ordered: bool | None = None
+
+
+DisplayPhase = Literal["queued", "rendering", "uploading", "removing", "starting"]
+
+
+class DisplayProgressOut(ApiModel):
+    """How far the running push is (`display.progress` carries the same, plus `target_id`)."""
+
+    job_id: str
+    phase: DisplayPhase
+    done: int
+    total: int
+
+
+class DisplayPushResultOut(ApiModel):
+    """What a push did (`display.pushed` carries the same)."""
+
+    target_id: str
+    mode: Literal["slideshow", "static"]
+    uploaded: int
+    reused: int
+    deleted_ours: int
+    deleted_foreign: int
+    foreign_remaining: int
+    """Slideshow mode: photos this app did not send, still there — and shown between ours."""
+    foreign_on_tv: int = 0
+    left_ours: int = 0
+    """"Don't change": images sent before, left on the TV."""
+    total: int
+    slideshow_minutes: int | None = None
+    first_content_id: str | None = None
+    moved_from: str | None = None
+    moved_to: str | None = None
+    """The TV answered at a new address (same MAC): the target followed it."""
+    warnings: list[str] = Field(default_factory=list)
+    finished_at: datetime | None = None
 
 
 class DisplayTargetOut(ApiModel):
     id: str
     name: str
     host: str
+    mac: str | None = None
     model: str | None = None
     api_version: str | None = None
     state: str
@@ -904,10 +950,20 @@ class DisplayTargetOut(ApiModel):
     source_label: str | None = None
     source: dict[str, Any] | None = None
     slideshow_minutes: int
+    """0 = "Don't change"."""
     slideshow_ordered: bool
     render_format: str
     paired: bool
     item_count: int
+    """Images this app put on the TV and believes are still there."""
+    set_count: int = 0
+    """Of those, the ones in the current set."""
+    ours_count: int | None = None
+    """As the TV last said (`checked_at`); None until it was asked."""
+    foreign_count: int | None = None
+    checked_at: datetime | None = None
+    last_result: DisplayPushResultOut | None = None
+    progress: DisplayProgressOut | None = None
     created_at: datetime
     last_pushed_at: datetime | None = None
     last_seen_at: datetime | None = None
@@ -929,18 +985,75 @@ class DisplayStatusOut(ApiModel):
     slideshow_minutes: int | None = None
     slideshow_ordered: bool = False
     current_content_id: str | None = None
+    moved_from: str | None = None
+    """Set when the TV no longer answered at its old address and was found at `target.host`."""
 
 
 class DisplayPushOut(ApiModel):
     job_id: str
 
 
+class DisplayPlanIn(BaseModel):
+    """A dry run: what pushing this source would do. Nothing on the TV changes."""
+
+    source: DisplaySourceIn | None = None
+    """None: the target's current set."""
+    slideshow_minutes: int | None = None
+    """None: the target's setting."""
+    check_tv: bool = True
+    """Ask the TV what it holds (a few seconds); otherwise the app's own map is believed."""
+
+
+class DisplayPlanOut(ApiModel):
+    mode: Literal["slideshow", "static"]
+    set_count: int
+    to_upload: int
+    already_there: int
+    ours_to_remove: int
+    """Slideshow mode: images sent before that leave the TV."""
+    ours_left: int
+    """"Don't change": images sent before that stay where they are."""
+    foreign: int | None = None
+    """Photos this app did not send; None when unknown (the TV did not answer, nothing cached)."""
+    foreign_checked_at: datetime | None = None
+    tv_error: str | None = None
+    """Problem code when the TV could not be asked; the numbers then come from the app's map."""
+    drafts: int
+    """Drafts in the source, whatever `status` says."""
+    drafts_left_out: int
+    moved_from: str | None = None
+    moved_to: str | None = None
+
+
 class DisplayCapabilitiesOut(ApiModel):
     """What this TV generation can do — measured, not assumed (`docs/tv-display.md`)."""
 
     slideshow_minutes: list[int]
+    """The intervals the TV's slideshow accepts (anything else answers -7)."""
+    static_display: bool = True
+    """`slideshow_minutes = 0` is "Don't change": the first image stays, nothing is deleted."""
     max_set: int
     scoped_slideshow: bool = False
     """False everywhere so far: a Frame plays a whole category, so a push mirrors the set."""
     favourites: bool = False
     thumbnails: bool = False
+
+
+class DiscoveredTvOut(ApiModel):
+    host: str
+    name: str | None = None
+    model: str | None = None
+    model_code: str | None = None
+    frame_support: bool
+    token_auth: bool
+    mac: str | None = None
+    target_id: str | None = None
+    """Already added: the target it is."""
+    recommended: bool = False
+    """The first Frame not added yet — what the Add-TV dialog pre-selects."""
+
+
+class DisplayDiscoverOut(ApiModel):
+    subnet: str | None = None
+    """The /24 swept (`192.168.1`), None when no LAN address could be told."""
+    tvs: list[DiscoveredTvOut]
