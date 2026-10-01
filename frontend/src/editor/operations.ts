@@ -22,6 +22,9 @@ import type { Alternative } from "@/editor/core/alternatives.ts";
 import {
   applyComposition,
   captionStyleOf,
+  roomy,
+  solveStrict,
+  splits,
   type Composition,
   type Recipe,
 } from "@/editor/core/composition.ts";
@@ -224,12 +227,14 @@ function normalizeLayout(layout: LayoutApiDocument): CoreLayout {
   return {
     recipe: layout.recipe,
     balance: layout.balance ?? null,
+    weights: (layout.weights ?? []).map((entry) => (entry ? [...entry] : null)),
     outer: { x: layout.outer?.x ?? 120, y: layout.outer?.y ?? 120 },
     gutter: { x: layout.gutter?.x ?? 80, y: layout.gutter?.y ?? 80 },
     format: layout.format ?? "fill",
     cell_formats: [...(layout.cell_formats ?? [])],
     border: layout.border ? { ...layout.border } : null,
     caption_place: layout.caption_place ?? "none",
+    caption_align: layout.caption_align ?? "center",
   };
 }
 
@@ -940,6 +945,8 @@ export function attachComposition(
   doc.composition = {
     recipe: recipe.id,
     balance: previous?.balance ?? null,
+    // Indexed by the recipe's splits: another recipe's entries would describe other divisions.
+    weights: previous?.recipe === recipe.id ? previous.weights : [],
     outer: previous ? { ...previous.outer } : { x: 120, y: 120 },
     gutter: previous ? { ...previous.gutter } : { x: 80, y: 80 },
     format: previous?.format ?? (recipe.count === 1 ? "original" : "fill"),
@@ -947,10 +954,10 @@ export function attachComposition(
     border: previous?.border ? { ...previous.border } : null,
     caption: previous
       ? { ...previous.caption }
-      : { text: existing?.text ?? "", place: existing ? "below" : "none" },
+      : { text: existing?.text ?? "", place: existing ? "below" : "none", align: "center" },
     detached: false,
   };
-  doc.composition.balance = balanceFor(recipe, doc.composition.balance);
+  doc.composition.balance = balanceFor(recipe, previous?.balance ?? null);
   resolveComposition(doc, recipes, sizes);
 }
 
@@ -982,9 +989,57 @@ export function recipeFollowsPhotoCount(
   }
   block.recipe = chosen.id;
   block.balance = balanceFor(chosen, block.balance);
+  block.weights = []; // they are indexed by the old recipe's splits
   // The per-cell overrides are positional: a shorter recipe drops the ones that no longer exist.
   block.cell_formats = block.cell_formats.slice(0, count);
   resolveComposition(doc, recipes, sizes);
+}
+
+/**
+ * Set how one division of a Fill layout shares its span out (§6.5); `null` gives it back to the
+ * recipe.
+ *
+ * `split` is the depth-first index `composition.weights` uses. The root of a recipe that declares
+ * a balance is written as `balance`, clamped to the recipe's range — one division, one name, and
+ * the only value the server accepts there. A change that would leave a cell under `MIN_CELL` is
+ * dropped: the solver would otherwise relax the gutters (§3.6) and the picture would stop
+ * matching the sliders.
+ */
+export function setSplitShares(
+  doc: EditorDocument,
+  split: number,
+  shares: readonly number[] | null,
+  recipes: readonly Recipe[],
+  sizes: PhotoSizes,
+): void {
+  const recipe = attachedRecipe(doc, recipes);
+  const block = doc.composition;
+  if (!recipe || !block) return;
+  const node = splits(recipe.tree)[split];
+  if (!node || (shares !== null && shares.length !== node.children.length)) return;
+  const patch: Partial<Composition> = {};
+  if (split === 0 && recipe.balance) {
+    const total = shares ? shares.reduce((sum, share) => sum + share, 0) : 0;
+    patch.balance =
+      shares === null || total <= 0
+        ? null
+        : balanceFor(recipe, Math.round(((shares[0] ?? 0) / total) * 1000) / 1000);
+  } else {
+    const next: (number[] | null)[] = block.weights.map((entry) => (entry ? [...entry] : null));
+    while (next.length <= split) next.push(null);
+    next[split] = shares === null ? null : [...shares];
+    while (next.length > 0 && next[next.length - 1] === null) next.pop();
+    patch.weights = next;
+  }
+  const candidate = { ...current(block), ...patch };
+  const photoSizes = doc.slots.map((slot) =>
+    slot.photo_id ? (sizes[slot.photo_id] ?? null) : null,
+  );
+  const captionSize = captionStyleOf(current(doc)).size;
+  const fits = (composition: Composition) =>
+    roomy(solveStrict(recipe, composition, photoSizes, captionSize));
+  if (shares !== null && !fits(candidate) && fits(current(block))) return;
+  setComposition(doc, patch, recipes, sizes);
 }
 
 /**

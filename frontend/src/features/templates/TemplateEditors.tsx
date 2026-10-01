@@ -300,7 +300,8 @@ export function LayoutEditorDialog({
           <RecipePicker
             recipes={recipes.data ?? []}
             selected={document.recipe}
-            onSelect={(id) => patch({ recipe: id, balance: null })}
+            // Balance and the per-split weights describe one recipe's divisions, not the next one's.
+            onSelect={(id) => patch({ recipe: id, balance: null, weights: [] })}
           />
           <Field label={t("editor.simple.format")}>
             <select
@@ -380,6 +381,13 @@ export function LayoutEditorDialog({
                 max={200}
                 onChange={(width) => patch({ border: { ...border, width } })}
               />
+              <NumberField
+                value={border.width}
+                min={1}
+                max={200}
+                suffix="px"
+                onChange={(width) => patch({ border: { ...border, width } })}
+              />
               <ColorField
                 color={border.color}
                 label={t("templates.borderColor")}
@@ -399,6 +407,20 @@ export function LayoutEditorDialog({
               onChange={(value) => patch({ caption_place: value })}
             />
           </Field>
+          {(document.caption_place ?? "none") !== "none" && (
+            <Field label={t("editor.simple.captionAlign")}>
+              <Segmented
+                value={document.caption_align ?? "center"}
+                label={t("editor.simple.captionAlign")}
+                options={[
+                  { value: "left", label: t("editor.simple.aligns.left") },
+                  { value: "center", label: t("editor.simple.aligns.center") },
+                  { value: "right", label: t("editor.simple.aligns.right") },
+                ]}
+                onChange={(value) => patch({ caption_align: value })}
+              />
+            </Field>
+          )}
         </>
       }
     />

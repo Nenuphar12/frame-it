@@ -26,6 +26,8 @@ from the_frame_v2.domain.composition import (
     roomy,
     solve,
     solve_strict,
+    split_weights,
+    splits,
 )
 from the_frame_v2.domain.document import ArtworkDocument, Caption, Composition, CropSpec
 from the_frame_v2.domain.geometry import CANVAS, Rect, Size
@@ -607,3 +609,92 @@ def test_fill_is_not_a_cell_format() -> None:
     """`fill` is a property of the whole block, never of one cell."""
     with pytest.raises(ValueError, match="String should match"):
         ArtworkDocument.model_validate(_document(cell_formats=["fill"]))
+
+
+# ---- per-split weights (§3.4) -------------------------------------------------------------------
+def test_splits_are_listed_depth_first() -> None:
+    """The index a `weights` entry is read by: the root, then each child's own splits in order."""
+    assert [len(s.children) for s in splits(_recipe("four-hero-left").tree)] == [2, 3]
+    assert [s.split for s in splits(_recipe("four-grid").tree)] == ["col", "row", "row"]
+    assert splits(_recipe("single").tree) == []
+
+
+def test_a_nested_weight_moves_only_its_own_division() -> None:
+    plain = cells_of("three-hero-left")
+    weighted = cells_of("three-hero-left", weights=[None, [3, 1]])
+    assert weighted[0].rect == plain[0].rect  # the hero does not move
+    assert weighted[1].rect.h == 1380 and weighted[2].rect.h == 460
+    assert weighted[2].rect.y - (weighted[1].rect.y + weighted[1].rect.h) == 80
+    assert weighted[2].rect.y + weighted[2].rect.h == plain[2].rect.y + plain[2].rect.h
+
+
+@pytest.mark.parametrize("recipe_id", ALL_IDS)
+def test_weighted_cells_still_tile_the_area(recipe_id: str) -> None:
+    recipe = _recipe(recipe_id)
+    weights = [
+        [1 + index + child for child in range(len(node.children))]
+        for index, node in enumerate(splits(recipe.tree))
+    ]
+    cells = cells_of(recipe_id, weights=weights)
+    area = block_area(composition(recipe_id), CAPTION_SIZE)
+    assert min(c.rect.x for c in cells) == area.x
+    assert max(c.rect.x + c.rect.w for c in cells) == area.x + area.w
+    assert min(c.rect.y for c in cells) == area.y
+    assert max(c.rect.y + c.rect.h for c in cells) == area.y + area.h
+    _assert_gaps_are_gutters(cells, 80, 80)
+
+
+def test_balance_stays_the_root_of_a_recipe_that_declares_one() -> None:
+    """One name per division: where there is a Balance, a root entry of `weights` is not read."""
+    recipe = _recipe("three-hero-left")
+    block = composition("three-hero-left", balance=0.5, weights=[[1, 9], [1, 2]])
+    assert split_weights(recipe, block) == [[0.5, 0.5], [1, 2]]
+    assert cells_of("three-hero-left", balance=0.5, weights=[[1, 9]]) == cells_of(
+        "three-hero-left", balance=0.5
+    )
+
+
+def test_a_root_weight_drives_a_recipe_without_a_balance() -> None:
+    cells = cells_of("two-side-by-side", weights=[[1, 3]])
+    assert cells[0].rect.w == 880 and cells[1].rect.w == 2640
+
+
+def test_an_entry_of_the_wrong_shape_is_ignored_by_the_solver() -> None:
+    """Total, like the rest of it (§3.6): the reference check is what reports the mismatch."""
+    assert cells_of("two-side-by-side", weights=[[1, 2, 3]]) == cells_of("two-side-by-side")
+    assert cells_of("two-stacked", weights=[None, [1, 5]]) == cells_of("two-stacked")
+
+
+def test_weights_are_inert_under_a_ratio() -> None:
+    assert cells_of("four-grid", format="3:2", weights=[[5, 1], [1, 5]]) == cells_of(
+        "four-grid", format="3:2"
+    )
+
+
+def test_weights_are_bounded_like_a_recipe_s() -> None:
+    for bad in ([[1]], [[0, 1]], [[1, -1]], [[1] * 9], [[1, 1001]]):
+        with pytest.raises(ValueError, match="weights"):
+            composition("two-side-by-side", weights=bad)
+
+
+# ---- caption alignment (§3.7) -------------------------------------------------------------------
+def _captioned(recipe_id: str, align: str, **fields: Any) -> ArtworkDocument:
+    caption = {"text": "Kyoto", "place": "below", "align": align}
+    return _applied(recipe_id, [Size(6000, 4000), Size(3000, 4000)], caption=caption, **fields)
+
+
+def test_a_caption_is_centred_unless_asked_otherwise() -> None:
+    caption = _captioned("two-stacked", "center", format="3:2").captions[0]
+    assert (caption.x, caption.anchor) == (CANVAS.w // 2, "middle")
+
+
+def test_a_caption_lines_up_with_the_block_s_printed_edge() -> None:
+    """The edge is the block's, border included — not `outer`, which is only a minimum (§3.5)."""
+    border = {"width": 24, "color": "#FFFFFF"}
+    left = _captioned("two-stacked", "left", format="3:2", border=border)
+    right = _captioned("two-stacked", "right", format="3:2", border=border)
+    first = left.slots[0].rect
+    assert left.margins.left > 120  # the block is narrower than the area: there is slack
+    assert (left.captions[0].x, left.captions[0].anchor) == (first.x - 24, "start")
+    assert (right.captions[0].x, right.captions[0].anchor) == (first.x + first.w + 24, "end")
+    assert left.captions[0].y == right.captions[0].y

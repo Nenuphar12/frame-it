@@ -86,3 +86,29 @@ def test_unknown_tag_rejected(local: TestClient) -> None:
     (photo_id,) = _seed(local, 1)
     res = local.patch(f"/api/v1/photos/{photo_id}", json={"tag_ids": ["nope"]})
     assert res.status_code == 422 and res.json()["code"] == "unknown_tag"
+
+
+def test_photos_around_another_one(local: TestClient) -> None:
+    """`around`: the same few days or the same spot — what replacing a photo offers first."""
+
+    def add(name: str, shade: int, taken: str | None, gps: tuple[float, float] | None) -> str:
+        upload_bytes(local, make_jpeg(900, 600, (shade, 40, 90), taken=taken, gps=gps), name)
+        items = local.get("/api/v1/photos").json()["items"]
+        return next(str(p["id"]) for p in items if p["original_filename"] == name)
+
+    kyoto, tokyo = (35.0116, 135.7681), (35.6762, 139.6503)
+    ref = add("ref.jpg", 10, "2026:04:12 10:30:00", kyoto)
+    same_trip = add("trip.jpg", 20, "2026:04:14 09:00:00", tokyo)
+    same_spot = add("spot.jpg", 30, "2025:11:02 16:00:00", (35.02, 135.77))
+    add("elsewhere.jpg", 40, "2025:11:02 16:00:00", tokyo)
+    no_date = add("bare.jpg", 50, None, None)
+
+    def around(photo_id: str) -> set[str]:
+        res = local.get("/api/v1/photos", params={"around": photo_id})
+        assert res.status_code == 200, res.text
+        return {p["id"] for p in res.json()["items"]}
+
+    assert around(ref) == {ref, same_trip, same_spot}
+    # no date and no position: nothing is "around" it — not the whole library
+    assert around(no_date) == set()
+    assert local.get("/api/v1/photos", params={"around": "missing"}).status_code == 404

@@ -1445,7 +1445,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Photos */
+        /**
+         * List Photos
+         * @description `around` is a photo id: only the photos taken in the same few days or at the same spot
+         *     (what the editor offers first when replacing that photo). 404 when it does not exist.
+         */
         get: operations["list_photos_api_v1_photos_get"];
         put?: never;
         post?: never;
@@ -2677,6 +2681,8 @@ export interface components {
             outer?: components["schemas"]["CompositionAxis"];
             /** Recipe */
             recipe: string;
+            /** Weights */
+            weights?: (number[] | null)[];
         };
         /**
          * CompositionAxis
@@ -2700,6 +2706,12 @@ export interface components {
         };
         /** CompositionCaption */
         CompositionCaption: {
+            /**
+             * Align
+             * @default center
+             * @enum {string}
+             */
+            align: "left" | "center" | "right";
             /**
              * Place
              * @default none
@@ -3494,6 +3506,12 @@ export interface components {
             balance?: number | null;
             border?: components["schemas"]["CompositionBorder"] | null;
             /**
+             * Caption Align
+             * @default center
+             * @enum {string}
+             */
+            caption_align: "left" | "center" | "right";
+            /**
              * Caption Place
              * @default none
              * @enum {string}
@@ -3510,6 +3528,8 @@ export interface components {
             outer?: components["schemas"]["CompositionAxis"];
             /** Recipe */
             recipe: string;
+            /** Weights */
+            weights?: (number[] | null)[];
         };
         /** LayoutIn */
         LayoutIn: {
@@ -7404,6 +7424,7 @@ export interface operations {
                 inbox_state?: ("inbox" | "processed" | "dismissed") | null;
                 q?: string | null;
                 tag_id?: string | null;
+                around?: string | null;
                 cursor?: string | null;
                 limit?: number;
             };

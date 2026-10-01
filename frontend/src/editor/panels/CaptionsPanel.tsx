@@ -1,7 +1,5 @@
-// Captions: the list, and every property of the selected one (§14 phase 6, item 4).
-//
-// The font catalogue comes from `GET /fonts`, which is also what the renderer uses, so a weight
-// offered here always exists in the bundled files (the server rejects the others).
+// Captions: the list, and every property of the selected one (§14 phase 6, item 4). The
+// typography fields are `CaptionTypography`, shared with the Simple panel.
 import { Plus, Trash2, Type } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -10,7 +8,7 @@ import * as actions from "@/editor/actions";
 import type { CaptionAnchor, DocCaption, EditorDocument } from "@/editor/core/document.ts";
 import { CAPTION_DEFAULTS, MAX_CAPTIONS } from "@/editor/operations";
 import { cn } from "@/shared/cn";
-import { ColorField } from "./ColorField";
+import { CaptionTypography } from "./CaptionTypography";
 import { Field, IconButton, NumberField, PanelSection, Segmented, Slider } from "./Controls";
 
 const ANCHORS: CaptionAnchor[] = ["start", "middle", "end"];
@@ -24,8 +22,6 @@ interface CaptionsPanelProps {
 export function CaptionsPanel({ doc, caption, onSelect }: CaptionsPanelProps) {
   const { t } = useTranslation();
   const fonts = useFonts();
-  const font = (fonts.data ?? []).find((item) => item.id === caption?.font);
-  const weights = font?.weights ?? [CAPTION_DEFAULTS.weight];
 
   const add = () => {
     const first = fonts.data?.[0];
@@ -92,81 +88,11 @@ export function CaptionsPanel({ doc, caption, onSelect }: CaptionsPanelProps) {
               className="h-7 min-w-0 flex-1 rounded border border-border bg-panel-2 px-1.5 text-xs"
             />
           </Field>
-          <Field label={t("editor.captions.font")}>
-            <select
-              className="h-7 min-w-0 flex-1 rounded border border-border bg-panel-2 px-1 text-xs"
-              value={caption.font}
-              onChange={(event) => {
-                const next = (fonts.data ?? []).find((item) => item.id === event.target.value);
-                actions.updateCaption({
-                  font: event.target.value,
-                  // The weight must exist in the new family, or the server rejects the document.
-                  weight: next?.weights.includes(caption.weight)
-                    ? caption.weight
-                    : (next?.weights[0] ?? caption.weight),
-                });
-              }}
-            >
-              {(fonts.data ?? []).map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label={t("editor.captions.weight")}>
-            <select
-              className="h-7 min-w-0 flex-1 rounded border border-border bg-panel-2 px-1 text-xs"
-              value={caption.weight}
-              onChange={(event) => actions.updateCaption({ weight: Number(event.target.value) })}
-            >
-              {weights.map((weight) => (
-                <option key={weight} value={weight}>
-                  {weight}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label={t("editor.captions.size")}>
-            <Slider
-              value={caption.size}
-              min={16}
-              max={320}
-              onChange={(size) => actions.updateCaption({ size }, "caption-size")}
-            />
-            <NumberField
-              value={caption.size}
-              min={4}
-              max={1000}
-              onChange={(size) => actions.updateCaption({ size }, "caption-size")}
-              suffix="px"
-            />
-          </Field>
-          <Field label={t("editor.captions.color")}>
-            <ColorField
-              color={caption.color}
-              onChange={(color) => actions.updateCaption({ color }, "caption-color")}
-              label={t("editor.captions.color")}
-              photoId={doc.slots[0]?.photo_id ?? null}
-            />
-          </Field>
-          <Field label={t("editor.captions.letterSpacing")}>
-            <Slider
-              value={caption.letter_spacing}
-              min={-0.1}
-              max={0.5}
-              step={0.005}
-              onChange={(value) => actions.updateCaption({ letter_spacing: value }, "caption-spacing")}
-            />
-            <NumberField
-              value={caption.letter_spacing}
-              min={-0.5}
-              max={2}
-              step={0.01}
-              onChange={(value) => actions.updateCaption({ letter_spacing: value }, "caption-spacing")}
-              suffix="em"
-            />
-          </Field>
+          <CaptionTypography
+            caption={caption}
+            photoId={doc.slots[0]?.photo_id ?? null}
+            onChange={(patch, group) => actions.updateCaption(patch, group)}
+          />
           <Segmented
             label={t("editor.captions.anchor")}
             value={caption.anchor}

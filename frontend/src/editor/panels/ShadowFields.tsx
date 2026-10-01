@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 
 import type { Shadow } from "@/editor/core/document.ts";
 import { ColorField } from "./ColorField";
-import { Field, NumberField, Segmented, Slider } from "./Controls";
+import { Field, NumberField, PercentField, Segmented, Slider } from "./Controls";
 
 /** What `None → Recessed/Raised` starts from: the look of the built-in styles. */
 const DEFAULT_SHADOW: Shadow = {
@@ -72,9 +72,10 @@ export function ShadowFields({
               step={0.01}
               onChange={(opacity) => set({ opacity }, "shadow-opacity")}
             />
-            <span className="w-8 shrink-0 text-right text-[11px] text-muted tabular-nums">
-              {Math.round(shadow.opacity * 100)}
-            </span>
+            <PercentField
+              value={shadow.opacity}
+              onChange={(opacity) => set({ opacity }, "shadow-opacity")}
+            />
           </Field>
           <Field label={t("editor.shadow.offset")}>
             <NumberField

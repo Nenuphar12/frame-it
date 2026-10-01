@@ -61,6 +61,7 @@ const NEW_LAYOUT = {
   cell_formats: [],
   border: null,
   caption_place: "none" as const,
+  caption_align: "center" as const,
 };
 
 type Editing =

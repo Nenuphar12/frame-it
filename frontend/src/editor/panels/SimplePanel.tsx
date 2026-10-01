@@ -4,15 +4,29 @@
 // geometry — the same solver the server runs on save, so what is drawn here is what gets stored.
 // The block is the source of truth while it is attached; a hand-built artwork shows the picker
 // alone until one is chosen (§6.1).
-import { ChevronDown, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
+import * as Menu from "@radix-ui/react-dropdown-menu";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Plus,
+  RotateCcw,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { photoThumbUrl, type FrameStyle, type Layout } from "@/api/client";
 import * as actions from "@/editor/actions";
 import { SLIDER_LIMITS, sliderMax, valueOf, type SliderKey } from "@/editor/core/bounds.ts";
-import type { CaptionPlace, Recipe } from "@/editor/core/composition.ts";
+import {
+  splitWeights,
+  type CaptionAlign,
+  type CaptionPlace,
+  type Recipe,
+} from "@/editor/core/composition.ts";
 import type { EditorDocument } from "@/editor/core/document.ts";
+import { cellSplits, normalized, shareRange } from "@/editor/core/splits.ts";
 import {
   nativeZoom,
   photoZoom,
@@ -25,8 +39,9 @@ import { cn } from "@/shared/cn";
 import { SLOT_MIME, startInternalDrag } from "@/shared/dnd";
 import { Button } from "@/shared/ui/Button";
 import { Dialog } from "@/shared/ui/Dialog";
+import { CaptionTypography } from "./CaptionTypography";
 import { ColorField } from "./ColorField";
-import { Field, IconButton, NumberField, PanelSection, Slider } from "./Controls";
+import { Field, IconButton, NumberField, PanelSection, PercentField, Slider } from "./Controls";
 import { SlotQualityBadge } from "./QualityBadge";
 import { RecipePicker, RecipeSchema } from "./RecipePicker";
 import { ShadowFields } from "./ShadowFields";
@@ -63,6 +78,10 @@ interface SimplePanelProps {
   onSelectSlot: (slotId: string) => void;
   /** Open the "save this artwork as a template" dialog (docs/templates.md §3). */
   onSaveAsTemplate: (kind: "frame_style" | "layout") => void;
+  /** Open the library picker for one more photo (the layout follows the count, §4.4). */
+  onAddPhoto: () => void;
+  /** Open the library picker to put another photo in this cell. */
+  onReplacePhoto: (slotId: string) => void;
 }
 
 export function SimplePanel({
@@ -74,6 +93,8 @@ export function SimplePanel({
   selectedSlotId,
   onSelectSlot,
   onSaveAsTemplate,
+  onAddPhoto,
+  onReplacePhoto,
 }: SimplePanelProps) {
   const { t } = useTranslation();
   const block = doc.composition;
@@ -114,6 +135,9 @@ export function SimplePanel({
       selectedSlotId={selectedSlotId}
       onSelectSlot={onSelectSlot}
       onSaveAsTemplate={onSaveAsTemplate}
+      // Past the catalogue the block would detach (§4.4): Simple does not offer that by accident.
+      onAddPhoto={recipes.some((item) => item.count === count + 1) ? onAddPhoto : null}
+      onReplacePhoto={onReplacePhoto}
     />
   );
 }
@@ -130,6 +154,8 @@ function AttachedPanel({
   selectedSlotId,
   onSelectSlot,
   onSaveAsTemplate,
+  onAddPhoto,
+  onReplacePhoto,
 }: {
   doc: EditorDocument;
   block: NonNullable<EditorDocument["composition"]>;
@@ -141,6 +167,8 @@ function AttachedPanel({
   selectedSlotId: string | null;
   onSelectSlot: (slotId: string) => void;
   onSaveAsTemplate: (kind: "frame_style" | "layout") => void;
+  onAddPhoto: (() => void) | null;
+  onReplacePhoto: (slotId: string) => void;
 }) {
   const { t } = useTranslation();
   const [more, setMore] = useState(false);
@@ -278,9 +306,14 @@ function AttachedPanel({
                   actions.setComposition({ balance: value }, "composition-balance")
                 }
               />
-              <span className="w-9 shrink-0 text-right text-[11px] text-muted tabular-nums">
-                {Math.round(balance * 100)}%
-              </span>
+              <PercentField
+                value={balance}
+                min={recipe.balance?.min ?? 0}
+                max={recipe.balance?.max ?? 1}
+                onChange={(value) =>
+                  actions.setComposition({ balance: value }, "composition-balance")
+                }
+              />
             </Field>
           )}
         </PanelSection>
@@ -296,6 +329,10 @@ function AttachedPanel({
         />
         {recipe.balance != null && !balanced && (
           <p className="text-[11px] text-muted">{t("editor.simple.balanceInert")}</p>
+        )}
+        {/* The gaps are handles in Fill (§6.5): nothing on the canvas says so, so the panel does. */}
+        {block.format === "fill" && count > 1 && (
+          <p className="text-[11px] text-muted">{t("editor.simple.dragGapHint")}</p>
         )}
       </PanelSection>
 
@@ -351,6 +388,10 @@ function AttachedPanel({
 
       <PhotosSection
         doc={doc}
+        block={block}
+        recipe={recipe}
+        onAddPhoto={onAddPhoto}
+        onReplacePhoto={onReplacePhoto}
         sizes={sizes}
         selectedSlotId={selectedSlotId}
         onSelectSlot={onSelectSlot}
@@ -463,6 +504,7 @@ function AttachedPanel({
             actions.setComposition(
               {
                 caption: {
+                  ...block.caption,
                   text: event.target.value,
                   place: block.caption.place === "none" ? "below" : block.caption.place,
                 },
@@ -481,24 +523,37 @@ function AttachedPanel({
             />
           ))}
         </div>
-        {/* The size moves the band the solver reserves (§3.3), so the block re-solves around it. */}
-        {caption && (
-          <Field label={t("editor.captions.size")}>
-            <Slider
-              value={caption.size}
-              min={16}
-              max={320}
-              step={2}
-              onChange={(value) => actions.setCaptionSize(value)}
-            />
-            <NumberField
-              value={caption.size}
-              min={4}
-              max={1000}
-              suffix="px"
-              onChange={(value) => actions.setCaptionSize(value)}
-            />
+        {block.caption.place !== "none" && (
+          <Field label={t("editor.simple.captionAlign")}>
+            <span
+              className="flex gap-1"
+              role="radiogroup"
+              aria-label={t("editor.simple.captionAlign")}
+            >
+              {(["left", "center", "right"] as CaptionAlign[]).map((align) => (
+                <FormatChip
+                  key={align}
+                  label={t(`editor.simple.aligns.${align}`)}
+                  active={block.caption.align === align}
+                  onClick={() =>
+                    actions.setComposition({ caption: { ...block.caption, align } }, null)
+                  }
+                />
+              ))}
+            </span>
           </Field>
+        )}
+        {/*
+          The typography is the document's, not the block's: `apply` reads it back off the caption
+          (§3.7), so it survives every re-solve. The size also moves the band the solver reserves
+          (§3.3) — which is why none of this is a free-form edit.
+        */}
+        {caption && (
+          <CaptionTypography
+            caption={caption}
+            photoId={doc.slots.find((slot) => slot.photo_id)?.photo_id ?? null}
+            onChange={(patch, group) => actions.setCaptionStyle(patch, group)}
+          />
         )}
       </PanelSection>
     </>
@@ -601,6 +656,10 @@ function LinkedSlider({
 /** Numbered photo chips: click selects the cell, dragging one onto another swaps the two (§6.2). */
 function PhotosSection({
   doc,
+  block,
+  recipe,
+  onAddPhoto,
+  onReplacePhoto,
   sizes,
   selectedSlotId,
   onSelectSlot,
@@ -610,6 +669,11 @@ function PhotosSection({
   onCellFormat,
 }: {
   doc: EditorDocument;
+  block: NonNullable<EditorDocument["composition"]>;
+  recipe: Recipe;
+  /** `null` when the catalogue holds no layout for one more photo (§4.4). */
+  onAddPhoto: (() => void) | null;
+  onReplacePhoto: (slotId: string) => void;
   sizes: PhotoSizes;
   selectedSlotId: string | null;
   onSelectSlot: (slotId: string) => void;
@@ -627,12 +691,31 @@ function PhotosSection({
   // A single photo has nothing to be swapped with and no cell of its own to shape: the chips, the
   // hint, the arrows and the per-cell format are all about *which* cell (remarks.md #10).
   const several = doc.slots.length > 1;
+  const only = doc.slots[0];
   return (
-    <PanelSection title={t("editor.simple.photos")}>
+    <PanelSection
+      title={t("editor.simple.photos")}
+      action={
+        <button
+          type="button"
+          disabled={onAddPhoto === null}
+          onClick={() => onAddPhoto?.()}
+          className="inline-flex items-center gap-1 text-[11px] text-muted hover:text-text disabled:opacity-40"
+        >
+          <Plus size={12} /> {t("editor.simple.addPhoto")}
+        </button>
+      }
+    >
+      {/* One photo has no chips to hang a menu on: replacing it is a plain button. */}
+      {!several && only && (
+        <Button size="sm" variant="secondary" onClick={() => onReplacePhoto(only.id)}>
+          {t("editor.simple.replacePhoto")}
+        </Button>
+      )}
       {several && (
         <ul className="flex flex-wrap gap-1.5">
           {doc.slots.map((slot, index) => (
-            <li key={slot.id}>
+            <li key={slot.id} className="relative">
               <button
                 type="button"
                 draggable
@@ -671,6 +754,11 @@ function PhotosSection({
                   {index + 1}
                 </span>
               </button>
+              <PhotoMenu
+                index={index}
+                onReplace={() => onReplacePhoto(slot.id)}
+                onRemove={() => actions.removeSlot(slot.id)}
+              />
             </li>
           ))}
         </ul>
@@ -700,6 +788,7 @@ function PhotosSection({
               </span>
             </span>
           </Field>
+          {block.format === "fill" && <SplitSliders recipe={recipe} block={block} index={index} />}
           {cellFormats && (
             <>
               <p className="text-[11px] text-muted">{t("editor.simple.cellFormat")}</p>
@@ -723,9 +812,14 @@ function PhotosSection({
               step={0.01}
               onChange={(value) => actions.setZoom(value)}
             />
-            <span className="w-9 shrink-0 text-right text-[11px] text-muted tabular-nums">
-              {zoom.toFixed(2)}×
-            </span>
+            <NumberField
+              value={zoom}
+              min={MIN_ZOOM}
+              max={MAX_ZOOM}
+              step={0.01}
+              suffix="×"
+              onChange={(value) => actions.setZoom(value)}
+            />
           </Field>
           {/* The tier belongs next to the zoom: it is the number the zoom actually moves (§7.2). */}
           <div className="flex items-center gap-2">
@@ -744,6 +838,115 @@ function PhotosSection({
         </>
       )}
     </PanelSection>
+  );
+}
+
+/** The `⋯` on a photo chip: what you do *to* a photo, next to where you pick it (§6.2). */
+function PhotoMenu({
+  index,
+  onReplace,
+  onRemove,
+}: {
+  index: number;
+  onReplace: () => void;
+  onRemove: () => void;
+}) {
+  const { t } = useTranslation();
+  const item =
+    "flex w-full cursor-default items-center rounded px-2 py-1 text-xs outline-none data-[highlighted]:bg-panel-2";
+  return (
+    <Menu.Root>
+      <Menu.Trigger asChild>
+        <button
+          type="button"
+          aria-label={t("editor.simple.photoMenu", { index: index + 1 })}
+          title={t("editor.simple.photoMenu", { index: index + 1 })}
+          className="absolute top-0 right-0 flex h-4 w-5 items-center justify-center rounded-bl bg-panel/85 text-text hover:bg-panel"
+        >
+          <MoreHorizontal size={12} />
+        </button>
+      </Menu.Trigger>
+      <Menu.Portal>
+        <Menu.Content
+          // Radix sees `Escape` before the page's own command does (docs/gotchas.md).
+          onEscapeKeyDown={(event) => event.stopPropagation()}
+          align="start"
+          sideOffset={4}
+          className="z-50 min-w-36 rounded-md border border-border bg-panel p-1 shadow-xl"
+        >
+          <Menu.Item className={item} onSelect={onReplace}>
+            {t("editor.simple.replacePhoto")}
+          </Menu.Item>
+          <Menu.Item className={cn(item, "text-danger")} onSelect={onRemove}>
+            {t("editor.simple.removePhoto")}
+          </Menu.Item>
+        </Menu.Content>
+      </Menu.Portal>
+    </Menu.Root>
+  );
+}
+
+/**
+ * Width and height of the selected photo in a Fill layout (§6.5) — the precise twin of dragging a
+ * gap on the canvas.
+ *
+ * A photo has no size of its own there: it has a share of the row it sits in and a share of its
+ * column, so each slider moves one division and the photos sharing it follow. A photo that spans
+ * the whole block one way has no slider for that way.
+ */
+function SplitSliders({
+  recipe,
+  block,
+  index,
+}: {
+  recipe: Recipe;
+  block: NonNullable<EditorDocument["composition"]>;
+  index: number;
+}) {
+  const { t } = useTranslation();
+  const where = cellSplits(recipe, index);
+  const weightsOf = splitWeights(recipe, block);
+  const custom = block.balance !== null || block.weights.some((entry) => entry !== null);
+  const slider = (axis: "x" | "y", label: string) => {
+    const at = where[axis];
+    if (!at) return null;
+    const shares = normalized(weightsOf[at.split] ?? []);
+    const value = shares[at.child] ?? 0;
+    const [min, max] = shareRange(recipe, at.split, at.child, shares);
+    return (
+      <Field label={label}>
+        <Slider
+          value={value}
+          min={min}
+          max={max}
+          step={0.01}
+          disabled={max - min < 0.01}
+          onChange={(next) => actions.setShare(at.split, at.child, next)}
+        />
+        <PercentField
+          value={value}
+          min={min}
+          max={max}
+          onChange={(next) => actions.setShare(at.split, at.child, next)}
+        />
+      </Field>
+    );
+  };
+  if (!where.x && !where.y) return null;
+  return (
+    <>
+      {slider("x", t("editor.simple.cellWidth"))}
+      {slider("y", t("editor.simple.cellHeight"))}
+      {custom && (
+        <button
+          type="button"
+          onClick={() => actions.resetSplits()}
+          className="flex items-center gap-1 self-start text-[11px] text-muted hover:text-text"
+        >
+          <RotateCcw size={11} /> {t("editor.simple.resetSplits")}
+        </button>
+      )}
+    </>
   );
 }
 

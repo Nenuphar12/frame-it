@@ -92,6 +92,36 @@ export function NumberField({
   );
 }
 
+/**
+ * The typed twin of a 0–1 slider, in percent. Every slider has a number field next to it: a
+ * read-only figure looks like one and cannot be typed into (remarks.md #14).
+ */
+export function PercentField({
+  value,
+  onChange,
+  min = 0,
+  max = 1,
+  disabled,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+  disabled?: boolean;
+}) {
+  return (
+    <NumberField
+      value={Math.round(value * 100)}
+      // 0.4 × 100 is 40.00000000000001: round the bounds, or `ceil` makes the minimum 41.
+      min={Math.round(min * 100)}
+      max={Math.round(max * 100)}
+      suffix="%"
+      disabled={disabled}
+      onChange={(percent) => onChange(percent / 100)}
+    />
+  );
+}
+
 export function Slider({
   value,
   onChange,

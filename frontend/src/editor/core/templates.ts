@@ -6,6 +6,7 @@
 import {
   applyComposition,
   DEFAULT_CAPTION_STYLE,
+  type CaptionAlign,
   type CaptionStyle,
   type Composition,
   type CompositionBorder,
@@ -43,12 +44,14 @@ export interface StyleDocument {
 export interface LayoutDocument {
   recipe: string;
   balance: number | null;
+  weights: (number[] | null)[];
   outer: { x: number; y: number };
   gutter: { x: number; y: number };
   format: string;
   cell_formats: (string | null)[];
   border: CompositionBorder | null;
   caption_place: CaptionPlace;
+  caption_align: CaptionAlign;
 }
 
 /** The composition an artwork starts from, carrying its own caption text. */
@@ -56,12 +59,13 @@ export function layoutBlock(layout: LayoutDocument, text = ""): Composition {
   return {
     recipe: layout.recipe,
     balance: layout.balance,
+    weights: layout.weights.map((entry) => (entry === null ? null : [...entry])),
     outer: { ...layout.outer },
     gutter: { ...layout.gutter },
     format: layout.format,
     cell_formats: [...layout.cell_formats],
     border: layout.border ? { ...layout.border } : null,
-    caption: { text, place: layout.caption_place },
+    caption: { text, place: layout.caption_place, align: layout.caption_align },
     detached: false,
   };
 }
@@ -73,12 +77,14 @@ export function layoutOfDocument(doc: EditorDocument): LayoutDocument | null {
   return {
     recipe: block.recipe,
     balance: block.balance,
+    weights: block.weights.map((entry) => (entry === null ? null : [...entry])),
     outer: { ...block.outer },
     gutter: { ...block.gutter },
     format: block.format,
     cell_formats: [...block.cell_formats],
     border: block.border ? { ...block.border } : null,
     caption_place: block.caption.place,
+    caption_align: block.caption.align,
   };
 }
 

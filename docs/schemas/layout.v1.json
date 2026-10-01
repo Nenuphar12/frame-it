@@ -100,6 +100,16 @@
       ],
       "default": null
     },
+    "caption_align": {
+      "default": "center",
+      "enum": [
+        "left",
+        "center",
+        "right"
+      ],
+      "title": "Caption Align",
+      "type": "string"
+    },
     "caption_place": {
       "default": "none",
       "enum": [
@@ -142,6 +152,28 @@
       "pattern": "^[a-z0-9-]{1,64}$",
       "title": "Recipe",
       "type": "string"
+    },
+    "weights": {
+      "items": {
+        "anyOf": [
+          {
+            "items": {
+              "exclusiveMinimum": 0,
+              "maximum": 1000,
+              "type": "number"
+            },
+            "maxItems": 8,
+            "minItems": 2,
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "maxItems": 16,
+      "title": "Weights",
+      "type": "array"
     }
   },
   "required": [

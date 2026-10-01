@@ -28,6 +28,7 @@
           "composition": {
             "recipe": "three-hero-left",
             "balance": null,
+            "weights": [],
             "outer": {
               "x": 120,
               "y": 120
@@ -44,7 +45,8 @@
             },
             "caption": {
               "text": "",
-              "place": "none"
+              "place": "none",
+              "align": "center"
             },
             "detached": false
           },
@@ -239,6 +241,7 @@
         "composition": {
           "recipe": "three-hero-left",
           "balance": null,
+          "weights": [],
           "outer": {
             "x": 120,
             "y": 120
@@ -255,7 +258,8 @@
           },
           "caption": {
             "text": "",
-            "place": "none"
+            "place": "none",
+            "align": "center"
           },
           "detached": false
         },
@@ -408,6 +412,7 @@
           "composition": {
             "recipe": "three-hero-left",
             "balance": null,
+            "weights": [],
             "outer": {
               "x": 120,
               "y": 120
@@ -424,7 +429,8 @@
             },
             "caption": {
               "text": "Kyoto - April 2026",
-              "place": "below"
+              "place": "below",
+              "align": "center"
             },
             "detached": false
           },
@@ -633,6 +639,7 @@
         "composition": {
           "recipe": "three-hero-left",
           "balance": null,
+          "weights": [],
           "outer": {
             "x": 120,
             "y": 120
@@ -649,7 +656,8 @@
           },
           "caption": {
             "text": "Kyoto - April 2026",
-            "place": "below"
+            "place": "below",
+            "align": "center"
           },
           "detached": false
         },
@@ -816,6 +824,7 @@
           "composition": {
             "recipe": "three-hero-left",
             "balance": null,
+            "weights": [],
             "outer": {
               "x": 120,
               "y": 120
@@ -832,7 +841,8 @@
             },
             "caption": {
               "text": "",
-              "place": "none"
+              "place": "none",
+              "align": "center"
             },
             "detached": true
           },
@@ -1027,6 +1037,7 @@
         "composition": {
           "recipe": "three-hero-left",
           "balance": null,
+          "weights": [],
           "outer": {
             "x": 120,
             "y": 120
@@ -1043,7 +1054,8 @@
           },
           "caption": {
             "text": "",
-            "place": "none"
+            "place": "none",
+            "align": "center"
           },
           "detached": true
         },
@@ -1196,6 +1208,7 @@
           "composition": {
             "recipe": "three-hero-left",
             "balance": null,
+            "weights": [],
             "outer": {
               "x": 120,
               "y": 120
@@ -1212,7 +1225,8 @@
             },
             "caption": {
               "text": "Kyoto - April 2026",
-              "place": "below"
+              "place": "below",
+              "align": "center"
             },
             "detached": true
           },
@@ -1421,6 +1435,7 @@
         "composition": {
           "recipe": "three-hero-left",
           "balance": null,
+          "weights": [],
           "outer": {
             "x": 120,
             "y": 120
@@ -1437,7 +1452,8 @@
           },
           "caption": {
             "text": "Kyoto - April 2026",
-            "place": "below"
+            "place": "below",
+            "align": "center"
           },
           "detached": true
         },
@@ -1604,6 +1620,7 @@
           "composition": {
             "recipe": "three-hero-left",
             "balance": null,
+            "weights": [],
             "outer": {
               "x": 120,
               "y": 120
@@ -1620,7 +1637,8 @@
             },
             "caption": {
               "text": "",
-              "place": "none"
+              "place": "none",
+              "align": "center"
             },
             "detached": false
           },
@@ -1803,6 +1821,7 @@
         "composition": {
           "recipe": "three-hero-left",
           "balance": null,
+          "weights": [],
           "outer": {
             "x": 120,
             "y": 120
@@ -1816,7 +1835,8 @@
           "border": null,
           "caption": {
             "text": "",
-            "place": "none"
+            "place": "none",
+            "align": "center"
           },
           "detached": false
         },
@@ -1933,6 +1953,7 @@
           "composition": {
             "recipe": "three-hero-left",
             "balance": null,
+            "weights": [],
             "outer": {
               "x": 120,
               "y": 120
@@ -1949,7 +1970,8 @@
             },
             "caption": {
               "text": "Kyoto - April 2026",
-              "place": "below"
+              "place": "below",
+              "align": "center"
             },
             "detached": false
           },
@@ -2146,6 +2168,7 @@
         "composition": {
           "recipe": "three-hero-left",
           "balance": null,
+          "weights": [],
           "outer": {
             "x": 120,
             "y": 120
@@ -2159,7 +2182,8 @@
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
-            "place": "below"
+            "place": "below",
+            "align": "center"
           },
           "detached": false
         },
@@ -2290,6 +2314,7 @@
           "composition": {
             "recipe": "three-hero-left",
             "balance": null,
+            "weights": [],
             "outer": {
               "x": 120,
               "y": 120
@@ -2306,7 +2331,8 @@
             },
             "caption": {
               "text": "",
-              "place": "none"
+              "place": "none",
+              "align": "center"
             },
             "detached": true
           },
@@ -2489,6 +2515,7 @@
         "composition": {
           "recipe": "three-hero-left",
           "balance": null,
+          "weights": [],
           "outer": {
             "x": 120,
             "y": 120
@@ -2505,7 +2532,8 @@
           },
           "caption": {
             "text": "",
-            "place": "none"
+            "place": "none",
+            "align": "center"
           },
           "detached": true
         },
@@ -2622,6 +2650,7 @@
           "composition": {
             "recipe": "three-hero-left",
             "balance": null,
+            "weights": [],
             "outer": {
               "x": 120,
               "y": 120
@@ -2638,7 +2667,8 @@
             },
             "caption": {
               "text": "Kyoto - April 2026",
-              "place": "below"
+              "place": "below",
+              "align": "center"
             },
             "detached": true
           },
@@ -2835,6 +2865,7 @@
         "composition": {
           "recipe": "three-hero-left",
           "balance": null,
+          "weights": [],
           "outer": {
             "x": 120,
             "y": 120
@@ -2851,7 +2882,8 @@
           },
           "caption": {
             "text": "Kyoto - April 2026",
-            "place": "below"
+            "place": "below",
+            "align": "center"
           },
           "detached": true
         },
@@ -2982,6 +3014,7 @@
           "composition": {
             "recipe": "two-side-by-side",
             "balance": null,
+            "weights": [],
             "outer": {
               "x": 120,
               "y": 120
@@ -2998,7 +3031,8 @@
             },
             "caption": {
               "text": "",
-              "place": "none"
+              "place": "none",
+              "align": "center"
             },
             "detached": false
           },
@@ -3154,6 +3188,7 @@
         "composition": {
           "recipe": "two-side-by-side",
           "balance": null,
+          "weights": [],
           "outer": {
             "x": 120,
             "y": 120
@@ -3170,7 +3205,8 @@
           },
           "caption": {
             "text": "",
-            "place": "none"
+            "place": "none",
+            "align": "center"
           },
           "detached": false
         },
@@ -3284,6 +3320,7 @@
           "composition": {
             "recipe": "two-side-by-side",
             "balance": null,
+            "weights": [],
             "outer": {
               "x": 120,
               "y": 120
@@ -3300,7 +3337,8 @@
             },
             "caption": {
               "text": "Kyoto - April 2026",
-              "place": "below"
+              "place": "below",
+              "align": "center"
             },
             "detached": false
           },
@@ -3396,6 +3434,7 @@
         "layout": {
           "recipe": "two-stacked",
           "balance": null,
+          "weights": [],
           "outer": {
             "x": 300,
             "y": 120
@@ -3407,7 +3446,8 @@
           "format": "fill",
           "cell_formats": [],
           "border": null,
-          "caption_place": "none"
+          "caption_place": "none",
+          "caption_align": "center"
         },
         "recipe": "two-stacked",
         "photo_sizes": {
@@ -3449,6 +3489,7 @@
         "composition": {
           "recipe": "two-stacked",
           "balance": null,
+          "weights": [],
           "outer": {
             "x": 300,
             "y": 120
@@ -3462,7 +3503,8 @@
           "border": null,
           "caption": {
             "text": "Kyoto - April 2026",
-            "place": "none"
+            "place": "none",
+            "align": "center"
           },
           "detached": false
         },
@@ -3559,6 +3601,7 @@
           "composition": {
             "recipe": "two-side-by-side",
             "balance": null,
+            "weights": [],
             "outer": {
               "x": 120,
               "y": 120
@@ -3575,7 +3618,8 @@
             },
             "caption": {
               "text": "Kyoto - April 2026",
-              "place": "below"
+              "place": "below",
+              "align": "center"
             },
             "detached": false
           },
@@ -3671,6 +3715,7 @@
         "layout": {
           "recipe": "two-side-by-side",
           "balance": null,
+          "weights": [],
           "outer": {
             "x": 200,
             "y": 180
@@ -3685,7 +3730,8 @@
             "width": 18,
             "color": "#FFFFFF"
           },
-          "caption_place": "below"
+          "caption_place": "below",
+          "caption_align": "center"
         },
         "recipe": "two-side-by-side",
         "photo_sizes": {
@@ -3727,6 +3773,7 @@
         "composition": {
           "recipe": "two-side-by-side",
           "balance": null,
+          "weights": [],
           "outer": {
             "x": 200,
             "y": 180
@@ -3743,7 +3790,8 @@
           },
           "caption": {
             "text": "Kyoto - April 2026",
-            "place": "below"
+            "place": "below",
+            "align": "center"
           },
           "detached": false
         },
@@ -3838,6 +3886,327 @@
       }
     },
     {
+      "name": "relayout to weighted",
+      "fn": "templates_relayout",
+      "input": {
+        "doc": {
+          "schema": 1,
+          "canvas": {
+            "width": 3840,
+            "height": 2160
+          },
+          "mat": {
+            "color": "#F2EFE8",
+            "texture": null
+          },
+          "placement": "manual",
+          "margins": {
+            "top": 7,
+            "right": 7,
+            "bottom": 7,
+            "left": 7,
+            "linked": true,
+            "mirror_x": true,
+            "mirror_y": true
+          },
+          "composition": {
+            "recipe": "two-side-by-side",
+            "balance": null,
+            "weights": [],
+            "outer": {
+              "x": 120,
+              "y": 120
+            },
+            "gutter": {
+              "x": 80,
+              "y": 80
+            },
+            "format": "fill",
+            "cell_formats": [],
+            "border": {
+              "width": 12,
+              "color": "#FFFFFF"
+            },
+            "caption": {
+              "text": "Kyoto - April 2026",
+              "place": "below",
+              "align": "center"
+            },
+            "detached": false
+          },
+          "slots": [
+            {
+              "id": "c1",
+              "photo_id": "p1",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1500,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 1200,
+                  "y": 800,
+                  "w": 3000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000"
+                }
+              ],
+              "shadow": null
+            },
+            {
+              "id": "c2",
+              "photo_id": "p2",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 750,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 1500,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000"
+                }
+              ],
+              "shadow": {
+                "type": "drop",
+                "offset_x": 8,
+                "offset_y": 8,
+                "blur": 20,
+                "color": "#000000",
+                "opacity": 0.4
+              }
+            }
+          ],
+          "captions": [
+            {
+              "id": "legacy",
+              "text": "Kyoto - April 2026",
+              "font": "inter",
+              "weight": 600,
+              "size": 31,
+              "color": "#101010",
+              "letter_spacing": -0.01,
+              "x": 10,
+              "y": 10,
+              "anchor": "start",
+              "rotation": 3.5
+            }
+          ]
+        },
+        "layout": {
+          "recipe": "two-side-by-side",
+          "balance": null,
+          "weights": [
+            [
+              1,
+              3
+            ]
+          ],
+          "outer": {
+            "x": 200,
+            "y": 180
+          },
+          "gutter": {
+            "x": 90,
+            "y": 90
+          },
+          "format": "fill",
+          "cell_formats": [],
+          "border": {
+            "width": 18,
+            "color": "#FFFFFF"
+          },
+          "caption_place": "above",
+          "caption_align": "right"
+        },
+        "recipe": "two-side-by-side",
+        "photo_sizes": {
+          "p1": {
+            "w": 6000,
+            "h": 4000
+          },
+          "p2": {
+            "w": 3000,
+            "h": 4000
+          },
+          "p3": {
+            "w": 4000,
+            "h": 4000
+          }
+        },
+        "caption": null
+      },
+      "expected": {
+        "schema": 1,
+        "canvas": {
+          "width": 3840,
+          "height": 2160
+        },
+        "mat": {
+          "color": "#F2EFE8",
+          "texture": null
+        },
+        "placement": "manual",
+        "margins": {
+          "top": 316,
+          "right": 200,
+          "bottom": 180,
+          "left": 200,
+          "linked": false,
+          "mirror_x": false,
+          "mirror_y": false
+        },
+        "composition": {
+          "recipe": "two-side-by-side",
+          "balance": null,
+          "weights": [
+            [
+              1.0,
+              3.0
+            ]
+          ],
+          "outer": {
+            "x": 200,
+            "y": 180
+          },
+          "gutter": {
+            "x": 90,
+            "y": 90
+          },
+          "format": "fill",
+          "cell_formats": [],
+          "border": {
+            "width": 18,
+            "color": "#FFFFFF"
+          },
+          "caption": {
+            "text": "Kyoto - April 2026",
+            "place": "above",
+            "align": "right"
+          },
+          "detached": false
+        },
+        "slots": [
+          {
+            "id": "c1",
+            "photo_id": "p1",
+            "rect": {
+              "x": 218,
+              "y": 334,
+              "w": 802,
+              "h": 1628
+            },
+            "rotation": 0.0,
+            "source": {
+              "orient": {
+                "rotate": 0,
+                "flip_h": false
+              },
+              "crop": {
+                "x": 1714,
+                "y": 0,
+                "w": 1971,
+                "h": 4000
+              },
+              "crop_ratio": "401:814"
+            },
+            "quality_lock": "no_upscale",
+            "bands": [
+              {
+                "width": 18,
+                "color": "#FFFFFF"
+              }
+            ],
+            "shadow": null
+          },
+          {
+            "id": "c2",
+            "photo_id": "p2",
+            "rect": {
+              "x": 1146,
+              "y": 334,
+              "w": 2476,
+              "h": 1628
+            },
+            "rotation": 0.0,
+            "source": {
+              "orient": {
+                "rotate": 0,
+                "flip_h": false
+              },
+              "crop": {
+                "x": 0,
+                "y": 507,
+                "w": 1500,
+                "h": 986
+              },
+              "crop_ratio": "619:407"
+            },
+            "quality_lock": "free",
+            "bands": [
+              {
+                "width": 18,
+                "color": "#FFFFFF"
+              }
+            ],
+            "shadow": {
+              "type": "drop",
+              "offset_x": 8,
+              "offset_y": 8,
+              "blur": 20.0,
+              "color": "#000000",
+              "opacity": 0.4
+            }
+          }
+        ],
+        "captions": [
+          {
+            "id": "legacy",
+            "text": "Kyoto - April 2026",
+            "font": "inter",
+            "weight": 600,
+            "size": 31,
+            "color": "#101010",
+            "letter_spacing": -0.01,
+            "x": 3640,
+            "y": 213,
+            "anchor": "end",
+            "rotation": 0.0
+          }
+        ]
+      }
+    },
+    {
       "name": "relayout re-attaches a detached artwork with the style's typography",
       "fn": "templates_relayout",
       "input": {
@@ -3864,6 +4233,7 @@
           "composition": {
             "recipe": "two-side-by-side",
             "balance": null,
+            "weights": [],
             "outer": {
               "x": 120,
               "y": 120
@@ -3877,7 +4247,8 @@
             "border": null,
             "caption": {
               "text": "",
-              "place": "none"
+              "place": "none",
+              "align": "center"
             },
             "detached": true
           },
@@ -3966,6 +4337,7 @@
         "layout": {
           "recipe": "two-stacked",
           "balance": null,
+          "weights": [],
           "outer": {
             "x": 300,
             "y": 120
@@ -3977,7 +4349,8 @@
           "format": "fill",
           "cell_formats": [],
           "border": null,
-          "caption_place": "none"
+          "caption_place": "none",
+          "caption_align": "center"
         },
         "recipe": "two-stacked",
         "photo_sizes": {
@@ -4025,6 +4398,7 @@
         "composition": {
           "recipe": "two-stacked",
           "balance": null,
+          "weights": [],
           "outer": {
             "x": 300,
             "y": 120
@@ -4038,7 +4412,8 @@
           "border": null,
           "caption": {
             "text": "",
-            "place": "none"
+            "place": "none",
+            "align": "center"
           },
           "detached": false
         },
@@ -4128,6 +4503,7 @@
           "composition": {
             "recipe": "two-side-by-side",
             "balance": null,
+            "weights": [],
             "outer": {
               "x": 120,
               "y": 120
@@ -4144,7 +4520,8 @@
             },
             "caption": {
               "text": "Kyoto - April 2026",
-              "place": "below"
+              "place": "below",
+              "align": "center"
             },
             "detached": false
           },
@@ -4305,6 +4682,7 @@
           "composition": {
             "recipe": "two-side-by-side",
             "balance": null,
+            "weights": [],
             "outer": {
               "x": 120,
               "y": 120
@@ -4318,7 +4696,8 @@
             "border": null,
             "caption": {
               "text": "",
-              "place": "none"
+              "place": "none",
+              "align": "center"
             },
             "detached": true
           },
@@ -4439,6 +4818,187 @@
       }
     },
     {
+      "name": "style of a document (weighted)",
+      "fn": "templates_style_of_document",
+      "input": {
+        "doc": {
+          "schema": 1,
+          "canvas": {
+            "width": 3840,
+            "height": 2160
+          },
+          "mat": {
+            "color": "#F2EFE8",
+            "texture": null
+          },
+          "placement": "manual",
+          "margins": {
+            "top": 7,
+            "right": 7,
+            "bottom": 7,
+            "left": 7,
+            "linked": true,
+            "mirror_x": true,
+            "mirror_y": true
+          },
+          "composition": {
+            "recipe": "three-hero-left",
+            "balance": null,
+            "weights": [
+              null,
+              [
+                3,
+                1
+              ]
+            ],
+            "outer": {
+              "x": 120,
+              "y": 120
+            },
+            "gutter": {
+              "x": 80,
+              "y": 80
+            },
+            "format": "fill",
+            "cell_formats": [],
+            "border": null,
+            "caption": {
+              "text": "Kyoto - April 2026",
+              "place": "above",
+              "align": "left"
+            },
+            "detached": false
+          },
+          "slots": [
+            {
+              "id": "c1",
+              "photo_id": "p1",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1500,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 3000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000"
+                }
+              ],
+              "shadow": null
+            },
+            {
+              "id": "c2",
+              "photo_id": "p2",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1500,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 3000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000"
+                }
+              ],
+              "shadow": null
+            },
+            {
+              "id": "c3",
+              "photo_id": "p3",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1500,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 3000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000"
+                }
+              ],
+              "shadow": null
+            }
+          ],
+          "captions": []
+        }
+      },
+      "expected": {
+        "mat": {
+          "color": "#F2EFE8",
+          "texture": null
+        },
+        "margins": {
+          "top": 7,
+          "right": 7,
+          "bottom": 7,
+          "left": 7,
+          "linked": true,
+          "mirror_x": true,
+          "mirror_y": true
+        },
+        "slot_defaults": {
+          "bands": [],
+          "shadow": null,
+          "quality_lock": "no_upscale"
+        },
+        "caption_defaults": {
+          "font": "cormorant-garamond",
+          "weight": 500,
+          "size": 48,
+          "color": "#3A3A3A",
+          "letter_spacing": 0.02
+        }
+      }
+    },
+    {
       "name": "layout of a document (attached)",
       "fn": "templates_layout_of_document",
       "input": {
@@ -4465,6 +5025,7 @@
           "composition": {
             "recipe": "two-side-by-side",
             "balance": null,
+            "weights": [],
             "outer": {
               "x": 120,
               "y": 120
@@ -4481,7 +5042,8 @@
             },
             "caption": {
               "text": "Kyoto - April 2026",
-              "place": "below"
+              "place": "below",
+              "align": "center"
             },
             "detached": false
           },
@@ -4578,6 +5140,7 @@
       "expected": {
         "recipe": "two-side-by-side",
         "balance": null,
+        "weights": [],
         "outer": {
           "x": 120,
           "y": 120
@@ -4592,7 +5155,8 @@
           "width": 18,
           "color": "#FFFFFF"
         },
-        "caption_place": "below"
+        "caption_place": "below",
+        "caption_align": "center"
       }
     },
     {
@@ -4622,6 +5186,7 @@
           "composition": {
             "recipe": "two-side-by-side",
             "balance": null,
+            "weights": [],
             "outer": {
               "x": 120,
               "y": 120
@@ -4635,7 +5200,8 @@
             "border": null,
             "caption": {
               "text": "",
-              "place": "none"
+              "place": "none",
+              "align": "center"
             },
             "detached": true
           },
@@ -4716,6 +5282,184 @@
         }
       },
       "expected": null
+    },
+    {
+      "name": "layout of a document (weighted)",
+      "fn": "templates_layout_of_document",
+      "input": {
+        "doc": {
+          "schema": 1,
+          "canvas": {
+            "width": 3840,
+            "height": 2160
+          },
+          "mat": {
+            "color": "#F2EFE8",
+            "texture": null
+          },
+          "placement": "manual",
+          "margins": {
+            "top": 7,
+            "right": 7,
+            "bottom": 7,
+            "left": 7,
+            "linked": true,
+            "mirror_x": true,
+            "mirror_y": true
+          },
+          "composition": {
+            "recipe": "three-hero-left",
+            "balance": null,
+            "weights": [
+              null,
+              [
+                3,
+                1
+              ]
+            ],
+            "outer": {
+              "x": 120,
+              "y": 120
+            },
+            "gutter": {
+              "x": 80,
+              "y": 80
+            },
+            "format": "fill",
+            "cell_formats": [],
+            "border": null,
+            "caption": {
+              "text": "Kyoto - April 2026",
+              "place": "above",
+              "align": "left"
+            },
+            "detached": false
+          },
+          "slots": [
+            {
+              "id": "c1",
+              "photo_id": "p1",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1500,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 3000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000"
+                }
+              ],
+              "shadow": null
+            },
+            {
+              "id": "c2",
+              "photo_id": "p2",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1500,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 3000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000"
+                }
+              ],
+              "shadow": null
+            },
+            {
+              "id": "c3",
+              "photo_id": "p3",
+              "rect": {
+                "x": 100,
+                "y": 100,
+                "w": 1500,
+                "h": 1000
+              },
+              "rotation": 12.5,
+              "source": {
+                "orient": {
+                  "rotate": 0,
+                  "flip_h": false
+                },
+                "crop": {
+                  "x": 0,
+                  "y": 0,
+                  "w": 3000,
+                  "h": 2000
+                },
+                "crop_ratio": "3:2"
+              },
+              "quality_lock": "free",
+              "bands": [
+                {
+                  "width": 9,
+                  "color": "#000000"
+                }
+              ],
+              "shadow": null
+            }
+          ],
+          "captions": []
+        }
+      },
+      "expected": {
+        "recipe": "three-hero-left",
+        "balance": null,
+        "weights": [
+          null,
+          [
+            3.0,
+            1.0
+          ]
+        ],
+        "outer": {
+          "x": 120,
+          "y": 120
+        },
+        "gutter": {
+          "x": 80,
+          "y": 80
+        },
+        "format": "fill",
+        "cell_formats": [],
+        "border": null,
+        "caption_place": "above",
+        "caption_align": "left"
+      }
     }
   ]
 }

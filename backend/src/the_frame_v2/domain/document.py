@@ -50,6 +50,13 @@ CellFormat = Annotated[
 ]
 """A per-cell format: a ratio or the photo's own aspect. `fill` is a property of the whole block."""
 MAX_FORMAT_TERM = 1000
+MAX_SPLITS = 16
+"""Split nodes a recipe tree can hold (one fewer than its cells, at most)."""
+SplitWeights = Annotated[
+    list[Annotated[float, Field(gt=0, le=1000)]], Field(min_length=2, max_length=8)
+]
+"""The shares of one split's children — same bounds as a recipe's own `weights`."""
+CaptionAlign = Literal["left", "center", "right"]
 QualityLock = Literal["native", "no_upscale", "free"]
 Placement = Literal["fit_in_mat", "fill", "manual"]
 
@@ -217,6 +224,8 @@ class CompositionBorder(DocModel):
 class CompositionCaption(DocModel):
     text: str = Field(default="", max_length=500)
     place: Literal["none", "above", "below"] = "none"
+    align: CaptionAlign = "center"
+    """Centred on the canvas, or flush with the block's left / right printed edge (§3.7)."""
 
     @model_validator(mode="after")
     def _single_line(self) -> CompositionCaption:
@@ -235,6 +244,12 @@ class Composition(DocModel):
     recipe: AssetId
     balance: float | None = Field(default=None, ge=0, le=1)
     """Share of the root split's first child; `None` = the recipe's default. Fill format only."""
+    weights: list[SplitWeights | None] = Field(default_factory=list, max_length=MAX_SPLITS)
+    """Per-split override of the recipe's `weights`, splits in depth-first order; `None` inherits.
+
+    Fill format only, like `balance` — which stays the root's share wherever the recipe declares
+    one (§3.4). An entry must hold one weight per child of its split (`weights_shape`).
+    """
     outer: CompositionAxis = Field(default_factory=lambda: CompositionAxis(x=120, y=120))
     """Minimum margin around the block, per axis."""
     gutter: CompositionGutter = Field(default_factory=lambda: CompositionGutter(x=80, y=80))
@@ -308,6 +323,8 @@ class RecipeSpec:
     count: int
     balance_min: float | None = None
     balance_max: float | None = None
+    splits: tuple[int, ...] = ()
+    """Children per split node, depth-first — the shape `composition.weights` must fit."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -323,7 +340,8 @@ class DocumentIssue:
 def _composition_issues(
     doc: ArtworkDocument, recipe_spec: Callable[[str], RecipeSpec | None]
 ) -> list[DocumentIssue]:
-    """Catalogue checks of §2: the recipe exists, matches the slot count, balance is in range."""
+    """Catalogue checks of §2: the recipe exists, matches the slot count, balance is in range and
+    the per-split weights have the recipe's shape."""
     composition = doc.composition
     if composition is None:
         return []
@@ -359,6 +377,18 @@ def _composition_issues(
                 "balance_out_of_range",
             )
         )
+    for index, entry in enumerate(composition.weights):
+        if entry is None:
+            continue
+        if index >= len(spec.splits) or len(entry) != spec.splits[index]:
+            issues.append(
+                DocumentIssue(
+                    ("composition", "weights", index),
+                    "weights do not fit the recipe's splits",
+                    "weights_shape",
+                )
+            )
+            break
     return issues
 
 

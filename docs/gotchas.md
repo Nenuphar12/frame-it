@@ -68,6 +68,10 @@ These bite whatever you are working on.
 - The React Compiler lint forbids `setState` in an effect body: derive the value during render instead (the
   stage view falls back to `fit()`, image/texture hooks read a module cache and only `setState` in the async
   callback).
+- `0.4 * 100` is `40.00000000000001`: a percent field's bounds are **rounded**, not `ceil`ed, or a
+  balance of 40 % becomes untypable (`PercentField`).
+- CDP test tabs each hold an SSE connection: six of them exhaust Chrome's per-host limit and the
+  seventh page never loads. Close a tab (`/json/close/<id>`) when a check is done.
 - Editor number fields keep the typed text while focused (`panels/Controls.tsx`) and never snap it — the §7.5
   tolerance is 8 *screen* px, which swallowed typed margins. Sliders still snap.
 - A **shadow** is edited in three places through one `ShadowFields`, and in Simple it dresses **every**
@@ -133,6 +137,19 @@ These bite whatever you are working on.
 - **A ratio format carries its orientation**: `4:3` and `3:4` are different formats and the cells
   take the ratio as written. Only `auto` (the 1-cell recipe) turns the landscape form the photo's
   way. The recipes' `landscape`/`portrait` cell kinds are inert as a result.
+- **`composition.weights` is indexed by the recipe's splits** (depth-first, root first), so it
+  belongs to *one* recipe: every path that changes the recipe must drop it — `setRecipe`,
+  `recipeFollowsPhotoCount`, `attachComposition`, the layout editor's picker — or the save is
+  refused with `weights_shape` (and a saved layout with `invalid_template`). The solver itself
+  ignores an entry of the wrong length: total, like the rest of it.
+- **Where a recipe declares a `balance`, the root division is `balance`, never `weights[0]`**
+  (`split_weights` reads it that way and `setSplitShares` writes it that way, clamped to the
+  recipe's range). Two fields for one line would let the slider and the drag disagree.
+- The gap handles (`editor/core/splits.ts`) are read **off the solved slots**, not re-derived from
+  the parameters: a second walker would drift from the solver the day it relaxes a gutter. A drag
+  computes its shares from the gap *as grabbed* plus the whole movement, never frame to frame.
+- A caption's `align` (left/centre/right) is the **block's** and re-solves; its `anchor` is the
+  caption's and detaches. Left and right are the block's printed edge (`margins`), not `outer`.
 - `composition.cell_formats` overrides the format cell by cell (`null` inherits, `original` = the photo's
   own aspect, never `fill`). `format: "original"` works at **any** photo count.
 - A recipe cell of kind `auto` means *the format turned the photo's way* (portrait photo + `3:2` → a 2:3

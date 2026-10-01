@@ -6,7 +6,7 @@ import { useTextures } from "@/api/queries";
 import * as actions from "@/editor/actions";
 import type { DocSlot, EditorDocument } from "@/editor/core/document.ts";
 import { ColorField } from "./ColorField";
-import { Field, NumberField, PanelSection, Slider } from "./Controls";
+import { Field, NumberField, PanelSection, PercentField, Slider } from "./Controls";
 import { ShadowFields } from "./ShadowFields";
 
 const MAX_BANDS = 3;
@@ -54,9 +54,10 @@ export function StylePanel({ doc, slot }: { doc: EditorDocument; slot: DocSlot |
               step={0.01}
               onChange={(value) => actions.setTexture(texture.id, value, "texture-strength")}
             />
-            <span className="w-8 text-right text-[11px] text-muted tabular-nums">
-              {Math.round(texture.strength * 100)}
-            </span>
+            <PercentField
+              value={texture.strength}
+              onChange={(value) => actions.setTexture(texture.id, value, "texture-strength")}
+            />
           </Field>
         )}
       </PanelSection>

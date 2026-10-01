@@ -37,11 +37,10 @@ from the_frame_v2.db.models import (
     PhotoTag,
     Tag,
 )
-from the_frame_v2.db.session import DISTANCE_FUNCTION
-from the_frame_v2.domain import filters, geo
+from the_frame_v2.domain import filters
 from the_frame_v2.domain.filters import Clause, Group
 from the_frame_v2.errors import ProblemError
-from the_frame_v2.services import collections, search
+from the_frame_v2.services import collections, photos, search
 
 MAX_LIMIT = 500
 Sort = Literal["created_desc", "created_asc", "updated_desc", "title_asc", "manual"]
@@ -151,28 +150,8 @@ def _clause_sql(session: Session, clause: Clause, depth: int) -> ColumnElement[b
 
 
 def _near_sql(value: dict[str, Any]) -> ColumnElement[bool]:
-    """A photo taken within `km` of the point. Photos without GPS never match.
-
-    A bounding box keeps the exact distance (`tf_distance_km`, `db/session.py`) to a handful of
-    rows; its longitude window wraps at ±180° so a circle across the antimeridian keeps both sides.
-    """
-    lat, lon, km = float(value["lat"]), float(value["lon"]), float(value["km"])
-    lat_lo, lat_hi, dlon = geo.bounding_box(lat, km)
-    lon_lo, lon_hi = lon - dlon, lon + dlon
-    in_lon: ColumnElement[bool]
-    if dlon >= 180:
-        in_lon = Photo.gps_lon.is_not(None)
-    elif lon_lo < -180:
-        in_lon = or_(Photo.gps_lon >= lon_lo + 360, Photo.gps_lon <= lon_hi)
-    elif lon_hi > 180:
-        in_lon = or_(Photo.gps_lon >= lon_lo, Photo.gps_lon <= lon_hi - 360)
-    else:
-        in_lon = Photo.gps_lon.between(lon_lo, lon_hi)
-    return and_(
-        Photo.gps_lat.between(lat_lo, lat_hi),
-        in_lon,
-        getattr(func, DISTANCE_FUNCTION)(Photo.gps_lat, Photo.gps_lon, lat, lon) <= km,
-    )
+    """A photo taken within `km` of the point. Photos without GPS never match."""
+    return photos.taken_near(float(value["lat"]), float(value["lon"]), float(value["km"]))
 
 
 def _carries(tag_ids: Sequence[str]) -> ColumnElement[bool]:

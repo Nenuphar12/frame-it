@@ -92,6 +92,22 @@ def test_layout_is_a_recipe_and_its_parameters(local: TestClient) -> None:
         },
     )
     assert imported.status_code == 422 and imported.json()["code"] == "invalid_template"
+    # per-split weights must describe *this* recipe's divisions (a two-part root here)
+    misfit = local.post(
+        f"{API}/layouts",
+        json={"name": "Nope", "document": {**LAYOUT_DOC, "weights": [[1, 1, 1]]}},
+    )
+    assert misfit.status_code == 422 and misfit.json()["code"] == "invalid_template"
+    weighted = local.post(
+        f"{API}/layouts",
+        json={
+            "name": "Uneven",
+            "document": {**LAYOUT_DOC, "weights": [[1, 3]], "caption_align": "left"},
+        },
+    )
+    assert weighted.status_code == 201, weighted.text
+    assert weighted.json()["document"]["weights"] == [[1.0, 3.0]]
+    assert weighted.json()["document"]["caption_align"] == "left"
 
     moved = local.patch(
         f"{API}/layouts/{layout['id']}",

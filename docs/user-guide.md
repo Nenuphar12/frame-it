@@ -141,6 +141,18 @@ Open an artwork with `e` or a double-click. Two panels:
 - **Simple** is the one to use. You choose an arrangement, then drag sliders: the *outer* margin
   around everything, the *gap* between photos, the format (3:2, 4:3, square, the photo's own…),
   the border, the caption. The layout re-solves geometrically as you drag, so it stays even.
+  - In **Fill**, the gaps between photos are handles: drag one on the canvas to make a photo
+    wider or taller. The photos sharing that row or column follow — a layout is rows and columns,
+    so you are moving a division, not one photo. It snaps to halves, thirds and the golden
+    section (hold `Alt` to stop it), and a double-click puts it back. For an exact figure, select
+    a photo and use its **Width** and **Height**.
+  - Each photo's chip has a `⋯`: **Replace photo…** opens the library on the photos taken the same
+    days or at the same place — usually where the better frame is — and **Remove** takes it out;
+    **Add photo** adds one, and the arrangement follows the count.
+  - The **caption** has its font, weight, size, colour and spacing right there, and can sit
+    centred or flush with the photos' left or right edge.
+  - Every slider has a field next to it: type the value when dragging is not precise enough.
+  - Selecting a photo no longer dims the others. Click the mat (or press `Escape`) to deselect.
 - **Advanced ᴮᴱᵀᴬ** lets you place every photo by hand — free-form move, resize, rotate, overlap,
   align and distribute. Anything you do there **detaches** the artwork from its arrangement: the
   sliders stop driving it, because your placement is now the truth.
@@ -168,7 +180,7 @@ smaller than its cell cannot reach it, and the button says so by being disabled.
 
 `?` shows the full list and closes it again. `Ctrl/Cmd+K` opens the command palette, which is the
 fastest way to find anything. In the editor: `P` toggles the TV preview, `f` favourites, `Ctrl+Z`
-undoes. Everything autosaves.
+undoes, `Escape` lets go of the selection and, pressed again, leaves. Everything autosaves.
 
 The **TV preview** fills the screen with the artwork at the proportions the Frame will show, and
 the **loupe** renders a small region on the *server* at full resolution — that is what the TV will

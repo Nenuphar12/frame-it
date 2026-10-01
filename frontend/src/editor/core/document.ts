@@ -84,6 +84,7 @@ export function normalizeComposition(raw: NonNullable<ApiDocument["composition"]
   return {
     recipe: raw.recipe,
     balance: raw.balance ?? null,
+    weights: (raw.weights ?? []).map((entry) => (entry ? [...entry] : null)),
     outer: { x: raw.outer?.x ?? 120, y: raw.outer?.y ?? 120 },
     gutter: { x: raw.gutter?.x ?? 80, y: raw.gutter?.y ?? 80 },
     format: raw.format ?? "fill",
@@ -92,6 +93,7 @@ export function normalizeComposition(raw: NonNullable<ApiDocument["composition"]
     caption: {
       text: raw.caption?.text ?? "",
       place: raw.caption?.place ?? "none",
+      align: raw.caption?.align ?? "center",
     },
     detached: raw.detached ?? false,
   };

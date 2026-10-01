@@ -18,7 +18,7 @@ Two kinds, deliberately independent (`PLAN.md` §4):
 | | holds | owns in the document |
 |---|---|---|
 | **Frame style** | mat, margins, slot decorations, caption typography | `mat`, each slot's `shadow`, the border, the captions' font/size/colour |
-| **Layout** | a recipe and its parameters | `composition` (recipe, balance, outer, gutter, format, cell formats, border, caption side) |
+| **Layout** | a recipe and its parameters | `composition` (recipe, balance, weights, outer, gutter, format, cell formats, border, caption side and alignment) |
 
 ## 2. A layout is a recipe and its parameters
 
@@ -30,12 +30,15 @@ parameters the Simple panel edits:
 {
   "recipe": "two-side-by-side",     // id from the bundled catalogue
   "balance": null,                   // Fill only, the recipe's range
+  "weights": [],                     // per-split proportions (simple-editor.md §3.4); must fit
+                                     // the recipe's splits, or the layout is `invalid_template`
   "outer":  { "x": 220, "y": 200 },
   "gutter": { "x": 100, "y": 100 },
   "format": "1:1",
   "cell_formats": [],
   "border": { "width": 18, "color": "#FFFFFF" },   // null = no border
-  "caption_place": "below"           // the side; the words are the artwork's
+  "caption_place": "below",          // the side; the words are the artwork's
+  "caption_align": "center"          // left | center | right, against the block's printed edge
 }
 ```
 

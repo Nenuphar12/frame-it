@@ -136,6 +136,8 @@ const FUNCTIONS: Record<string, Fn> = {
     ),
   templates_style_of_document: (x) => coreTemplates.styleOfDocument(a(x, "doc")),
   templates_layout_of_document: (x) => coreTemplates.layoutOfDocument(a(x, "doc")),
+  composition_split_weights: (x) =>
+    composition.splitWeights(recipe(a(x, "recipe")), a(x, "composition")),
   composition_block_area: (x) => composition.blockArea(a(x, "composition"), a(x, "caption_size")),
   composition_block_margins: (x) => composition.blockMargins(a(x, "cells"), a(x, "border")),
   composition_refit_crop: (x) =>

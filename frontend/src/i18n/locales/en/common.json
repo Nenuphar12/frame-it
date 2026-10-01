@@ -612,7 +612,21 @@
       "native": "Native 100%",
       "nativeHint": "Zoom so the photo is shown pixel for pixel (no scaling).",
       "style": "Style",
-      "customStyle": "Custom"
+      "customStyle": "Custom",
+      "captionAlign": "Align",
+      "aligns": {
+        "left": "Left",
+        "center": "Centre",
+        "right": "Right"
+      },
+      "addPhoto": "Add photo",
+      "replacePhoto": "Replace photo…",
+      "removePhoto": "Remove from the artwork",
+      "photoMenu": "Photo {{index}}: replace or remove",
+      "cellWidth": "Width",
+      "cellHeight": "Height",
+      "resetSplits": "Reset proportions",
+      "dragGapHint": "Drag the gap between two photos on the canvas to resize them — the photos sharing that row or column follow. Double-click a gap to reset it."
     },
     "mode": {
       "label": "Editing mode",
@@ -779,7 +793,7 @@
       "skip": "Skip to the next draft",
       "next": "Next draft",
       "previous": "Previous draft",
-      "close": "Leave the editor",
+      "close": "Deselect, then leave the editor",
       "nudge": "Nudge the photo by 1 px",
       "nudge10": "Nudge the photo by 10 px",
       "open": "Open in the editor",
@@ -844,6 +858,12 @@
         "end": "Right"
       },
       "position": "Position"
+    },
+    "picker": {
+      "scope": "Which photos to show",
+      "around": "Same days or place",
+      "all": "All photos",
+      "aroundEmpty": "Nothing else was taken around this photo. Show all photos to pick from the whole library."
     }
   },
   "recipes": {

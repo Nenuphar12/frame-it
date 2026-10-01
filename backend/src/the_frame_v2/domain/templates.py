@@ -24,10 +24,12 @@ from pydantic import Field
 from the_frame_v2.domain.composition import CaptionStyle, Recipe, apply, cell_id
 from the_frame_v2.domain.document import (
     MAX_SLOTS,
+    MAX_SPLITS,
     ArtworkDocument,
     AssetId,
     Band,
     Caption,
+    CaptionAlign,
     CellFormat,
     Composition,
     CompositionAxis,
@@ -46,6 +48,7 @@ from the_frame_v2.domain.document import (
     Shadow,
     Slot,
     SourceSpec,
+    SplitWeights,
 )
 from the_frame_v2.domain.geometry import CANVAS, Rect, Size
 from the_frame_v2.domain.placement import SlotPlacement, fit_slot
@@ -89,24 +92,29 @@ class LayoutDocument(DocModel):
 
     recipe: AssetId
     balance: float | None = Field(default=None, ge=0, le=1)
+    weights: list[SplitWeights | None] = Field(default_factory=list, max_length=MAX_SPLITS)
     outer: CompositionAxis = Field(default_factory=lambda: CompositionAxis(x=120, y=120))
     gutter: CompositionGutter = Field(default_factory=lambda: CompositionGutter(x=80, y=80))
     format: CompositionFormat = "fill"
     cell_formats: list[CellFormat | None] = Field(default_factory=list, max_length=MAX_SLOTS)
     border: CompositionBorder | None = None
     caption_place: CaptionPlace = "none"
+    caption_align: CaptionAlign = "center"
 
     def block(self, text: str = "") -> Composition:
         """The composition an artwork starts from, carrying its own caption text."""
         return Composition(
             recipe=self.recipe,
             balance=self.balance,
+            weights=[None if entry is None else list(entry) for entry in self.weights],
             outer=self.outer.model_copy(),
             gutter=self.gutter.model_copy(),
             format=self.format,
             cell_formats=list(self.cell_formats),
             border=self.border.model_copy() if self.border else None,
-            caption=CompositionCaption(text=text, place=self.caption_place),
+            caption=CompositionCaption(
+                text=text, place=self.caption_place, align=self.caption_align
+            ),
         )
 
     @classmethod
@@ -115,12 +123,14 @@ class LayoutDocument(DocModel):
         return cls(
             recipe=block.recipe,
             balance=block.balance,
+            weights=[None if entry is None else list(entry) for entry in block.weights],
             outer=block.outer.model_copy(),
             gutter=block.gutter.model_copy(),
             format=block.format,
             cell_formats=list(block.cell_formats),
             border=block.border.model_copy() if block.border else None,
             caption_place=block.caption.place,
+            caption_align=block.caption.align,
         )
 
 

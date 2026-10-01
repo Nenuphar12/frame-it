@@ -125,6 +125,7 @@ class Recipe(DocModel):
             count=self.count,
             balance_min=balance.min if balance else None,
             balance_max=balance.max if balance else None,
+            splits=tuple(len(node.children) for node in splits(self.tree)),
         )
 
 
@@ -144,6 +145,13 @@ def leaves(node: RecipeNode) -> list[RecipeCell]:
     if isinstance(node, RecipeCell):
         return [node]
     return [leaf for child in node.children for leaf in leaves(child)]
+
+
+def splits(node: RecipeNode) -> list[RecipeSplit]:
+    """Split nodes in depth-first order, the root first — how `composition.weights` is indexed."""
+    if isinstance(node, RecipeCell):
+        return []
+    return [node, *(inner for child in node.children for inner in splits(child))]
 
 
 # ---- solving ------------------------------------------------------------------------------------
@@ -317,7 +325,9 @@ def _attempt(
     box = _Box(float(area.x), float(area.y), float(area.w), float(area.h))
     boxes: list[_Box] = []
     if composition.format == "fill":
-        _walk_fill(recipe.tree, box, _root_weights(recipe, composition), gutter_x, gutter_y, boxes)
+        _walk_fill(
+            recipe.tree, box, split_weights(recipe, composition), 0, gutter_x, gutter_y, boxes
+        )
     else:
         aspects = [
             _leaf_aspect(cell, cell_format(composition, index), _size_at(photo_sizes, index), area)
@@ -370,12 +380,27 @@ def _leaf_aspect(cell: RecipeCell, fmt: str, photo: Size | None, area: Rect) -> 
     return 1.0 if cell.cell == "square" else ratio
 
 
-def _root_weights(recipe: Recipe, composition: Composition) -> list[float] | None:
-    """`balance` replaces the root split's weights by `[b, 1−b]`; `None` keeps the recipe's."""
-    if recipe.balance is None or isinstance(recipe.tree, RecipeCell):
-        return None
-    share = composition.balance if composition.balance is not None else recipe.balance.default
-    return [share, 1 - share]
+def split_weights(recipe: Recipe, composition: Composition) -> list[list[float]]:
+    """The weights every split is laid out with under `fill`, in depth-first order (§3.4).
+
+    A split takes its entry of `composition.weights` when there is one **of its own shape**, else
+    the recipe's. Where the recipe declares a `balance`, the root is `[b, 1−b]` whatever the block
+    says: `balance` stays the one name of that division. An entry of the wrong length is ignored
+    rather than raised on — the solver is total (§3.6), `validate_references` is what reports it.
+    """
+    result: list[list[float]] = []
+    for index, node in enumerate(splits(recipe.tree)):
+        override = composition.weights[index] if index < len(composition.weights) else None
+        if index == 0 and recipe.balance is not None:
+            share = (
+                composition.balance if composition.balance is not None else recipe.balance.default
+            )
+            result.append([share, 1 - share])
+        elif override is not None and len(override) == len(node.children):
+            result.append(list(override))
+        else:
+            result.append(list(node.weights))
+    return result
 
 
 def _cell(index: int, footprint: _Box, border: int) -> Cell:
@@ -392,16 +417,21 @@ def _cell(index: int, footprint: _Box, border: int) -> Cell:
 def _walk_fill(
     node: RecipeNode,
     box: _Box,
-    root_weights: list[float] | None,
+    weights_of: Sequence[Sequence[float]],
+    split: int,
     gutter_x: int,
     gutter_y: int,
     out: list[_Box],
-) -> None:
-    """Weighted split filling `box`; gutters stay exact, the last child snaps to the far edge."""
+) -> int:
+    """Weighted split filling `box`; gutters stay exact, the last child snaps to the far edge.
+
+    `split` is this node's index in `weights_of` if it is a split; returns the next free index.
+    """
     if isinstance(node, RecipeCell):
         out.append(box)
-        return
-    weights = root_weights or node.weights
+        return split
+    weights = weights_of[split]
+    following = split + 1
     total = sum(weights)
     count = len(node.children)
     row = node.split == "row"
@@ -420,8 +450,9 @@ def _walk_fill(
             if row
             else _Box(box.x, start, box.w, max(0.0, end - start))
         )
-        _walk_fill(child, child_box, None, gutter_x, gutter_y, out)
+        following = _walk_fill(child, child_box, weights_of, following, gutter_x, gutter_y, out)
         start = end + gutter
+    return following
 
 
 # ---- ratio format (§3.5) ------------------------------------------------------------------------
@@ -623,13 +654,27 @@ def _solved_slot(slot: Slot, cell: Cell, source: Size | None, border: Band | Non
 
 
 def _derived_caption(
-    doc: ArtworkDocument, composition: Composition, style: CaptionStyle, canvas: Size
+    doc: ArtworkDocument,
+    composition: Composition,
+    style: CaptionStyle,
+    margins: Margins,
+    canvas: Size,
 ) -> list[Caption]:
-    """The one caption a composition owns (§3.7); none when it is off or has no text yet."""
+    """The one caption a composition owns (§3.7); none when it is off or has no text yet.
+
+    `align` puts it on the canvas' centre line or flush with the block's printed edge — `margins`
+    are the block's effective insets, so the text lines up with what the eye sees, border included.
+    """
     text = composition.caption.text.strip()
     if composition.caption.place == "none" or not text:
         return []
     previous = doc.captions[0] if doc.captions else None
+    anchor: Literal["start", "middle", "end"] = "middle"
+    x = canvas.w // 2
+    if composition.caption.align == "left":
+        anchor, x = "start", margins.left
+    elif composition.caption.align == "right":
+        anchor, x = "end", canvas.w - margins.right
     return [
         Caption(
             id=previous.id if previous else DERIVED_CAPTION_ID,
@@ -639,9 +684,9 @@ def _derived_caption(
             size=style.size,
             color=style.color,
             letter_spacing=style.letter_spacing,
-            x=canvas.w // 2,
+            x=x,
             y=caption_baseline(composition, style.size, canvas),
-            anchor="middle",
+            anchor=anchor,
             rotation=0,
         )
     ]
@@ -690,5 +735,5 @@ def apply(
         ),
         composition=composition.model_copy(deep=True),
         slots=slots,
-        captions=_derived_caption(doc, composition, style, canvas),
+        captions=_derived_caption(doc, composition, style, margins, canvas),
     )

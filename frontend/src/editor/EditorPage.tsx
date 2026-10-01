@@ -39,7 +39,9 @@ import { problemMessage } from "@/shared/problem";
 import { ShowOnTvDialog } from "@/features/display/ShowOnTvDialog";
 import { EditorStage } from "./canvas/EditorStage";
 import * as actions from "./actions";
+import { bandWidth } from "./core/document.ts";
 import type { Side } from "./core/snapping.ts";
+import { dividers as layoutDividers } from "./core/splits.ts";
 import { AlternativesPanel } from "./panels/AlternativesPanel";
 import { ArrangePanel } from "./panels/ArrangePanel";
 import { CaptionsPanel } from "./panels/CaptionsPanel";
@@ -139,7 +141,29 @@ export function EditorPage() {
   const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null);
   const [guides, setGuides] = useState<{ x?: number | null; y?: number | null }>({});
   const [stageScale, setStageScale] = useState(0.25);
-  const [picking, setPicking] = useState(false);
+  /** The library picker: one more photo, or another photo for the slot being replaced. */
+  const [picking, setPicking] = useState<{ slotId: string | null } | null>(null);
+
+  // The gaps of a Fill layout are handles in Simple (§6.5). Read off the solved slots, so they
+  // sit exactly where the eye sees them; no block, another format or Advanced ⇒ no handles.
+  const dividers = useMemo(() => {
+    const block = doc?.composition;
+    if (!doc || mode !== "simple" || !block || block.detached || block.format !== "fill") return [];
+    const recipe = catalogue.find((item) => item.id === block.recipe);
+    if (!recipe || recipe.count !== doc.slots.length) return [];
+    return layoutDividers(
+      recipe,
+      doc.slots.map((item) => {
+        const band = bandWidth(item);
+        return {
+          x: item.rect.x - band,
+          y: item.rect.y - band,
+          w: item.rect.w + 2 * band,
+          h: item.rect.h + 2 * band,
+        };
+      }),
+    );
+  }, [doc, mode, catalogue]);
 
   // ---- queue (review flow) ---------------------------------------------------------------------
   const queueFilter = useMemo(() => ({ status: "draft" as const }), []);
@@ -354,14 +378,23 @@ export function EditorPage() {
         label: "editor.commands.close",
         group,
         shortcut: "Escape",
-        run: () => void navigate({ to: "/artworks" }),
+        // First press lets go of the selection, so every photo of a composition can be judged
+        // side by side (remarks.md #9); with nothing to let go of, it leaves. A lone photo stays
+        // selected — the panel's framing controls are about it and there is nothing to compare.
+        run: () => {
+          const state = useEditor.getState();
+          const several = (state.doc?.slots.length ?? 0) > 1;
+          const selected = state.selectedSlotIds.length > 0 && several;
+          if (selected || state.selectedCaptionId) select(null);
+          else void navigate({ to: "/artworks" });
+        },
       },
       {
         id: "editor.addSlot",
         label: "editor.commands.addSlot",
         group,
         shortcut: "a",
-        run: () => setPicking(true),
+        run: () => setPicking({ slotId: null }),
       },
       {
         id: "editor.deleteSelection",
@@ -624,6 +657,8 @@ export function EditorPage() {
             onPointer={setPointer}
             onScaleChange={setStageScale}
             guides={guides}
+            dividers={dividers}
+            onSetShares={actions.setSplitShares}
           />
           {loupe && <Loupe doc={doc} point={pointer} />}
         </div>
@@ -656,6 +691,8 @@ export function EditorPage() {
               selectedSlotId={slot?.id ?? null}
               onSelectSlot={(slotId) => select(slotId)}
               onSaveAsTemplate={setSavingTemplate}
+              onAddPhoto={() => setPicking({ slotId: null })}
+              onReplacePhoto={(slotId) => setPicking({ slotId })}
             />
           ) : tab === "design" ? (
             <>
@@ -713,13 +750,21 @@ export function EditorPage() {
       )}
 
       <PhotoPicker
-        open={picking}
-        onOpenChange={setPicking}
-        used={photoIds}
-        onPickEmpty={() => void actions.addSlot(null)}
+        // Keyed by what is being replaced: the "around this photo" scope starts afresh each time.
+        key={picking?.slotId ?? "add"}
+        open={picking !== null}
+        onOpenChange={(open) => !open && setPicking(null)}
+        used={doc.slots.flatMap((item) => (item.photo_id ? [item.photo_id] : []))}
+        around={
+          picking?.slotId
+            ? (doc.slots.find((item) => item.id === picking.slotId)?.photo_id ?? null)
+            : null
+        }
+        onPickEmpty={picking?.slotId ? undefined : () => void actions.addSlot(null)}
         onPick={(photoId) => {
-          void actions.addSlot(photoId);
-          setPicking(false);
+          if (picking?.slotId) void actions.setSlotPhoto(picking.slotId, photoId);
+          else void actions.addSlot(photoId);
+          setPicking(null);
         }}
       />
 

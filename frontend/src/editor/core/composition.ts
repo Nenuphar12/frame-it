@@ -1,7 +1,7 @@
 // Parametric compositions — mirror of backend/src/the_frame_v2/domain/composition.py.
 // Spec: docs/simple-editor.md §3–§4. Parity: conformance/geometry/composition.json.
 // Relative imports keep the `.ts` extension so Node can run this code without a bundler.
-import type { Band, DocCaption, DocSlot, EditorDocument } from "./document.ts";
+import type { Band, CaptionAnchor, DocCaption, DocSlot, EditorDocument } from "./document.ts";
 import {
   CANVAS,
   type Margins,
@@ -31,6 +31,7 @@ export const DERIVED_CAPTION_ID = "caption";
 
 export type CellKind = "landscape" | "portrait" | "square" | "auto";
 export type CaptionPlace = "none" | "above" | "below";
+export type CaptionAlign = "left" | "center" | "right";
 
 /** A leaf: one cell. `auto` takes the photo's own orientation (1-cell recipes). */
 export interface RecipeCell {
@@ -69,6 +70,8 @@ export interface CompositionBorder {
 export interface CompositionCaption {
   text: string;
   place: CaptionPlace;
+  /** Centred on the canvas, or flush with the block's left / right printed edge (§3.7). */
+  align: CaptionAlign;
 }
 
 /** The document's `composition` block (docs/simple-editor.md §2). */
@@ -76,6 +79,11 @@ export interface Composition {
   recipe: string;
   /** Share of the root split's first child; `null` = the recipe's default. Fill format only. */
   balance: number | null;
+  /**
+   * Per-split override of the recipe's `weights`, splits in depth-first order; `null` inherits.
+   * Fill format only, and `balance` stays the root's share wherever the recipe declares one (§3.4).
+   */
+  weights: (number[] | null)[];
   /** Minimum margin around the block, per axis. */
   outer: { x: number; y: number };
   /** Exact gap between two printed edges, per axis. */
@@ -123,6 +131,12 @@ const isCell = (node: RecipeNode): node is RecipeCell => "cell" in node;
 export function leaves(node: RecipeNode): RecipeCell[] {
   if (isCell(node)) return [node];
   return node.children.flatMap(leaves);
+}
+
+/** Split nodes in depth-first order, the root first — how `composition.weights` is indexed. */
+export function splits(node: RecipeNode): RecipeSplit[] {
+  if (isCell(node)) return [];
+  return [node, ...node.children.flatMap(splits)];
 }
 
 export const cellId = (index: number): string => `c${index + 1}`;
@@ -247,7 +261,7 @@ function solveOnce(
   const box: Box = { x: area.x, y: area.y, w: area.w, h: area.h };
   const boxes: Box[] = [];
   if (composition.format === "fill") {
-    walkFill(recipe.tree, box, rootWeights(recipe, composition), gutterX, gutterY, boxes);
+    walkFill(recipe.tree, box, splitWeights(recipe, composition), 0, gutterX, gutterY, boxes);
   } else {
     const aspects = leaves(recipe.tree).map((cell, index) =>
       leafAspect(cell, cellFormat(composition, index), photoSizes[index] ?? null, area),
@@ -293,11 +307,24 @@ function leafAspect(cell: RecipeCell, format: string, photo: Size | null, area: 
   return cell.cell === "square" ? 1 : ratio;
 }
 
-/** `balance` replaces the root split's weights by `[b, 1−b]`; `null` keeps the recipe's. */
-function rootWeights(recipe: Recipe, composition: Composition): number[] | null {
-  if (!recipe.balance || isCell(recipe.tree)) return null;
-  const share = composition.balance ?? recipe.balance.default;
-  return [share, 1 - share];
+/**
+ * The weights every split is laid out with under `fill`, in depth-first order (§3.4).
+ *
+ * A split takes its entry of `composition.weights` when there is one **of its own shape**, else
+ * the recipe's. Where the recipe declares a `balance`, the root is `[b, 1−b]` whatever the block
+ * says: `balance` stays the one name of that division. An entry of the wrong length is ignored
+ * rather than thrown on — the solver is total (§3.6), the server's reference check reports it.
+ */
+export function splitWeights(recipe: Recipe, composition: Composition): number[][] {
+  return splits(recipe.tree).map((node, index) => {
+    const override = composition.weights[index] ?? null;
+    if (index === 0 && recipe.balance) {
+      const share = composition.balance ?? recipe.balance.default;
+      return [share, 1 - share];
+    }
+    if (override !== null && override.length === node.children.length) return [...override];
+    return [...node.weights];
+  });
 }
 
 /** Round a footprint's float edges, then deflate it by the border to get the photo rect. */
@@ -312,20 +339,26 @@ function toCell(index: number, footprint: Box, border: number): Cell {
 }
 
 // ---- fill format (§3.4) ------------------------------------------------------------------------
-/** Weighted split filling `box` exactly; gutters stay exact, the last child snaps to the edge. */
+/**
+ * Weighted split filling `box` exactly; gutters stay exact, the last child snaps to the edge.
+ *
+ * `split` is this node's index in `weightsOf` if it is a split; returns the next free index.
+ */
 function walkFill(
   node: RecipeNode,
   box: Box,
-  weightOverride: number[] | null,
+  weightsOf: number[][],
+  split: number,
   gutterX: number,
   gutterY: number,
   out: Box[],
-): void {
+): number {
   if (isCell(node)) {
     out.push(box);
-    return;
+    return split;
   }
-  const weights = weightOverride ?? node.weights;
+  const weights = weightsOf[split]!;
+  let following = split + 1;
   const total = weights.reduce((sum, weight) => sum + weight, 0);
   const count = node.children.length;
   const row = node.split === "row";
@@ -341,9 +374,18 @@ function walkFill(
     const childBox: Box = row
       ? { x: start, y: box.y, w: Math.max(0, end - start), h: box.h }
       : { x: box.x, y: start, w: box.w, h: Math.max(0, end - start) };
-    walkFill(node.children[index]!, childBox, null, gutterX, gutterY, out);
+    following = walkFill(
+      node.children[index]!,
+      childBox,
+      weightsOf,
+      following,
+      gutterX,
+      gutterY,
+      out,
+    );
     start = end + gutter;
   }
+  return following;
 }
 
 // ---- ratio format (§3.5) -----------------------------------------------------------------------
@@ -566,16 +608,31 @@ function solvedSlot(slot: DocSlot, cell: Cell, source: Size | null, border: Band
   };
 }
 
-/** The one caption a composition owns (§3.7); none when it is off or has no text yet. */
+/**
+ * The one caption a composition owns (§3.7); none when it is off or has no text yet.
+ *
+ * `align` puts it on the canvas' centre line or flush with the block's printed edge — `margins`
+ * are the block's effective insets, so the text lines up with what the eye sees, border included.
+ */
 function derivedCaption(
   doc: EditorDocument,
   composition: Composition,
   style: CaptionStyle,
+  margins: Margins,
   canvas: Size,
 ): DocCaption[] {
   const text = composition.caption.text.trim();
   if (composition.caption.place === "none" || text === "") return [];
   const previous = doc.captions[0];
+  let anchor: CaptionAnchor = "middle";
+  let x = Math.floor(canvas.w / 2);
+  if (composition.caption.align === "left") {
+    anchor = "start";
+    x = margins.left;
+  } else if (composition.caption.align === "right") {
+    anchor = "end";
+    x = canvas.w - margins.right;
+  }
   return [
     {
       id: previous ? previous.id : DERIVED_CAPTION_ID,
@@ -585,9 +642,9 @@ function derivedCaption(
       size: style.size,
       color: style.color,
       letter_spacing: style.letter_spacing,
-      x: Math.floor(canvas.w / 2),
+      x,
       y: captionBaseline(composition, style.size, canvas),
-      anchor: "middle",
+      anchor,
       rotation: 0,
     },
   ];
@@ -632,6 +689,6 @@ export function applyComposition(
     placement: "manual",
     margins: { ...margins, linked: false, mirror_x: false, mirror_y: false },
     slots,
-    captions: derivedCaption(doc, composition, style, canvas),
+    captions: derivedCaption(doc, composition, style, margins, canvas),
   };
 }

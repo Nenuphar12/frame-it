@@ -6,10 +6,10 @@ import base64
 from collections import defaultdict
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
-from sqlalchemy import Select, and_, delete, func, or_, select
+from sqlalchemy import ColumnElement, Select, and_, delete, false, func, or_, select
 from sqlalchemy.orm import Session
 
 from the_frame_v2.db.models import (
@@ -21,11 +21,16 @@ from the_frame_v2.db.models import (
     PhotoTag,
     Tag,
 )
+from the_frame_v2.db.session import DISTANCE_FUNCTION
+from the_frame_v2.domain import geo
 from the_frame_v2.errors import ProblemError, not_found
 from the_frame_v2.services import search, tags
 
 INBOX_STATES = ("inbox", "processed", "dismissed")
 MAX_LIMIT = 500
+AROUND_DAYS = 3
+AROUND_KM = 10.0
+"""What "around this photo" means (`PhotoFilter.around`): the same few days, or the same spot."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,6 +38,8 @@ class PhotoFilter:
     inbox_state: str | None = None
     q: str | None = None
     tag_id: str | None = None
+    around: str | None = None
+    """A photo id: only photos taken within `AROUND_DAYS` of it, or within `AROUND_KM` of it."""
     trashed: bool = False
 
 
@@ -56,6 +63,48 @@ def _decode_cursor(cursor: str) -> tuple[datetime, str]:
         return datetime.fromisoformat(stamp), photo_id
     except (ValueError, UnicodeDecodeError) as exc:
         raise ProblemError(400, "invalid_cursor", "Invalid cursor") from exc
+
+
+def taken_near(lat: float, lon: float, km: float) -> ColumnElement[bool]:
+    """A photo taken within `km` of the point. Photos without GPS never match.
+
+    A bounding box keeps the exact distance (`tf_distance_km`, `db/session.py`) to a handful of
+    rows; its longitude window wraps at ±180° so a circle across the antimeridian keeps both sides.
+    """
+    lat_lo, lat_hi, dlon = geo.bounding_box(lat, km)
+    lon_lo, lon_hi = lon - dlon, lon + dlon
+    in_lon: ColumnElement[bool]
+    if dlon >= 180:
+        in_lon = Photo.gps_lon.is_not(None)
+    elif lon_lo < -180:
+        in_lon = or_(Photo.gps_lon >= lon_lo + 360, Photo.gps_lon <= lon_hi)
+    elif lon_hi > 180:
+        in_lon = or_(Photo.gps_lon >= lon_lo, Photo.gps_lon <= lon_hi - 360)
+    else:
+        in_lon = Photo.gps_lon.between(lon_lo, lon_hi)
+    return and_(
+        Photo.gps_lat.between(lat_lo, lat_hi),
+        in_lon,
+        getattr(func, DISTANCE_FUNCTION)(Photo.gps_lat, Photo.gps_lon, lat, lon) <= km,
+    )
+
+
+def _around(session: Session, photo_id: str) -> ColumnElement[bool]:
+    """Taken in the same few days as `photo_id`, or at the same spot — the likely stand-ins for it.
+
+    What the editor's picker opens on when a photo is being replaced. A photo that says neither
+    when nor where it was taken has no neighbours: the clause is then false, not "everything".
+    """
+    photo = session.get(Photo, photo_id)
+    if photo is None or photo.deleted_at is not None:
+        raise not_found("photo")
+    clauses: list[ColumnElement[bool]] = []
+    if photo.taken_at is not None:
+        span = timedelta(days=AROUND_DAYS)
+        clauses.append(Photo.taken_at.between(photo.taken_at - span, photo.taken_at + span))
+    if photo.gps_lat is not None and photo.gps_lon is not None:
+        clauses.append(taken_near(photo.gps_lat, photo.gps_lon, AROUND_KM))
+    return or_(*clauses) if clauses else false()
 
 
 def _apply_filter(
@@ -83,6 +132,8 @@ def _apply_filter(
         stmt = stmt.where(
             Photo.id.in_(select(PhotoTag.photo_id).where(PhotoTag.tag_id == flt.tag_id))
         )
+    if flt.around:
+        stmt = stmt.where(_around(session, flt.around))
     return stmt
 
 

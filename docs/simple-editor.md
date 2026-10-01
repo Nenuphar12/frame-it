@@ -4,7 +4,8 @@
 > the mirrored solver, the recipe catalogue, `GET /recipes`, the server authority (`apply`,
 > re-solve on save, `POST /artworks` with a composition), the **Simple panel** and the
 > `[Simple] [Advanced ᴮᴱᵀᴬ]` switch with `detached` / Re-apply layout. Sections marked ✅ describe
-> shipped code.
+> shipped code. **2026-10-01**: per-split `weights` (§3.4, §6.5), caption alignment and typography
+> (§3.7, §6.2), replace / add / remove a photo from the panel, a typed field on every slider.
 > Companion specs: `artwork-document.md` (document v1), `geometry-and-quality.md` (§7.x rules it reuses),
 > `rendering-spec.md` (bands grow outward — §3 below depends on it).
 
@@ -32,13 +33,17 @@ hand-built artwork and every existing document stays valid, so there is no migra
     "recipe": "three-hero-left",       // id from assets/presets/recipes.json
     "balance": 0.62,                   // share of the root split's first child; Fill only (§4.3)
                                        // null ⇒ the recipe's own default
+    "weights": [null, [3, 1]],         // per-split override of the recipe's weights, splits in
+                                       // depth-first order; null inherits. Fill only (§3.4)
     "outer":  { "x": 120, "y": 120 },  // minimum margin around the block, per axis
     "gutter": { "x": 80,  "y": 80 },   // gap between footprints, per axis, exact
     "format": "fill",                  // "fill" | "original" | "1:1" | "3:2" | … | "w:h"
                                        // a ratio carries its orientation: 4:3 ≠ 3:4
     "cell_formats": [null, "1:1"],     // per-cell override, slot order; null inherits (§3.5)
     "border": { "width": 24, "color": "#FFFFFF" },   // null ⇒ no border; applied to every cell
-    "caption": { "text": "Kyoto — April 2026", "place": "below" },  // place: "none" | "above" | "below"
+    "caption": { "text": "Kyoto — April 2026", "place": "below", "align": "center" },
+                                       // place: "none" | "above" | "below"
+                                       // align: "left" | "center" | "right" (§3.7)
     "detached": false                  // true ⇒ the slots are the truth, this block is memory only (§5)
   },
   "slots": [ … ],                      // derived from the block while detached = false
@@ -53,6 +58,10 @@ Validation (in addition to the v1 rules):
   `validate_references` (it needs the catalogue), so the problem codes are `unknown_recipe` /
   `recipe_slot_count` / `balance_out_of_range` / `balance_not_supported`.
 - `balance` ∈ the recipe's declared range; ignored (and hidden) unless `format = "fill"`.
+- `weights`: at most one entry per split of the recipe, each `null` or **one positive weight per
+  child of that split** (2–8 values in `(0, 1000]`, like a recipe's own). An entry that does not
+  fit the recipe's shape is `weights_shape` — also checked in `validate_references`, since the
+  shape comes from the catalogue. Ignored unless `format = "fill"`.
 - `outer.x` ∈ [0, 800], `outer.y` ∈ [0, 450], `gutter.{x,y}` ∈ [0, 400]. Values that leave a cell narrower
   than `MIN_CELL = 40` px are clamped by the solver (§3.6), never rejected — an imported document must open.
 - `format`: `"fill"`, `"original"` (every cell takes its own photo's aspect — good for any count) or a
@@ -133,6 +142,21 @@ integers, the last child snapped to the node's far edge — cells tile `A` with 
 
 Each cell's `ratio_label` is its own `w:h`; leaf orientation is ignored.
 
+**Which weights.** `split_weights(recipe, composition)` (↔ `splitWeights`) gives the weights every
+split is laid out with, splits in **depth-first order, the root first** (`splits(tree)`):
+
+1. the root of a recipe that declares a `balance` is `[b, 1−b]` — whatever `weights[0]` says.
+   **One division, one name**: the Balance slider, the canvas drag and the document all mean the
+   same field, and the recipe's range keeps applying;
+2. otherwise the split's entry of `composition.weights`, when there is one **of its own shape**;
+3. otherwise the recipe's own `weights`.
+
+Only proportions matter (`[3, 1]` ≡ `[0.75, 0.25]`). An entry of the wrong length is *ignored* by
+the solver, not raised on — it is total (§3.6) and `validate_references` is what reports it. So
+`three-hero-left` with `weights: [null, [3, 1]]` keeps its hero and gives the top-right photo three
+quarters of the right-hand column: the hero's rect does not move, the two small cells become
+`1338 × 1380` and `1338 × 460` with the same 80 px between them.
+
 ### 3.5 Ratio format
 
 Every cell must end up at exactly the chosen aspect. **A format carries its orientation**: `4:3`
@@ -205,9 +229,15 @@ returned unchanged.
 | `slots[i].shadow` | untouched (style default / Advanced) |
 | `margins` | the effective insets of the block's footprint bbox (`block_margins`), `linked = false`, mirrors `false` |
 | `placement` | `"manual"` |
-| `captions` | one derived caption when `caption.place ≠ none` **and its text is not blank**: `x = 1920`, `anchor = "middle"`, baseline `y` inside the reserved band; font/weight/size/colour from the style's `caption_defaults` |
+| `captions` | one derived caption when `caption.place ≠ none` **and its text is not blank**: baseline `y` inside the reserved band; `x`/`anchor` from `caption.align` — `center`: `1920`, `middle` · `left`: the block's left printed edge, `start` · `right`: its right printed edge, `end`; font/weight/size/colour from the style's `caption_defaults` |
 
 Writing `margins` back keeps the Advanced panels and every existing helper reading a truthful document.
+
+**The printed edge.** A left- or right-aligned caption lines up with what the eye sees: the block's
+*footprint* (border included), read off the solved cells — exactly `margins.left` and
+`canvas.w − margins.right`. Not `outer`: under a ratio format the block is centred with slack
+(§3.5), and a caption flush with a margin nobody can see would look misplaced. The baseline keeps
+using the nominal `outer`, as before.
 
 Three rules the table leaves implicit, decided while implementing:
 
@@ -241,8 +271,9 @@ drag — the invariant users notice first.
 
 ### 4.2 Triggers
 
-Re-solve on: recipe, balance, outer, gutter, format, border, caption place/size, and on adding, removing or
-swapping a photo. **Not** on a reframe (pan/zoom changes `source.crop` only, inside a fixed rect) and not on a
+Re-solve on: recipe, balance, weights, outer, gutter, format, border, caption place/align/size
+(and the rest of its typography, which `apply` simply carries over), and on adding, removing,
+replacing or swapping a photo. **Not** on a reframe (pan/zoom changes `source.crop` only, inside a fixed rect) and not on a
 background change.
 
 ### 4.3 Balance
@@ -254,7 +285,9 @@ instead of the slider: *the format sets the proportions*.
 
 The count comes from the photos, not the picker. Adding or removing a photo keeps the current recipe if one
 with the new count has the same id family, otherwise falls back to that count's first catalogue entry.
-Margins, format, border, caption and every surviving crop are kept.
+Margins, format, border, caption and every surviving crop are kept. `weights` are **not**: they
+are indexed by the recipe's splits, so any change of recipe (picked, or following the count) drops
+them — another recipe's entries would describe other divisions, or be refused as `weights_shape`.
 
 ## 5. Detaching ✅
 
@@ -311,16 +344,19 @@ Balance     ────●────  62%                 fill + asymmetric r
 Format      [Fill] [Original] [1:1] [5:4] [4:3] [3:2] [16:9] [ … ]  + [Landscape] [Portrait]
 Margins     Outer  ────●────  120 px       ▸ More → Outer ↔ / ↕, Gap ↔ / ↕
             Gap    ──●──────   80 px       multi-photo only
-Photos      [1][2][3]                      drag to swap, click to select (or click it on the canvas)
+Photos      [1⋯][2⋯][3⋯]      + Add photo   drag to swap, click to select (or click it on the canvas)
+              ⋯ → Replace photo… · Remove from the artwork
               selected → ◀ ▶ swap · cell 2 of 3
+              Width  ──●── 38 %   Height ──●── 50 %   ↺ Reset proportions      Fill only (§6.5)
               This photo  [Same as layout] [Original] [1:1] … + [Landscape] [Portrait]
-              Zoom ──●── 1.4×
+              Zoom ──●── 1.4 ×
               Downscaled 63%  [Native 100%]   drag on the canvas to pan
 Background  Style [Gallery recessed ▾] · [swatch][swatch][swatch]  #F2EFE8
 Border      ──●──────  24 px  [■]
 Shadow      ( ) none  (●) recessed  ( ) raised   blur ──●── · opacity ──●── · offset · colour
 Caption     [ Kyoto — April 2026        ]  ( ) none  (●) below  ( ) above
-            Size  ────●────  48 px
+            Align [Left] [Centre] [Right]
+            Font · Weight · Size ──●── 48 px · Colour · Spacing
 ```
 
 - `Original` is offered at any photo count (every cell takes its photo's aspect); it is the default for a
@@ -340,6 +376,22 @@ Caption     [ Kyoto — April 2026        ]  ( ) none  (●) below  ( ) above
 - **Caption size** is a slider, not a hidden Advanced field. It is not a free-form edit: the band the solver
   reserves is a function of the size (§3.3), so the block re-solves around it and the typography round-trips
   (`apply` reads it back off the document, §3.7).
+- **The whole typography is here** — font, weight, size, colour, spacing (`CaptionTypography`, the
+  same component the Advanced panel uses, so a font offered in one mode is offered in the other).
+  None of it detaches: `apply` carries it over (§3.7). It shows once there is a caption to dress,
+  i.e. once the text is not blank. **Align** is the block's (`caption.align`), not the caption's
+  `anchor`: setting the anchor by hand is a free-form edit, asking for "flush left with the photos"
+  is a parameter the solver keeps true when the margins move.
+- **Every slider has a number field** (`%` for a 0–1 value, `×` for the zoom): balance, zoom,
+  shadow opacity, texture strength. A read-only figure next to a slider looks like a field and
+  cannot be typed into (remarks.md #14).
+- **A photo is replaced, added and removed here** (remarks.md #16): each chip has a `⋯` menu
+  (*Replace photo…*, *Remove from the artwork*), the section an *Add photo* button, and a lone photo
+  a plain *Replace photo…* button. Adding and removing follow §4.4; *Add photo* is disabled when
+  the catalogue holds no recipe for one more, where the block would detach. The picker opens on
+  the photos taken **around the one being replaced** — `GET /photos?around=<id>`: within 3 days of
+  it, or within 10 km — with *All photos* one chip away; a photo with neither a date nor a position
+  has no neighbours and the picker shows the library.
 - **A single-photo artwork hides what is about choosing a cell**: the layout picker (there is one 1-cell
   recipe), the gap sliders, the photo chips, the swap arrows and the per-cell format (remarks.md #10).
 - Sliders snap to stops; typed values never snap and keep what you type while focused (`panels/Controls.tsx`,
@@ -378,6 +430,13 @@ Decided while implementing (stage 3):
   re-picks the recipe (§4.4, `recipeFollowsPhotoCount`); beyond the catalogue (7 photos and up) the
   block detaches, which is also what stops the server rejecting the save with `recipe_slot_count`.
 
+Selection on the canvas (remarks.md #9): **a selected photo no longer dims the others.** They fade
+only *while* a photo is being dragged inside its cell — when it says which one is moving — and are
+back as they will print the moment the pointer is released; judging the whole composition used to
+need `P`. With several photos, a click on the mat or `Escape` lets go of the selection (`Escape`
+again leaves the editor); a lone photo stays selected, since the panel's framing controls are about
+it and there is nothing to compare it with.
+
 ### 6.3 Picker schemas ✅
 
 Drawn from the solver itself: each thumbnail is `solve(recipe, {format: fill, outer: 6%, gutter: 4%})` at
@@ -410,6 +469,32 @@ Rich for 2–4 photos, complete for 1, one safe default for 5 and 6. `name_key` 
 
 ⚖ = declares a `Balance` range. Orientations only matter under a ratio format.
 
+### 6.5 Moving a division (Fill) ✅
+
+A layout is nested rows and columns, so a photo has no size of its own under `fill`: it has a share
+of its row and a share of its column. "Make this photo wider" therefore means "move this
+division", and the photos sharing it move too — in `three-hero-left`, widening the top-right photo
+widens the bottom-right one. The UI makes that coupling visible instead of hiding it:
+
+- **On the canvas, every gap is a handle.** Hovering one shows a line down its middle and a resize
+  cursor; dragging moves the division; **double-click gives it back to the recipe**. Only the two
+  parts on either side of the gap change — the third cell of a row stays as it is. The line snaps
+  to equal parts, thirds and the golden section of those two parts (8 screen px, `Alt` disables),
+  with the usual magenta guide. A thin or zero gutter is still grabbed over 14 screen px.
+- **In the panel, Width and Height** of the selected photo: the share of its nearest row and of its
+  nearest column, as a slider and a typed percentage. The other parts of that split keep their own
+  proportions and share what is left. A photo that spans the block one way has no slider for it.
+  *Reset proportions* clears `balance` and `weights`.
+
+Both write the same thing (`editor/core/splits.ts`, client-only like `bounds.ts`):
+`composition.weights[k]` for split *k*, or `balance` when *k* is the root of a recipe that declares
+one — clamped to the recipe's range, which is the only value the server accepts there. Every part
+keeps at least `MIN_SHARE = 10 %` of its split, and a change that would leave a cell under
+`MIN_CELL` is dropped (`setSplitShares` probes `solve_strict`, like the slider bounds). The gaps
+are read **off the solved slots** (footprints), not re-derived, so a handle is where the eye sees
+the gap whatever the solver relaxed. Shares are stored rounded to 1/10 000. One drag is one undo
+step. Nothing here applies under a ratio format, where the proportions are the format's (§3.5).
+
 ## 7. Authority & API
 
 > ✅ Both halves are in: stage 1 the catalogue (`domain/composition.py` + its TS mirror,
@@ -441,7 +526,9 @@ Changes:
   `templates.build_composition_document` builds the skeleton a new artwork starts from — whole
   photos fitted in the canvas, which `apply` turns into centred cover crops (zoom 1, §4.1).
 - `make gen-api` in the same change (invariant 6). No DB migration (the document is JSON), no renderer change,
-  so **no `RENDERER_VERSION` bump and no golden update**.
+  so **no `RENDERER_VERSION` bump and no golden update**. The same holds for `weights` and
+  `caption.align` (2026-10-01): two optional fields with defaults, so every stored document stays
+  valid, and they only move rects and one caption — which the renderer already draws.
 
 Today's `assets/presets/layouts.json` and the layout-template code stay untouched and keep serving the beta
 editor; Phase 8 rewrites layout templates around recipes (a saved layout becomes recipe + parameters).
@@ -471,6 +558,14 @@ editor; Phase 8 rewrites layout templates around recipes (a saved layout becomes
   solved ones and the reframe survives, a detached document stored verbatim, creating from a
   composition (border, caption, 3:2 cells) and the four `POST` problem codes; ⏳ (stage 4) re-apply
   clears the flag.
+- ✅ `weights` and `caption.align` (2026-10-01): 30 more conformance cases — 3 for the layouts
+  that carry them (`templates.json`) and 27 here (`composition_solve` /
+  `composition_split_weights` over nested, 3-child, balanced-root, wrong-shape, too-many-entries
+  and ratio-format blocks; `composition_apply` for the alignment with and without slack); unit
+  tests that weighted cells still tile the area for **every** recipe, that a nested weight moves
+  only its own division and that a caption lines up with the printed edge; API tests for
+  `weights_shape` and the layout's own check. The 224 older cases are unchanged apart from the two
+  new fields in their inputs and outputs.
 - Golden: none (no renderer change). One new render smoke test through an existing golden document is enough.
 - ✅ Browser (soft, §13.6, done 2026-09-22 over CDP): a 3-photo hero composition, both sliders
   dragged, format switched to 3:2, a photo reframed and two swapped, a border added and a caption

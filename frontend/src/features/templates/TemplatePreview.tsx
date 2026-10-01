@@ -17,12 +17,17 @@ function block(layout: LayoutDocumentApi): Composition {
   return {
     recipe: layout.recipe,
     balance: layout.balance ?? null,
+    weights: (layout.weights ?? []).map((entry) => (entry ? [...entry] : null)),
     outer: { x: layout.outer?.x ?? 120, y: layout.outer?.y ?? 120 },
     gutter: { x: layout.gutter?.x ?? 80, y: layout.gutter?.y ?? 80 },
     format: layout.format ?? "fill",
     cell_formats: [...(layout.cell_formats ?? [])],
     border: layout.border ? { ...layout.border } : null,
-    caption: { text: "", place: layout.caption_place ?? "none" },
+    caption: {
+      text: "",
+      place: layout.caption_place ?? "none",
+      align: layout.caption_align ?? "center",
+    },
     detached: false,
   };
 }

@@ -85,6 +85,8 @@ export interface PhotoFilter {
   inbox_state?: "inbox" | "processed" | "dismissed";
   q?: string;
   tag_id?: string;
+  /** A photo id: only the photos taken in the same few days, or at the same spot. */
+  around?: string;
 }
 
 export function useMe() {

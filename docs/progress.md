@@ -1,5 +1,65 @@
 # Progress log
 
+## 2026-10-01 — The Simple editor (remarks #9, #10, #14, #16, #18)
+
+**A division you can move** (#18). Under Fill a photo has no size of its own — it has a share of its
+row and of its column — so "per photo" is really "per dividing line", and the neighbours have to be
+seen to move. `composition.weights` holds the proportions of each split of the recipe, in
+depth-first order; `balance` stays the root wherever the recipe declares one, so the slider, the
+drag and the document name that line once. Two ways in, one result (`editor/core/splits.ts`):
+**drag a gap on the canvas** (it snaps to halves, thirds and the golden section, `Alt` turns that
+off, a double-click gives the division back to the recipe) or, with a photo selected, its **Width**
+and **Height** as a slider and a typed percentage. Solver mirrored in both languages
+(`split_weights` ↔ `splitWeights`); an entry that does not fit the recipe is `weights_shape`, and
+every path that changes the recipe drops the weights. Layouts carry them too.
+
+**The caption** (#10): font, weight, size, colour and spacing in the Simple panel — the artwork
+already kept them through a re-solve, the panel just did not show them (`CaptionTypography`, shared
+with Advanced) — and `caption.align`, flush with the photos' left or right **printed** edge (the
+block's, border included: under a ratio the block is centred and `outer` is not where it ends).
+
+**Photos** (#16): each chip has a `⋯` — *Replace photo…*, *Remove from the artwork* — and the
+section an *Add photo* button; a lone photo gets a plain *Replace photo…*. The picker opens on
+`GET /photos?around=<id>`: the photos taken within 3 days of the one being replaced, or within
+10 km of it, with *All photos* one chip away.
+
+**Seeing the whole artwork** (#9): a selected photo no longer dims the others; they fade only while
+one is being dragged inside its cell. With several photos the mat and `Escape` deselect (`Escape`
+again leaves).
+
+**Typed values** (#14): balance, zoom, shadow opacity and texture strength each showed a figure that
+looked like a field and was not one. Every slider now has a real one (`PercentField`), the layout
+template's border width included.
+
+No migration and no renderer change: two optional document fields with defaults. Conformance grew
+from 362 to 392 cases; the 224 older composition/template cases are unchanged apart from the two
+new fields. Hand-checked: `three-hero-left` with `weights: [null, [3, 1]]` keeps its hero and makes
+the right column 1380 + 80 + 460; two stacked 3:2 cells with a 24 px border put a left caption at
+x = 1299, the block's own edge.
+
+Driven in headless Chromium over CDP on a copy of the dev library (a 3-photo `three-hero-left`),
+every result read back through the API:
+
+- a photo next to the selected one reads the same canvas luminance selected or not (110.3), 200.6
+  while the other is dragged, 110.3 again on release; a mat click empties the selection; `Escape`
+  empties it and stays, a second one lands on `/artworks`;
+- dragging the nested gap 100 px down with `Alt` stores `weights: [null, [0.5526, 0.4474]]` and
+  moves only the two right-hand cells; 110 px further without `Alt` snaps to `[0.618, 0.382]`; a
+  double-click on the gap brings `weights: []` back; the root gap dragged 300 px writes
+  `balance: 0.534`, dragged to the far left stops at the recipe's 0.4; undo takes one drag back;
+- Height typed 30 → `[null, [0.3, 0.7]]`; Width typed 50 on the right column → `balance: 0.5`;
+  *Reset proportions* clears both; zoom typed 2 halves the crop; opacity typed 62 → 0.62 on all
+  three slots; balance typed 55 → 0.55;
+- a caption typed, *Left* → `anchor: start` at x = 120 = `margins.left`; EB Garamond, spacing 0.2
+  and *Right* survive an outer-margin change (x = 3640 with `outer` 200);
+- `⋯` → *Replace photo…* opens on 30 of the library's 78 photos (the API's own count for
+  `around`), *All photos* shows 78; picking one changes that slot only and re-crops it to the
+  cell; *Add photo* turns the block into `four-hero-left`; *Remove* on the fourth brings
+  `three-hero-left` back.
+
+Not driven in a browser: the layout template editor's new alignment control and border field, and
+the Advanced panel's use of `CaptionTypography` (typecheck and lint only).
+
 ## 2026-10-01 — Collections and filters (remarks #11, #20, #24)
 
 **One way to create a collection** (#24): a single *New collection* button whose dialog starts with

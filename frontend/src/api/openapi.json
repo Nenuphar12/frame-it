@@ -1554,6 +1554,28 @@
             "pattern": "^[a-z0-9-]{1,64}$",
             "title": "Recipe",
             "type": "string"
+          },
+          "weights": {
+            "items": {
+              "anyOf": [
+                {
+                  "items": {
+                    "exclusiveMinimum": 0.0,
+                    "maximum": 1000.0,
+                    "type": "number"
+                  },
+                  "maxItems": 8,
+                  "minItems": 2,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxItems": 16,
+            "title": "Weights",
+            "type": "array"
           }
         },
         "required": [
@@ -1611,6 +1633,16 @@
       "CompositionCaption": {
         "additionalProperties": false,
         "properties": {
+          "align": {
+            "default": "center",
+            "enum": [
+              "left",
+              "center",
+              "right"
+            ],
+            "title": "Align",
+            "type": "string"
+          },
           "place": {
             "default": "none",
             "enum": [
@@ -3853,6 +3885,16 @@
               }
             ]
           },
+          "caption_align": {
+            "default": "center",
+            "enum": [
+              "left",
+              "center",
+              "right"
+            ],
+            "title": "Caption Align",
+            "type": "string"
+          },
           "caption_place": {
             "default": "none",
             "enum": [
@@ -3895,6 +3937,28 @@
             "pattern": "^[a-z0-9-]{1,64}$",
             "title": "Recipe",
             "type": "string"
+          },
+          "weights": {
+            "items": {
+              "anyOf": [
+                {
+                  "items": {
+                    "exclusiveMinimum": 0.0,
+                    "maximum": 1000.0,
+                    "type": "number"
+                  },
+                  "maxItems": 8,
+                  "minItems": 2,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxItems": 16,
+            "title": "Weights",
+            "type": "array"
           }
         },
         "required": [
@@ -10616,6 +10680,7 @@
     },
     "/api/v1/photos": {
       "get": {
+        "description": "`around` is a photo id: only the photos taken in the same few days or at the same spot\n(what the editor offers first when replacing that photo). 404 when it does not exist.",
         "operationId": "list_photos_api_v1_photos_get",
         "parameters": [
           {
@@ -10670,6 +10735,23 @@
                 }
               ],
               "title": "Tag Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "around",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Around"
             }
           },
           {

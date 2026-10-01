@@ -139,7 +139,18 @@ def parse_layout(document: Mapping[str, Any]) -> LayoutDocument:
         parsed = LayoutDocument.model_validate(dict(document))
     except ValidationError as exc:
         raise _invalid("layout", exc) from exc
-    layout_recipe(parsed)  # a layout that names no catalogue entry could never be applied
+    # A layout that names no catalogue entry could never be applied — nor one whose per-split
+    # weights describe another recipe's divisions: every artwork it reached would be refused.
+    shape = layout_recipe(parsed).spec().splits
+    for index, entry in enumerate(parsed.weights):
+        if entry is not None and (index >= len(shape) or len(entry) != shape[index]):
+            raise ProblemError(
+                422,
+                "invalid_template",
+                "Invalid template document",
+                f"weights.{index}: does not fit the recipe's splits",
+                extra={"kind": "layout"},
+            )
     return parsed
 
 

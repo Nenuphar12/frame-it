@@ -16,6 +16,7 @@ import type { DocCaption, EditorDocument } from "@/editor/core/document.ts";
 import type { Rect as DocRect, Size } from "@/editor/core/geometry.ts";
 import { availableArea } from "@/editor/core/placement.ts";
 import { snapRect, TOLERANCE_PX } from "@/editor/core/snapping.ts";
+import { dragShares, type Divider } from "@/editor/core/splits.ts";
 import { PHOTO_MIME } from "@/shared/dnd";
 import { slotSource, type PhotoSizes } from "@/editor/operations";
 import { CaptionNode } from "./CaptionNode.tsx";
@@ -69,11 +70,22 @@ interface EditorStageProps {
   onPointer?: (point: { x: number; y: number } | null) => void;
   /** Current zoom, so panels can express tolerances in screen pixels (snapping, §7.5). */
   onScaleChange?: (scale: number) => void;
+  /**
+   * The gaps of a Fill layout (docs/simple-editor.md §6.5): each one is a handle that moves the
+   * division it separates. Empty wherever the layout is not the user's to stretch.
+   */
+  dividers?: Divider[];
+  /** A division dragged (every share of the split), or reset by a double-click (`null`). */
+  onSetShares?: (split: number, shares: number[] | null, group: string | null) => void;
 }
 
 const MIN_SCALE = 0.02;
 const MAX_SCALE = 2;
 const ROTATION_STEP = 15;
+/** A gap is grabbed over at least this many screen px, however thin the gutter is. */
+const DIVIDER_HIT_PX = 14;
+/** Same blue as the available-area outline: "this is a guide, not part of the picture". */
+const DIVIDER_COLOR = "#5B8DEF";
 
 /** What the pointer is doing between mousedown and mouseup. */
 type Gesture =
@@ -82,7 +94,8 @@ type Gesture =
   | { mode: "slot"; rect: DocRect; id: string; collapse: boolean; moved: boolean }
   | { mode: "resize"; handle: Handle; rect: DocRect; rotation: number }
   | { mode: "rotate"; rect: DocRect; offset: number }
-  | { mode: "caption"; x: number; y: number };
+  | { mode: "caption"; x: number; y: number }
+  | { mode: "divider"; divider: Divider };
 
 export function EditorStage({
   doc,
@@ -103,6 +116,8 @@ export function EditorStage({
   guides,
   onPointer,
   onScaleChange,
+  dividers = NO_DIVIDERS,
+  onSetShares,
 }: EditorStageProps) {
   const container = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState({ width: 0, height: 0 });
@@ -113,6 +128,14 @@ export function EditorStage({
   const [editing, setEditing] = useState<{ id: string; value: string } | null>(null);
   /** Only used for the cursor: the gesture itself lives in a ref (no render per event). */
   const [moving, setMoving] = useState(false);
+  /**
+   * True while a photo is being dragged inside its cell: that is when fading the others helps
+   * (it says which one moves). At rest every photo is shown as it will print — fading them
+   * whenever one was merely *selected* left `P` as the only way to judge the whole composition.
+   */
+  const [reframing, setReframing] = useState(false);
+  /** The gap under the pointer, or being dragged: highlighted, and it sets the cursor. */
+  const [activeDivider, setActiveDivider] = useState<Divider | null>(null);
   const [snapGuides, setSnapGuides] = useState<{ x: number | null; y: number | null }>({
     x: null,
     y: null,
@@ -250,6 +273,29 @@ export function EditorStage({
     [primary, transformable, view],
   );
 
+  /** The gap under the pointer; a thin (or zero) gutter is still grabbed over a few screen px. */
+  const dividerAt = useCallback(
+    (point: Point): Divider | null => {
+      const scale = viewRef.current?.scale ?? 1;
+      const reach = DIVIDER_HIT_PX / Math.max(scale, 0.001);
+      for (const item of dividers) {
+        const { rect } = item;
+        const padX = item.axis === "x" ? Math.max(0, (reach - rect.w) / 2) : 0;
+        const padY = item.axis === "y" ? Math.max(0, (reach - rect.h) / 2) : 0;
+        if (
+          point.x >= rect.x - padX &&
+          point.x <= rect.x + rect.w + padX &&
+          point.y >= rect.y - padY &&
+          point.y <= rect.y + rect.h + padY
+        ) {
+          return item;
+        }
+      }
+      return null;
+    },
+    [dividers],
+  );
+
   // ---- gesture flush ---------------------------------------------------------------------------
   const flush = useCallback(() => {
     frame.current = null;
@@ -267,6 +313,19 @@ export function EditorStage({
       x: (move.x - origin.current.x) / scale,
       y: (move.y - origin.current.y) / scale,
     };
+    if (current.mode === "divider") {
+      // The shares come from the gap as it was when grabbed plus the whole drag, never from the
+      // previous frame: the result does not depend on how many frames the drag took.
+      const { divider } = current;
+      const drag = dragShares(
+        divider,
+        divider.axis === "x" ? delta.x : delta.y,
+        move.alt ? null : TOLERANCE_PX / Math.max(scale, 0.001),
+      );
+      setSnapGuides(divider.axis === "x" ? { x: drag.guide, y: null } : { x: null, y: drag.guide });
+      onSetShares?.(divider.split, drag.shares, `split-${divider.split}`);
+      return;
+    }
     if (current.mode === "pan") {
       // Panning pins the view: `fit()` is the starting point while it still follows the container.
       origin.current = { x: move.x, y: move.y };
@@ -330,6 +389,7 @@ export function EditorStage({
     onPanCrop,
     onResizeSlot,
     onRotateSlot,
+    onSetShares,
     primaryId,
     selectedCaptionId,
     selectedSlotIds,
@@ -382,13 +442,26 @@ export function EditorStage({
           : { mode: "resize", handle, rect: primary.rect, rotation: primary.rotation };
       return;
     }
+    const divider = dividerAt(point);
+    if (divider) {
+      gesture.current = { mode: "divider", divider };
+      setActiveDivider(divider);
+      return;
+    }
     if (tool === "crop") {
       // Clicking a photo picks it, then drags its crop: in Simple mode this is the *only* way to
       // choose which photo the panel edits, and going through the right column for it is exactly
       // what the feedback called unintuitive (remarks.md #3).
       const hitSlot = slotAt(doc.slots, point);
-      if (hitSlot && hitSlot.id !== primaryId) onSelectSlot(hitSlot.id, "replace");
-      gesture.current = hitSlot || primary ? { mode: "crop" } : { mode: "pan" };
+      if (!hitSlot) {
+        // The mat lets go of the selection — with several photos, that is how you look at them
+        // all at once (remarks.md #9). A lone photo stays selected: the panel is about it.
+        if (primaryId !== null && doc.slots.length > 1) onSelectSlot(null, "replace");
+        gesture.current = { mode: "pan" };
+        return;
+      }
+      if (hitSlot.id !== primaryId) onSelectSlot(hitSlot.id, "replace");
+      gesture.current = { mode: "crop" };
       return;
     }
     const hitCaption = captionAt(point);
@@ -434,7 +507,19 @@ export function EditorStage({
       });
     }
     const current = gesture.current;
-    if (!current || !view) return;
+    if (!current) {
+      // Hovering a gap: the state only changes when the pointer enters or leaves one, so this
+      // costs a hit test per event and a render per gap, not a render per event (invariant 12).
+      if (dividers.length > 0 || activeDivider) {
+        const point = documentPoint(event.evt.clientX, event.evt.clientY);
+        const hover = point ? dividerAt(point) : null;
+        if (hover?.split !== activeDivider?.split || hover?.gap !== activeDivider?.gap) {
+          setActiveDivider(hover);
+        }
+      }
+      return;
+    }
+    if (!view) return;
     if (current.mode === "crop") {
       if (!primary) return;
       const source = slotSource(primary, sizes);
@@ -447,6 +532,7 @@ export function EditorStage({
       const perPixel = primary.source.crop.w / Math.max(1, primary.rect.w) / view.scale;
       const pending = cropDelta.current ?? { dx: 0, dy: 0 };
       cropDelta.current = { dx: pending.dx - dx * perPixel, dy: pending.dy - dy * perPixel };
+      if (!reframing) setReframing(true);
       schedule();
       return;
     }
@@ -472,6 +558,8 @@ export function EditorStage({
     gesture.current = null;
     latest.current = null;
     setMoving(false);
+    setReframing(false);
+    if (current?.mode === "divider") setActiveDivider(null);
     setSnapGuides({ x: null, y: null });
   };
 
@@ -479,7 +567,13 @@ export function EditorStage({
     const point = documentPoint(event.evt.clientX, event.evt.clientY);
     if (!point) return;
     const hit = captionAt(point);
-    if (hit) setEditing({ id: hit.id, value: hit.text });
+    if (hit) {
+      setEditing({ id: hit.id, value: hit.text });
+      return;
+    }
+    // Double-clicking a gap gives its division back to the recipe.
+    const divider = dividerAt(point);
+    if (divider) onSetShares?.(divider.split, null, null);
   };
 
   const commitEditing = () => {
@@ -487,10 +581,24 @@ export function EditorStage({
     setEditing(null);
   };
 
+  // The gap moves while it is dragged: draw it where the document now has it.
+  const currentDivider = activeDivider
+    ? (dividers.find(
+        (item) => item.split === activeDivider.split && item.gap === activeDivider.gap,
+      ) ?? null)
+    : null;
   const editingBox = editing ? boxes.get(editing.id) : null;
   const guideX = guides?.x ?? snapGuides.x;
   const guideY = guides?.y ?? snapGuides.y;
-  const cursor = tool === "crop" ? "grab" : moving ? "grabbing" : "default";
+  const cursor = activeDivider
+    ? activeDivider.axis === "x"
+      ? "col-resize"
+      : "row-resize"
+    : tool === "crop"
+      ? "grab"
+      : moving
+        ? "grabbing"
+        : "default";
 
   return (
     <div
@@ -525,6 +633,7 @@ export function EditorStage({
           onDblClick={onDoubleClick}
           onMouseLeave={() => {
             endDrag();
+            setActiveDivider(null);
             onPointer?.(null);
           }}
           style={{ cursor }}
@@ -546,7 +655,7 @@ export function EditorStage({
                 key={slot.id}
                 slot={slot}
                 source={slotSource(slot, sizes)}
-                dimmed={tool === "crop" && primaryId !== null && slot.id !== primaryId}
+                dimmed={reframing && primaryId !== null && slot.id !== primaryId}
               />
             ))}
             {doc.captions.map((item) => (
@@ -565,6 +674,9 @@ export function EditorStage({
                 dash={[10 / view.scale, 10 / view.scale]}
                 opacity={0.7}
               />
+            )}
+            {activeDivider && (
+              <DividerMark divider={currentDivider ?? activeDivider} scale={view.scale} />
             )}
             <SelectionOverlay
               slots={selectedSlots}
@@ -633,7 +745,29 @@ export function EditorStage({
   );
 }
 
-/** Drag & drop payload of a photo dragged out of the picker onto the canvas. */
+const NO_DIVIDERS: Divider[] = [];
+
+/** The grabbed (or hovered) gap: a line down its middle with a grip, in screen-constant sizes. */
+function DividerMark({ divider, scale }: { divider: Divider; scale: number }) {
+  const { rect, axis } = divider;
+  const middle = axis === "x" ? rect.x + rect.w / 2 : rect.y + rect.h / 2;
+  const points =
+    axis === "x"
+      ? [middle, rect.y, middle, rect.y + rect.h]
+      : [rect.x, middle, rect.x + rect.w, middle];
+  const grip = 28 / scale;
+  const center = axis === "x" ? rect.y + rect.h / 2 : rect.x + rect.w / 2;
+  const gripPoints =
+    axis === "x"
+      ? [middle, center - grip / 2, middle, center + grip / 2]
+      : [center - grip / 2, middle, center + grip / 2, middle];
+  return (
+    <>
+      <Line points={points} stroke={DIVIDER_COLOR} strokeWidth={2 / scale} opacity={0.9} />
+      <Line points={gripPoints} stroke={DIVIDER_COLOR} strokeWidth={6 / scale} lineCap="round" />
+    </>
+  );
+}
 
 function StageControls({
   view,

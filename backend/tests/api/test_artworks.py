@@ -429,6 +429,41 @@ def test_put_document_re_solves_the_composition(local: TestClient) -> None:
     assert saved.json()["document"]["margins"]["left"] == 120
 
 
+def test_put_document_lays_out_the_per_split_weights(local: TestClient) -> None:
+    """`composition.weights` (§3.4): each split's own shares, checked against the recipe's shape."""
+    ids = [photo(local, 3000, 2000 + index) for index in range(3)]
+    artwork = create(local, ids, composition={"recipe": "three-hero-left"})
+    doc = artwork["document"]
+    assert doc["composition"]["weights"] == []
+    before = [s["rect"] for s in doc["slots"]]
+
+    doc["composition"]["weights"] = [None, [3, 1]]
+    saved = put_document(local, artwork, doc)
+    assert saved.status_code == 200, saved.text
+    after = [s["rect"] for s in saved.json()["document"]["slots"]]
+    assert after[0] == before[0]
+    assert (after[1]["h"], after[2]["h"]) == (1380, 460)
+    assert saved.json()["document"]["composition"]["weights"] == [None, [3.0, 1.0]]
+
+    artwork = saved.json()
+    for bad in ([None, [1, 1, 1]], [None, None, [1, 1]]):
+        doc["composition"]["weights"] = bad
+        refused = put_document(local, artwork, doc)
+        assert refused.status_code == 422, bad
+        assert refused.json()["extra"]["errors"][0]["type"] == "weights_shape"
+
+
+def test_put_document_aligns_the_caption_with_the_block(local: TestClient) -> None:
+    ids = [photo(local, 3000, 2000), photo(local, 3000, 2000)]
+    artwork = create(local, ids)
+    doc = artwork["document"]
+    doc["composition"]["caption"] = {"text": "Kyoto", "place": "below", "align": "right"}
+    saved = put_document(local, artwork, doc)
+    assert saved.status_code == 200, saved.text
+    caption = saved.json()["document"]["captions"][0]
+    assert (caption["x"], caption["anchor"]) == (3720, "end")
+
+
 def test_put_document_leaves_a_detached_composition_alone(local: TestClient) -> None:
     """Detached: the slots are the truth, so the payload is stored verbatim (§5)."""
     artwork = create(local, [photo(local, 3000, 2000), photo(local, 3000, 2000)])

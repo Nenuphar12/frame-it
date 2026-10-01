@@ -286,6 +286,10 @@ FUNCTIONS: dict[str, tuple[Callable[..., Any], dict[str, Callable[[Any], Any]]]]
     ),
     "templates_style_of_document": (_style_of, {"doc": lambda v: v}),
     "templates_layout_of_document": (_layout_of, {"doc": lambda v: v}),
+    "composition_split_weights": (
+        composition.split_weights,
+        {"recipe": _recipe, "composition": _composition},
+    ),
     "composition_block_area": (
         composition.block_area,
         {"composition": _composition, "caption_size": int},
@@ -402,17 +406,24 @@ def _comp(
     outer: tuple[int, int] = (120, 120),
     gutter: tuple[int, int] = (80, 80),
     cell_formats: list[str | None] | None = None,
+    weights: list[list[float] | None] | None = None,
+    align: str = "center",
 ) -> dict[str, Any]:
     """A complete composition block: fixtures carry every field (the TS mirror has no defaults)."""
     return {
         "recipe": recipe,
         "balance": balance,
+        "weights": weights or [],
         "outer": {"x": outer[0], "y": outer[1]},
         "gutter": {"x": gutter[0], "y": gutter[1]},
         "format": fmt,
         "cell_formats": cell_formats or [],
         "border": None if border is None else {"width": border, "color": "#FFFFFF"},
-        "caption": {"text": "" if caption == "none" else "Kyoto - April 2026", "place": caption},
+        "caption": {
+            "text": "" if caption == "none" else "Kyoto - April 2026",
+            "place": caption,
+            "align": align,
+        },
         "detached": False,
     }
 
@@ -434,6 +445,50 @@ CELLS_3 = [
     {"id": "c3", "rect": {"x": 2587, "y": 1120, "w": 1133, "h": 756}, "ratio_label": "1133:756"},
 ]
 """The `three-hero-left` 3:2 block of docs/simple-editor.md §3.5."""
+
+WEIGHTED: list[tuple[str, str, dict[str, Any]]] = [
+    (
+        "a nested split",
+        "three-hero-left",
+        _comp("three-hero-left", weights=[None, [3, 1]]),
+    ),
+    (
+        "every split of a grid",
+        "four-grid",
+        _comp("four-grid", weights=[[2, 1], [1, 3], [0.618, 0.382]]),
+    ),
+    (
+        "three children",
+        "three-row",
+        _comp("three-row", weights=[[0.5, 0.25, 0.25]], border=24),
+    ),
+    (
+        "balance keeps the root",
+        "three-hero-left",
+        _comp("three-hero-left", balance=0.5, weights=[[1, 9], [1, 2]]),
+    ),
+    (
+        "an entry of the wrong shape is ignored",
+        "two-side-by-side",
+        _comp("two-side-by-side", weights=[[1, 2, 3]]),
+    ),
+    (
+        "more entries than splits",
+        "two-stacked",
+        _comp("two-stacked", weights=[[1, 3], [1, 1]]),
+    ),
+    (
+        "inert under a ratio",
+        "four-grid",
+        _comp("four-grid", "3:2", weights=[[2, 1], [1, 3]]),
+    ),
+    (
+        "six cells with a caption",
+        "six-grid-3x2",
+        _comp("six-grid-3x2", border=12, caption="below", weights=[[3, 2], [2, 1, 1], [1, 1, 2]]),
+    ),
+]
+"""Per-split weights (§3.4): `composition.weights`, splits in depth-first order."""
 
 CAPTION_STYLE = {
     "font": "inter",
@@ -587,23 +642,34 @@ def _layout(
     outer: tuple[int, int] = (200, 180),
     gutter: tuple[int, int] = (90, 90),
     balance: float | None = None,
+    weights: list[list[float] | None] | None = None,
+    caption_align: str = "center",
 ) -> dict[str, Any]:
     """A complete layout document — a recipe and its parameters (docs/templates.md §2)."""
     return {
         "recipe": recipe,
         "balance": balance,
+        "weights": weights or [],
         "outer": {"x": outer[0], "y": outer[1]},
         "gutter": {"x": gutter[0], "y": gutter[1]},
         "format": fmt,
         "cell_formats": [],
         "border": None if border is None else {"width": border, "color": "#FFFFFF"},
         "caption_place": caption_place,
+        "caption_align": caption_align,
     }
 
 
 LAYOUTS = {
     "stacked": _layout("two-stacked", outer=(300, 120), gutter=(60, 60)),
     "squares": _layout("two-side-by-side", "1:1", border=18, caption_place="below"),
+    "weighted": _layout(
+        "two-side-by-side",
+        border=18,
+        caption_place="above",
+        caption_align="right",
+        weights=[[1, 3]],
+    ),
 }
 
 SAVE_AS_DOCS = {
@@ -615,6 +681,11 @@ SAVE_AS_DOCS = {
     "detached": _doc(
         {**_comp("two-side-by-side"), "detached": True},
         [_doc_slot(0, "p1", shadow=True), _doc_slot(1, "p2")],
+        [],
+    ),
+    "weighted": _doc(
+        _comp("three-hero-left", caption="above", align="left", weights=[None, [3, 1]]),
+        [_doc_slot(0, "p1"), _doc_slot(1, "p2"), _doc_slot(2, "p3")],
         [],
     ),
 }
@@ -1475,6 +1546,76 @@ CASES: dict[str, list[tuple[str, str, dict[str, Any]]]] = {
         ),
         *[
             (
+                f"solve {name}",
+                "composition_solve",
+                {
+                    "recipe": recipe_id,
+                    "composition": comp,
+                    "photo_sizes": PHOTOS[: _recipe(recipe_id).count],
+                    "caption_size": 48,
+                },
+            )
+            for name, recipe_id, comp in WEIGHTED
+        ],
+        *[
+            (
+                f"split weights {name}",
+                "composition_split_weights",
+                {"recipe": recipe_id, "composition": comp},
+            )
+            for name, recipe_id, comp in WEIGHTED
+        ],
+        *[
+            (
+                f"apply caption {align} {fmt} border={border}",
+                "composition_apply",
+                {
+                    "doc": _doc(
+                        _comp("three-hero-left", fmt, border=border, caption=place, align=align),
+                        [_doc_slot(0, "p1"), _doc_slot(1, "p2"), _doc_slot(2, "p3")],
+                    ),
+                    "recipe": "three-hero-left",
+                    "photo_sizes": SIZES_3,
+                    "caption": None,
+                },
+            )
+            # under `3:2` the block is centred with slack, so its edge is not `outer`
+            for align, place in (("left", "below"), ("right", "above"))
+            for fmt in ("fill", "3:2")
+            for border in (None, 24)
+        ],
+        *[
+            (
+                f"apply caption {align} beside a narrow block",
+                "composition_apply",
+                {
+                    # two stacked 3:2 cells leave slack left and right: the edge is the block's
+                    "doc": _doc(
+                        _comp("two-stacked", "3:2", border=24, caption="below", align=align),
+                        [_doc_slot(0, "p1"), _doc_slot(1, "p2")],
+                    ),
+                    "recipe": "two-stacked",
+                    "photo_sizes": SIZES_3,
+                    "caption": None,
+                },
+            )
+            for align in ("left", "right")
+        ],
+        (
+            "apply per-split weights",
+            "composition_apply",
+            {
+                "doc": _doc(
+                    _comp("four-grid", weights=[[2, 1], [1, 3], None]),
+                    [_doc_slot(i, f"p{(i % 3) + 1}") for i in range(4)],
+                ),
+                "recipe": "four-grid",
+                "photo_sizes": SIZES_3,
+                "caption": None,
+            },
+        ),
+        *[
+            (
                 f"apply three-hero-left {fmt} border={border} caption={caption}",
                 "composition_apply",
                 {
@@ -1588,6 +1729,7 @@ CASES: dict[str, list[tuple[str, str, dict[str, Any]]]] = {
                         "caption": {
                             "text": "  ",
                             "place": "below",
+                            "align": "center",
                         },
                     },
                     [_doc_slot(0, "p1"), _doc_slot(1, "p2")],

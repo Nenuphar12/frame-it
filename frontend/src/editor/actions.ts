@@ -2,7 +2,7 @@
 // Components never touch the document directly, so every change is undoable and autosaved.
 import { api, unwrap } from "@/api/client";
 import type { Alternative } from "@/editor/core/alternatives.ts";
-import type { Composition, Recipe } from "@/editor/core/composition.ts";
+import { splitWeights, type Composition, type Recipe } from "@/editor/core/composition.ts";
 import {
   findSlot,
   type DocMargins,
@@ -17,6 +17,7 @@ import type { Axis, Edge } from "@/editor/core/arrange.ts";
 import type { Anchor } from "@/editor/core/constraints.ts";
 import type { DocCaption } from "@/editor/core/document.ts";
 import type { Size } from "@/editor/core/geometry.ts";
+import { shareRange, withShare } from "@/editor/core/splits.ts";
 import {
   edit,
   ensurePhotoSize,
@@ -133,16 +134,22 @@ async function recordOrigin(body: {
   }
 }
 
+/** What the Simple panel edits of the derived caption: its typography, never its position. */
+export type CaptionTypography = Partial<
+  Pick<DocCaption, "font" | "weight" | "size" | "color" | "letter_spacing">
+>;
+
 /**
- * Caption size (the Simple panel's slider). It is not a free-form edit: the band the solver
- * reserves is a function of the size (§3.3), so the block re-solves around the new one — and the
- * typography round-trips, `apply` reading it back off the document (§3.7).
+ * The derived caption's typography (the Simple panel's Caption section). None of it is a
+ * free-form edit: `apply` reads the font, weight, size, colour and spacing back off the document
+ * (§3.7), so they survive every re-solve — and the size moves the band the solver reserves
+ * (§3.3), which is why the block re-solves around it.
  */
-export const setCaptionSize = (size: number, group: string | null = "caption-size") =>
+export const setCaptionStyle = (patch: CaptionTypography, group: string | null = "caption") =>
   edit((doc) => {
     const caption = doc.captions[0];
     if (!caption) return;
-    ops.updateCaption(doc, caption.id, { size: Math.max(4, Math.min(1000, Math.round(size))) });
+    ops.updateCaption(doc, caption.id, patch);
     reflow(doc);
   }, group);
 
@@ -263,6 +270,16 @@ export async function addSlot(
     reflow(doc);
   });
   if (added) select(added);
+}
+
+/** Remove one photo (the Simple panel's chip menu); the layout follows the new count (§4.4). */
+export function removeSlot(slotId: string): void {
+  edit((doc) => {
+    ops.removeSlots(doc, [slotId]);
+    reflow(doc);
+  });
+  const state = useEditor.getState();
+  if (state.selectedSlotIds.includes(slotId)) select(null);
 }
 
 export function removeSelectedSlots(): void {
@@ -400,6 +417,7 @@ export const updateCaption = (patch: Partial<DocCaption>, group: string | null =
     // block: writing it only on the caption would lose it at the next solve.
     if (typeof patch.text === "string" && doc.captions[0]?.id === id) {
       block.caption = {
+        ...block.caption,
         text: patch.text,
         place: block.caption.place === "none" ? "below" : block.caption.place,
       };
@@ -446,7 +464,12 @@ export function setRecipe(recipeId: string): void {
     if (doc.composition && !doc.composition.detached) {
       ops.setComposition(
         doc,
-        { recipe: recipe.id, balance: ops.balanceFor(recipe, doc.composition.balance) },
+        // `weights` are indexed by the recipe's splits: they do not carry over to another one.
+        {
+          recipe: recipe.id,
+          balance: ops.balanceFor(recipe, doc.composition.balance),
+          weights: recipe.id === doc.composition.recipe ? doc.composition.weights : [],
+        },
         recipes(),
         sizes(),
       );
@@ -454,6 +477,35 @@ export function setRecipe(recipeId: string): void {
       ops.attachComposition(doc, recipe, recipes(), sizes());
     }
   });
+}
+
+/**
+ * How one division of a Fill layout shares its span out (§6.5): the canvas drag sends every share
+ * of the split, `null` resets it to the recipe's.
+ */
+export const setSplitShares = (
+  split: number,
+  shares: readonly number[] | null,
+  group: string | null = "split",
+) => edit((doc) => ops.setSplitShares(doc, split, shares, recipes(), sizes()), group);
+
+/** Every division back to the recipe's own proportions (the panel's "Reset proportions"). */
+export const resetSplits = () => setComposition({ balance: null, weights: [] });
+
+/**
+ * One part of a division, from the panel's Width / Height sliders: the neighbours keep their own
+ * proportions and share what is left, within the range that keeps every part visible.
+ */
+export function setShare(split: number, child: number, value: number): void {
+  const state = useEditor.getState();
+  const recipe = activeRecipe(state);
+  const block = state.doc?.composition;
+  if (!recipe || !block) return;
+  const shares = splitWeights(recipe, block)[split];
+  if (!shares) return;
+  const [min, max] = shareRange(recipe, split, child, shares);
+  const next = withShare(shares, child, Math.max(min, Math.min(max, value)));
+  setSplitShares(split, next, `split-${split}`);
 }
 
 /**
