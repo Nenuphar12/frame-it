@@ -437,7 +437,7 @@ class DisplayTarget(Base):
     state: Mapped[str] = mapped_column(String(16), default="new")
     """new | ready | pushing | error"""
     last_error: Mapped[str | None] = mapped_column(String(64))
-    """Problem code of the last failure (`tv_unreachable`, `tv_unauthorized`, …)."""
+    """Problem code of the last failure (`tv_unreachable`, `tv_art_unavailable`, …)."""
     ours_count: Mapped[int | None] = mapped_column(Integer)
     """Items on the TV this app uploaded, as of `checked_at` (cached: asking takes seconds)."""
     foreign_count: Mapped[int | None] = mapped_column(Integer)

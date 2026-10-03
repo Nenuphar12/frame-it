@@ -946,6 +946,7 @@ def push_job(ctx: AppContext) -> JobHandler:
 def _problem(exc: TvError) -> ProblemError:
     titles = {
         "tv_unreachable": "The TV did not answer",
+        "tv_art_unavailable": "The TV's art mode did not answer",
         "tv_unauthorized": "The TV no longer trusts this app",
         "tv_rejected": "The TV refused that",
     }

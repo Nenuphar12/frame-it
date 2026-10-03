@@ -334,6 +334,7 @@ Other things worth knowing:
 | The phone sees the pairing page but the QR goes nowhere | `public_url` is wrong — it must be the address the *phone* can reach, not `0.0.0.0` or `localhost`. |
 | No place name on photos from an Android phone | Expected with the browser picker: Android removes GPS. Send with LocalSend instead. |
 | "This artwork's photos are too large to render together" | Too many large originals in one artwork. The renderer holds them all at once; use fewer or smaller photos. |
+| "The TV is on the network, but its art mode did not answer" | The TV is off or not showing art. Turn it on (or switch it to art mode) and press **Retry** in Activity. |
 | Thumbnails or renders look stale | `uv run the_frame_v2 cache clear` — the cache is always safe to delete, it regenerates on demand. |
 
 ### Where your library lives

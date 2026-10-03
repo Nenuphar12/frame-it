@@ -415,6 +415,7 @@
     "render_too_large": "This artwork's photos are too large to render together. Use fewer or smaller photos.",
     "photo_file_missing": "A photo's file is missing from the library.",
     "tv_unreachable": "The TV did not answer. Is it on the network?",
+    "tv_art_unavailable": "The TV is on the network, but its art mode did not answer. Turn it on or switch it to art mode, then try again.",
     "tv_unauthorized": "The TV no longer trusts this app — pair again.",
     "tv_rejected": "The TV refused that.",
     "target_not_found": "That TV is not registered.",

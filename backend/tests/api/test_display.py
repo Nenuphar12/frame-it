@@ -172,6 +172,32 @@ def test_unreachable_tv_fails_the_job_with_a_code(local: TestClient) -> None:
     assert status.json()["code"] == "tv_unreachable"
 
 
+def test_a_tv_that_is_off_says_so_and_is_not_looked_for(local: TestClient) -> None:
+    # Off, a Frame still takes the connection: "is it on the network?" would be the wrong hint,
+    # and so would scanning the LAN for a TV that answered at its own address.
+    fake = FakeTv(art_ready=False)
+    asked = moving_tv(local, fake)
+    target = make_target(local, host=fake.host, mac=fake.mac)
+    set_of(local, target["id"], artworks(local, 1))
+
+    job = push(local, target["id"])
+    assert job["state"] == "failed"
+    assert job["code"] == "tv_art_unavailable"
+    assert not fake.uploads
+    assert asked == []
+    listed = local.get(f"{API}/display/targets").json()["targets"][0]
+    assert listed["last_error"] == "tv_art_unavailable"
+    assert listed["progress"] is None
+
+    status = local.get(f"{API}/display/targets/{target['id']}/status")
+    assert status.status_code == 502
+    assert status.json()["code"] == "tv_art_unavailable"
+
+    dry = local.post(f"{API}/display/targets/{target['id']}/plan", json={})
+    assert dry.status_code == 200, dry.text
+    assert dry.json()["tv_error"] == "tv_art_unavailable"
+
+
 def test_interval_the_tv_refuses_is_rejected_here(local: TestClient) -> None:
     use_fake(local)
     target = make_target(local)

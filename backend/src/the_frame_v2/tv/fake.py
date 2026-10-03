@@ -26,6 +26,7 @@ from the_frame_v2.tv.client import (
     STORE,
     ArtItem,
     FileType,
+    TvArtUnavailableError,
     TvInfo,
     TvRejectedError,
     TvUnauthorizedError,
@@ -48,6 +49,8 @@ class FakeTv:
     reachable: bool = True
     authorized: bool = True
     art_mode: bool = True
+    #: False = the TV is off: it takes the connection, its art app never answers.
+    art_ready: bool = True
     #: Content ids in the order the TV would list them (newest first).
     items_: list[ArtItem] = field(default_factory=list)
     uploads: dict[str, bytes] = field(default_factory=dict)
@@ -100,6 +103,8 @@ class FakeTv:
     def _guard(self) -> None:
         if not self.reachable:
             raise TvUnreachableError("fake TV is unreachable")
+        if not self.art_ready:
+            raise TvArtUnavailableError("fake TV is off")
         if not self.authorized:
             raise TvUnauthorizedError("fake TV has forgotten the token")
 

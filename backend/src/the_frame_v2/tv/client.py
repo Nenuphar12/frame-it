@@ -12,7 +12,9 @@ Everything here was measured against a 2025 Frame (`TQ55LS03FAUXXC`, art API 5.0
   push is therefore: stop → select the first image → start.
 
 `-7` from the TV means it refused a *value* (an interval outside `SLIDESHOW_MINUTES`, say), which
-is why `TvRejectedError` is separate from `TvUnreachableError`.
+is why `TvRejectedError` is separate from `TvUnreachableError`. And a TV that is **off** still
+accepts the websocket — its art app just never says it is ready — which is why
+`TvArtUnavailableError` is separate too: "is it on the network?" is the wrong question there.
 """
 
 from __future__ import annotations
@@ -43,6 +45,12 @@ class TvUnreachableError(TvError):
     """No answer: TV off the network, wrong address, or deep standby."""
 
     code = "tv_unreachable"
+
+
+class TvArtUnavailableError(TvError):
+    """The TV took the connection but its art app stayed silent: it is off, or not showing art."""
+
+    code = "tv_art_unavailable"
 
 
 class TvUnauthorizedError(TvError):
@@ -115,8 +123,8 @@ class TvClient(Protocol):
     def close(self) -> None: ...
 
 
-def _art_error(exc: Exception) -> TvError:
-    """Map whatever the library raised onto our three cases."""
+def _link_error(exc: Exception) -> TvError:
+    """Map whatever the library raised onto our cases, on either channel."""
     name = type(exc).__name__
     text = str(exc)
     lowered = text.lower()
@@ -125,6 +133,35 @@ def _art_error(exc: Exception) -> TvError:
     if name in {"ResponseError", "MessageError"} or "error number" in text:
         return TvRejectedError(text)
     return TvUnreachableError(f"{name}: {text}" if text else name)
+
+
+def _art_is_silent(exc: Exception) -> bool:
+    """The websocket opened (the TV is there), then the art app did not answer.
+
+    The library says so in two ways, both a `ConnectionFailure`: the frame it got while waiting
+    for `ms.channel.ready` (in practice `ms.channel.clientConnect`: another connection of ours
+    joining the channel — what a push answered on 2026-10-02 with the TV out of art mode), or
+    `Websocket Time out` when nothing came at all. A TV that is off the network never gets that
+    far: it fails in the socket, with another exception.
+    """
+    if type(exc).__name__ != "ConnectionFailure":
+        return False
+    frame = exc.args[0] if exc.args else None
+    if isinstance(frame, dict):
+        return str(frame.get("event", "")).startswith("ms.channel.")
+    return str(frame).startswith("Websocket Time out")
+
+
+def _art_error(exc: Exception) -> TvError:
+    """`_link_error` for the art channel, where a silent art app is a case of its own.
+
+    Its message is ours: the library's is the raw frame, which carries the pairing token.
+    """
+    if _art_is_silent(exc):
+        return TvArtUnavailableError(
+            "the TV answered but its art mode did not: turn it on, or switch it to art mode"
+        )
+    return _link_error(exc)
 
 
 class SamsungTvClient:
@@ -308,7 +345,7 @@ def pair_with_tv(host: str, timeout: float = 45.0) -> str:
     try:
         tv.open()
     except Exception as exc:
-        raise _art_error(exc) from exc
+        raise _link_error(exc) from exc
     finally:
         try:
             tv.close()
