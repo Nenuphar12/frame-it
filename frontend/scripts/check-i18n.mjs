@@ -1,5 +1,6 @@
 // Verifies that every static i18n key used in src/ exists in the English catalog.
 // Dynamic keys (template literals) are listed in DYNAMIC_PREFIXES and must have at least one entry.
+// Every other catalog must hold exactly the English keys, with the same {{placeholders}}.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
@@ -82,8 +83,39 @@ for (const file of files) {
 for (const prefix of DYNAMIC_PREFIXES) {
   if (!has(prefix)) missing.push(`dynamic prefix: ${prefix}`);
 }
+const flatten = (node, prefix = "", out = new Map()) => {
+  for (const [key, value] of Object.entries(node)) {
+    const path = prefix ? `${prefix}.${key}` : key;
+    if (typeof value === "string") out.set(path, value);
+    else flatten(value, path, out);
+  }
+  return out;
+};
+const placeholders = (text) =>
+  [...text.matchAll(/\{\{(\w+)\}\}/g)]
+    .map((m) => m[1])
+    .sort()
+    .join(",");
+const english = flatten(catalog);
+for (const language of readdirSync("src/i18n/locales")) {
+  if (language === "en") continue;
+  const other = flatten(
+    JSON.parse(readFileSync(`src/i18n/locales/${language}/common.json`, "utf8")),
+  );
+  for (const [key, text] of english) {
+    if (!other.has(key)) missing.push(`${language}: ${key}`);
+    else if (placeholders(other.get(key)) !== placeholders(text)) {
+      missing.push(`${language}: ${key} — placeholders {${placeholders(text)}} expected`);
+    }
+  }
+  for (const key of other.keys()) {
+    if (!english.has(key)) missing.push(`${language}: ${key} — not in the English catalog`);
+  }
+}
 if (missing.length) {
   console.error(`Missing i18n keys:\n  ${missing.join("\n  ")}`);
   process.exit(1);
 }
-console.log(`i18n OK (${files.length} files checked)`);
+console.log(
+  `i18n OK (${files.length} files checked, ${readdirSync("src/i18n/locales").length} languages)`,
+);

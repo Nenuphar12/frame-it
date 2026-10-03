@@ -1,5 +1,35 @@
 # Progress log
 
+## 2026-10-02 — A TV that is off says so; French
+
+**`tv_art_unavailable`.** A push to a Frame that was not in art mode failed with "The TV did not
+answer. Is it on the network?" followed by the raw frame — pairing token included. The TV *had*
+answered: the websocket opened, then `samsungtvws`' art `open()` got `ms.channel.clientConnect`
+(another connection of ours joining the channel) where it waited for `ms.channel.ready`, which a
+TV that is off never sends. `_art_error` now tells that case — a `ConnectionFailure` carrying a
+channel frame, or `Websocket Time out` — from a TV off the network, as `TvArtUnavailableError`
+with a message of our own: "The TV is on the network, but its art mode did not answer. Turn it on
+or switch it to art mode, then try again." It is not looked for by MAC (it answered where it is).
+Pairing, on the remote-control channel, keeps the old mapping. `FakeTv(art_ready=False)` plays it;
+unit tests build the library's own exceptions, one of them the frame from the report.
+
+**French.** `locales/fr/common.json` (every key, French typography: no-break spaces before `:` and
+inside « », narrow ones before `; ! ?`), picked in Settings or, when nothing is stored, from the
+browser's languages — the phone upload page has no Settings to choose in. `<html lang>` follows the
+language. French's third plural form (`many`, exact millions) is filled from `_other` at load
+rather than written 64 times. `check-i18n.mjs` now also fails on a key, or a `{{placeholder}}`, that
+a catalog has and English lacks or the other way round. Vocabulary: artwork = *œuvre*, inbox =
+*À traiter*, tag = *étiquette*, layout = *disposition*, mat = *passe-partout*, band = *liseré*,
+pair = *associer*. Not translated: what the server stores (built-in style names, place names) and
+the backend's English problem titles, which only show for a code no catalog knows.
+
+**Verified**: backend tests for the mapping and for a push, a status probe and a dry run against a
+TV that is off; i18next resolves `0 photo`, `1 photo`, `2 photos`, `1000000 photos` in French.
+Driven in headless Chromium over CDP against the production build: with nothing stored and
+`Accept-Language: fr-FR` the sidebar reads *À traiter | Œuvres | … | Réglages* and `<html lang="fr">`;
+switching to English in Settings stores `en` and survives a reload. Not driven: a real Frame
+switched off (the mapping is tested on the exact frame the user reported).
+
 ## 2026-10-02 — Bevel shades, folded frame shadow (renderer version 3)
 
 **The bevel is in shade on all four faces.** `BEVEL_SHADES` lit the right face (`+0.35`) and the

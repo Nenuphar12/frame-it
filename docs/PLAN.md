@@ -377,7 +377,8 @@ with its shortcut. `?` shows the cheat sheet. Examples: `F` favorite, `T` tag, `
 ### 11.7 Theming & i18n
 
 Tailwind with CSS variables; dark (default, neutral gray for photo judgment) + light; `prefers-color-scheme` initial.
-i18next with namespaces per feature; English only in v1; a script checks for missing keys; no hardcoded strings
+i18next with namespaces per feature; English only in v1 (French added 2026-10-02); a script checks for missing
+keys, and that every catalog has the English keys and placeholders; no hardcoded strings
 (ESLint rule `i18next/no-literal-string` on JSX).
 
 ---

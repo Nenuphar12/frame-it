@@ -320,6 +320,10 @@ The same from a terminal: `uv run the_frame_v2 tv scan`, `tv add <ip>`, `tv pair
 
 ---
 
+**Language.** The app speaks English and French. It follows the browser's language until you pick
+one in **Settings → Language**, which that browser then remembers — so a phone set to French gets
+the upload page in French with nothing to choose.
+
 ## 8. When something goes wrong
 
 **Activity** in the sidebar lists background work that failed — a render, an import, an export —

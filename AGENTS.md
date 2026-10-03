@@ -109,6 +109,9 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
   from 1-D profiles (`_blurred_box`): a 4K render 1.3 → 1.0 s, 9 slots 4.7 → 3.5 s; 3 = the
   bevel shaded on all four faces (sides alike, bottom barely). The frame-shadow controls are
   folded behind one line in every panel (`EdgeShadowFields`).
+- **French (2026-10-02)**: a second catalog, chosen in Settings or from the browser (a phone has
+  no Settings page); `<html lang>` follows. Server data (built-in style names, place names) stays
+  as stored. TV errors tell a TV that is off (`tv_art_unavailable`) from one off the network.
 - **Next: nothing planned** (`docs/PLAN.md` §16 keeps the open questions, the rename above
   all). Not yet verified on hardware: deleting foreign photos, whether the
   pairing token survives a TV power cut (hence "pair again" in the UI), discovery on the real LAN,
@@ -177,7 +180,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `frontend/src/features/` | `display/` (the TV page + "Show on the TV"), `activity/` (failed jobs + retry), `archive/` (export dialog, import report + policies), `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, grid, viewer, create dialog), `templates/` (page, editors, push update, `.tf*.json` files), `library/` (the filter AST + chip bar, `PlacePicker`), `collections/` (page, tree, create/edit dialog), `trash/` (page, the cascade dialog, `useTrashWithUndo` / `useDeletePhotos`), `tags/` (picker, the tri-state `TagMenu`, category grouping, the manager page + `PlacesView`), `devices/`, `auth/`, `mobile/` (upload + read-only browse), `settings/`, `localsend/` (the editor lives in `src/editor/`, not here) |
 | `…/features/display/` | `DisplayPage` (TV cards, scanning Add-TV dialog, Send = dry run then confirm), `ShowOnTvDialog` (dry-run numbers, collapsed rotation, drafts, foreign checkbox only when there are some), `SlideshowSettings` (interval incl. "Don't change", *In order \| Shuffle*), `PushTray` (sidebar progress + summary toast), `pushStore.ts` (`display.progress` outside React), `summary.ts` (result/phase sentences) |
 | `frontend/src/shared/` | UI primitives (`ui/`, incl. `Toaster.tsx`), `toast.ts` (the store, outside React), `problem.ts` (`problemMessage`), `format.ts`, `cn.ts`, `dnd.ts` (the MIME types our own drags carry) |
-| `frontend/src/i18n/` | i18next setup; strings in `locales/en/common.json` |
+| `frontend/src/i18n/` | i18next setup (Settings choice, else the browser's language); strings in `locales/en/common.json` and `locales/fr/common.json` |
 | `docs/` | Plan, specs, ADRs (`adr/`), research findings (`research/`), progress |
 
 ## Architecture essentials
@@ -228,7 +231,8 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 4. Every mutating `/api/` request needs header `X-TF-Client: 1` (the frontend client adds it).
 5. Localhost trust only for loopback peers **without** proxy headers and without `trusted_proxies`.
 6. API schema change ⇒ `make gen-api` in the same change; DB change ⇒ Alembic migration.
-7. All user-facing strings via i18n (`t("…")`); errors carry a stable `code` translated as `errors.<code>`.
+7. All user-facing strings via i18n (`t("…")`), in **every** catalog (English, French — `make i18n` fails
+   on a key or a `{{placeholder}}` one of them lacks); errors carry a stable `code` translated as `errors.<code>`.
 8. No secure-context-only browser APIs (crypto.subtle, randomUUID, clipboard write, service worker, wake lock)
    without a fallback: the app runs over plain HTTP on the LAN.
 9. `taken_at` is floating camera-local time: never timezone-convert it (display with `timeZone: "UTC"`).

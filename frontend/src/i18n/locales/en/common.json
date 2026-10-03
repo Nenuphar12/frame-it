@@ -310,7 +310,8 @@
     },
     "language": "Language",
     "languages": {
-      "en": "English"
+      "en": "English",
+      "fr": "Français"
     },
     "about": "About",
     "version": "Version",
