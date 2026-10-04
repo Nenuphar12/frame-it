@@ -9,117 +9,43 @@
 Self-hosted web app to prepare pictures for a 4K art-mode TV (Samsung The Frame, 3840×2160): phone uploads in
 full quality over the LAN, pixel-perfect framing/compositions, collections, export/import.
 
-- **Current state (2026-10-01): Phases 0–12 done, plus the follow-ups below** — foundations, device auth &
-  pairing, resumable uploads, LocalSend receiver, ingest, Photos + Inbox UI, phone upload page; artwork
-  document + geometry (Python/TS mirrored), pyvips renderer, built-in styles/layouts, artworks API;
-  **editor** (Konva canvas, crop/placement/locks with the constraint solver, colour tools, alternatives,
-  loupe, TV preview, undo/autosave, review queue) and **multi-photo compositions** (slots panel with
-  z-order, photo picker, free-form move/resize/rotate with smart guides, multi-selection +
-  align/distribute, caption editing).
-- **Phase 7 (`docs/simple-editor.md`)**: parametric compositions — the optional `composition`
-  block, the pure mirrored **solver**, the 17-entry recipe catalogue (`GET /recipes`), **server
-  authority** (`composition.apply` writes §3.7's table, `PUT document` re-solves on every save),
-  the **Simple panel**, and the `[Simple] [Advanced ᴮᴱᵀᴬ]` switch with `detached`.
-- **Phase 8 (`docs/templates.md`)**: templates rebuilt around recipes — **a layout is a recipe +
-  parameters** (migration `0004` dropped the absolute-rect code); full CRUD for both kinds,
-  "Save as" from an artwork, `.tf*.json` files, a Templates page, `apply-template` with the
-  origin/outdated badge, and **push update** (dry run + `pre_template_update` snapshots).
-  `restyle`/`relayout` are pure and mirrored (`conformance/geometry/templates.json`).
-- **Phase 9 (2026-09-23, `docs/organization.md`)**: organization — the **filter AST**
-  (`domain/filters.py` validates, `services/library.py` compiles) shared by the filter bar,
-  `POST /artworks/query` and smart collections; **collections** as a tree (REAL `position`,
-  recursive-CTE subtree, cycle + depth checks, manual item order, DnD everywhere); the **tag
-  manager** (rename/recolour/merge/delete with per-kind counts); **FTS search** kept in sync by
-  `services/search.py` and rebuilt when empty; the **trash** (batch soft delete, a cascade dialog
-  choosing between trashing the artworks and emptying their slots, restore by batch, daily +
-  manual purge that frees originals and render caches); Favorites view, the heart in the grid and
-  the editor (`f`), and read-only mobile browsing at `/m/browse`. Migration `0005` adds the
-  indexes those queries lean on; `scripts/seed_library.py` fills a 10k-item library.
-- **Phase 10 (2026-09-23, `docs/archive-format.md`)**: export / import — the `.tfarchive`
-  (a plain **ZIP of JSON + JSON Lines + the originals**, with a `sha256sum`-format
-  `checksums.sha256` and JSON Schemas in `docs/schemas/archive/`), full and partial exports as a
-  job you then download, **rendered-image** export laid out by collection, and the import flow:
-  chunked receive → **staging** (safety + checksums + every record parsed) → **dry-run report**
-  (new / identical / matched / conflicting) → apply under `keep_mine | take_theirs | keep_both`
-  (per import, per kind, per item) in one transaction. `the_frame_v2 export` / `import` do the
-  same without a browser. Migration `0006` adds `archive_imports`.
-- **Phase 11 (2026-09-24, `docs/user-guide.md`, `docs/security.md`)**: hardening & polish —
-  **performance** (`scripts/bench_library.py`; migration `0008` leads every artwork index with
-  `deleted_at`, killing the temp sort: 13 → 0.5 ms a page at the SQL level, 22 → 12 ms through the
-  API on 10k artworks) and **memory** (`bench_render.py` reports peak RSS; `MAX_RENDER_PIXELS`
-  refuses a document whose distinct sources exceed 320 Mpx); **accessibility** (AA in both themes,
-  `--color-border-strong` for control boundaries, skip link, reduced motion, `aria-live`);
-  **error UX** (`shared/toast.ts`, `problemMessage`, a `MutationCache` that reports any unhandled
-  mutation failure, and `/activity` — failed jobs with retry, `jobs.code` from migration `0007`);
-  **`the_frame_v2 service install`** (systemd user unit / launchd agent); docs (user guide,
-  README, `CONTRIBUTING.md`, `NOTICE.md`); a **security review** (`docs/security.md`) with clean
-  `pip-audit`/`pnpm audit` runs. Licence: **MIT**; the name stays the placeholder by decision.
-- **Phase 12 (2026-09-25, `docs/tv-display.md`)**: **display on the TV** — a `tv/` client for the
-  Frame's art channel (pairing on the remote-control channel, upload/delete/select/slideshow) with
-  a `FakeTv` that encodes the firmware's real behaviour; `display_targets` + `display_target_items`
-  (migration `0009`) mapping `(artwork, render_hash) → content_id`; `services/display.py` pushing a
-  set in the `display` lane; `/display` API and `the_frame_v2 tv add|list|pair|status|push`. The
-  Frame's slideshow **cannot be scoped to a subset** (measured: favourites refuse, `content_list`
-  is ignored, no per-item request), so a push **mirrors** — and never deletes anything this app did
-  not upload without `allow_delete_foreign`. Intervals are 3/15/60/720/1440 min; uploads go in
-  reverse because the TV lists newest first; a push is stop → select → start because `select_image`
-  stops a running slideshow. Measurements: `docs/research/tv-display.md`; probe: `scripts/tv_probe.py`.
-  UI: a **TV** page (pair / re-pair, live status, interval) and **Show on the TV** on a collection
-  or a grid selection, with the mirror warning and the confirmation before removing photos this app
-  did not upload (`features/display/`).
-- **TV follow-ups (2026-10-01, `docs/tv-display.md`)**: **discovery** (`tv/discovery.py`: SSDP +
-  a sweep of the LAN's /24, `GET /display/discover`, the Add-TV dialog scans and recommends) and
-  **following a TV by MAC** when its address changes; **"Don't change"** (`slideshow_minutes = 0`:
-  show the first image, rotate nothing, **delete nothing**); a pure planner `plan_push` shared by the
-  push and the **dry run** (`POST /display/targets/{id}/plan` — what goes up, stays, leaves, whose,
-  and the drafts left out); **reuse only a tail** in slideshow mode so the TV's newest-first order
-  stays the set's; **live progress** (SSE `display.progress`, a sidebar tray, a summary toast) and
-  the last result kept on the target; cached foreign/ours counts; *In order | Shuffle*; **Show on
-  the TV** from the viewer and the editor too. Migration `0010` (`position` nullable = ours but out
-  of the set). `THE_FRAME_V2_FAKE_TV=1` drives it all without a TV.
-- **Tags, inbox & ready (2026-10-01, `docs/organization.md` §1, §5, §6)**: an artwork **carries
-  its photos' tags** (read, never copied: the `tag` filter clause, smart collections, FTS and the
-  counts see own ∪ inherited; `inherited_tags` in the API, shown dashed); **bulk tagging**
-  (`POST /photos/tags`, `POST /artworks/tags`, additive; the tri-state `TagMenu`, `t` on every
-  selection, *Tag these N photos…* in the upload tray); **tag categories** (migration `0011`:
-  `tag_categories`, `tags.category_id` / `last_used_at`, "recent" first in the picker, the Tags
-  page grouped by category, unused-tag clean-up, a derived **Places** tab — no Places tag) that
-  travel in the archive; the **inbox rule** — a photo leaves the inbox only when an artwork using
-  it is marked **ready** (one-way; Draft badge on the tile, *Back to inbox* by hand); and the
-  **trash acts, then offers Undo** (the cascade dialog only when artworks use the photos).
-- **Collections & filters (2026-10-01, `docs/organization.md` §2–3)**: one *New collection* button
-  with a *Manual | Smart* choice, **Save as smart collection** from a filtered grid, collection
-  dates no longer edited or shown (columns kept for archives); **`place near`** — within `km` of a
-  point, on the photos' GPS (bounding box + the `tf_distance_km` SQLite function from
-  `db/session.py`), the point picked by name through `GET /places/search` (offline GeoNames, the
-  library's places first), *Artworks within 10 km* from a photo, `unlocated_artworks` said aloud.
-- **Editor, Simple mode (2026-10-01, `docs/simple-editor.md` §3.4, §3.7, §6.2, §6.5)**:
-  `composition.weights` — per-split proportions under Fill, depth-first (`balance` stays the root
-  where the recipe declares one; `weights_shape` otherwise) — set by **dragging the gaps on the
-  canvas** or by the selected photo's **Width / Height**; `caption.align` and the caption's whole
-  typography; a chip's `⋯` (**Replace photo…**, Remove) and **Add photo**, the picker opening on
-  `GET /photos?around=<id>`; a typed field on every slider; a selected photo dims the others only
-  while dragged, the mat and `Escape` deselect. Layouts carry `weights` and `caption_align`.
-- **Rendering & styles (2026-10-01, `docs/rendering-spec.md` §8.1, §8.4)**: `edge_shadow` — the
-  frame's shadow, the inner shadow of the whole canvas drawn **last** — and `bevel` on a band or
-  on `composition.border` (four mitred, shaded faces); both in frame styles, both panels and the
-  style editor, combined in the built-in **Bevelled mat**. The render hash reads
-  `render_identity()` and re-seeding the built-ins compares through the model, so a schema
-  addition moves no cache, TV or outdated badge. `RENDERER_VERSION` 2 = rectangular shadows
-  from 1-D profiles (`_blurred_box`): a 4K render 1.3 → 1.0 s, 9 slots 4.7 → 3.5 s; 3 = the
-  bevel shaded on all four faces (sides alike, bottom barely). The frame-shadow controls are
-  folded behind one line in every panel (`EdgeShadowFields`).
-- **French (2026-10-02)**: a second catalog, chosen in Settings or from the browser (a phone has
-  no Settings page); `<html lang>` follows. Server data (built-in style names, place names) stays
-  as stored. TV errors tell a TV that is off (`tv_art_unavailable`) from one off the network.
-- **Next: nothing planned** (`docs/PLAN.md` §16 keeps the open questions, the rename above
-  all). Not yet verified on hardware: deleting foreign photos, whether the
-  pairing token survives a TV power cut (hence "pair again" in the UI), discovery on the real LAN,
-  following a TV that moved, and a "Don't change" push.
-- **Written with AI, and said so** (`README.md` *Written with AI*, `CONTRIBUTING.md`): keep the
-  README's "checked on real hardware" list in step with the one below.
-- Verified by the user on real hardware (2026-09-17): Android uploads (both pickers keep full quality but
-  Android zeroes GPS → no place; see `docs/research/phone-uploads.md`), Docker image build/run/persistence.
+- **Status (2026-10-02): Phases 0–12 done, plus their follow-ups. Next: nothing planned** (`docs/PLAN.md` §16
+  keeps the open questions, the rename above all). What each phase added, with its measurements and
+  migrations: `docs/progress.md`. The areas, where they are specified, and what a change there must respect:
+  - **Uploads & ingest** (`docs/localsend.md`, `docs/research/phone-uploads.md`): resumable uploads, the
+    LocalSend receiver, the phone upload page.
+  - **Artwork document, geometry, renderer** (`docs/artwork-document.md`, `docs/geometry-and-quality.md`,
+    `docs/rendering-spec.md`): the render hash reads `render_identity()`, so a schema addition moves no
+    cache, TV or outdated badge. Frame styles carry `edge_shadow` (drawn last) and `bevel`.
+  - **Editor** (`docs/simple-editor.md`): Konva canvas; **Simple** edits the optional `composition` block
+    (a recipe + parameters, `weights` included) that the mirrored solver turns into slots, and the server
+    re-solves on every save; **Advanced** is free-form and sets `detached`. 17 recipes at `GET /recipes`.
+  - **Templates** (`docs/templates.md`): a layout is a recipe + parameters; styles and layouts have CRUD,
+    "Save as", `.tf*.json` files, apply-template with the outdated badge, and push update (dry run +
+    `pre_template_update` snapshots). `restyle`/`relayout` are pure and mirrored.
+  - **Organization** (`docs/organization.md`): one filter AST (`domain/filters.py` validates,
+    `services/library.py` compiles) behind the filter bar, `POST /artworks/query` and smart collections;
+    collections as a tree; FTS search; tags with categories, and an artwork **carries its photos' tags**
+    (read, never copied); `place near` on the photos' GPS; the trash acts, then offers Undo. A photo leaves
+    the inbox only when an artwork using it is marked **ready** (one-way).
+  - **Export / import** (`docs/archive-format.md`): the `.tfarchive` is a ZIP of JSON + JSON Lines + the
+    originals; staging → dry-run report → apply under `keep_mine | take_theirs | keep_both`; the CLI does
+    the same without a browser.
+  - **Hardening** (`docs/user-guide.md`, `docs/security.md`): `MAX_RENDER_PIXELS` (320 Mpx of distinct
+    sources), AA in both themes, `/activity` for failed jobs, `the_frame_v2 service install`. Licence MIT;
+    the name stays a placeholder by decision.
+  - **TV** (`docs/tv-display.md`, measurements in `docs/research/tv-display.md`): the Frame's slideshow
+    cannot be scoped to a subset, so a push **mirrors** the set; a push is stop → select → start, uploads go
+    in reverse (the TV lists newest first), and "Don't change" (`slideshow_minutes = 0`) rotates and
+    deletes nothing. A TV is followed by MAC when its address changes. `THE_FRAME_V2_FAKE_TV=1` drives it
+    all without a TV.
+  - **i18n**: English and French catalogs; server data (built-in style names, place names) stays as stored.
+- **Not yet verified on hardware**: deleting foreign photos, whether the pairing token survives a TV power
+  cut (hence "pair again" in the UI), discovery on the real LAN, following a TV that moved, a "Don't
+  change" push. **Verified by the user** (2026-09-17): Android uploads (both pickers keep full quality, but
+  Android zeroes GPS → no place), Docker image build/run/persistence.
+- **Written with AI, and said so** (`README.md` *Written with AI*, `CONTRIBUTING.md`): keep the README's
+  "checked on real hardware" list in step with the one above.
 
 ## Quick commands
 
@@ -141,7 +67,7 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
 | TV pages without a TV | `THE_FRAME_V2_FAKE_TV=1 uv run the_frame_v2 serve` (one in-memory `FakeTv`; never reaches a real TV) · `uv run the_frame_v2 tv scan` lists the TVs on the LAN |
 | Regenerate API types + `docs/schemas/` (after any API/document schema change) | `make gen-api` |
 | Production build + serve | `make serve` (frontend built into `backend/src/the_frame_v2/static`) |
-| CLI | `uv run the_frame_v2 --help` (`serve`, `doctor`, `setup-code`, `openapi`, `schemas`, `db upgrade`, `cache clear`, `service`, `export`, `import`) |
+| CLI | `uv run the_frame_v2 --help` (`serve`, `doctor`, `setup-code`, `openapi`, `schemas`, `db upgrade`, `cache clear`, `service`, `export`, `import`, `tv`, `version`) |
 | New migration | edit `db/models.py`, then `cd backend && uv run python -m the_frame_v2.db.migrate "message"`, rename to `NNNN_message.py`, replace custom types by `sa.String` |
 | Docker | `make docker`; `docker/compose.yaml` (set `THE_FRAME_V2_PUBLIC_URL`) |
 
@@ -173,7 +99,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `scripts/` | `build_geonames.py`, `build_fonts.py`, `generate_textures.py`, `bench_render.py` (time **and** peak RSS), `bench_library.py` (§8.6 budgets), `seed_library.py`, `render_parity/` (S3 page), `tv_probe.py` (S5 spike: probes the Frame's art channel, `--fake` self-tests it without hardware — `docs/research/tv-display.md`) |
 | `frontend/src/api/` | `client.ts` (openapi-fetch + `ApiError`), `queries.ts` (TanStack Query hooks), `events.ts` (SSE), generated `schema.d.ts` |
 | `frontend/src/app/` | `router.tsx`, `AuthGate.tsx` (role routing), `Shell.tsx` (sidebar), `commands.ts` (shortcuts/palette registry), `theme.ts` |
-| `frontend/src/editor/core/` | PURE TS mirror of `domain/` (`geometry`, `quality`, `placement`, `constraints`, `alternatives`, `arrange`, `composition`, `templates`, `bevel` = the renderer's bevel shades) + `snapping.ts`, `bounds.ts` and `splits.ts` (client-only: the gaps of a Fill layout, a drag in shares, a cell's row/column) and `document.ts` (the document with every optional field filled in); relative imports with `.ts` extension (run by Node in `scripts/conformance.ts`) |
+| `frontend/src/editor/core/` | PURE TS mirror of `domain/` (`geometry`, `quality`, `placement`, `constraints`, `alternatives`, `arrange`, `composition`, `templates`, `bevel` = the renderer's bevel shades) + `snapping.ts`, `bounds.ts` and `splits.ts` (client-only: the gaps of a Fill layout, a drag in shares, a cell's row/column) and `document.ts` (the document with every optional field filled in); relative imports with `.ts` extension (run by Node in `frontend/scripts/conformance.ts`) |
 | `frontend/src/editor/` | `EditorPage.tsx` (layout, shortcuts, review queue), `store.ts` (working document, undo/redo on Immer patches, autosave + conflicts), `operations.ts` (pure document mutations: how a change propagates), `actions.ts` (what the UI calls), `TvPreview.tsx` |
 | `…/editor/canvas/` | `EditorStage.tsx` (Konva stage, one pointer pipeline for every gesture, overlays), `SlotNode.tsx` (bands, photo, shadows), `CaptionNode.tsx`, `SelectionOverlay.tsx` (outlines + transform handles), `hit.ts` (rotation-aware hit tests, handle maths), `texture.ts`, `fonts.ts`, `useOrientedImage.ts` |
 | `…/editor/panels/` | `SimplePanel` (the parametric editor, §6.2) + `RecipePicker` (schemas drawn by the solver), `SlotsPanel` (z-order, add/remove, photos), `PhotoPicker`, `ArrangePanel` (align/distribute), `CaptionsPanel` + `CaptionTypography` (shared with Simple), `FramingPanel`, `StylePanel`, `ColorField` (picker + swatches + palette + presets), `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`, `ShadowFields` (shared with the template editor), `Controls` (`NumberField`, `PercentField`: every slider has a typed twin) |
@@ -186,7 +112,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 ## Architecture essentials
 
 - Layers: `api` (HTTP only) → `services` (transactions, rules) → `domain` (pure) / `imaging` / `db`. Jobs call services.
-- Artwork flow: `POST /artworks` (photos + style + layout → `build_document`) or `PUT /artworks/{id}/document`
+- Artwork flow: `POST /artworks` (photos + style + a layout or a composition → `build_composition_document`) or `PUT /artworks/{id}/document`
   (`If-Match: <document_version>`) → validate (structure + references) → derived columns + `artwork_photos` →
   commit → coalesced `render` job → `cache/renders/<id>/<render_hash>.png` → SSE `artwork.rendered`. Render
   endpoints render on demand; URLs carry `?v=<render_hash>` for immutable caching.
@@ -209,8 +135,9 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
   into cells — **footprints** (photo rect + border) so `gutter`/`outer` describe what the eye sees, then
   deflated by the border into the slot rects. The block is the source of truth while `detached = false`:
   `services/artworks.validated()` parses, checks references, then **re-solves** (`composition.apply`),
-  so no client can persist a rect the composition does not imply. `POST /artworks` without a
-  `layout_id` is parametric; with one it builds a Phase 6 document carrying no block.
+  so no client can persist a rect the composition does not imply. `POST /artworks` is always
+  parametric: a `layout_id` supplies a saved recipe + parameters (recorded as the origin layout),
+  otherwise the catalogue and the Settings defaults do.
 - Editor selection: `selectedSlotIds` (Shift/Ctrl-click adds; the **last** id is the *primary* one the
   property panels edit) and `selectedCaptionId` are exclusive. Nothing selected is a normal state
   with several photos (the mat, `Escape`): panels must cope with no primary slot. Framing and cropping act on the primary slot,
@@ -301,10 +228,11 @@ whatever you are touching before you touch it.** These few bite whatever you are
 - `make format` runs prettier over the whole frontend, but `make lint` only runs ESLint: a lot of editor
   files have never been prettier-formatted, so `make format` rewrites ~20 files you did not touch. Format
   your own files, then `git checkout --` the rest.
-- `make check` does not lint or run `scripts/`: `bench_render.py` had been broken since Phase 8 (it called
-  the removed `build_document`) and nothing said so. Run a script you changed.
+- `make check` neither lints nor runs `scripts/` (ruff covers `backend/src` and `backend/tests` only), so a
+  broken script goes unnoticed: run a script you changed.
 - Dev over the Vite proxy is **not** trusted as localhost (`xfwd` adds `X-Forwarded-For`, invariant 5): the
   first load asks for the setup code printed in the server log. Point Vite at another backend with
   `THE_FRAME_V2_BACKEND=http://127.0.0.1:<port>`.
 - `pkill -f "the_frame_v2 serve"` also matches your own shell command line: use `pkill -f "[t]he_frame_v2 serve"`.
-- TypeScript is pinned to `~6.0` (typescript-eslint does not support 7.x yet).
+- TypeScript stays on major 6 (`^6.0.3` in `frontend/package.json`) because typescript-eslint did not support
+  7.x when this was written: check its support before moving to 7.
