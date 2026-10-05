@@ -43,7 +43,7 @@ drafts out — of an explicit list too. A query matching more than `MAX_SET` (20
 | | **Slideshow** (`slideshow_minutes` ∈ 3/15/60/720/1440) | **"Don't change"** (`slideshow_minutes = 0`) |
 |---|---|---|
 | What the TV shows | every image in My Photos, rotating | the first artwork of the set, until something else is selected |
-| Our earlier uploads outside the set | **removed** (they would be shown too) | **left alone** — still ours in the map, `position = NULL` |
+| Our earlier uploads outside the set | **removed** (they would be shown too) — unless `keep_ours`: then left alone and played along with the set | **left alone** — still ours in the map, `position = NULL` |
 | Photos this app did not send | stay unless `allow_delete_foreign`; then deleted | **never deleted** (`allow_delete_foreign` is ignored) |
 | Last calls | stop → select → start | stop → select |
 | Default in the UI | collections and selections: the TV's setting | a single artwork |
@@ -63,7 +63,8 @@ as usual.
 4. **Upload** what the plan says, last position first. Each upload is written to the map **in its own
    transaction the moment the TV accepts it** (§4.1).
 5. **Re-number**: positions follow the set; any row of ours not in it gets `position = NULL`.
-6. Slideshow mode only: **delete ours** outside the set, then foreign items **only with
+6. Slideshow mode only: **delete ours** outside the set (not with `keep_ours`: they stay, counted
+   in `left_ours`), then foreign items **only with
    `allow_delete_foreign`** (otherwise the result carries `foreign_remaining` and the warning
    `foreign_items_remain`, and the TV honestly shows more than the set).
 7. **Stop the slideshow → select the first image → (slideshow mode) start it.**
@@ -153,10 +154,10 @@ through). Each report updates `display_targets.progress` and publishes SSE `disp
 | `GET /display/targets/{id}/status` | what the TV reports now, plus `ours` / `foreign` counts; refreshes the cache; `moved_from` |
 | `PUT /display/targets/{id}/source` | the set this TV shows |
 | `POST /display/targets/{id}/plan` | the dry run (§5) |
-| `POST /display/targets/{id}/push` | queue a push; `slideshow_minutes` / `slideshow_ordered` are saved first; `allow_delete_foreign` is the confirmation |
+| `POST /display/targets/{id}/push` | queue a push; `slideshow_minutes` / `slideshow_ordered` are saved first; `allow_delete_foreign` is the confirmation; `keep_ours` leaves our earlier uploads on the TV |
 
 CLI, same service layer: `the_frame_v2 tv scan|add|list|pair|status|push`, with `--collection`,
-`--favorites`, `--every` (`0` = "Don't change"), `--shuffle`, `--yes-delete-others`.
+`--favorites`, `--every` (`0` = "Don't change"), `--shuffle`, `--yes-delete-others`, `--keep-previous`.
 
 ## 9. UI (`frontend/src/features/display/`)
 
@@ -173,7 +174,10 @@ CLI, same service layer: `the_frame_v2 tv scan|add|list|pair|status|push`, with 
   editor's command palette: the TV, a collapsed *On the TV* row ("Every 15 minutes · In order") that
   expands to the rotation, the dry run's numbers, *Leave out N drafts* when the set has drafts
   (ticked for a collection or filter, unticked for a hand-picked selection), and — slideshow mode
-  only, and only when there is at least one — *Also remove the N photos this app did not send*.
+  only, each only when there is at least one — *Remove the N images sent before* (ticked; unticked
+  sends `keep_ours`, and the warning says they will play along) and *Also remove the N photos this
+  app did not send*. The dry run is not asked again when the first one changes: keeping them
+  changes no upload, only which count they land in.
   A single artwork starts at "Don't change", whose note says nothing else on the TV is touched.
 - **While a push runs**, `PushTray` (in the sidebar, every page) shows the phase and a bar, fed by
   `display.progress` through `pushStore` (outside React) and by `target.progress` after a reload.

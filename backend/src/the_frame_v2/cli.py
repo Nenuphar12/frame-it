@@ -483,6 +483,13 @@ def tv_push(
             "--every 0, which deletes nothing)",
         ),
     ] = False,
+    keep_previous: Annotated[
+        bool,
+        typer.Option(
+            "--keep-previous",
+            help="Leave the images this app sent before on the TV (they play along with the set)",
+        ),
+    ] = False,
     data_dir: DataDir = None,
 ) -> None:
     """Make the TV show a set. Without --collection/--favorites it re-pushes the current one."""
@@ -513,7 +520,13 @@ def tv_push(
         if phase in phases and total and done == total:
             typer.echo(f"{phases[phase]}: {done}/{total}")
 
-    result = display.push(ctx, target_id, allow_delete_foreign=yes_delete_others, report=report)
+    result = display.push(
+        ctx,
+        target_id,
+        allow_delete_foreign=yes_delete_others,
+        keep_ours=keep_previous,
+        report=report,
+    )
     if result.moved_to:
         typer.echo(f"The TV moved: {result.moved_from} -> {result.moved_to} (followed).")
     typer.echo(
@@ -535,4 +548,6 @@ def tv_push(
         )
         typer.echo(f"Showing the first image, no slideshow. Nothing else was touched{left}.")
     else:
+        if result.left_ours:
+            typer.echo(f"{result.left_ours} image(s) sent before were kept and play along.")
         typer.echo(f"Slideshow: every {result.slideshow_minutes} min.")

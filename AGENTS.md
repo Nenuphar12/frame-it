@@ -35,9 +35,9 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
     sources), AA in both themes, `/activity` for failed jobs, `the_frame_v2 service install`. Licence MIT;
     the name stays a placeholder by decision.
   - **TV** (`docs/tv-display.md`, measurements in `docs/research/tv-display.md`): the Frame's slideshow
-    cannot be scoped to a subset, so a push **mirrors** the set; a push is stop → select → start, uploads go
-    in reverse (the TV lists newest first), and "Don't change" (`slideshow_minutes = 0`) rotates and
-    deletes nothing. A TV is followed by MAC when its address changes. `THE_FRAME_V2_FAKE_TV=1` drives it
+    cannot be scoped to a subset, so a push **mirrors** the set (`keep_ours` spares our earlier
+    uploads); a push is stop → select → start, uploads go in reverse (the TV lists newest first), and
+    "Don't change" (`slideshow_minutes = 0`) rotates and deletes nothing. A TV is followed by MAC when its address changes. `THE_FRAME_V2_FAKE_TV=1` drives it
     all without a TV.
   - **i18n**: English and French catalogs; server data (built-in style names, place names) stays as stored.
 - **Not yet verified on hardware**: deleting foreign photos, whether the pairing token survives a TV power
@@ -104,7 +104,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `…/editor/canvas/` | `EditorStage.tsx` (Konva stage, one pointer pipeline for every gesture, overlays), `SlotNode.tsx` (bands, photo, shadows), `CaptionNode.tsx`, `SelectionOverlay.tsx` (outlines + transform handles), `hit.ts` (rotation-aware hit tests, handle maths), `texture.ts`, `fonts.ts`, `useOrientedImage.ts` |
 | `…/editor/panels/` | `SimplePanel` (the parametric editor, §6.2) + `RecipePicker` (schemas drawn by the solver), `SlotsPanel` (z-order, add/remove, photos), `PhotoPicker`, `ArrangePanel` (align/distribute), `CaptionsPanel` + `CaptionTypography` (shared with Simple), `FramingPanel`, `StylePanel`, `ColorField` (picker + swatches + palette + presets), `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`, `ShadowFields` (shared with the template editor), `Controls` (`NumberField`, `PercentField`: every slider has a typed twin) |
 | `frontend/src/features/` | `display/` (the TV page + "Show on the TV"), `activity/` (failed jobs + retry), `archive/` (export dialog, import report + policies), `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, grid, viewer, create dialog), `templates/` (page, editors, push update, `.tf*.json` files), `library/` (the filter AST + chip bar, `PlacePicker`), `collections/` (page, tree, create/edit dialog), `trash/` (page, the cascade dialog, `useTrashWithUndo` / `useDeletePhotos`), `tags/` (picker, the tri-state `TagMenu`, category grouping, the manager page + `PlacesView`), `devices/`, `auth/`, `mobile/` (upload + read-only browse), `settings/`, `localsend/` (the editor lives in `src/editor/`, not here) |
-| `…/features/display/` | `DisplayPage` (TV cards, scanning Add-TV dialog, Send = dry run then confirm), `ShowOnTvDialog` (dry-run numbers, collapsed rotation, drafts, foreign checkbox only when there are some), `SlideshowSettings` (interval incl. "Don't change", *In order \| Shuffle*), `PushTray` (sidebar progress + summary toast), `pushStore.ts` (`display.progress` outside React), `summary.ts` (result/phase sentences) |
+| `…/features/display/` | `DisplayPage` (TV cards, scanning Add-TV dialog, Send = dry run then confirm), `ShowOnTvDialog` (dry-run numbers, collapsed rotation, drafts, the remove-previous and foreign checkboxes only when there are some), `SlideshowSettings` (interval incl. "Don't change", *In order \| Shuffle*), `PushTray` (sidebar progress + summary toast), `pushStore.ts` (`display.progress` outside React), `summary.ts` (result/phase sentences) |
 | `frontend/src/shared/` | UI primitives (`ui/`, incl. `Toaster.tsx`), `toast.ts` (the store, outside React), `problem.ts` (`problemMessage`), `format.ts`, `cn.ts`, `dnd.ts` (the MIME types our own drags carry) |
 | `frontend/src/i18n/` | i18next setup (Settings choice, else the browser's language); strings in `locales/en/common.json` and `locales/fr/common.json` |
 | `docs/` | Plan, specs, ADRs (`adr/`), research findings (`research/`), progress |

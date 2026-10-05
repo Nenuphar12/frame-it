@@ -31,7 +31,7 @@ export function pushSummary(t: TFunction, result: DisplayPushResult): string {
   if (result.foreign_remaining > 0) {
     parts.push(t("display.result.foreignShown", { count: result.foreign_remaining }));
   }
-  if (result.mode === "static" && (result.left_ours ?? 0) > 0) {
+  if ((result.left_ours ?? 0) > 0) {
     parts.push(t("display.result.leftOurs", { count: result.left_ours }));
   }
   if (result.moved_to) parts.push(t("display.result.moved", { host: result.moved_to }));

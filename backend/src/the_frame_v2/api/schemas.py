@@ -991,6 +991,9 @@ class DisplayPushIn(BaseModel):
     allow_delete_foreign: bool = False
     """Delete items on the TV this app did not upload. The UI asks first, every time. Ignored when
     the target does not rotate (`slideshow_minutes = 0`): such a push deletes nothing."""
+    keep_ours: bool = False
+    """Leave the images this app sent before, and that are not in the set, on the TV: they play
+    along with the set. By default a slideshow push removes them (the TV mirrors the set)."""
     slideshow_minutes: int | None = None
     """Saved on the target before the push is queued (same values as `PATCH`)."""
     slideshow_ordered: bool | None = None
@@ -1021,7 +1024,7 @@ class DisplayPushResultOut(ApiModel):
     """Slideshow mode: photos this app did not send, still there — and shown between ours."""
     foreign_on_tv: int = 0
     left_ours: int = 0
-    """"Don't change": images sent before, left on the TV."""
+    """"Don't change" or `keep_ours`: images sent before, left on the TV."""
     total: int
     slideshow_minutes: int | None = None
     first_content_id: str | None = None

@@ -242,5 +242,10 @@ def push(
         slideshow_ordered=body.slideshow_ordered,
     )
     session.commit()  # the job reads the target from its own session
-    job_id = display.enqueue_push(ctx, target_id, allow_delete_foreign=body.allow_delete_foreign)
+    job_id = display.enqueue_push(
+        ctx,
+        target_id,
+        allow_delete_foreign=body.allow_delete_foreign,
+        keep_ours=body.keep_ours,
+    )
     return DisplayPushOut(job_id=job_id)

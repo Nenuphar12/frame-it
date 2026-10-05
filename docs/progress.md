@@ -1,5 +1,20 @@
 # Progress log
 
+## 2026-10-05 — Folding the sidebar's collections; keeping the images sent before
+
+- **Sidebar**: a chevron next to *Collections* folds the collection tree away (it grows with the
+  library and pushed the rest of the sidebar down). Open by default, remembered per browser
+  (`localStorage` `tf.sidebar.collections`).
+- **Show on the TV**: *Remove the N images sent before* (ticked by default), slideshow mode only and
+  only when the dry run finds some. Unticked, the push carries `keep_ours` (API, `--keep-previous`
+  on the CLI): our uploads outside the set stay on the TV, still ours in the map
+  (`position = NULL`), counted in `left_ours`, and the next default push removes them. Separate
+  from *Also remove the photos this app did not send*. Pinned by
+  `test_keep_ours_leaves_the_earlier_set_playing`.
+
+**Verified**: `make check` green (1154 backend tests). Not driven in a browser: the chevron and
+the new checkbox were checked by type-checking and the API test only.
+
 ## 2026-10-02 — A TV that is off says so; French
 
 **`tv_art_unavailable`.** A push to a Frame that was not in art mode failed with "The TV did not

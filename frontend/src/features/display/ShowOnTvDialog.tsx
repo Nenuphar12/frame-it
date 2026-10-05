@@ -78,6 +78,8 @@ function ShowOnTvBody({
   const [draftsChoice, setDraftsChoice] = useState<boolean | null>(null);
   const leaveOutDrafts = draftsChoice ?? !explicit;
   const [deleteForeign, setDeleteForeign] = useState(false);
+  // In slideshow mode the images sent before leave the TV unless the user keeps them.
+  const [removeOurs, setRemoveOurs] = useState(true);
 
   const query: DisplaySource = {
     include_nested: false,
@@ -92,6 +94,9 @@ function ShowOnTvBody({
   const checking = live.isFetching;
   const foreign = plan?.foreign ?? 0;
   const offerDelete = !isStatic && foreign > 0;
+  // The dry run is asked without `keep_ours`: keeping them changes no upload, only this count.
+  const previous = isStatic ? 0 : (plan?.ours_to_remove ?? 0);
+  const keepOurs = previous > 0 && !removeOurs;
 
   const send = () => {
     if (!target) return;
@@ -103,6 +108,7 @@ function ShowOnTvBody({
             {
               id: target.id,
               allowDeleteForeign: offerDelete && deleteForeign,
+              keepOurs,
               slideshow_minutes: minutes,
               slideshow_ordered: ordered,
             },
@@ -233,13 +239,28 @@ function ShowOnTvBody({
           <p className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-2.5">
             <TriangleAlert size={14} className="mt-px shrink-0 text-warning" />
             <span>
-              {t("display.mirrorWarning")}
-              {plan &&
-                plan.ours_to_remove > 0 &&
-                ` ${t("display.planOursRemoved", { count: plan.ours_to_remove })}`}
+              {keepOurs
+                ? t("display.mirrorKeepWarning", { count: previous })
+                : t("display.mirrorWarning")}
+              {previous > 0 && !keepOurs && ` ${t("display.planOursRemoved", { count: previous })}`}
               {offerDelete && ` ${t("display.planForeignShown", { count: foreign })}`}
             </span>
           </p>
+        )}
+
+        {previous > 0 && (
+          <label className="flex items-start gap-2">
+            <input
+              type="checkbox"
+              checked={removeOurs}
+              onChange={(event) => setRemoveOurs(event.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              {t("display.removeOursOption", { count: previous })}
+              <span className="block text-muted">{t("display.removeOursHint")}</span>
+            </span>
+          </label>
         )}
 
         {offerDelete && (

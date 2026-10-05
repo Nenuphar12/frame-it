@@ -16,8 +16,9 @@ A push, in order (every step measured, none of it guessed):
 3. plan it (`plan_push`, pure — the dry run the UI shows is the same function);
 4. upload what the TV does not already have, **oldest member last** — the TV lists newest first,
    so uploading in reverse makes its order our order (`image_date` is written to match);
-5. slideshow mode only: delete our own uploads that left the set, and foreign items **only** when
-   the caller passed `allow_delete_foreign` (the UI asks, `--yes-delete-others` on the CLI);
+5. slideshow mode only: delete our own uploads that left the set (unless the caller passed
+   `keep_ours`: then they play along with it), and foreign items **only** when the caller passed
+   `allow_delete_foreign` (the UI asks, `--yes-delete-others` on the CLI);
 6. stop the slideshow, `select_image` the first member, then (slideshow mode) start it — in that
    order, because selecting an image stops a running slideshow and starting one never moves the
    panel.
@@ -329,7 +330,7 @@ class PushPlan:
     remove_ours: list[MapRow] = field(default_factory=list)
     """Slideshow mode: our uploads that are not part of the set — they would be shown too."""
     leave_ours: list[MapRow] = field(default_factory=list)
-    """"Don't change": our uploads outside the set, which stay where they are."""
+    """"Don't change", or `keep_ours`: our uploads outside the set, which stay where they are."""
     foreign: list[str] = field(default_factory=list)
     """Content ids on the TV this app did not upload (empty when the TV was not asked)."""
 
@@ -344,6 +345,7 @@ def plan_push(
     on_tv: set[str] | None,
     *,
     static: bool,
+    keep_ours: bool = False,
 ) -> PushPlan:
     """Decide a push. Pure: the push executes it and the dry run (`plan`) reports it.
 
@@ -358,6 +360,9 @@ def plan_push(
 
     **"Don't change"** shows the first image and rotates nothing, so any upload of the right
     render serves, whatever its position; our uploads outside the set are left alone.
+
+    `keep_ours` leaves them alone in slideshow mode too: they then play along with the set (the
+    TV rotates through all of My Photos). It changes nothing about what is reused or uploaded.
     """
     plan = PushPlan(static=static, wanted=list(wanted))
     present = rows if on_tv is None else [r for r in rows if r.content_id in on_tv]
@@ -396,7 +401,7 @@ def plan_push(
             tail = position
         plan.upload = list(range(tail - 1, -1, -1))
     rest = [r for r in present if r.id not in used]
-    if static:
+    if static or keep_ours:
         plan.leave_ours = rest
     else:
         plan.remove_ours = rest
@@ -637,7 +642,7 @@ class PushResult:
     foreign_on_tv: int = 0
     """Items the app did not upload, whatever the mode (in "Don't change" they are just there)."""
     left_ours: int = 0
-    """"Don't change": our earlier uploads left on the TV."""
+    """"Don't change" or `keep_ours`: our earlier uploads left on the TV."""
     total: int = 0
     slideshow_minutes: int | None = None
     first_content_id: str | None = None
@@ -696,6 +701,7 @@ def _apply(
     minutes: int,
     ordered: bool,
     allow_delete_foreign: bool,
+    keep_ours: bool,
     report: Report | None,
 ) -> PushResult:
     """Make the TV match the plan. Safe to repeat: it re-plans from what the TV holds."""
@@ -705,7 +711,7 @@ def _apply(
         target = get_target(s, target_id)
         rows = _map_rows(s, target_id)
         base = _image_base(target, rows)
-    plan_ = plan_push(wanted, rows, on_tv, static=static)
+    plan_ = plan_push(wanted, rows, on_tv, static=static, keep_ours=keep_ours)
     result = PushResult(
         target_id=target_id,
         static=static,
@@ -748,9 +754,8 @@ def _apply(
         ).all():
             row.position = in_set.get(row.content_id)
 
-    if static:
-        result.left_ours = len(plan_.leave_ours)
-    else:
+    result.left_ours = len(plan_.leave_ours)
+    if not static:
         doomed = [row.content_id for row in plan_.remove_ours]
         removing = len(doomed) + (len(plan_.foreign) if allow_delete_foreign else 0)
         if removing and report:
@@ -792,11 +797,13 @@ def push(
     target_id: str,
     *,
     allow_delete_foreign: bool = False,
+    keep_ours: bool = False,
     report: Report | None = None,
 ) -> PushResult:
     """Make the TV show this target's set. Idempotent: re-pushing uploads nothing.
 
-    `allow_delete_foreign` only means something in slideshow mode: "Don't change" deletes nothing.
+    `allow_delete_foreign` and `keep_ours` (leave our uploads outside the set on the TV) only mean
+    something in slideshow mode: "Don't change" deletes nothing.
     Whatever fails — an empty set as much as a sleeping TV — the target ends in `error` with the
     code, and without the progress `enqueue_push` stored (or the tray would wait forever).
     """
@@ -839,6 +846,7 @@ def push(
                 minutes=minutes,
                 ordered=ordered,
                 allow_delete_foreign=allow_delete_foreign,
+                keep_ours=keep_ours,
                 report=report,
             ),
         )
@@ -910,10 +918,20 @@ def progress_reporter(ctx: AppContext, target_id: str, job: JobContext) -> Repor
     return report
 
 
-def enqueue_push(ctx: AppContext, target_id: str, *, allow_delete_foreign: bool = False) -> str:
+def enqueue_push(
+    ctx: AppContext,
+    target_id: str,
+    *,
+    allow_delete_foreign: bool = False,
+    keep_ours: bool = False,
+) -> str:
     job_id = ctx.jobs.enqueue(
         PUSH_JOB,
-        {"target_id": target_id, "allow_delete_foreign": allow_delete_foreign},
+        {
+            "target_id": target_id,
+            "allow_delete_foreign": allow_delete_foreign,
+            "keep_ours": keep_ours,
+        },
         coalesce_key=f"{PUSH_JOB}:{target_id}",
     )
     queued = _progress_out(job_id, "queued", 0, 0)
@@ -931,6 +949,7 @@ def push_job(ctx: AppContext) -> JobHandler:
                 ctx,
                 target_id,
                 allow_delete_foreign=bool(job.payload.get("allow_delete_foreign")),
+                keep_ours=bool(job.payload.get("keep_ours")),
                 report=progress_reporter(ctx, target_id, job),
             )
         except TvError as exc:

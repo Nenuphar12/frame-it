@@ -1330,17 +1330,20 @@ export function useDisplayActions() {
     ({
       id,
       allowDeleteForeign,
+      keepOurs = false,
       ...settings
     }: {
       id: string;
       allowDeleteForeign: boolean;
+      /** Leave the images sent before on the TV instead of removing them (slideshow mode). */
+      keepOurs?: boolean;
       slideshow_minutes?: number;
       slideshow_ordered?: boolean;
     }) =>
       unwrap(
         api.POST("/api/v1/display/targets/{target_id}/push", {
           params: { path: { target_id: id } },
-          body: { allow_delete_foreign: allowDeleteForeign, ...settings },
+          body: { allow_delete_foreign: allowDeleteForeign, keep_ours: keepOurs, ...settings },
         }),
       ),
   );

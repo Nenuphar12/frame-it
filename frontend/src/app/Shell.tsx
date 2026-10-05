@@ -2,6 +2,8 @@ import { Link, Outlet, useNavigate } from "@tanstack/react-router";
 import {
   Activity,
   Archive,
+  ChevronDown,
+  ChevronRight,
   Frame,
   Heart,
   Images,
@@ -18,7 +20,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useEffect, useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { onServerEvent } from "@/api/events";
@@ -62,9 +64,7 @@ function NavLink({ item }: { item: NavItem }) {
         <span
           className={cn(
             "rounded-full px-1.5 text-[11px] font-semibold",
-            item.countTone === "danger"
-              ? "bg-danger/20 text-danger"
-              : "bg-accent/20 text-accent",
+            item.countTone === "danger" ? "bg-danger/20 text-danger" : "bg-accent/20 text-accent",
           )}
         >
           {item.count}
@@ -74,23 +74,71 @@ function NavLink({ item }: { item: NavItem }) {
   );
 }
 
-/** The collection tree, right under the library links: dropping artworks on a row files them. */
-function SidebarCollections() {
+const COLLECTIONS_OPEN_KEY = "tf.sidebar.collections";
+
+/** Whether the sidebar's collection tree is unfolded: a per-browser convenience, open by default. */
+function useCollectionsOpen(): [boolean, () => void] {
+  const [open, setOpen] = useState(() => {
+    try {
+      return localStorage.getItem(COLLECTIONS_OPEN_KEY) !== "closed";
+    } catch {
+      return true; /* storage unavailable */
+    }
+  });
+  const toggle = () =>
+    setOpen((current) => {
+      try {
+        localStorage.setItem(COLLECTIONS_OPEN_KEY, current ? "closed" : "open");
+      } catch {
+        /* storage unavailable */
+      }
+      return !current;
+    });
+  return [open, toggle];
+}
+
+/**
+ * The Collections link, with the collection tree right under it: dropping artworks on a row files
+ * them. A long tree would push everything else out of the sidebar, so it folds away.
+ */
+function SidebarCollections({ item }: { item: NavItem }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const collections = useCollections();
   const items = useCollectionItems();
+  const [open, toggle] = useCollectionsOpen();
   const rows = collections.data ?? [];
-  if (rows.length === 0) return null;
+  if (rows.length === 0) return <NavLink item={item} />;
   return (
-    <div className="pt-1 pl-1.5">
-      {/* A row opens *that* collection, not the page: the id travels in the URL (remarks.md #1). */}
-      <CollectionTree
-        rows={rows}
-        selectedId={null}
-        onSelect={(id) => void navigate({ to: "/collections", search: { id } })}
-        onDropArtworks={(id, artworkIds) => items.add.mutate({ id, artwork_ids: artworkIds })}
-      />
-    </div>
+    <>
+      <div className="flex items-center gap-0.5">
+        <div className="min-w-0 flex-1">
+          <NavLink item={item} />
+        </div>
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={open}
+          aria-controls="sidebar-collections"
+          aria-label={open ? t("nav.hideCollections") : t("nav.showCollections")}
+          title={open ? t("nav.hideCollections") : t("nav.showCollections")}
+          className="rounded-md p-1.5 text-muted hover:bg-panel-2 hover:text-text"
+        >
+          {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        </button>
+      </div>
+      {open && (
+        <div id="sidebar-collections" className="pt-1 pl-1.5">
+          {/* A row opens *that* collection, not the page: the id travels in the URL (remarks.md #1). */}
+          <CollectionTree
+            rows={rows}
+            selectedId={null}
+            onSelect={(id) => void navigate({ to: "/collections", search: { id } })}
+            onDropArtworks={(id, artworkIds) => items.add.mutate({ id, artwork_ids: artworkIds })}
+          />
+        </div>
+      )}
+    </>
   );
 }
 
@@ -255,8 +303,12 @@ export function Shell() {
     { to: "/artworks", label: t("nav.artworks"), icon: <Frame size={16} /> },
     { to: "/photos", label: t("nav.photos"), icon: <Images size={16} /> },
     { to: "/favorites", label: t("nav.favorites"), icon: <Heart size={16} /> },
-    { to: "/collections", label: t("nav.collections"), icon: <Layers size={16} /> },
   ];
+  const collectionsItem: NavItem = {
+    to: "/collections",
+    label: t("nav.collections"),
+    icon: <Layers size={16} />,
+  };
   const manage: NavItem[] = [
     { to: "/tags", label: t("nav.tags"), icon: <TagsIcon size={16} /> },
     { to: "/templates", label: t("nav.templates"), icon: <LayoutTemplate size={16} /> },
@@ -277,7 +329,10 @@ export function Shell() {
   return (
     <div className="flex h-full">
       {/* First tab stop: past a sidebar of ~20 links, straight to the page (WCAG 2.4.1). */}
-      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-panel focus:px-3 focus:py-2 focus:text-sm focus:shadow-lg">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-panel focus:px-3 focus:py-2 focus:text-sm focus:shadow-lg"
+      >
         {t("nav.skipToContent")}
       </a>
       <nav
@@ -302,7 +357,7 @@ export function Shell() {
           {library.map((item) => (
             <NavLink key={item.to} item={item} />
           ))}
-          <SidebarCollections />
+          <SidebarCollections item={collectionsItem} />
         </div>
         <div className="space-y-0.5">
           <div className="px-2.5 pb-1 text-[11px] text-muted uppercase">{t("nav.manage")}</div>
@@ -314,9 +369,7 @@ export function Shell() {
           {/* A push to the TV takes minutes: it shows here, whatever page is open. */}
           <PushTray />
           <div className="space-y-0.5">
-            <NavLink
-              item={{ to: "/m", label: t("nav.mobile"), icon: <Smartphone size={16} /> }}
-            />
+            <NavLink item={{ to: "/m", label: t("nav.mobile"), icon: <Smartphone size={16} /> }} />
             <button
               onClick={() => setCheatSheetOpen(true)}
               className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm text-muted hover:bg-panel-2 hover:text-text"

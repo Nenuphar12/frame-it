@@ -2282,6 +2282,11 @@
             "title": "Allow Delete Foreign",
             "type": "boolean"
           },
+          "keep_ours": {
+            "default": false,
+            "title": "Keep Ours",
+            "type": "boolean"
+          },
           "slideshow_minutes": {
             "anyOf": [
               {

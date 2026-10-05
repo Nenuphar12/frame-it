@@ -281,6 +281,33 @@ def test_dont_change_deletes_nothing_at_all(local: TestClient) -> None:
     assert result["warnings"] == []
 
 
+def test_keep_ours_leaves_the_earlier_set_playing(local: TestClient) -> None:
+    fake = use_fake(local)
+    target = make_target(local)
+    set_of(local, target["id"], artworks(local, 2))
+    push(local, target["id"], slideshow_minutes=15)
+    ours_before = set(fake.my_ids())
+
+    fake.calls.clear()
+    set_of(local, target["id"], artworks(local, 1))
+    assert push(local, target["id"], keep_ours=True)["state"] == "done"
+
+    assert deletes(fake) == []
+    assert ours_before < set(fake.my_ids())
+    assert fake.slideshow_minutes == 15
+    # Still ours, outside the set: the next default push removes them.
+    rows = items_of(local, target["id"])
+    assert len(rows) == 3
+    assert sorted(r.position for r in rows if r.position is not None) == [0]
+    result = local.get(f"{API}/display/targets").json()["targets"][0]["last_result"]
+    assert result["mode"] == "slideshow"
+    assert result["left_ours"] == 2 and result["deleted_ours"] == 0
+
+    push(local, target["id"])
+    assert len(fake.my_ids()) == 1
+    assert len(items_of(local, target["id"])) == 1
+
+
 def test_dont_change_twice_uploads_nothing(local: TestClient) -> None:
     fake = use_fake(local)
     target = make_target(local)

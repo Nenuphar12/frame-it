@@ -2939,6 +2939,11 @@ export interface components {
              * @default false
              */
             allow_delete_foreign: boolean;
+            /**
+             * Keep Ours
+             * @default false
+             */
+            keep_ours: boolean;
             /** Slideshow Minutes */
             slideshow_minutes?: number | null;
             /** Slideshow Ordered */
