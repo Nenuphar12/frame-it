@@ -75,7 +75,7 @@ function EditorShell({
       >
         {/*
           Preview left, settings right — the artwork editor's arrangement, so the two editors
-          read the same way (remarks.md #1). `row-reverse` rather than a swap in the markup: the
+          read the same way (user feedback). `row-reverse` rather than a swap in the markup: the
           controls stay first in the DOM, which is the tab order a form wants, and they stay on
           top when the dialog is too narrow to hold two columns.
         */}
@@ -234,7 +234,7 @@ export function StyleEditorDialog({
           )}
           {/*
             The same control as the artwork editor's: a template that could only say "inner at
-            40 %" read as a limitation of templates rather than of this dialog (remarks.md #2).
+            40 %" read as a limitation of templates rather than of this dialog (user feedback).
           */}
           <ShadowFields
             shadow={shadow}

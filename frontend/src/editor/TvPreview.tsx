@@ -32,7 +32,7 @@ export function TvPreview({ artwork, ids = [], onNavigate, onClose }: TvPreviewP
   // Callers pass an inline arrow, i.e. a new function on every render of the editor (autosave, a
   // fresh render arriving over SSE…). As a dependency it re-ran the fullscreen effect: its cleanup
   // left fullscreen, and the re-run's `fullscreenchange` listener read that as the user leaving and
-  // closed the preview — it opened, flickered and shut (remarks.md #4).
+  // closed the preview — it opened, flickered and shut (user feedback).
   const closeRef = useRef(onClose);
   useLayoutEffect(() => {
     closeRef.current = onClose;

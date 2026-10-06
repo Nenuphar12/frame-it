@@ -379,7 +379,7 @@ export function EditorPage() {
         group,
         shortcut: "Escape",
         // First press lets go of the selection, so every photo of a composition can be judged
-        // side by side (remarks.md #9); with nothing to let go of, it leaves. A lone photo stays
+        // side by side (user feedback); with nothing to let go of, it leaves. A lone photo stays
         // selected — the panel's framing controls are about it and there is nothing to compare.
         run: () => {
           const state = useEditor.getState();

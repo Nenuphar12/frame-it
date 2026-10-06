@@ -86,7 +86,7 @@ export function ArtworkGrid({
               if (moved.length === 0 || moved.includes(artwork.id)) return;
               event.preventDefault();
               // Dropping always meant "insert before the target", so dragging a card *forward*
-              // asked for the place it already had and nothing moved (remarks.md #6). Dragging
+              // asked for the place it already had and nothing moved (user feedback). Dragging
               // down/right now lands the card after the target instead.
               const from = items.findIndex((a) => a.id === moved[0]);
               const forward = from !== -1 && from < index;

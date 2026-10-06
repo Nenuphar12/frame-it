@@ -716,7 +716,7 @@ export function useArtworkActions() {
     if (artwork) qc.setQueryData(queryKeys.artwork(artwork.id), artwork);
     void qc.invalidateQueries({ queryKey: ["artworks", "list"] });
     // An artwork's tags, favourite, status… are what smart collections match on, and the tree's
-    // counts and the tag counts live in their own queries (remarks.md #19).
+    // counts and the tag counts live in their own queries (user feedback).
     void qc.invalidateQueries({ queryKey: ["collections"] });
     void qc.invalidateQueries({ queryKey: ["tags"] });
   };

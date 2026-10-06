@@ -19,7 +19,7 @@ interface PickArtworksDialogProps {
 }
 
 /**
- * "Add artworks" from inside a collection (remarks.md #8): search the library, tick what belongs
+ * "Add artworks" from inside a collection (user feedback): search the library, tick what belongs
  * here, confirm. The mirror of dragging cards onto the tree, for when you are already *in* the
  * collection and the artworks are somewhere else.
  */

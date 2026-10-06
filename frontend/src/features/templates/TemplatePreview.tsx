@@ -114,7 +114,7 @@ function BandShape({
  * The shadow of a frame style, drawn the way the renderer draws it (`rendering-spec.md` §8.1).
  *
  * A hard rect peeking out from behind the photo showed nothing — a 6 px offset under a 12 px band
- * is invisible, and inner and drop looked identical (remarks.md #2). Both are filters here: the
+ * is invisible, and inner and drop looked identical (user feedback). Both are filters here: the
  * blur is a real Gaussian at `σ = blur / 2`, and the recessed one is the renderer's algorithm —
  * the complement of the layer, offset, blurred, clipped back inside it.
  */

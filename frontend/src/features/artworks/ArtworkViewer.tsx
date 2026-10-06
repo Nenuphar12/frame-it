@@ -58,7 +58,7 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onEdit, onClose }: A
   const collections = useCollections();
   const [collectionMenuOpen, setCollectionMenuOpen] = useState(false);
   /** The artwork whose tags are being edited — derived, so moving to another one closes the
-   *  editor by itself (remarks.md "Other" #3: the extra row could never be closed). */
+   *  editor by itself (user feedback: the extra row could never be closed). */
   const [editingTagsFor, setEditingTagsFor] = useState<string | null>(null);
   const editingTags = editingTagsFor === artworkId;
   const { update, validate, duplicate } = useArtworkActions();
@@ -324,7 +324,7 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onEdit, onClose }: A
                 </RadixDialog.Close>
               </div>
               {/* Its own row under the actions: where the artwork is filed and how it is labelled,
-                  both editable here (remarks.md #3, #5). Sharing the actions' row pushed the
+                  both editable here (user feedback). Sharing the actions' row pushed the
                   buttons onto a third line, left-aligned and cramped. */}
               <div className="flex flex-wrap items-center gap-1.5 border-t border-border pt-2 text-xs">
                 <Layers size={13} className="text-muted" />

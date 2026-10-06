@@ -113,7 +113,7 @@ old one showed two photos faded behind the selected one, which the editor no lon
 
 ## 2026-10-01 — Rendering and styles (remarks #8, #15)
 
-The reference photos of the Frame's own matte (`tmp_frame_style_example/`) show three things: an
+The reference photos of the Frame's own matte (photos of a real Frame, not in the repository) show three things: an
 off-white mat with a fine weave (we had it), a **bevel** around the photo window with 45° corners,
 and a **soft shadow cast by the frame** onto the mat, strongest under the top edge. The last two
 are new.
@@ -278,7 +278,7 @@ its artwork query, with `collection_id: "none"` as a placeholder, and the server
 every visit. `useArtworks` takes `enabled` now and the page sends nothing until a collection is
 picked; measured: no failed request on `/collections`.
 
-## 2026-10-01 — TV follow-ups (remarks.md TV-1…6, "ready" on the wall)
+## 2026-10-01 — TV follow-ups (user feedback, "ready" on the wall)
 
 Spec: `docs/tv-display.md` (rewritten). Migration `0010` (`32545e54fd09`).
 
@@ -642,7 +642,7 @@ Not driven in a browser: resuming an interrupted archive upload (the offset prot
 uploader's, regression-tested there and covered by a chunked-receive API test), and the CLI's
 `--policy` combinations (covered by API tests over the same service functions).
 
-## 2026-09-23 — Phase 9 feedback, second round (remarks.md, 6 items)
+## 2026-09-23 — Phase 9 feedback, second round (6 items)
 
 **A smart sub-collection contributed nothing to include-nested (#3).** Real bug: the listing scoped
 a subtree with `collection_items IN (ids)` — manual membership only — while a smart collection's
@@ -689,7 +689,7 @@ an artwork's smart memberships). All six driven in a real browser over CDP again
 build, read back through the API, plus two screenshots where the question was about pixels (the
 select in both themes, the footer layout).
 
-## 2026-09-23 — Phase 9 feedback round (remarks.md, 8 items)
+## 2026-09-23 — Phase 9 feedback round (8 items)
 
 Three of the eight were bug reports, and all three reproduced.
 
@@ -877,7 +877,7 @@ preview filling the rest — measured over CDP at 1552×952 for the dialog and 1
 preview pane in a 1600×1000 window (it was ~256×144), no overflow, Save always reachable, and the
 two columns stacking below `lg`.
 
-**Second follow-up (same day, remarks.md #1 and #2)**: the template editors put their settings on
+**Second follow-up (same day, user feedback)**: the template editors put their settings on
 the **right**, like the artwork editor (measured over CDP: preview at x = 45 w = 1142, settings at
 x = 1203 w = 352 in a 1552×831 dialog, no horizontal overflow), and the **shadow** stopped being a
 setting you could see but not judge:
@@ -1081,7 +1081,7 @@ Phase 6 as planned.
 
 ## Post-Phase-5 feedback round (2026-09-19)
 
-Six items from the user's `remarks.md`, all driven in a real browser against a copy of the library
+Six items of user feedback, all driven in a real browser against a copy of the library
 (`/tmp/e2e`, backend :8799 + Vite :5199):
 
 1. *Margins could not be reduced under `native`.* `fit_in_mat` only re-derived the crop when it **overflowed**
@@ -1382,7 +1382,7 @@ than a style + recipe + format (§10, left to Phase 8 with the rest of the templ
 create dialog still sends a `layout_id`, so artworks made from the Photos page are hand-built until
 the user picks a layout in the editor. Both are Phase 8's to change.
 
-## 2026-09-22 — Phase 7 feedback round (`remarks.md`)
+## 2026-09-22 — Phase 7 feedback round
 
 Seven items came back from using the Simple editor. One was a false alarm (the "asymmetric" bottom
 margin was the caption band, which the user diagnosed themselves); the other six are treated.
@@ -1428,7 +1428,7 @@ driven in a real browser (CDP): the create dialog from the Photos grid through t
 parametric artwork, then the format orientation, a per-cell `1:1`, the swap arrows, Native 100% and
 the wheel zoom-out, each checked against the **saved document** rather than the screen.
 
-## 2026-09-23 — Phase 7 feedback, second round (`remarks.md`)
+## 2026-09-23 — Phase 7 feedback, second round
 
 Ten items. Nine were actionable, one was a question answered in the reply (#7, below).
 

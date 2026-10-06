@@ -94,7 +94,7 @@ export function NumberField({
 
 /**
  * The typed twin of a 0–1 slider, in percent. Every slider has a number field next to it: a
- * read-only figure looks like one and cannot be typed into (remarks.md #14).
+ * read-only figure looks like one and cannot be typed into (user feedback).
  */
 export function PercentField({
   value,

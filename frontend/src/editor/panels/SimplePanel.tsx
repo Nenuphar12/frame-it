@@ -548,7 +548,7 @@ function AttachedPanel({
 
       {/*
         A style carries a shadow and the mat dropdown applies it, so leaving the control in the
-        Advanced panel alone made it look as though Simple had dropped the setting (remarks.md #2).
+        Advanced panel alone made it look as though Simple had dropped the setting (user feedback).
         It dresses every photo: in this panel the shadow is part of the look, not of one cell.
       */}
       <PanelSection title={t("editor.sections.shadow")}>
@@ -754,7 +754,7 @@ function PhotosSection({
   const zoom = selected ? photoZoom(selected, sizes) : null;
   const native = selected ? nativeZoom(selected, sizes) : null;
   // A single photo has nothing to be swapped with and no cell of its own to shape: the chips, the
-  // hint, the arrows and the per-cell format are all about *which* cell (remarks.md #10).
+  // hint, the arrows and the per-cell format are all about *which* cell (user feedback).
   const several = doc.slots.length > 1;
   const only = doc.slots[0];
   return (
@@ -1020,7 +1020,7 @@ function SplitSliders({
  *
  * The same control serves the artwork and a single cell (`inherit` adds the "same as the layout"
  * chip): a dropdown for one and chips for the other made the two read as different kinds of
- * setting when they are the same one at two scales (remarks.md #4).
+ * setting when they are the same one at two scales (user feedback).
  */
 function FormatChoice({
   label,

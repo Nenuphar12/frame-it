@@ -3,7 +3,7 @@
 // They exist to be *recognised*, not just read. Dragging a photo chip means dragging an `<img>`,
 // and Chrome offers such a drag to the page as a file (it could be dropped on the desktop), so the
 // window-wide upload zone lit up — "Drop photos or a folder" across the whole screen — for a drag
-// that only ever meant "swap these two cells" (remarks.md #1). Every internal drag stamps itself,
+// that only ever meant "swap these two cells" (user feedback). Every internal drag stamps itself,
 // and `hasFiles` ignores a drag that is stamped.
 export const PHOTO_MIME = "text/x-the-frame-photo";
 export const SLOT_MIME = "text/x-the-frame-slot";

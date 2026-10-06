@@ -175,7 +175,7 @@ export function PhotosPage() {
                 />
               </label>
               {/* Tags reach photos as well as artworks, so the photo grid filters by one too
-                  (remarks.md #7). Every tag, grouped by category — not the autocomplete's 20. */}
+                  (user feedback). Every tag, grouped by category — not the autocomplete's 20. */}
               <div className="flex items-center gap-1.5">
                 <select
                   value={tagId}

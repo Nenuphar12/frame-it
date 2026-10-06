@@ -389,7 +389,7 @@ export function panCrop(
  *
  * It goes through the **same bounded scale as the slider** (`MIN_ZOOM`…`MAX_ZOOM`): an unbounded
  * wheel used to shrink the crop a few pixels wide, where rounding destroys its aspect and the slot
- * follows it (remarks.md #2). Scrolling can no longer take the document anywhere the slider cannot.
+ * follows it (user feedback). Scrolling can no longer take the document anywhere the slider cannot.
  */
 export function zoomCrop(
   doc: EditorDocument,

@@ -331,7 +331,7 @@ control and is hidden in Simple, which has only one gesture to offer.
 
 Clicking a photo on the canvas **selects** it before the crop gesture starts, in both modes. In Simple the
 canvas is then the natural way to choose which photo the panel edits — going to the right column for it is
-what the feedback called unintuitive (remarks.md #3) — and the chips stay as the way to *swap* two of them.
+what the feedback called unintuitive — and the chips stay as the way to *swap* two of them.
 
 ### 6.2 The Simple panel ✅
 
@@ -363,13 +363,13 @@ Caption     [ Kyoto — April 2026        ]  ( ) none  (●) below  ( ) above
   new single-photo artwork, where it is today's `fit_in_mat`. Multi-photo recipes default to `Fill`.
 - **The artwork's format and one cell's format are the same control** (`FormatChoice`), the per-cell one
   with an extra `Same as layout` chip. They are the same setting at two scales, and a dropdown for one and
-  chips for the other made them read as two unrelated things (remarks.md #4).
+  chips for the other made them read as two unrelated things (user feedback).
 - **Style** re-dresses the artwork — mat, shadow, border and caption typography — without touching the
   layout: the style's own `margins` are ignored, because under a block the margins are derived (§3.7). The
   dropdown shows the style the mat currently *is*, or `Custom` once the colour has been edited on its own.
 - **Shadow** is here too, and it dresses *every* photo (`setShadowEverywhere`). A style carries a
   shadow and the Style dropdown applies it, so leaving the control in the Advanced panel alone made
-  Simple look as though it had dropped the setting (remarks.md #2). In this panel the shadow is part
+  Simple look as though it had dropped the setting (user feedback). In this panel the shadow is part
   of the look, not of one cell — giving one cell a shadow of its own stays an Advanced move. It is
   the same `ShadowFields` the Advanced panel and the frame-style editor use, and it is one of the
   edits that neither detaches nor re-solves: the block never writes `shadow` (§3.7).
@@ -384,8 +384,8 @@ Caption     [ Kyoto — April 2026        ]  ( ) none  (●) below  ( ) above
   is a parameter the solver keeps true when the margins move.
 - **Every slider has a number field** (`%` for a 0–1 value, `×` for the zoom): balance, zoom,
   shadow opacity, texture strength. A read-only figure next to a slider looks like a field and
-  cannot be typed into (remarks.md #14).
-- **A photo is replaced, added and removed here** (remarks.md #16): each chip has a `⋯` menu
+  cannot be typed into (user feedback).
+- **A photo is replaced, added and removed here** (user feedback): each chip has a `⋯` menu
   (*Replace photo…*, *Remove from the artwork*), the section an *Add photo* button, and a lone photo
   a plain *Replace photo…* button. Adding and removing follow §4.4; *Add photo* is disabled when
   the catalogue holds no recipe for one more, where the block would detach. The picker opens on
@@ -393,7 +393,7 @@ Caption     [ Kyoto — April 2026        ]  ( ) none  (●) below  ( ) above
   it, or within 10 km — with *All photos* one chip away; a photo with neither a date nor a position
   has no neighbours and the picker shows the library.
 - **A single-photo artwork hides what is about choosing a cell**: the layout picker (there is one 1-cell
-  recipe), the gap sliders, the photo chips, the swap arrows and the per-cell format (remarks.md #10).
+  recipe), the gap sliders, the photo chips, the swap arrows and the per-cell format (user feedback).
 - Sliders snap to stops; typed values never snap and keep what you type while focused (`panels/Controls.tsx`,
   the §7.5 lesson).
 - Each `outer` slider shows its **effective** value next to the minimum when the block is centred with slack
@@ -406,7 +406,7 @@ Caption     [ Kyoto — April 2026        ]  ( ) none  (●) below  ( ) above
   through the rounded zoom value lands a pixel off and reads "Downscaled 100 %"). The button is
   disabled when the photo is smaller than its cell, where native does not exist.
 - Swapping is offered twice: drag one photo chip onto another, or select one and use **◀ ▶**. A
-  drag nobody guesses is not a feature (remarks.md, phase 7 feedback #5).
+  drag nobody guesses is not a feature (user feedback).
 
 Decided while implementing (stage 3):
 
@@ -430,7 +430,7 @@ Decided while implementing (stage 3):
   re-picks the recipe (§4.4, `recipeFollowsPhotoCount`); beyond the catalogue (7 photos and up) the
   block detaches, which is also what stops the server rejecting the save with `recipe_slot_count`.
 
-Selection on the canvas (remarks.md #9): **a selected photo no longer dims the others.** They fade
+Selection on the canvas (user feedback): **a selected photo no longer dims the others.** They fade
 only *while* a photo is being dragged inside its cell — when it says which one is moving — and are
 back as they will print the moment the pointer is released; judging the whole composition used to
 need `P`. With several photos, a click on the mat or `Escape` lets go of the selection (`Escape`

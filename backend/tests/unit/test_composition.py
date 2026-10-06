@@ -162,7 +162,7 @@ def test_the_block_is_centred_in_the_available_area(recipe_id: str) -> None:
 
 
 def test_a_ratio_carries_its_orientation() -> None:
-    """`4:3` and `3:4` are different formats (remarks.md, phase 7 feedback #3)."""
+    """`4:3` and `3:4` are different formats (user feedback)."""
     assert format_ratio("3:2") == 1.5
     assert format_ratio("2:3") == pytest.approx(2 / 3)
     assert format_ratio("fill") is None and format_ratio("original") is None
@@ -572,7 +572,7 @@ def test_roomy_is_the_min_cell_rule() -> None:
     assert not roomy([Cell("c1", Rect(0, 0, MIN_CELL - 1, MIN_CELL), "1:1")])
 
 
-# ---- per-cell formats (§3.5, remarks.md phase 7 feedback #4) ---------------------------------------
+# ---- per-cell formats (§3.5, user feedback) ---------------------------------------
 def test_a_cell_format_overrides_the_block_s() -> None:
     cells = cells_of("three-one-over-two", format="3:2", cell_formats=[None, "1:1", "1:1"])
     assert abs(cells[0].rect.w / cells[0].rect.h - 1.5) < 0.01

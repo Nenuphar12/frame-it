@@ -345,8 +345,8 @@ export function CollectionsPage() {
         collectionIds={selected ? [selected.id] : []}
       />
       {/* New collections land at the top level by default; the dialog's own picker nests them
-          (a "+" next to the selected collection used to be the *only* way, remarks.md #4), and
-          its first choice is the kind — one button for both (remarks.md #24). */}
+          (a "+" next to the selected collection used to be the *only* way, user feedback), and
+          its first choice is the kind — one button for both (user feedback). */}
       <CollectionDialog
         open={creating}
         onOpenChange={setCreating}

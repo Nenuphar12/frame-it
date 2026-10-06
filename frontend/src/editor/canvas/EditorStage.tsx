@@ -451,11 +451,11 @@ export function EditorStage({
     if (tool === "crop") {
       // Clicking a photo picks it, then drags its crop: in Simple mode this is the *only* way to
       // choose which photo the panel edits, and going through the right column for it is exactly
-      // what the feedback called unintuitive (remarks.md #3).
+      // what the feedback called unintuitive.
       const hitSlot = slotAt(doc.slots, point);
       if (!hitSlot) {
         // The mat lets go of the selection — with several photos, that is how you look at them
-        // all at once (remarks.md #9). A lone photo stays selected: the panel is about it.
+        // all at once (user feedback). A lone photo stays selected: the panel is about it.
         if (primaryId !== null && doc.slots.length > 1) onSelectSlot(null, "replace");
         gesture.current = { mode: "pan" };
         return;

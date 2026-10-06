@@ -136,7 +136,7 @@ export function useArtworkGridCommands({
     }
     if (removeFromCollection) {
       // `Delete` trashes everywhere; taking an artwork *out of a collection* is a different, far
-      // gentler act and deserves its own key (remarks.md #6).
+      // gentler act and deserves its own key (user feedback).
       list.push({
         id: "collections.removeItems",
         label: "collections.removeFromCollection",

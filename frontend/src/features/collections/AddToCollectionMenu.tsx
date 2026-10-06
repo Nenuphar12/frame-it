@@ -20,7 +20,7 @@ interface AddToCollectionMenuProps {
 
 /**
  * Files artworks into a manual collection — from the Artworks grid, from the viewer, or from a
- * keyboard shortcut. It can **create** the collection on the spot (remarks.md #2): the common case
+ * keyboard shortcut. It can **create** the collection on the spot (user feedback): the common case
  * is realizing halfway through a selection that the collection you want does not exist yet.
  */
 export const AddToCollectionMenu = forwardRef<HTMLButtonElement, AddToCollectionMenuProps>(

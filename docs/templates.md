@@ -134,14 +134,14 @@ the model rejects `invalid_template`.
   read-only — duplicate one to get an editable copy.
 - **Editing is a full-window dialog** (`Dialog size="full"`): the preview on the left, the settings
   in a 22 rem column on the **right** — the artwork editor's arrangement, so the two editors read
-  the same way (remarks.md #1) — and the preview takes everything else (~1110×790 in a 1600×1000
+  the same way (user feedback) — and the preview takes everything else (~1110×790 in a 1600×1000
   window, against ~256×144 before). The preview *is* the editor here: at dialog size you cannot tell
   a 12 px border from an 18 px one or see where a caption band lands. The markup keeps the controls
   first and flips the row (`lg:flex-row-reverse`), so the tab order still reaches them first and
   they stay on top when the dialog is too narrow for two columns.
 - **A style says everything about a shadow that an artwork can** — type, blur, opacity, offsets and
   colour, through the same `ShadowFields` the editor's panels use. It offered only type and opacity
-  before, which read as a limit of templates rather than of the dialog (remarks.md #2). The card
+  before, which read as a limit of templates rather than of the dialog (user feedback). The card
   draws the shadow with the renderer's own algorithm (`TemplatePreview`, §8.1 of the rendering
   spec): a real Gaussian at `σ = blur / 2`, cast by the *layer* (photo + band), recessed as the
   blurred complement of the layer clipped back inside it. The old hard rect peeking out from behind

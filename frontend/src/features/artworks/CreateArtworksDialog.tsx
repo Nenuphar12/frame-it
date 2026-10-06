@@ -32,7 +32,7 @@ type Grouping = "together" | "separate";
  * Create artworks from the selected photos.
  *
  * Selecting several photos means "make me *one* artwork out of these" far more often than "make
- * me one artwork each" (remarks.md, phase 7 feedback #6), so the default is a single parametric
+ * me one artwork each" (user feedback), so the default is a single parametric
  * artwork holding them all, laid out by the recipe for that count. "One artwork per photo" is one
  * radio away.
  */

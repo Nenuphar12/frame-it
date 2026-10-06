@@ -129,7 +129,7 @@ function SidebarCollections({ item }: { item: NavItem }) {
       </div>
       {open && (
         <div id="sidebar-collections" className="pt-1 pl-1.5">
-          {/* A row opens *that* collection, not the page: the id travels in the URL (remarks.md #1). */}
+          {/* A row opens *that* collection, not the page: the id travels in the URL (user feedback). */}
           <CollectionTree
             rows={rows}
             selectedId={null}

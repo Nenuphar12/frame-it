@@ -134,7 +134,7 @@ export function useServerEvents(enabled: boolean) {
         if (name === "entity.changed") {
           const entity = (data as ServerEvents["entity.changed"]).entity;
           // Smart collections match on an artwork's fields and tags, so a changed artwork or tag
-          // moves the tree's counts, and tag counts move with artworks (remarks.md #19). Every
+          // moves the tree's counts, and tag counts move with artworks (user feedback). Every
           // artwork write publishes this event — the editor's autosave included, hence the
           // coalescing for artworks; a collection or a tag changes on a deliberate action.
           if (entity === "collection" || entity === "tag") {

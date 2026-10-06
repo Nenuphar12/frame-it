@@ -61,7 +61,7 @@ export function CollectionTree({
 
 /**
  * Dropping a collection here re-parents it to the **top level**. Without it a sub-collection has
- * nowhere to go: every other target in the tree is another parent (remarks.md #4).
+ * nowhere to go: every other target in the tree is another parent (user feedback).
  */
 function RootDropZone({ onMove }: { onMove: NonNullable<CollectionTreeProps["onMove"]> }) {
   const { t } = useTranslation();

@@ -3,7 +3,7 @@
 //
 // One component on purpose — a shadow edited in a template and a shadow edited on an artwork are
 // the same six numbers, and the style editor used to offer a subset (type and opacity), which read
-// as "a template cannot say that" rather than "we did not wire it up" (remarks.md #2).
+// as "a template cannot say that" rather than "we did not wire it up" (user feedback).
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -76,7 +76,7 @@ const DEFAULT_EDGE_SHADOW: EdgeShadow = {
  * as a photo's shadow, without a kind — it is always cast inwards, from the edge of the screen.
  *
  * Folded by default: it is set once, usually by the style, so the panel shows one line saying
- * whether there is one and keeps the switch and the numbers behind it (remarks.md).
+ * whether there is one and keeps the switch and the numbers behind it (user feedback).
  */
 export function EdgeShadowFields({
   shadow,
