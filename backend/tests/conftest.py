@@ -10,9 +10,9 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from the_frame_v2.app import create_app
-from the_frame_v2.config import Settings
-from the_frame_v2.context import AppContext
+from frame_it.app import create_app
+from frame_it.config import Settings
+from frame_it.context import AppContext
 
 LOCAL = ("127.0.0.1", 50000)
 REMOTE = ("192.168.1.50", 50000)

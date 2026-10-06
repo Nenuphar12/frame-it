@@ -18,7 +18,7 @@ from typing import Any
 
 import pytest
 
-from the_frame_v2.domain import (
+from frame_it.domain import (
     alternatives,
     arrange,
     composition,
@@ -28,13 +28,13 @@ from the_frame_v2.domain import (
     quality,
     templates,
 )
-from the_frame_v2.domain.composition import Cell
-from the_frame_v2.domain.constraints import SlotState
-from the_frame_v2.domain.document import Composition, parse_document
-from the_frame_v2.domain.geometry import Margins, Orient, Rect, Size
-from the_frame_v2.domain.quality import SlotGeometry
-from the_frame_v2.imaging import render
-from the_frame_v2.services import recipes as recipe_catalog
+from frame_it.domain.composition import Cell
+from frame_it.domain.constraints import SlotState
+from frame_it.domain.document import Composition, parse_document
+from frame_it.domain.geometry import Margins, Orient, Rect, Size
+from frame_it.domain.quality import SlotGeometry
+from frame_it.imaging import render
+from frame_it.services import recipes as recipe_catalog
 
 FIXTURES = Path(__file__).resolve().parents[3] / "conformance" / "geometry"
 

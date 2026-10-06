@@ -1,4 +1,4 @@
-// Parametric compositions — mirror of backend/src/the_frame_v2/domain/composition.py.
+// Parametric compositions — mirror of backend/src/frame_it/domain/composition.py.
 // Spec: docs/simple-editor.md §3–§4. Parity: conformance/geometry/composition.json.
 // Relative imports keep the `.ts` extension so Node can run this code without a bundler.
 import type { Band, CaptionAnchor, DocCaption, DocSlot, EditorDocument } from "./document.ts";

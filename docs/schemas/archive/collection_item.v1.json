@@ -1,5 +1,5 @@
 {
-  "$id": "https://the-frame-v2/schemas/archive/collection_item.v1.json",
+  "$id": "https://frame-it/schemas/archive/collection_item.v1.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "properties": {
     "artwork_id": {

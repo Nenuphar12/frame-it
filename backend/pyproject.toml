@@ -1,5 +1,5 @@
 [project]
-name = "the-frame-v2"
+name = "frame-it"
 version = "0.1.0"
 description = "Prepare and curate pictures for a 4K art-mode TV (Samsung The Frame)."
 authors = [
@@ -24,8 +24,13 @@ dependencies = [
     "uvicorn[standard]>=0.53.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/Nenuphar12/frame-it"
+Documentation = "https://github.com/Nenuphar12/frame-it/blob/master/docs/user-guide.md"
+Issues = "https://github.com/Nenuphar12/frame-it/issues"
+
 [project.scripts]
-the_frame_v2 = "the_frame_v2.cli:main"
+frame-it = "frame_it.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.11.21,<0.12.0"]
@@ -51,13 +56,13 @@ ignore = ["S101", "B008", "RUF012", "RUF005"]  # RUF005: pyvips image + list ari
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "N802", "PT018", "E501", "RUF005", "PLR2004"]
-"src/the_frame_v2/db/migrations/**" = ["N", "E501"]
+"src/frame_it/db/migrations/**" = ["N", "E501"]
 
 [tool.mypy]
 strict = true
 python_version = "3.14"
 plugins = ["pydantic.mypy"]
-exclude = ["src/the_frame_v2/db/migrations/"]
+exclude = ["src/frame_it/db/migrations/"]
 
 [[tool.mypy.overrides]]
 module = ["pyvips", "pyvips.*", "samsungtvws", "samsungtvws.*"]
@@ -66,4 +71,4 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
-filterwarnings = ["error::DeprecationWarning:the_frame_v2.*"]
+filterwarnings = ["error::DeprecationWarning:frame_it.*"]

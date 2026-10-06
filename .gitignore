@@ -11,7 +11,7 @@ node_modules/
 frontend/dist/
 *.tsbuildinfo
 # Build output (frontend bundled into the backend package)
-backend/src/the_frame_v2/static/
+backend/src/frame_it/static/
 # Local data
 .dev-data/
 # Editors / OS

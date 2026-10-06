@@ -1,4 +1,4 @@
-// Alternatives for an upscaled slot — mirror of backend/src/the_frame_v2/domain/alternatives.py.
+// Alternatives for an upscaled slot — mirror of backend/src/frame_it/domain/alternatives.py.
 // Spec: docs/geometry-and-quality.md §7.6. Parity: conformance/geometry/alternatives.json.
 import { CANVAS, roundHalfEven, type Margins, type Rect, type Size } from "./geometry.ts";
 import type { SlotState } from "./constraints.ts";

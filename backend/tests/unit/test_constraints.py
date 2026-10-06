@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import pytest
 
-from the_frame_v2.domain.alternatives import alternatives
-from the_frame_v2.domain.constraints import (
+from frame_it.domain.alternatives import alternatives
+from frame_it.domain.constraints import (
     SlotState,
     apply_crop_ratio,
     apply_lock,
@@ -18,9 +18,9 @@ from the_frame_v2.domain.constraints import (
     resize_slot,
     zoom_crop,
 )
-from the_frame_v2.domain.geometry import Margins, Rect, Size, aspect_consistent
-from the_frame_v2.domain.placement import SlotPlacement, fit_in_mat, margins_for_slot
-from the_frame_v2.domain.quality import SlotGeometry, slot_quality
+from frame_it.domain.geometry import Margins, Rect, Size, aspect_consistent
+from frame_it.domain.placement import SlotPlacement, fit_in_mat, margins_for_slot
+from frame_it.domain.quality import SlotGeometry, slot_quality
 
 SRC = Size(6000, 4000)
 SMALL = Size(1000, 800)

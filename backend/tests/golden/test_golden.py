@@ -14,9 +14,9 @@ from typing import Any
 import pytest
 import pyvips
 
-from the_frame_v2.domain.document import ArtworkDocument
-from the_frame_v2.domain.geometry import Rect
-from the_frame_v2.imaging.render import decoded_originals, render_document
+from frame_it.domain.document import ArtworkDocument
+from frame_it.domain.geometry import Rect
+from frame_it.imaging.render import decoded_originals, render_document
 
 REFS = Path(__file__).parent / "refs"
 UPDATE = bool(os.environ.get("GOLDEN_UPDATE"))

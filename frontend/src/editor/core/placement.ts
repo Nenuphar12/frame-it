@@ -1,4 +1,4 @@
-// Placement modes and native linking — mirror of backend/src/the_frame_v2/domain/placement.py.
+// Placement modes and native linking — mirror of backend/src/frame_it/domain/placement.py.
 // Spec: docs/geometry-and-quality.md §7.4.
 import {
   CANVAS,

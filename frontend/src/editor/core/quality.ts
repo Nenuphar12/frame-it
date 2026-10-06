@@ -1,4 +1,4 @@
-// Quality tiers and artwork aggregates — mirror of backend/src/the_frame_v2/domain/quality.py.
+// Quality tiers and artwork aggregates — mirror of backend/src/frame_it/domain/quality.py.
 // Spec: docs/geometry-and-quality.md §7.2.
 import { roundHalfEven } from "./geometry.ts";
 

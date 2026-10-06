@@ -284,7 +284,7 @@ These bite whatever you are working on.
 
 `docs/tv-display.md`, `docs/research/tv-display.md`.
 
-- **No TV at hand? `THE_FRAME_V2_FAKE_TV=1`** routes every target, discovery and pairing to one
+- **No TV at hand? `FRAME_IT_FAKE_TV=1`** routes every target, discovery and pairing to one
   in-memory `FakeTv` (three "foreign" photos, 0.8 s per upload). Its photos vanish on restart while
   the map in the database stays — after a restart the next push sees the map's rows as gone and
   re-uploads. Never commit a config with it on; it logs a warning at start.

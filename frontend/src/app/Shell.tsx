@@ -340,7 +340,7 @@ export function Shell() {
         aria-label={t("nav.label")}
       >
         <div className="flex items-center gap-2 px-2 text-sm font-semibold tracking-wide">
-          <Frame size={18} className="text-accent" /> the_frame_v2
+          <Frame size={18} className="text-accent" /> Frame It
         </div>
         <button
           onClick={() => setPaletteOpen(true)}

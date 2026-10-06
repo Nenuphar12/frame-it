@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from samsungtvws import exceptions
 
-from the_frame_v2.tv.client import (
+from frame_it.tv.client import (
     TvArtUnavailableError,
     TvRejectedError,
     TvUnauthorizedError,

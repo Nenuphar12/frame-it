@@ -278,7 +278,7 @@
     "defaultPhoneName": "Android phone",
     "defaultBrowserName": "Browser",
     "setupTitle": "Set up admin access",
-    "setupDescription": "Enter the setup code printed by the server at startup (or run `the_frame_v2 setup-code`).",
+    "setupDescription": "Enter the setup code printed by the server at startup (or run `frame-it setup-code`).",
     "setupSubmit": "Register as admin",
     "pairTitle": "Pair this device",
     "pairDescription": "Enter the code shown on the desktop, or scan its QR code.",

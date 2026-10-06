@@ -11,10 +11,10 @@ from typing import Any
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
+from frame_it.db.models import FrameStyle, Layout
+from frame_it.services import templates
 from tests.api.test_artworks import API, create, photo
 from tests.conftest import ctx_of, pair
-from the_frame_v2.db.models import FrameStyle, Layout
-from the_frame_v2.services import templates
 
 STYLE_DOC: dict[str, Any] = {
     "mat": {"color": "#101010", "texture": None},

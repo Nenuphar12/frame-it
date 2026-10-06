@@ -11,8 +11,8 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from the_frame_v2.domain.document import ArtworkDocument
-from the_frame_v2.imaging import render as renderer
+from frame_it.domain.document import ArtworkDocument
+from frame_it.imaging import render as renderer
 
 
 def _doc(photo_ids: list[str]) -> ArtworkDocument:

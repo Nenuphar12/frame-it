@@ -21,10 +21,10 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from frame_it.domain import archive
 from tests.api.test_artworks import create, photo
 from tests.api.test_organization import collection, tag
 from tests.conftest import ctx_of
-from the_frame_v2.domain import archive
 
 API = "/api/v1"
 
@@ -504,6 +504,28 @@ def test_a_newer_format_version_is_refused(local: TestClient) -> None:
         extra={archive.MANIFEST_NAME: json.dumps(manifest).encode()},
     )
     assert _refused(local, future) == "unsupported_archive_version"
+
+
+def test_an_archive_written_before_the_rename_is_read(local: TestClient) -> None:
+    """Archives of the placeholder name (`the_frame_v2.archive`) still import."""
+    photo(local)
+    path = export_archive(local)
+    with zipfile.ZipFile(path) as zf:
+        manifest = json.loads(zf.read(archive.MANIFEST_NAME))
+    manifest["format"] = "the_frame_v2.archive"
+    old = _rewrite(
+        path,
+        path.with_name("old.tfarchive"),
+        extra={archive.MANIFEST_NAME: json.dumps(manifest).encode()},
+    )
+    assert receive(local, old)["state"] == "ready"
+    manifest["format"] = "someone_else.archive"
+    alien = _rewrite(
+        path,
+        path.with_name("alien.tfarchive"),
+        extra={archive.MANIFEST_NAME: json.dumps(manifest).encode()},
+    )
+    assert _refused(local, alien) == "unknown_format"
 
 
 def test_something_that_is_not_an_archive_is_refused(local: TestClient) -> None:

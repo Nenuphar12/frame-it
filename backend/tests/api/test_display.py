@@ -13,13 +13,13 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
+from frame_it.app import use_fake_tv
+from frame_it.db.models import DisplayTarget, DisplayTargetItem, Job
+from frame_it.events import Event
+from frame_it.services import display
+from frame_it.tv import DiscoveredTv, FakeTv
 from tests.api.test_artworks import create, photo
 from tests.conftest import ctx_of, pair
-from the_frame_v2.app import use_fake_tv
-from the_frame_v2.db.models import DisplayTarget, DisplayTargetItem, Job
-from the_frame_v2.events import Event
-from the_frame_v2.services import display
-from the_frame_v2.tv import DiscoveredTv, FakeTv
 
 API = "/api/v1"
 

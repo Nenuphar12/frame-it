@@ -51,10 +51,10 @@ event is published for it: `photo.updated` is what refreshes the open pages (inb
 
 Not implemented: PIN, download API (reverse transfer), protocol v1 routes, IPv6 multicast, text messages.
 
-## Settings (`THE_FRAME_V2_…`)
+## Settings (`FRAME_IT_…`)
 
 `LOCALSEND_ENABLED` (true) · `LOCALSEND_PORT` (53317, TCP, TLS) · `LOCALSEND_DISCOVERY` (true) ·
-`LOCALSEND_MULTICAST_PORT` (53317, UDP) · `LOCALSEND_ALIAS` (`the_frame_v2 (<hostname>)`) ·
+`LOCALSEND_MULTICAST_PORT` (53317, UDP) · `LOCALSEND_ALIAS` (`Frame It (<hostname>)`) ·
 `LOCALSEND_APPROVAL_TIMEOUT_SECONDS` (120).
 
 ## Deployment notes

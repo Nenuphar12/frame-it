@@ -6,16 +6,17 @@ from typing import Any
 
 import pytest
 
-from the_frame_v2.auth.middleware import _host_without_port
-from the_frame_v2.auth.ratelimit import RateLimiter
-from the_frame_v2.config import load_settings
-from the_frame_v2.db.migrate import upgrade_to_head
-from the_frame_v2.db.models import Job
-from the_frame_v2.db.session import Database
-from the_frame_v2.events import EventBroker
-from the_frame_v2.ids import new_human_code, new_id, normalize_human_code
-from the_frame_v2.jobs.queue import JobContext, JobQueue, PermanentJobError
-from the_frame_v2.services.geocode import Geocoder
+from frame_it import config
+from frame_it.auth.middleware import _host_without_port
+from frame_it.auth.ratelimit import RateLimiter
+from frame_it.config import load_settings
+from frame_it.db.migrate import upgrade_to_head
+from frame_it.db.models import Job
+from frame_it.db.session import Database
+from frame_it.events import EventBroker
+from frame_it.ids import new_human_code, new_id, normalize_human_code
+from frame_it.jobs.queue import JobContext, JobQueue, PermanentJobError
+from frame_it.services.geocode import Geocoder
 
 
 def test_ids_are_uuid7_and_sortable() -> None:
@@ -54,12 +55,33 @@ def test_rate_limiter_windows() -> None:
 
 def test_settings_precedence(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     (tmp_path / "config.toml").write_text('port = 9000\npublic_url = "http://frame.lan:9000"\n')
-    monkeypatch.setenv("THE_FRAME_V2_PORT", "9100")
+    monkeypatch.setenv("FRAME_IT_PORT", "9100")
     s = load_settings(data_dir=tmp_path)
     assert s.port == 9100 and s.effective_public_url == "http://frame.lan:9000"
     assert load_settings(data_dir=tmp_path, port=9200).port == 9200
     assert "frame.lan" in (s.allowed_host_set() or set())
     assert load_settings(data_dir=tmp_path, allowed_hosts=["*"]).allowed_host_set() is None
+
+
+def test_settings_read_the_placeholder_names(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`THE_FRAME_V2_*` and the old data dir keep working after the rename to Frame It."""
+    monkeypatch.setenv("FRAME_IT_PORT", "")  # so the copy made below is undone after the test
+    monkeypatch.delenv("FRAME_IT_PORT")
+    monkeypatch.setenv("THE_FRAME_V2_PORT", "9300")
+    monkeypatch.setenv("THE_FRAME_V2_LOG_LEVEL", "DEBUG")
+    monkeypatch.setenv("FRAME_IT_LOG_LEVEL", "WARNING")
+    s = load_settings(data_dir=tmp_path)
+    assert s.port == 9300 and s.log_level == "WARNING"
+
+    dirs = {"frame-it": tmp_path / "new", "the_frame_v2": tmp_path / "old"}
+    monkeypatch.setattr(config, "user_data_dir", lambda name, appauthor: str(dirs[name]))
+    assert config.default_data_dir() == dirs["frame-it"]  # neither exists: the new one
+    dirs["the_frame_v2"].mkdir()
+    assert config.default_data_dir() == dirs["the_frame_v2"]  # only the old one
+    dirs["frame-it"].mkdir()
+    assert config.default_data_dir() == dirs["frame-it"]
 
 
 def test_geocoder_nearest_place() -> None:

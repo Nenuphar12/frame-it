@@ -1,4 +1,4 @@
-// Arranging several slots — mirror of backend/src/the_frame_v2/domain/arrange.py.
+// Arranging several slots — mirror of backend/src/frame_it/domain/arrange.py.
 // Spec: docs/geometry-and-quality.md §7.7. Parity: conformance/geometry/arrange.json.
 //
 // These functions only move and resize rects: they never touch a crop, so the caller runs the

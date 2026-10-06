@@ -6,14 +6,14 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from the_frame_v2.domain.document import (
+from frame_it.domain.document import (
     ArtworkDocument,
     migrate,
     parse_document,
     validate_references,
 )
-from the_frame_v2.domain.geometry import Size
-from the_frame_v2.domain.templates import (
+from frame_it.domain.geometry import Size
+from frame_it.domain.templates import (
     FrameStyleDocument,
     LayoutDocument,
     PhotoInput,
@@ -23,8 +23,8 @@ from the_frame_v2.domain.templates import (
     restyle,
     style_of_document,
 )
-from the_frame_v2.services import recipes
-from the_frame_v2.services.templates import PRESETS_DIR
+from frame_it.services import recipes
+from frame_it.services.templates import PRESETS_DIR
 
 
 def slot(**overrides: Any) -> dict[str, Any]:

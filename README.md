@@ -1,11 +1,10 @@
-# the_frame_v2
+# Frame It
 
 Prepare and curate pictures for a 4K art-mode TV (Samsung The Frame): send originals from your
 phone over Wi-Fi, frame them pixel-perfectly, group them in collections, export them as finished
 3840×2160 images or send them straight to the TV.
 
-Self-hosted, offline, one directory of files you own. *(Placeholder name; the rename is the last
-open question — see [`docs/PLAN.md`](docs/PLAN.md) §16.)*
+Self-hosted, offline, one directory of files you own.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -85,8 +84,8 @@ what happened to each file — including the ones the library already had.
 **Phases 0–12 of [the plan](docs/PLAN.md) are implemented** — foundations, device pairing, uploads,
 ingest, the artwork document and renderer, the editor, parametric compositions, templates,
 organization, export/import, the hardening pass and sending to the TV — plus a round of
-improvements from daily use ([`docs/progress.md`](docs/progress.md) is the log). The name and a
-few §16 questions are the remaining open items.
+improvements from daily use ([`docs/progress.md`](docs/progress.md) is the log). A few §16
+questions are the remaining open items.
 
 ## Quick start
 
@@ -99,18 +98,18 @@ make serve          # builds the UI and serves everything on http://localhost:87
 
 On the computer running the server you are admin automatically. To add your phone: **Devices › Pair
 a device**, then scan the QR code from the same Wi-Fi. From another computer, use the setup code
-printed at startup (or `uv run the_frame_v2 setup-code`).
+printed at startup (or `uv run frame-it setup-code`).
 
 To keep it running across reboots:
 
 ```sh
-uv run the_frame_v2 service install    # systemd user unit, or a launchd agent on macOS
+uv run frame-it service install    # systemd user unit, or a launchd agent on macOS
 ```
 
 ### Docker
 
 ```sh
-docker compose -f docker/compose.yaml up -d   # set THE_FRAME_V2_PUBLIC_URL first
+docker compose -f docker/compose.yaml up -d   # set FRAME_IT_PUBLIC_URL first
 ```
 
 LocalSend discovery needs host networking in Docker (see the comments in `docker/compose.yaml`).

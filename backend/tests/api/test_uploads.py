@@ -7,8 +7,8 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
+from frame_it.events import Event
 from tests.conftest import ctx_of, make_jpeg, pair, sha256, upload_bytes
-from the_frame_v2.events import Event
 
 
 def _open(client: TestClient, data: bytes, **extra: object) -> dict[str, object]:
@@ -137,7 +137,7 @@ def test_heic_rejected_with_code(local: TestClient) -> None:
     data = b"\x00\x00\x00\x18ftypheic\x00\x00\x00\x00mif1heic" + b"\x00" * 64
     upload_bytes(local, data, "IMG.HEIC")
     assert local.get("/api/v1/photos/stats").json()["photos"] == 0
-    from the_frame_v2.db.models import UploadSession
+    from frame_it.db.models import UploadSession
 
     with ctx_of(local).db.session() as s:
         session = s.query(UploadSession).one()

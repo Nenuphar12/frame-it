@@ -13,13 +13,13 @@ from typing import Any
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
+from frame_it.domain import archive
+from frame_it.services import search
 from tests.api.test_archive import apply, export_archive, receive, report_of
 from tests.api.test_archive import other_library as other_library  # the fixture
 from tests.api.test_artworks import create, photo
 from tests.api.test_organization import collection, query, tag
 from tests.conftest import ctx_of, make_jpeg, upload_bytes
-from the_frame_v2.domain import archive
-from the_frame_v2.services import search
 
 API = "/api/v1"
 

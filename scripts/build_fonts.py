@@ -6,7 +6,7 @@ Usage: uv run --with fonttools python scripts/build_fonts.py [--source-dir DIR]
 Downloads the variable fonts from google/fonts at a pinned commit (unless present in DIR), creates one
 static TTF per weight with fontTools' instancer and gives each file a unique family name
 (`TF <font id> <weight>`) so fontconfig/Pango never mixes them with fonts installed on the machine.
-Writes backend/src/the_frame_v2/assets/fonts/<id>/<weight>.ttf, OFL.txt per font and manifest.json.
+Writes backend/src/frame_it/assets/fonts/<id>/<weight>.ttf, OFL.txt per font and manifest.json.
 Spec: docs/rendering-spec.md (captions).
 """
 
@@ -22,7 +22,7 @@ from fontTools.varLib.instancer import instantiateVariableFont
 
 COMMIT = "965e9104ac4cab0d9dbf49baeeb0c3d3de68cbe0"
 BASE = f"https://raw.githubusercontent.com/google/fonts/{COMMIT}/"
-OUT = Path(__file__).resolve().parents[1] / "backend/src/the_frame_v2/assets/fonts"
+OUT = Path(__file__).resolve().parents[1] / "backend/src/frame_it/assets/fonts"
 
 FONTS: list[dict[str, object]] = [
     {
@@ -80,7 +80,7 @@ def rename(font: TTFont, family: str) -> None:
     for name_id, value in (
         (1, family),
         (2, "Regular"),
-        (3, f"{family};the_frame_v2"),
+        (3, f"{family};frame-it"),
         (4, family),
         (6, family.replace(" ", "-")),
     ):

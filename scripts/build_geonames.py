@@ -3,7 +3,7 @@
 
 Usage: python scripts/build_geonames.py [--source-dir DIR]
 Downloads cities1000.zip, admin1CodesASCII.txt and countryInfo.txt (unless present in DIR) and writes
-backend/src/the_frame_v2/assets/geonames/cities1000.tsv.gz with columns:
+backend/src/frame_it/assets/geonames/cities1000.tsv.gz with columns:
 name, lat, lon, admin1 name, country name.
 """
 
@@ -19,7 +19,7 @@ from pathlib import Path
 BASE = "https://download.geonames.org/export/dump/"
 # Sections of cities (e.g. "Lyon 01") and historical/abandoned/destroyed places are not useful names.
 EXCLUDED_FEATURE_CODES = {"PPLX", "PPLH", "PPLQ", "PPLW", "PPLCH"}
-OUT = Path(__file__).resolve().parents[1] / "backend/src/the_frame_v2/assets/geonames/cities1000.tsv.gz"
+OUT = Path(__file__).resolve().parents[1] / "backend/src/frame_it/assets/geonames/cities1000.tsv.gz"
 
 
 def fetch(name: str, source_dir: Path | None) -> bytes:

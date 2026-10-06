@@ -23,8 +23,8 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 
-from the_frame_v2.app import create_app
-from the_frame_v2.config import Settings
+from frame_it.app import create_app
+from frame_it.config import Settings
 
 #: A page the grid asks for while the user drags the scrollbar has one frame to answer.
 BUDGET_MS = 16.7 * 4  # four frames: the budget is "no visible stall", not "instant"

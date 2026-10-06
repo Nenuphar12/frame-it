@@ -7,8 +7,8 @@ from pathlib import Path
 from alembic import command
 from sqlalchemy import text
 
-from the_frame_v2.db.migrate import alembic_config, upgrade_to_head
-from the_frame_v2.db.session import Database
+from frame_it.db.migrate import alembic_config, upgrade_to_head
+from frame_it.db.session import Database
 
 BEFORE_TAG_CATEGORIES = "32545e54fd09"  # 0010, the revision 0011 builds on
 

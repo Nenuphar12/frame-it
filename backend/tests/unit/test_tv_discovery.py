@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from the_frame_v2.tv import normalize_mac
-from the_frame_v2.tv.discovery import (
+from frame_it.tv import normalize_mac
+from frame_it.tv.discovery import (
     DiscoveredTv,
     discover,
     find_by_mac,

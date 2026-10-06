@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
-const backend = process.env.THE_FRAME_V2_BACKEND ?? "http://127.0.0.1:8765";
+const backend = process.env.FRAME_IT_BACKEND ?? "http://127.0.0.1:8765";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -18,7 +18,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: "../backend/src/the_frame_v2/static",
+    outDir: "../backend/src/frame_it/static",
     emptyOutDir: true,
     sourcemap: false,
     // The main chunk is ~1010 kB raw / ~318 kB gzip, half of it Konva + its React reconciler for

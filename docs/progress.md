@@ -1,5 +1,24 @@
 # Progress log
 
+## 2026-10-06 — Frame It
+
+- **Name**: the placeholder `the_frame_v2` becomes **Frame It** — package `frame_it`, command and
+  distribution `frame-it`, env prefix `FRAME_IT_`, data dir `frame-it`, Docker image `frame-it`,
+  service `frame-it`, error and schema URLs `https://frame-it/…`, archive format
+  `frame_it.archive`. The name the TV, LocalSend and the TLS certificate see is "Frame It".
+  Checked before choosing: no live "FRAME IT" trademark for software turned up (US, quick search,
+  not legal advice); fastlane's `frameit` and several app-store "Frame It" apps exist, and
+  `frameit` is taken on PyPI and npm (PLAN §16).
+- **What a library already had keeps working**: `THE_FRAME_V2_*` variables are copied to their
+  `FRAME_IT_*` names unless set (`config.adopt_legacy_env`), the old data dir is used while no new
+  one exists (`default_data_dir`), and an archive saying `the_frame_v2.archive` imports
+  (`archive.LEGACY_FORMATS`). Pinned by `test_settings_read_the_placeholder_names` and
+  `test_an_archive_written_before_the_rename_is_read`. Not carried over: a service installed under
+  the old name (reinstall it), and possibly the TV's pairing — the TV may treat "Frame It" as a
+  new device and ask again (not tried on hardware; *Pair again* covers it).
+
+**Verified**: `make check`, and the changed scripts' `--help`.
+
 ## 2026-10-05 — Folding the sidebar's collections; keeping the images sent before
 
 - **Sidebar**: a chevron next to *Collections* folds the collection tree away (it grows with the
@@ -319,7 +338,7 @@ lists too). A query over 200 artworks is refused rather than cut.
 Found while verifying: a push failing *before* the TV (an empty set) left the `queued` progress
 stored, so the tray would have waited forever after a reload — every failure path now clears it.
 
-**Verified in a browser** (headless Chromium over CDP, production build, `THE_FRAME_V2_FAKE_TV=1`,
+**Verified in a browser** (headless Chromium over CDP, production build, `FRAME_IT_FAKE_TV=1`,
 a copy of the dev library; results read back through the API), 55 checks: add a TV from the scan
 (recommended, pre-selected, MAC and model stored) and by address; pair; rotation saved; Show on the
 TV from a collection — dry-run numbers, the collapsed row, *Leave out 1 draft* (3 vs 4 artworks),
@@ -481,7 +500,7 @@ link, `prefers-reduced-motion`, and `role="status"` + `aria-live` on the toasts.
 buttons found **no** icon-only button without an accessible name, and every `<img>` already carried
 an `alt` — that part of the codebase was already right.
 
-**Service installers.** `the_frame_v2 service install|status|uninstall` generates the unit for *this*
+**Service installers.** `frame-it service install|status|uninstall` generates the unit for *this*
 machine — the absolute path of this interpreter's console script and the data directory the user
 chose, neither of which is guessable from a shipped file — and prints the commands that enable it
 rather than running them. `systemd-analyze --user verify` passes on the generated unit. Windows gets
@@ -500,7 +519,7 @@ it actually streams, and both cases are pinned by tests. The rest of `docs/secur
 through and found correct; the review is written up there.
 
 **Name and licence.** MIT (`LICENSE`, declared in both manifests). The name stays the placeholder by
-the user's decision — the rename touches the package, the `THE_FRAME_V2_*` prefix, the data dir and
+the user's decision — the rename touches the package, the `FRAME_IT_*` prefix, the data dir and
 the error URLs, and is better as one mechanical commit than as a strand of this one.
 
 **Docs.** `docs/user-guide.md` (install, service, pairing, the two upload routes and why Android
@@ -618,7 +637,7 @@ dropped connection resumes) → staging job → `GET /imports/{id}/report` → `
 Both staging areas are swept on a schedule (`archive.sweep`, 6 h). The UI is one page
 (`/backup`, `g b`) holding the import flow and the recent exports, plus the same export dialog from
 a selection on any grid of artworks and from a collection's header. The CLI does both without a
-browser: `the_frame_v2 export -o lib.tfarchive`, `the_frame_v2 import lib.tfarchive [--dry-run]
+browser: `frame-it export -o lib.tfarchive`, `frame-it import lib.tfarchive [--dry-run]
 [--policy …]`.
 
 **Verified**: `make check` green — 948 backend tests (42 new), mypy strict, ESLint, tsc, i18n,
@@ -633,7 +652,7 @@ rather than off the screen:
   artworks came back byte-identical, render hashes included.
 - A partial export from a one-artwork selection on `/artworks`: 3.6 MB, `scope: partial`, and the
   dialog's scope line reads "1 artwork — with the photos and tags they use".
-- The *Rendered images* card: JPEG/PNG offered, `the_frame_v2-renders-….zip` written.
+- The *Rendered images* card: JPEG/PNG offered, `frame-it-renders-….zip` written.
 - A real conflict: renaming an artwork locally then re-importing gives `Artworks … 1 conflicting`,
   **only that row's** policy select enabled, the button reading `Import (1 conflict)`; choosing
   *Take theirs* restored the title and left a `pre_import` snapshot — the undo, as specified.
@@ -903,7 +922,6 @@ setting you could see but not judge:
 choice), template file *import* through the file picker (a `<input type=file>` cannot be driven over
 CDP without a real file dialog — the endpoint is covered by an API test), and the Templates page on
 a narrow window.
-
 
 ## 2026-09-16 — Phases 0–3
 

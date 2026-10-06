@@ -22,17 +22,17 @@ from pathlib import Path
 
 import pyvips
 
-from the_frame_v2.domain import composition as composition_domain
-from the_frame_v2.domain.document import ArtworkDocument, Composition
-from the_frame_v2.domain.geometry import Rect, Size
-from the_frame_v2.domain.templates import (
+from frame_it.domain import composition as composition_domain
+from frame_it.domain.document import ArtworkDocument, Composition
+from frame_it.domain.geometry import Rect, Size
+from frame_it.domain.templates import (
     FrameStyleDocument,
     PhotoInput,
     build_composition_document,
 )
-from the_frame_v2.imaging.render import decoded_originals, render_document, save_png
-from the_frame_v2.services import recipes
-from the_frame_v2.services.templates import PRESETS_DIR
+from frame_it.imaging.render import decoded_originals, render_document, save_png
+from frame_it.services import recipes
+from frame_it.services.templates import PRESETS_DIR
 
 
 def photo(path: Path, seed: int) -> Path:

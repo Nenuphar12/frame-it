@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from frame_it.imaging.fingerprint import content_fingerprint, file_sha256
+from frame_it.services.photo_copies import is_generated_name
 from tests.conftest import make_jpeg
-from the_frame_v2.imaging.fingerprint import content_fingerprint, file_sha256
-from the_frame_v2.services.photo_copies import is_generated_name
 
 
 def test_jpeg_fingerprint_ignores_exif_only(tmp_path: Path) -> None:

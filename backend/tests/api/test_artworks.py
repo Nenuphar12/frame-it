@@ -309,8 +309,8 @@ def test_roles(local: TestClient) -> None:
 def test_trashed_photo_makes_render_fail_cleanly(local: TestClient) -> None:
     pid = photo(local)
     artwork = create(local, [pid])
-    from the_frame_v2.db.models import Photo
-    from the_frame_v2.ids import utcnow
+    from frame_it.db.models import Photo
+    from frame_it.ids import utcnow
 
     with ctx_of(local).db.session() as s:
         row = s.get(Photo, pid)

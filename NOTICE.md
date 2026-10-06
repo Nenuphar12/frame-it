@@ -1,18 +1,18 @@
 # Third-party notices
 
-the_frame_v2 itself is MIT-licensed (`LICENSE`). Everything below ships *inside* the package and
+Frame It itself is MIT-licensed (`LICENSE`). Everything below ships *inside* the package and
 keeps its own licence.
 
 ## Assets
 
 | Asset | Location | License |
 |---|---|---|
-| GeoNames cities1000, admin1 codes, country info | `backend/src/the_frame_v2/assets/geonames/` | CC BY 4.0 — © GeoNames (https://www.geonames.org) |
-| Cormorant Garamond (Christian Thalmann) | `backend/src/the_frame_v2/assets/fonts/cormorant-garamond/` | SIL Open Font License 1.1 (`OFL.txt`) |
-| EB Garamond (Georg Duffner, Octavio Pardo) | `backend/src/the_frame_v2/assets/fonts/eb-garamond/` | SIL Open Font License 1.1 (`OFL.txt`) |
-| Inter (Rasmus Andersson) | `backend/src/the_frame_v2/assets/fonts/inter/` | SIL Open Font License 1.1 (`OFL.txt`) |
-| Josefin Sans (Santiago Orozco) | `backend/src/the_frame_v2/assets/fonts/josefin-sans/` | SIL Open Font License 1.1 (`OFL.txt`) |
-| Mat textures (generated) | `backend/src/the_frame_v2/assets/textures/` | CC0 1.0 |
+| GeoNames cities1000, admin1 codes, country info | `backend/src/frame_it/assets/geonames/` | CC BY 4.0 — © GeoNames (https://www.geonames.org) |
+| Cormorant Garamond (Christian Thalmann) | `backend/src/frame_it/assets/fonts/cormorant-garamond/` | SIL Open Font License 1.1 (`OFL.txt`) |
+| EB Garamond (Georg Duffner, Octavio Pardo) | `backend/src/frame_it/assets/fonts/eb-garamond/` | SIL Open Font License 1.1 (`OFL.txt`) |
+| Inter (Rasmus Andersson) | `backend/src/frame_it/assets/fonts/inter/` | SIL Open Font License 1.1 (`OFL.txt`) |
+| Josefin Sans (Santiago Orozco) | `backend/src/frame_it/assets/fonts/josefin-sans/` | SIL Open Font License 1.1 (`OFL.txt`) |
+| Mat textures (generated) | `backend/src/frame_it/assets/textures/` | CC0 1.0 |
 
 Font files are static instances (renamed families `TF <id> <weight>`) of the variable fonts published in
 https://github.com/google/fonts, built by `scripts/build_fonts.py`; the OFL permits this as modified versions

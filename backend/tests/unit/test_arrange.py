@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from the_frame_v2.domain.arrange import (
+from frame_it.domain.arrange import (
     Edge,
     align,
     bounding_box,
@@ -17,7 +17,7 @@ from the_frame_v2.domain.arrange import (
     new_slot_size,
     same_size,
 )
-from the_frame_v2.domain.geometry import Rect, Size
+from frame_it.domain.geometry import Rect, Size
 
 THREE = [
     Rect(200, 200, 1200, 800),

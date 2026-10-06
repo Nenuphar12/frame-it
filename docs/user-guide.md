@@ -24,7 +24,7 @@ Open <http://localhost:8765>. **On the machine running the server you are admin 
 the app trusts loopback connections, so there is nothing to log into.
 
 From *another* computer you need the **setup code**: it is printed in the server log at startup, and
-`uv run the_frame_v2 setup-code` prints a fresh one. Open `http://<server>:8765/setup` and type it
+`uv run frame-it setup-code` prints a fresh one. Open `http://<server>:8765/setup` and type it
 in. The code lasts an hour and works once.
 
 ### With Docker
@@ -33,7 +33,7 @@ in. The code lasts an hour and works once.
 docker compose -f docker/compose.yaml up -d
 ```
 
-Set `THE_FRAME_V2_PUBLIC_URL` to the address your phone will use (for example
+Set `FRAME_IT_PUBLIC_URL` to the address your phone will use (for example
 `http://192.168.1.179:8765`) **before** starting it: that URL is what the pairing QR code contains.
 In Docker the connection comes from a bridge address, not loopback, so you always need the setup
 code:
@@ -47,7 +47,7 @@ LocalSend discovery needs host networking — see the comments in `docker/compos
 ### Keeping it running
 
 ```sh
-uv run the_frame_v2 service install     # writes a systemd user unit (Linux) or a launchd agent (macOS)
+uv run frame-it service install     # writes a systemd user unit (Linux) or a launchd agent (macOS)
 ```
 
 It prints the file it wrote and the one or two commands that start it — it does not start anything
@@ -56,13 +56,13 @@ your library alone. Add `--public-url http://192.168.1.179:8765` so the QR codes
 a reboot.
 
 On Windows there is no unit to generate: create a Task Scheduler task that runs
-`the_frame_v2 serve` **At log on**, with "Run whether user is logged on or not" unticked, or use
+`frame-it serve` **At log on**, with "Run whether user is logged on or not" unticked, or use
 [NSSM](https://nssm.cc/) to register it as a real service.
 
 ### Checking the machine
 
 ```sh
-uv run the_frame_v2 doctor
+uv run frame-it doctor
 ```
 
 It reports the data directory, the public URL, and what your libvips build can actually decode
@@ -265,9 +265,9 @@ anything get written, and it is written in one transaction.
 The same thing without a browser:
 
 ```sh
-uv run the_frame_v2 export -o library.tfarchive
-uv run the_frame_v2 export -o renders.zip --kind renders --format jpg
-uv run the_frame_v2 import library.tfarchive --dry-run
+uv run frame-it export -o library.tfarchive
+uv run frame-it export -o renders.zip --kind renders --format jpg
+uv run frame-it import library.tfarchive --dry-run
 ```
 
 ### Showing it on the TV
@@ -277,8 +277,8 @@ uv run the_frame_v2 import library.tfarchive --dry-run
 
 1. **Add a TV.** The dialog looks for TVs on your network as it opens and pre-selects the first
    Frame it has not seen before (*Recommended*). If yours is not listed, *Scan again*, or type its
-   address (on the TV: Settings → Support → About this TV). In Docker, set `THE_FRAME_V2_PUBLIC_URL`
-   (or `THE_FRAME_V2_TV_SCAN_SUBNET=192.168.1`) so the app looks on your network, not the
+   address (on the TV: Settings → Support → About this TV). In Docker, set `FRAME_IT_PUBLIC_URL`
+   (or `FRAME_IT_TV_SCAN_SUBNET=192.168.1`) so the app looks on your network, not the
    container's.
 2. **Pair it.** Turn the TV fully **on** (not art mode — it cannot draw its prompt there), press
    *Pair*, and accept "allow this device" on the TV. A power cut can make the TV forget the app:
@@ -314,7 +314,7 @@ and how many foreign photos the TV last reported.
 position on the TV requires. If the router gives the TV a new address, the app finds it again by
 its network identity on the next send or *Check the TV*, and says so.
 
-The same from a terminal: `uv run the_frame_v2 tv scan`, `tv add <ip>`, `tv pair <id>`,
+The same from a terminal: `uv run frame-it tv scan`, `tv add <ip>`, `tv pair <id>`,
 `tv status <id>`, and `tv push <id> --collection <id> --every 15` (`--every 0` is *Don't change*,
 `--yes-delete-others` removes the photos the app did not send).
 
@@ -334,24 +334,27 @@ Other things worth knowing:
 
 | Symptom | What it is |
 |---|---|
-| "This address is not allowed by the server configuration" | The `Host` header is not in the allow-list. Reach the server by its LAN IP, or set `THE_FRAME_V2_ALLOWED_HOSTS`. |
+| "This address is not allowed by the server configuration" | The `Host` header is not in the allow-list. Reach the server by its LAN IP, or set `FRAME_IT_ALLOWED_HOSTS`. |
 | The phone sees the pairing page but the QR goes nowhere | `public_url` is wrong — it must be the address the *phone* can reach, not `0.0.0.0` or `localhost`. |
 | No place name on photos from an Android phone | Expected with the browser picker: Android removes GPS. Send with LocalSend instead. |
 | "This artwork's photos are too large to render together" | Too many large originals in one artwork. The renderer holds them all at once; use fewer or smaller photos. |
 | "The TV is on the network, but its art mode did not answer" | The TV is off or not showing art. Turn it on (or switch it to art mode) and press **Retry** in Activity. |
-| Thumbnails or renders look stale | `uv run the_frame_v2 cache clear` — the cache is always safe to delete, it regenerates on demand. |
+| Thumbnails or renders look stale | `uv run frame-it cache clear` — the cache is always safe to delete, it regenerates on demand. |
 
 ### Where your library lives
 
-One directory, printed by `the_frame_v2 doctor`. It holds `library.db` (SQLite), `originals/`
+One directory, printed by `frame-it doctor`. It holds `library.db` (SQLite), `originals/`
 (content-addressed, **never modified**) and `cache/` (always safe to delete). Back up the first two;
 ignore the third.
+
+By default that is the platform's data directory for `frame-it` (`~/.local/share/frame-it` on
+Linux); `--data-dir` or `FRAME_IT_DATA_DIR` puts it elsewhere.
 
 ---
 
 ## 9. Configuration
 
-Precedence: command-line flag → environment variable `THE_FRAME_V2_*` → `<data_dir>/config.toml` →
+Precedence: command-line flag → environment variable `FRAME_IT_*` → `<data_dir>/config.toml` →
 default.
 
 | Setting | Default | What it does |

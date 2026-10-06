@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 
-from the_frame_v2.domain.composition import (
+from frame_it.domain.composition import (
     CAPTION_BAND_FACTOR,
     MIN_CELL,
     Cell,
@@ -29,9 +29,9 @@ from the_frame_v2.domain.composition import (
     split_weights,
     splits,
 )
-from the_frame_v2.domain.document import ArtworkDocument, Caption, Composition, CropSpec
-from the_frame_v2.domain.geometry import CANVAS, Rect, Size
-from the_frame_v2.services import recipes
+from frame_it.domain.document import ArtworkDocument, Caption, Composition, CropSpec
+from frame_it.domain.geometry import CANVAS, Rect, Size
+from frame_it.services import recipes
 
 CAPTION_SIZE = 48
 PHOTOS = [Size(6000, 4000), Size(3000, 4000), Size(4000, 4000), Size(5000, 2000)]

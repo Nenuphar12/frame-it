@@ -7,8 +7,8 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from frame_it.jobs.queue import JobContext, PermanentJobError
 from tests.conftest import ctx_of, pair
-from the_frame_v2.jobs.queue import JobContext, PermanentJobError
 
 FAILING = "test_failing"
 PERMANENT = "test_permanent"

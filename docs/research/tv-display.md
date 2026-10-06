@@ -340,7 +340,7 @@ changes:
 - **UI**: a *Display* section in Settings (pair by IP, accept the on-screen prompt, show model/API
   version/what is on the TV now, interval, ordered vs shuffle) and one action — "Show this on the TV"
   — on a collection, on a grid selection and in `/m/browse`. Failures land in `/activity`.
-- **CLI**: `the_frame_v2 tv pair | status | push <collection> | show <artwork> | clear`, same service
+- **CLI**: `frame-it tv pair | status | push <collection> | show <artwork> | clear`, same service
   layer, no browser (as `export`/`import` do).
 - Tokens live in the DB in the data dir (a token is a credential for the TV), not in `config.toml`.
 
@@ -459,7 +459,7 @@ storage ceiling (the ~75-images figure versus ~2 GB).
 
 | Stage | What | Acceptance |
 |---|---|---|
-| **12.1 Client & pairing** | `tv/` package (`client.py` wrapping `samsungtvws` sync, `FakeTv` for tests), `display_targets` table (migration `0009`), `services/display.py` pair/status, CLI `the_frame_v2 tv pair|status` | Pair from the CLI; status prints model, API version, art-mode state, item counts; API tests run against `FakeTv`; `make check` green |
+| **12.1 Client & pairing** | `tv/` package (`client.py` wrapping `samsungtvws` sync, `FakeTv` for tests), `display_targets` table (migration `0009`), `services/display.py` pair/status, CLI `frame-it tv pair|status` | Pair from the CLI; status prints model, API version, art-mode state, item counts; API tests run against `FakeTv`; `make check` green |
 | **12.2 Push a set** | `display_target_items` map `(artwork_id, render_hash) → content_id`; the diff (render → upload missing → favourite/slideshow → delete only ours); `display` job lane, coalesced per target; SSE `display.*`; `jobs.code` for `tv_unreachable`/`tv_unauthorized`/`tv_storage_full`; CLI `tv push <collection>` | Pushing a 10-artwork collection twice uploads 10 then 0; editing one artwork replaces exactly one image; the user's own TV art is never touched; failures land in `/activity` |
 | **12.3 UI** | Settings → Display (pair, state, what is on the TV, interval, ordered/shuffle), "Show on the TV" on a collection / grid selection / `/m/browse`, an "on the TV" badge on artworks | The whole flow without a terminal; i18n keys; AA in both themes; `make gen-api` in the same change |
 | **12.4 Polish** | "Show this now" (`select_image`), art-mode on/off, the TV's brightness/colour-temperature surfaced read-only or editable, `docs/user-guide.md` section, `docs/gotchas.md` entry | Documented, tested, and the AGENTS.md status line updated in the same commit |

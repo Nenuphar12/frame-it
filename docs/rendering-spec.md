@@ -105,7 +105,7 @@ compensation offset is needed at all.
   16-bit sources are transformed in 16-bit, then cast to 8-bit.
 - HDR gain-map photos (Ultra HDR JPEG, AVIF with gain map): use the SDR base image. PQ/HLG-only HDR: tone-map is out of
   scope → flag `quality_warnings: ["hdr_unsupported"]` and use a clipped conversion.
-- `imaging/capabilities.py` + `the_frame_v2 doctor`: report libvips version, loaders (heifload with AV1), lcms; fail fast
+- `imaging/capabilities.py` + `frame-it doctor`: report libvips version, loaders (heifload with AV1), lcms; fail fast
   at startup if a required capability is missing.
 
 ### 8.4 Render cache & jobs

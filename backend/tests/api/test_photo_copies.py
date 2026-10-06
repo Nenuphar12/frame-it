@@ -83,8 +83,8 @@ def test_different_images_are_not_merged(local: TestClient) -> None:
 
 
 def test_backfill_computes_missing_fingerprints(local: TestClient) -> None:
-    from the_frame_v2.db.models import Photo
-    from the_frame_v2.services import photo_copies
+    from frame_it.db.models import Photo
+    from frame_it.services import photo_copies
 
     upload_bytes(local, REDACTED, "a.jpg")
     ctx = ctx_of(local)

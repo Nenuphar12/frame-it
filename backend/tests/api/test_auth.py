@@ -124,7 +124,7 @@ def test_an_image_response_carries_the_headers_too(local: TestClient) -> None:
 
 
 def test_setup_code_flow(local: TestClient) -> None:
-    from the_frame_v2.services.devices import issue_setup_code
+    from frame_it.services.devices import issue_setup_code
 
     with ctx_of(local).db.session() as s:
         code = issue_setup_code(s).code

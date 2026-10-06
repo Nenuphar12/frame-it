@@ -9,10 +9,10 @@ from typing import Any
 import pytest
 import pyvips
 
-from the_frame_v2.domain.document import ArtworkDocument, EdgeShadow, Shadow
-from the_frame_v2.domain.geometry import Rect
-from the_frame_v2.imaging.decode import load_srgb
-from the_frame_v2.imaging.render import (
+from frame_it.domain.document import ArtworkDocument, EdgeShadow, Shadow
+from frame_it.domain.geometry import Rect
+from frame_it.imaging.decode import load_srgb
+from frame_it.imaging.render import (
     BEVEL_SHADES,
     _blur,
     _colored_alpha,
@@ -131,7 +131,7 @@ def test_texture_formula_and_bands(tmp_path: Path) -> None:
     )
     image = render_document(doc, {"p": photo}.get).image
     tile = pyvips.Image.new_from_file(
-        str(Path(__file__).resolve().parents[2] / "src/the_frame_v2/assets/textures/paper-01.png")
+        str(Path(__file__).resolve().parents[2] / "src/frame_it/assets/textures/paper-01.png")
     )
     for x, y in ((0, 0), (17, 1023), (1030, 5)):
         t = tile(x % 1024, y % 1024)[0]
@@ -320,7 +320,7 @@ def test_caption_sits_on_its_baseline() -> None:
 
 
 def test_missing_photo_fails_cleanly(tmp_path: Path) -> None:
-    from the_frame_v2.imaging.render import RenderError
+    from frame_it.imaging.render import RenderError
 
     doc = single((10, 10))
     with pytest.raises(RenderError) as info:

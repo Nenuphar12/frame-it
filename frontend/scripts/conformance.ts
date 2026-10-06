@@ -22,7 +22,7 @@ const a = <T>(args: Args, key: string) => args[key] as T;
 // Recipes come from the backend's bundled catalogue — one source for both solvers (§7).
 const CATALOG = JSON.parse(
   readFileSync(
-    join(import.meta.dirname, "../../backend/src/the_frame_v2/assets/presets/recipes.json"),
+    join(import.meta.dirname, "../../backend/src/frame_it/assets/presets/recipes.json"),
     "utf8",
   ),
 ) as { recipes: composition.Recipe[] };

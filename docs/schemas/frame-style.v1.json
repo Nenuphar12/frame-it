@@ -294,7 +294,7 @@
       "type": "object"
     }
   },
-  "$id": "https://the-frame-v2/schemas/frame-style.v1.json",
+  "$id": "https://frame-it/schemas/frame-style.v1.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "A *look*: the mat, what is drawn around each photo, the caption's typography.\n\n`margins` are kept for a hand-built artwork; a composition derives its own (\u00a73.7), which is\nwhy `restyle` never writes them \u2014 re-dressing must not disturb a layout.",

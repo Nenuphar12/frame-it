@@ -4,6 +4,6 @@
 **/.mypy_cache
 **/.pytest_cache
 **/.ruff_cache
-backend/src/the_frame_v2/static
+backend/src/frame_it/static
 .dev-data
 .git

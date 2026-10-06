@@ -1,5 +1,5 @@
 {
-  "$id": "https://the-frame-v2/schemas/archive/tag_category.v1.json",
+  "$id": "https://frame-it/schemas/archive/tag_category.v1.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "A group of tags (People, Events\u2026). Absent from archives written before categories: a\nreader treats a missing `tag_categories.jsonl` as empty.",
   "properties": {

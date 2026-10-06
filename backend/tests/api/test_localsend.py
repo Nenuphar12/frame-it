@@ -16,15 +16,15 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
+from frame_it.db.models import Photo
+from frame_it.events import Event
+from frame_it.ids import utcnow
+from frame_it.localsend.app import create_localsend_app, own_info
+from frame_it.localsend.discovery import Discovery, register_over_http
+from frame_it.localsend.dto import Announcement
+from frame_it.localsend.identity import ensure_identity, fingerprint_of
+from frame_it.localsend.runner import LocalSendRunner
 from tests.conftest import ctx_of, make_jpeg, sha256
-from the_frame_v2.db.models import Photo
-from the_frame_v2.events import Event
-from the_frame_v2.ids import utcnow
-from the_frame_v2.localsend.app import create_localsend_app, own_info
-from the_frame_v2.localsend.discovery import Discovery, register_over_http
-from the_frame_v2.localsend.dto import Announcement
-from the_frame_v2.localsend.identity import ensure_identity, fingerprint_of
-from the_frame_v2.localsend.runner import LocalSendRunner
 
 PHONE_IP = "192.168.1.50"
 PREFIX = "/api/localsend/v2"

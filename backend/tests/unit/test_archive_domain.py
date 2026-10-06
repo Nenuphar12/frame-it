@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from the_frame_v2.domain import archive, filters
+from frame_it.domain import archive, filters
 
 
 @pytest.mark.parametrize(

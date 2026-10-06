@@ -1,6 +1,6 @@
 // A bevelled band: the cut edge of a mat window, as four mitred faces (rendering-spec.md §8.1).
 //
-// Mirror of `shade` / `BEVEL_SHADES` in backend/src/the_frame_v2/imaging/render.py — the renderer
+// Mirror of `shade` / `BEVEL_SHADES` in backend/src/frame_it/imaging/render.py — the renderer
 // is authoritative, this is what the canvas and the template cards draw. Parity of the colours is
 // pinned by conformance/geometry/render.json; the geometry is four trapezoids either way.
 import type { Rect } from "./geometry.ts";

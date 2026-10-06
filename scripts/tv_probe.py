@@ -182,7 +182,7 @@ class AsyncArt:
         self._thread = threading.Thread(target=self._loop.run_forever, daemon=True, name="art-loop")
         self._thread.start()
         self._art = SamsungTVAsyncArt(
-            host=host, port=port, token_file=token_file, name="the_frame_v2 probe"
+            host=host, port=port, token_file=token_file, name="Frame It probe"
         )
         self._submit(self._art.start_listening())
 
@@ -533,7 +533,7 @@ def fidelity_chart(path: Path, width: int = 3840, height: int = 2160) -> Path:
         return bottom + label(caption, margin, bottom, 34) + gap
 
     cursor = margin // 2
-    cursor += label(f"the_frame_v2 TV probe — {width}×{height}, sRGB", margin, cursor, 56) + gap
+    cursor += label(f"Frame It TV probe — {width}×{height}, sRGB", margin, cursor, 56) + gap
 
     checker_w, checker_h = 1400, 360
     cxy = pyvips.Image.xyz(checker_w, checker_h)
@@ -1369,7 +1369,7 @@ def main() -> int:
     parser.add_argument("--timeout", type=float, default=30.0)
     parser.add_argument(
         "--name",
-        default="the_frame_v2",
+        default="Frame It",
         help="how this app appears in the TV's Device List (default: %(default)s)",
     )
     parser.add_argument(
@@ -1530,7 +1530,7 @@ def main() -> int:
         started_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     )
     runner = Runner(report, args.verbose, args.step_timeout)
-    print(f"the_frame_v2 TV probe — {args.host}:{args.port} ({args.client} client)")
+    print(f"Frame It TV probe — {args.host}:{args.port} ({args.client} client)")
     print(f"token file: {args.token_file}")
     if not args.token_file.exists() and not args.fake:
         print("no token yet — pairing first (the TV must be ON, not in art mode)")

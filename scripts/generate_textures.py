@@ -18,7 +18,7 @@ from typing import Any
 import pyvips
 
 SIZE = 1024
-OUT = Path(__file__).resolve().parents[1] / "backend/src/the_frame_v2/assets/textures"
+OUT = Path(__file__).resolve().parents[1] / "backend/src/frame_it/assets/textures"
 
 
 def noise(seed: int, sigma: float) -> Any:

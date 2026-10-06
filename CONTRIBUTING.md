@@ -32,9 +32,9 @@ make check       # everything that must pass before you commit
 
 `make dev` goes through the Vite proxy, which adds `X-Forwarded-For`, so the browser is **not**
 trusted as localhost: the first load asks for the setup code printed in the server log.
-`uv run the_frame_v2 doctor` reports what the machine can decode.
+`uv run frame-it doctor` reports what the machine can decode.
 
-**Working on the TV pages without a TV**: start the server with `THE_FRAME_V2_FAKE_TV=1`. Every TV
+**Working on the TV pages without a TV**: start the server with `FRAME_IT_FAKE_TV=1`. Every TV
 is then one in-memory fake (`tv/fake.py`) — discovery finds it, pairing needs no prompt, pushes take
 a little time per image so the progress shows — and nothing ever reaches a real TV. Development only
 (`docs/tv-display.md` §10).

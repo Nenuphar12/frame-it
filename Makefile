@@ -19,7 +19,7 @@ dev: ## Run backend (:8765) and Vite (:5173) together
 	$(MAKE) -j2 dev-backend dev-frontend
 
 dev-backend:
-	cd $(BACKEND) && THE_FRAME_V2_DATA_DIR=$(DATA_DIR) uv run the_frame_v2 serve --reload
+	cd $(BACKEND) && FRAME_IT_DATA_DIR=$(DATA_DIR) uv run frame-it serve --reload
 
 dev-frontend:
 	cd $(FRONTEND) && pnpm dev
@@ -51,15 +51,15 @@ golden-update: ## Regenerate golden reference renders (review the diff before co
 	cd $(BACKEND) && GOLDEN_UPDATE=1 uv run pytest tests/golden
 
 gen-api: ## Regenerate frontend API types and docs/schemas/ (JSON Schemas) from the backend
-	cd $(BACKEND) && uv run the_frame_v2 openapi -o ../$(FRONTEND)/src/api/openapi.json
-	cd $(BACKEND) && uv run the_frame_v2 schemas -o ../docs/schemas
+	cd $(BACKEND) && uv run frame-it openapi -o ../$(FRONTEND)/src/api/openapi.json
+	cd $(BACKEND) && uv run frame-it schemas -o ../docs/schemas
 	cd $(FRONTEND) && pnpm gen-api
 
 build: ## Build the frontend into the backend package (static/)
 	cd $(FRONTEND) && pnpm build
 
 serve: build ## Build then serve the full app on :8765
-	cd $(BACKEND) && THE_FRAME_V2_DATA_DIR=$(DATA_DIR) uv run the_frame_v2 serve
+	cd $(BACKEND) && FRAME_IT_DATA_DIR=$(DATA_DIR) uv run frame-it serve
 
 docker: ## Build the Docker image
-	docker build -f docker/Dockerfile -t the_frame_v2:dev .
+	docker build -f docker/Dockerfile -t frame-it:dev .

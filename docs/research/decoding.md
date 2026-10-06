@@ -13,7 +13,7 @@ Environment: `pyvips` 3.x + `pyvips-binary` (libvips **8.18.6**), Pillow 12, Pyt
 | icc_transform (lcms) | ✅ | built-in profiles `srgb`, `p3`, `cmyk` |
 | jxlload, magickload | ❌ | not needed |
 
-`the_frame_v2 doctor` reports these at runtime; startup fails if a required one is missing.
+`frame-it doctor` reports these at runtime; startup fails if a required one is missing.
 
 ## Results (synthetic fixtures, reproduced by `tests/unit/test_imaging.py`)
 

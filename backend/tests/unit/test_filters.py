@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from the_frame_v2.domain.filters import (
+from frame_it.domain.filters import (
     Clause,
     FilterError,
     collection_ids_used,

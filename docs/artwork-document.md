@@ -46,7 +46,7 @@ exposed through OpenAPI → TS types. **Array order = z-order (first is back-mos
 }
 ```
 
-Implementation: `backend/src/the_frame_v2/domain/document.py`; JSON Schemas in `docs/schemas/` (`make gen-api`).
+Implementation: `backend/src/frame_it/domain/document.py`; JSON Schemas in `docs/schemas/` (`make gen-api`).
 
 **Validation rules** (server rejects with 422, client never produces):
 - All rect/crop/margin/band values are integers; `rect.w, rect.h ≥ 1`. Canvas coordinates within ±20 000,

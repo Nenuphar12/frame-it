@@ -2,7 +2,7 @@
 
 > Extracted from `PLAN.md` §7 (Phase 1). This file is now the maintained spec.
 
-Implemented identically in `backend/src/the_frame_v2/domain/` and `frontend/src/editor/core/`, verified by
+Implemented identically in `backend/src/frame_it/domain/` and `frontend/src/editor/core/`, verified by
 `conformance/geometry/*.json` (§13.3).
 
 ### 7.1 Coordinate conventions

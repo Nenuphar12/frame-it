@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
-from the_frame_v2.services.display import MapRow, plan_push
+from frame_it.services.display import MapRow, plan_push
 
 T0 = datetime(2026, 9, 30, 12, 0, tzinfo=UTC)
 

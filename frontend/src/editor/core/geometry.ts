@@ -1,4 +1,4 @@
-// Pure integer geometry — mirror of backend/src/the_frame_v2/domain/geometry.py.
+// Pure integer geometry — mirror of backend/src/frame_it/domain/geometry.py.
 // Spec: docs/geometry-and-quality.md §7.1. Parity: conformance/geometry/*.json (`pnpm conformance`).
 // Relative imports keep the `.ts` extension so Node can run this code without a bundler.
 

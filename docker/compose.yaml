@@ -1,13 +1,13 @@
 # docker compose -f docker/compose.yaml up -d
 # The container cannot detect the host's LAN address: set PUBLIC_URL so pairing QR codes work.
 # First admin access from another machine: `docker compose logs` shows the setup code
-# (or `docker compose exec frame the_frame_v2 setup-code`).
+# (or `docker compose exec frame frame-it setup-code`).
 services:
   frame:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    image: the_frame_v2:latest
+    image: frame-it:latest
     restart: unless-stopped
     # LocalSend: multicast discovery does not cross Docker's bridge network. For automatic discovery replace
     # `ports:` by `network_mode: host`; otherwise add the server by IP address in the LocalSend app.
@@ -16,8 +16,8 @@ services:
       - "53317:53317/tcp"
       - "53317:53317/udp"
     environment:
-      THE_FRAME_V2_PUBLIC_URL: "http://192.168.1.10:8765"  # <- your host's LAN address
-      THE_FRAME_V2_LOCALSEND_ALIAS: "The Frame library"      # name shown in LocalSend
+      FRAME_IT_PUBLIC_URL: "http://192.168.1.10:8765"  # <- your host's LAN address
+      FRAME_IT_LOCALSEND_ALIAS: "The Frame library"      # name shown in LocalSend
     volumes:
       - frame-data:/data
 volumes:

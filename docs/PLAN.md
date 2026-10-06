@@ -1,7 +1,7 @@
-# the_frame_v2 — Implementation Plan
+# Frame It — Implementation Plan
 
-> Status: **Phases 0–11 implemented** (see `docs/progress.md`) ·
-> Created 2026-09-16 · Placeholder name `the_frame_v2` (rename before open-sourcing)
+> Status: **Phases 0–12 implemented** (see `docs/progress.md`) ·
+> Created 2026-09-16 · Named **Frame It** on 2026-10-06 (the placeholder was `the_frame_v2`)
 >
 > This plan is the single source of truth for scope and sequencing. Specs (§5–§9, §12) live in dedicated
 > files under `docs/` (linked in place). Agents: read `AGENTS.md` first (see §3).
@@ -143,7 +143,7 @@ agent produce relevant changes **without re-exploring the whole codebase**, savi
 ### 4.2 Repository layout
 
 ```
-the_frame_v2/
+frame-it/
 ├── AGENTS.md                 # §3 — always up to date
 ├── CLAUDE.md                 # "@AGENTS.md"
 ├── README.md
@@ -161,7 +161,7 @@ the_frame_v2/
 │   └── schemas/              # JSON Schemas (artwork document, archive entities, template files)
 ├── backend/
 │   ├── pyproject.toml, uv.lock
-│   ├── src/the_frame_v2/
+│   ├── src/frame_it/
 │   │   ├── __main__.py, cli.py (Typer), config.py (pydantic-settings), app.py (factory)
 │   │   ├── api/              # routers only: auth, devices, uploads, photos, artworks, collections,
 │   │   │                     #   tags, templates, render, exports, imports, trash, events, system
@@ -233,7 +233,7 @@ a pillow-heif decoder behind `imaging/decode.py` (ADR required: HEVC patent cave
 
 ### 4.5 Configuration
 
-`pydantic-settings`, precedence: CLI flags > env (`THE_FRAME_V2_*`) > `<data_dir>/config.toml` > defaults.
+`pydantic-settings`, precedence: CLI flags > env (`FRAME_IT_*`) > `<data_dir>/config.toml` > defaults.
 
 | Key | Default | Notes |
 |---|---|---|
@@ -310,7 +310,7 @@ the UI). Lists use keyset pagination (`?cursor=&limit=`). All payloads are Pydan
 | events | `GET /events` (SSE): `photo.ingested`, `photo.ingest_failed`, `upload.completed`, `artwork.rendered`, `job.progress`, `job.failed`, `entity.changed`, `export.ready`, `import.staged`, `import.failed`, `import.applied` | uploader+ (filtered) |
 | jobs | `GET /jobs?state=`, `POST /jobs/{id}/retry` | admin |
 
-CLI (`the_frame_v2`): `serve`, `doctor`, `setup-code`, `openapi`, `schemas`, `export`, `import`, `service install|uninstall|status`
+CLI (`frame-it`): `serve`, `doctor`, `setup-code`, `openapi`, `schemas`, `export`, `import`, `service install|uninstall|status`
 (systemd user unit / launchd agent; Windows: documented manual steps), `db upgrade`, `cache clear`.
 
 ---
@@ -474,17 +474,17 @@ Dependency graph: `0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8`; `9` can s
    0001 stack, 0002 storage/content addressing, 0003 integer geometry & server-authoritative render,
    0004 auth model, 0005 display-target seam.
 2. Backend skeleton: uv project, app factory, config (§4.5), logging, problem+json errors, `/system/info`,
-   SQLAlchemy + Alembic initial migration (all §5 tables), WAL, data dir bootstrap, `the_frame_v2 serve|doctor`.
+   SQLAlchemy + Alembic initial migration (all §5 tables), WAL, data dir bootstrap, `frame-it serve|doctor`.
 3. Frontend skeleton: Vite + TS strict, Tailwind + Radix base components, router with all routes as placeholders,
    shell/sidebar, theme switch, i18n setup + missing-key script, shortcut registry + empty command palette,
    OpenAPI type generation, openapi-fetch client, Query provider.
 4. Tooling: Makefile (`dev`, `check` = ruff + mypy + pytest + eslint + tsc + conformance, `gen-api`, `build`,
    `docker`), pre-commit optional, `.editorconfig`, `.gitignore`.
-5. Packaging: build frontend into `backend/src/the_frame_v2/static`; multi-stage Dockerfile (node build → python
-   slim runtime), `compose.yaml` with `/data` volume and `THE_FRAME_V2_PUBLIC_URL`.
+5. Packaging: build frontend into `backend/src/frame_it/static`; multi-stage Dockerfile (node build → python
+   slim runtime), `compose.yaml` with `/data` volume and `FRAME_IT_PUBLIC_URL`.
 6. Jobs queue (`jobs/`) + SSE broadcaster with a demo job.
 
-**AC**: `make dev` gives a working shell at http://localhost:5173 proxied to API; `the_frame_v2 serve` serves the
+**AC**: `make dev` gives a working shell at http://localhost:5173 proxied to API; `frame-it serve` serves the
 built SPA; `docker compose up` works with a volume; `make check` green; AGENTS.md accurate.
 
 ### Phase 2 — Security & devices
@@ -509,7 +509,7 @@ revoked device gets 401 immediately; Docker instance requires setup code.
    with progress.
 4. Mobile upload UI (§11.6) incl. metadata sheet and pending meta.
 5. Photos grid (virtualized, keyset pagination), photo detail drawer, Inbox view (grid, multi-select, dismiss).
-6. `the_frame_v2 doctor` reports capabilities; startup check.
+6. `frame-it doctor` reports capabilities; startup check.
 
 **AC**: 40 photos from an Android phone upload at original quality (per S2 findings), interrupted
 Wi-Fi resumes without re-sending completed chunks, duplicates are skipped instantly; AVIF/P3/Ultra HDR fixtures render; a HEIC upload is rejected with guidance
@@ -686,7 +686,7 @@ policies work; malicious archive fixtures are rejected.
    in the sidebar and a toast on SSE `job.failed`. `jobs.code` (migration `0007`) carries the
    problem code so the client translates it.
 4. `service install` helpers (systemd user unit, launchd agent), docs for Windows.
-   → `the_frame_v2 service install|status|uninstall` generates the unit for *this* machine and
+   → `frame-it service install|status|uninstall` generates the unit for *this* machine and
    prints the commands that enable it. Windows is Task Scheduler / NSSM in the user guide.
 5. Docs: user guide, README with screenshots, CONTRIBUTING, NOTICE.
    → `docs/user-guide.md`, README rewritten, `CONTRIBUTING.md`, `NOTICE.md` extended with the
@@ -695,8 +695,8 @@ policies work; malicious archive fixtures are rejected.
    → `docs/security.md` "Review — 2026-09-24": both audits clean, five response-header directives
    added, the archive byte budget spent against measured rather than declared sizes.
 7. Decide name + license (open questions §16).
-   → **MIT** (`LICENSE`, declared in both manifests). The name stays the placeholder by decision;
-   the rename is a single mechanical commit whenever it is wanted.
+   → **MIT** (`LICENSE`, declared in both manifests). The name stayed the placeholder by decision
+   until 2026-10-06, when it became **Frame It** (§16).
 
 **AC**: all budgets met; no known data-loss bugs; fresh-user walkthrough (install → pair phone → upload → create
 artwork → collection → export) completes without reading code.
@@ -712,7 +712,7 @@ becomes the set — and the app never deletes what it did not upload unless told
 
 | Stage | Contents | Status |
 |---|---|---|
-| 12.1 | `tv/` (`TvClient`, `SamsungTvClient`, `FakeTv`), pairing on the remote-control channel, `display_targets` (migration `0009`), `the_frame_v2 tv add|list|pair|status` | ✅ |
+| 12.1 | `tv/` (`TvClient`, `SamsungTvClient`, `FakeTv`), pairing on the remote-control channel, `display_targets` (migration `0009`), `frame-it tv add|list|pair|status` | ✅ |
 | 12.2 | `display_target_items` (`(artwork, render_hash) → content_id`), the push (render → upload in reverse → delete ours → optionally delete foreign → stop/select/start), `display` job lane, `/display` API, `tv push` | ✅ |
 | 12.3 | UI: a **TV** page (pair / re-pair, live status, interval, push) and "Show on the TV" on a collection and on a grid selection, with the mirror warning and the foreign-photo confirmation | ✅ |
 | 12.4 | Polish: "show this now" (it stops the rotation — say so), user-guide section, gotchas | ☐ |
@@ -735,7 +735,7 @@ API from day one.
 - **TypeScript**: strict, no `any`, feature folders, components `PascalCase.tsx`, hooks `useX.ts`, pure logic out of components.
 - **API change workflow**: edit Pydantic models → `make gen-api` → fix TS compile errors → commit together.
 - **DB**: every schema change = Alembic migration (never edit old migrations); migrations tested on an empty and a seeded DB.
-- **Errors**: problem+json `type` = `https://the-frame-v2/errors/<code>`; frontend maps `<code>` to i18n key.
+- **Errors**: problem+json `type` = `https://frame-it/errors/<code>`; frontend maps `<code>` to i18n key.
 - **Time/IDs**: UTC ISO-8601; UUIDv7.
 - **Commits**: Conventional Commits (`feat(editor): …`).
 - **Docs**: specs in `docs/`; any behavior change to a spec updates the spec in the same change; decisions with
@@ -776,9 +776,13 @@ API from day one.
   the local art-mode WebSocket with **the set mirrored into My Photos** and the TV's own slideshow
   doing the rotation (so it survives the server being off), USB as the fallback. Implementation waits
   on the S5a–S5d spikes on the real TV — the one real risk is `send_image` on 2025 firmware.
-- Final project name (kept as the placeholder `the_frame_v2` by decision on 2026-09-24; the
-  rename touches the package, the `THE_FRAME_V2_*` env prefix, the data dir and the error URLs,
-  and is one mechanical commit whenever it is wanted).
+- ~~Final project name~~ — **Frame It**, decided 2026-10-06 for the open-source release (Python
+  package `frame_it`, command and distribution `frame-it`, env prefix `FRAME_IT_`, data dir
+  `frame-it`). The placeholder `the_frame_v2` is still read where a library depends on it: the
+  `THE_FRAME_V2_*` variables (below the new ones), the old data dir while no new one exists, and
+  archives whose manifest says `the_frame_v2.archive`. Not unique: fastlane's `frameit`
+  (screenshot frames) and several app-store "Frame It" apps exist, and the PyPI/npm name
+  `frameit` is taken — a PyPI release would need another distribution name.
 - ~~License (Phase 11)~~ — **MIT**, decided 2026-09-24 (`LICENSE`).
 - Caption band factor (1.5 × size) reserved by the composition solver: implemented and pinned by
   conformance, still to be checked against a real render (Phase 7 stage 3, `docs/simple-editor.md` §10).

@@ -3,7 +3,7 @@
 > Spec for Phase 10 (`docs/PLAN.md` §12 and §14). Implemented by `domain/archive.py` (records and
 > rules), `services/archive_export.py` (writer), `services/archive_import.py` (reader + dry run),
 > `services/archive_apply.py` (the transaction), `api/archive.py`, `features/archive/` and the CLI
-> (`the_frame_v2 export` / `import`).
+> (`frame-it export` / `import`).
 
 Everything here is **boring on purpose**: an archive is a ZIP of JSON, [JSON Lines][jsonl] and the
 original image files, with a `sha256sum`-compatible checksum list. No custom container, no custom
@@ -19,7 +19,7 @@ A ZIP file. The extension names what it holds; readers accept the file whatever 
 format is recognized by `manifest.json`, not by the name).
 
 ```
-manifest.json          { "format": "the_frame_v2.archive", "format_version": 1, "app_version": "…",
+manifest.json          { "format": "frame_it.archive", "format_version": 1, "app_version": "…",
                          "created_at": "…", "scope": "full" | "partial", "document_schema": 1,
                          "counts": {…}, "includes_renders": false, "render_key": "1:…" }
 data/photos.jsonl  artworks.jsonl  artwork_tags.jsonl  photo_tags.jsonl  tags.jsonl

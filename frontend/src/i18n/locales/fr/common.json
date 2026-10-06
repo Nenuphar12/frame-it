@@ -278,7 +278,7 @@
     "defaultPhoneName": "Téléphone Android",
     "defaultBrowserName": "Navigateur",
     "setupTitle": "Configurer l'accès administrateur",
-    "setupDescription": "Saisissez le code de configuration affiché par le serveur au démarrage (ou lancez `the_frame_v2 setup-code`).",
+    "setupDescription": "Saisissez le code de configuration affiché par le serveur au démarrage (ou lancez `frame-it setup-code`).",
     "setupSubmit": "S'enregistrer comme administrateur",
     "pairTitle": "Associer cet appareil",
     "pairDescription": "Saisissez le code affiché sur l'ordinateur, ou scannez son QR code.",

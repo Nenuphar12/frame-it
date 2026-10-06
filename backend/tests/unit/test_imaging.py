@@ -5,10 +5,10 @@ from pathlib import Path
 import pytest
 import pyvips
 
+from frame_it.imaging import capabilities, decode
+from frame_it.imaging.metadata import is_wide_gamut, parse_exif
+from frame_it.imaging.sniff import sniff_bytes
 from tests.conftest import make_jpeg
-from the_frame_v2.imaging import capabilities, decode
-from the_frame_v2.imaging.metadata import is_wide_gamut, parse_exif
-from the_frame_v2.imaging.sniff import sniff_bytes
 
 BASE_RGB = [200, 100, 50]
 

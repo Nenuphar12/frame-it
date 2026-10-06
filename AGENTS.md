@@ -1,4 +1,4 @@
-# AGENTS.md — the_frame_v2
+# AGENTS.md — Frame It
 
 > Entry point for coding agents and contributors. **Read this first, trust it, and update it in the same change
 > as the code it describes** (rules: `docs/PLAN.md` §3). Keep it under ~300 lines; link to `docs/` for
@@ -9,8 +9,8 @@
 Self-hosted web app to prepare pictures for a 4K art-mode TV (Samsung The Frame, 3840×2160): phone uploads in
 full quality over the LAN, pixel-perfect framing/compositions, collections, export/import.
 
-- **Status (2026-10-02): Phases 0–12 done, plus their follow-ups. Next: nothing planned** (`docs/PLAN.md` §16
-  keeps the open questions, the rename above all). What each phase added, with its measurements and
+- **Status (2026-10-06): Phases 0–12 done, plus their follow-ups. Next: nothing planned**
+  (`docs/PLAN.md` §16 keeps the open questions). What each phase added, with its measurements and
   migrations: `docs/progress.md`. The areas, where they are specified, and what a change there must respect:
   - **Uploads & ingest** (`docs/localsend.md`, `docs/research/phone-uploads.md`): resumable uploads, the
     LocalSend receiver, the phone upload page.
@@ -32,12 +32,14 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
     originals; staging → dry-run report → apply under `keep_mine | take_theirs | keep_both`; the CLI does
     the same without a browser.
   - **Hardening** (`docs/user-guide.md`, `docs/security.md`): `MAX_RENDER_PIXELS` (320 Mpx of distinct
-    sources), AA in both themes, `/activity` for failed jobs, `the_frame_v2 service install`. Licence MIT;
-    the name stays a placeholder by decision.
+    sources), AA in both themes, `/activity` for failed jobs, `frame-it service install`. Licence MIT.
+  - **Name**: Frame It (package `frame_it`, command `frame-it`, env `FRAME_IT_*`) since 2026-10-06; the
+    placeholder `the_frame_v2` is still **read** — `THE_FRAME_V2_*` env, its data dir, its archive
+    format (`config.py`, `domain/archive.LEGACY_FORMATS`). Never write the old name anywhere new.
   - **TV** (`docs/tv-display.md`, measurements in `docs/research/tv-display.md`): the Frame's slideshow
     cannot be scoped to a subset, so a push **mirrors** the set (`keep_ours` spares our earlier
     uploads); a push is stop → select → start, uploads go in reverse (the TV lists newest first), and
-    "Don't change" (`slideshow_minutes = 0`) rotates and deletes nothing. A TV is followed by MAC when its address changes. `THE_FRAME_V2_FAKE_TV=1` drives it
+    "Don't change" (`slideshow_minutes = 0`) rotates and deletes nothing. A TV is followed by MAC when its address changes. `FRAME_IT_FAKE_TV=1` drives it
     all without a TV.
   - **i18n**: English and French catalogs; server data (built-in style names, place names) stays as stored.
 - **Not yet verified on hardware**: deleting foreign photos, whether the pairing token survives a TV power
@@ -59,17 +61,17 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
 | Render budgets + peak RSS | `cd backend && uv run python ../scripts/bench_render.py` |
 | Library budgets (seeded 10k) | `cd backend && uv run python ../scripts/bench_library.py --data-dir /tmp/seed` |
 | Dependency audit | `cd frontend && pnpm audit`; backend: `uv export --no-emit-project --no-dev --format requirements.txt -o /tmp/r.txt && uv run --with pip-audit pip-audit -r /tmp/r.txt` |
-| Run at login | `uv run the_frame_v2 service install` (`--show` prints the unit; `status`, `uninstall`) |
+| Run at login | `uv run frame-it service install` (`--show` prints the unit; `status`, `uninstall`) |
 | Seed a big library (Phase 9 AC) | `cd backend && uv run python ../scripts/seed_library.py --data-dir /tmp/seed --artworks 10000` |
-| Export / import a library | `uv run the_frame_v2 export -o lib.tfarchive` · `uv run the_frame_v2 import lib.tfarchive --dry-run` |
-| Editor E2E against a copy of the library | `cp -r .dev-data /tmp/e2e && cd backend && THE_FRAME_V2_DATA_DIR=/tmp/e2e THE_FRAME_V2_PORT=8799 uv run the_frame_v2 serve`, then `cd frontend && THE_FRAME_V2_BACKEND=http://127.0.0.1:8799 pnpm dev --port 5199` |
+| Export / import a library | `uv run frame-it export -o lib.tfarchive` · `uv run frame-it import lib.tfarchive --dry-run` |
+| Editor E2E against a copy of the library | `cp -r .dev-data /tmp/e2e && cd backend && FRAME_IT_DATA_DIR=/tmp/e2e FRAME_IT_PORT=8799 uv run frame-it serve`, then `cd frontend && FRAME_IT_BACKEND=http://127.0.0.1:8799 pnpm dev --port 5199` |
 | Backend tests only | `cd backend && uv run pytest` (add `-k name`) |
-| TV pages without a TV | `THE_FRAME_V2_FAKE_TV=1 uv run the_frame_v2 serve` (one in-memory `FakeTv`; never reaches a real TV) · `uv run the_frame_v2 tv scan` lists the TVs on the LAN |
+| TV pages without a TV | `FRAME_IT_FAKE_TV=1 uv run frame-it serve` (one in-memory `FakeTv`; never reaches a real TV) · `uv run frame-it tv scan` lists the TVs on the LAN |
 | Regenerate API types + `docs/schemas/` (after any API/document schema change) | `make gen-api` |
-| Production build + serve | `make serve` (frontend built into `backend/src/the_frame_v2/static`) |
-| CLI | `uv run the_frame_v2 --help` (`serve`, `doctor`, `setup-code`, `openapi`, `schemas`, `db upgrade`, `cache clear`, `service`, `export`, `import`, `tv`, `version`) |
-| New migration | edit `db/models.py`, then `cd backend && uv run python -m the_frame_v2.db.migrate "message"`, rename to `NNNN_message.py`, replace custom types by `sa.String` |
-| Docker | `make docker`; `docker/compose.yaml` (set `THE_FRAME_V2_PUBLIC_URL`) |
+| Production build + serve | `make serve` (frontend built into `backend/src/frame_it/static`) |
+| CLI | `uv run frame-it --help` (`serve`, `doctor`, `setup-code`, `openapi`, `schemas`, `db upgrade`, `cache clear`, `service`, `export`, `import`, `tv`, `version`) |
+| New migration | edit `db/models.py`, then `cd backend && uv run python -m frame_it.db.migrate "message"`, rename to `NNNN_message.py`, replace custom types by `sa.String` |
+| Docker | `make docker`; `docker/compose.yaml` (set `FRAME_IT_PUBLIC_URL`) |
 
 NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint RUFF=ruff` with a Nix ruff.
 
@@ -77,8 +79,8 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 
 | Path | Responsibility |
 |---|---|
-| `backend/src/the_frame_v2/app.py` | App factory: context, routers, SPA serving, lifespan (jobs, setup code) |
-| `…/config.py` | Settings (env `THE_FRAME_V2_*` > `<data_dir>/config.toml` > defaults), LAN IP, allowed hosts |
+| `backend/src/frame_it/app.py` | App factory: context, routers, SPA serving, lifespan (jobs, setup code) |
+| `…/config.py` | Settings (env `FRAME_IT_*` > `<data_dir>/config.toml` > defaults), LAN IP, allowed hosts |
 | `…/context.py` | `AppContext` service container (`app.state.ctx`) |
 | `…/api/` | Thin routers + `schemas.py` (Pydantic API models = OpenAPI source) + `deps.py` (auth deps); `templates.py` = styles/layouts CRUD, usage, push update, template files; `library.py` = tags + collections + `POST /filters/validate`; `trash.py` = preview/trash/restore/purge; `archive.py` = exports + imports; `jobs.py` = the activity centre (list/retry/dismiss) |
 | `…/auth/` | `principal.py` (cookie/localhost → role), `middleware.py` (Host/CSRF/headers), `ratelimit.py` |
@@ -86,13 +88,13 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `…/domain/` | PURE: `document` (artwork document v1 + the `composition` block + reference checks), `geometry`, `quality` (tiers), `placement`, `constraints` (editor solver §7.3), `alternatives` (§7.6), `arrange` (align/distribute/new slot, §7.7), `composition` (recipe trees, the parametric solver and `apply` = what it writes into a document, `docs/simple-editor.md` §3), `templates` (style/layout docs, `restyle`/`relayout`/save-as, `build_composition_document`), `filters` (the library filter AST, `docs/data-model.md` §5.2), `geo` (great-circle distance, the `place near` bounding box), `archive` (the archive's records, file layout and member-name safety, `docs/archive-format.md`) |
 | `…/imaging/` | `sniff` (magic bytes), `decode` (the only pixel access), `metadata` (EXIF/ICC), `fingerprint` (hash ignoring EXIF), `capabilities`, `render` (the renderer), `palette` (OKLab k-means), `assets` (fonts/textures catalog) |
 | `…/assets/` | `geonames/`, `fonts/` (OFL, `scripts/build_fonts.py`), `textures/` (CC0, `scripts/generate_textures.py`), `presets/` (built-in styles/layouts + `recipes.json`) |
-| `…/tv/` | Samsung Frame art channel: `client.py` (`TvClient` + `SamsungTvClient` over `samsungtvws`, pairing, `SLIDESHOW_MINUTES`, `normalize_mac`), `discovery.py` (SSDP + /24 sweep of `:8001/api/v2/`, `subnet_prefix`, `find_by_mac`), `fake.py` (`FakeTv` — the firmware's quirks, used by every test and by `THE_FRAME_V2_FAKE_TV`). The push itself is `services/display.py` (`plan_push` pure, `push`, `plan`, `_with_tv` = follow by MAC) |
+| `…/tv/` | Samsung Frame art channel: `client.py` (`TvClient` + `SamsungTvClient` over `samsungtvws`, pairing, `SLIDESHOW_MINUTES`, `normalize_mac`), `discovery.py` (SSDP + /24 sweep of `:8001/api/v2/`, `subnet_prefix`, `find_by_mac`), `fake.py` (`FakeTv` — the firmware's quirks, used by every test and by `FRAME_IT_FAKE_TV`). The push itself is `services/display.py` (`plan_push` pure, `push`, `plan`, `_with_tv` = follow by MAC) |
 | `…/localsend/` | LocalSend v2 receiver: `app.py` (protocol routes, own TLS port), `discovery.py` (multicast), `identity.py` (cert/fingerprint), `client.py` (outgoing TLS), `runner.py` (lifespan); logic in `services/localsend.py`, admin API `api/localsend.py` |
 | `…/jobs/` | `queue.py` persistent in-process job queue (lanes, retries, coalescing); `gate.py` render concurrency |
 | `…/events.py` | Thread-safe SSE broker (`/api/v1/events`) |
 | `…/db/` | `models.py`, `session.py` (WAL), `migrate.py`, `migrations/versions/` |
 | `…/storage.py` | Data-dir layout (originals, cache, uploads) |
-| `…/service.py` | Generates this machine's systemd unit / launchd plist (`the_frame_v2 service`) |
+| `…/service.py` | Generates this machine's systemd unit / launchd plist (`frame-it service`) |
 | `…/assets/geonames/` | Offline place dataset (built by `scripts/build_geonames.py`, CC BY 4.0) |
 | `backend/tests/` | `unit/`, `api/`, `golden/` (reference PNGs in `refs/`); fixtures & helpers in `conftest.py` (`make_jpeg`, `pair`, `upload_bytes`) |
 | `conformance/geometry/` | Shared JSON fixtures: Python domain ↔ `frontend/src/editor/core` (`render.json`: the two renderer constants the canvas mirrors) |
@@ -232,7 +234,7 @@ whatever you are touching before you touch it.** These few bite whatever you are
   broken script goes unnoticed: run a script you changed.
 - Dev over the Vite proxy is **not** trusted as localhost (`xfwd` adds `X-Forwarded-For`, invariant 5): the
   first load asks for the setup code printed in the server log. Point Vite at another backend with
-  `THE_FRAME_V2_BACKEND=http://127.0.0.1:<port>`.
-- `pkill -f "the_frame_v2 serve"` also matches your own shell command line: use `pkill -f "[t]he_frame_v2 serve"`.
+  `FRAME_IT_BACKEND=http://127.0.0.1:<port>`.
+- `pkill -f "frame-it serve"` also matches your own shell command line: use `pkill -f "[t]he_frame_v2 serve"`.
 - TypeScript stays on major 6 (`^6.0.3` in `frontend/package.json`) because typescript-eslint did not support
   7.x when this was written: check its support before moving to 7.

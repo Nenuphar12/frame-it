@@ -3718,7 +3718,7 @@ export interface components {
             document_schema: number;
             /**
              * Format
-             * @default the_frame_v2.archive
+             * @default frame_it.archive
              */
             format: string;
             /**

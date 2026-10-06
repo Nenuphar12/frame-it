@@ -1,4 +1,4 @@
-// Editor constraint solver — mirror of backend/src/the_frame_v2/domain/constraints.py.
+// Editor constraint solver — mirror of backend/src/frame_it/domain/constraints.py.
 // Spec: docs/geometry-and-quality.md §7.3. Parity: conformance/geometry/constraints.json.
 //
 // Two invariants are never broken, whatever the user drags: `rect` and `crop` keep the same

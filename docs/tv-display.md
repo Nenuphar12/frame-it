@@ -156,7 +156,7 @@ through). Each report updates `display_targets.progress` and publishes SSE `disp
 | `POST /display/targets/{id}/plan` | the dry run (§5) |
 | `POST /display/targets/{id}/push` | queue a push; `slideshow_minutes` / `slideshow_ordered` are saved first; `allow_delete_foreign` is the confirmation; `keep_ours` leaves our earlier uploads on the TV |
 
-CLI, same service layer: `the_frame_v2 tv scan|add|list|pair|status|push`, with `--collection`,
+CLI, same service layer: `frame-it tv scan|add|list|pair|status|push`, with `--collection`,
 `--favorites`, `--every` (`0` = "Don't change"), `--shuffle`, `--yes-delete-others`, `--keep-previous`.
 
 ## 9. UI (`frontend/src/features/display/`)
@@ -187,7 +187,7 @@ CLI, same service layer: `the_frame_v2 tv scan|add|list|pair|status|push`, with 
 
 ## 10. Testing, and driving it without a TV
 
-`the_frame_v2.tv.FakeTv` implements the same `TvClient` protocol as the real client and encodes the
+`frame_it.tv.FakeTv` implements the same `TvClient` protocol as the real client and encodes the
 firmware's behaviour — newest-first listing, `select_image` stopping the slideshow, `-7` for an
 interval outside the accepted list, and the fact that starting a slideshow does not move the panel.
 `tests/api/test_display.py` drives the whole feature through it (order, idempotence, both modes,
@@ -196,7 +196,7 @@ run, the cached counts, progress events); `tests/unit/test_display_plan.py` pins
 `tests/unit/test_tv_discovery.py` the parsing and the subnet rule. A test puts the fake on the
 context (`ctx.tv_factory`, `ctx.tv_discovery`, `ctx.tv_pairer`).
 
-**`THE_FRAME_V2_FAKE_TV=1`** (development only) does the same for a running server: every target
+**`FRAME_IT_FAKE_TV=1`** (development only) does the same for a running server: every target
 reaches one in-memory `FakeTv` holding three "foreign" photos, discovery finds it, pairing needs no
 prompt, uploads take 0.8 s each so progress is visible — and nothing reaches a real TV. The fake
 lives in memory: restart the server and it is empty again, while the map in the database is not.

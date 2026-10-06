@@ -1,0 +1,458 @@
+"""LocalSend receiving: device approval, transfer sessions, hand-off to the ingest pipeline.
+
+- Senders are identified by the fingerprint they announce. Unknown or pending devices wait for an
+  admin decision in the web UI (`localsend.request` event); approved devices are auto-accepted;
+  blocked devices are rejected.
+- Only supported image files are accepted. Files already in the library ("already sent", known by
+  SHA-256) are not transferred again: the sender's app sees a plain successful transfer, and the
+  photos come back to the inbox like any received photo (`photo_copies.receive_again`). What really
+  happened is told in the web UI.
+- A received file becomes an `UploadSession` in state `processing` and goes through the regular
+  `ingest` job (same dedupe/merge/inbox behaviour as browser uploads).
+- Transfers are mirrored to the web UI (`localsend.transfer`, `localsend.file`,
+  `localsend.cancelled` events → upload tray).
+
+Spec: docs/localsend.md.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import contextlib
+import secrets
+import threading
+import time
+from dataclasses import dataclass, field
+from datetime import timedelta
+from pathlib import Path, PurePosixPath, PureWindowsPath
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from frame_it.context import AppContext
+from frame_it.db.models import LocalSendDevice, Photo, UploadSession
+from frame_it.errors import ProblemError, not_found
+from frame_it.events import Event
+from frame_it.ids import new_id, utcnow
+from frame_it.localsend.dto import DeviceInfo, FileOffer
+from frame_it.services import photo_copies
+
+DEVICE_KEY_PREFIX = "localsend:"
+ACCEPTED_EXTENSIONS = {"jpg", "jpeg", "png", "avif"}
+ACCEPTED_MIMES = {"image/jpeg", "image/png", "image/avif"}
+MAX_PENDING_REQUESTS = 10
+SESSION_IDLE_SECONDS = 3600
+DEVICE_STATUSES = ("pending", "approved", "blocked")
+
+
+class LocalSendRejection(Exception):  # noqa: N818 — maps 1:1 to protocol status codes
+    def __init__(self, status: int, message: str) -> None:
+        super().__init__(message)
+        self.status = status
+        self.message = message
+
+
+# ---- devices ------------------------------------------------------------------------------------
+def list_devices(session: Session) -> list[LocalSendDevice]:
+    return list(session.scalars(select(LocalSendDevice).order_by(LocalSendDevice.alias)))
+
+
+def touch_device(session: Session, info: DeviceInfo, ip: str) -> LocalSendDevice:
+    fingerprint = info.fingerprint.strip()
+    if not fingerprint:
+        raise LocalSendRejection(400, "Missing fingerprint")
+    device = session.scalars(
+        select(LocalSendDevice).where(LocalSendDevice.fingerprint == fingerprint)
+    ).first()
+    if device is None:
+        device = LocalSendDevice(fingerprint=fingerprint, alias="", status="pending")
+        session.add(device)
+    device.alias = (info.alias or "LocalSend device")[:128]
+    device.device_model = info.device_model
+    device.device_type = info.device_type
+    device.last_ip = ip
+    device.last_seen_at = utcnow()
+    session.flush()
+    return device
+
+
+def set_device_status(session: Session, device_id: str, status: str) -> LocalSendDevice:
+    if status not in DEVICE_STATUSES:
+        raise ProblemError(422, "invalid_status", "Invalid status")
+    device = session.get(LocalSendDevice, device_id)
+    if device is None:
+        raise not_found("LocalSend device")
+    device.status = status
+    device.decided_at = utcnow()
+    return device
+
+
+def forget_device(session: Session, device_id: str) -> None:
+    device = session.get(LocalSendDevice, device_id)
+    if device is None:
+        raise not_found("LocalSend device")
+    session.delete(device)
+
+
+# ---- files --------------------------------------------------------------------------------------
+def safe_filename(name: str) -> str:
+    """Last path component of a sender-provided name (folders are sent as `dir/file.jpg`)."""
+    base = PureWindowsPath(PurePosixPath(name).name).name
+    return base.replace("\x00", "")[:512] or "localsend"
+
+
+def is_supported(offer: FileOffer) -> bool:
+    ext = safe_filename(offer.file_name).rsplit(".", 1)[-1].lower()
+    if "." in offer.file_name and ext in ACCEPTED_EXTENSIONS:
+        return True
+    return offer.file_type.lower() in ACCEPTED_MIMES
+
+
+def rejection_code(offer: FileOffer, max_bytes: int) -> str | None:
+    """Problem code (`errors.<code>` in the web UI) of a file that cannot be accepted."""
+    if not is_supported(offer):
+        heic = safe_filename(offer.file_name).lower().endswith((".heic", ".heif"))
+        return "unsupported_format_heic" if heic else "unsupported_format"
+    if offer.size <= 0:
+        return "empty_file"
+    if offer.size > max_bytes:
+        return "file_too_large"
+    return None
+
+
+@dataclass(frozen=True, slots=True)
+class Selection:
+    accepted: dict[str, FileOffer]
+    """New files, or files sent without a SHA-256 (checked again once received)."""
+    known: dict[str, FileOffer]
+    """Files whose announced SHA-256 is already in the library."""
+    rejected: dict[str, tuple[FileOffer, str]]
+    """Unsupported files, with their problem code."""
+
+
+def select_files(session: Session, offers: dict[str, FileOffer], max_bytes: int) -> Selection:
+    rejected: dict[str, tuple[FileOffer, str]] = {}
+    candidates: dict[str, FileOffer] = {}
+    for fid, offer in offers.items():
+        code = rejection_code(offer, max_bytes)
+        if code is None:
+            candidates[fid] = offer
+        else:
+            rejected[fid] = (offer, code)
+    hashes = [o.sha256.lower() for o in candidates.values() if o.sha256]
+    known_hashes = photo_copies.photo_ids_for_hashes(session, hashes) if hashes else {}
+    is_known = {
+        fid: bool(o.sha256 and o.sha256.lower() in known_hashes) for fid, o in candidates.items()
+    }
+    return Selection(
+        accepted={fid: o for fid, o in candidates.items() if not is_known[fid]},
+        known={fid: o for fid, o in candidates.items() if is_known[fid]},
+        rejected=rejected,
+    )
+
+
+# ---- already sent -------------------------------------------------------------------------------
+@dataclass(frozen=True, slots=True)
+class KnownPhoto:
+    photo_id: str
+    restored: bool
+    """The photo was in the trash: sending it again restores it (same rule as browser uploads)."""
+
+
+def resolve_known(session: Session, sha256: str) -> KnownPhoto | None:
+    """The photo already holding this file, brought back to the inbox (and out of the trash)."""
+    photo_id = photo_copies.photo_id_for_hash(session, sha256.lower())
+    photo = session.get(Photo, photo_id) if photo_id is not None else None
+    if photo is None:
+        return None
+    return KnownPhoto(photo.id, photo_copies.receive_again(photo))
+
+
+def smallest(known: dict[str, tuple[FileOffer, KnownPhoto]]) -> dict[str, FileOffer]:
+    """The smallest already-sent file, transferred to give the sender its usual transfer screen."""
+    file_id = min(known, key=lambda fid: known[fid][0].size)
+    return {file_id: known[file_id][0]}
+
+
+def resolve_selection(
+    ctx: AppContext, selection: Selection
+) -> tuple[dict[str, FileOffer], dict[str, tuple[FileOffer, KnownPhoto]]]:
+    """Split an approved offer into new files and known photos (restoring trashed ones)."""
+    accepted = dict(selection.accepted)
+    known: dict[str, tuple[FileOffer, KnownPhoto]] = {}
+    with ctx.db.session() as s:
+        for fid, offer in selection.known.items():
+            photo = resolve_known(s, offer.sha256 or "")
+            if photo is None:  # deleted meanwhile: receive it again
+                accepted[fid] = offer
+            else:
+                known[fid] = (offer, photo)
+    if known:  # they are back in the inbox: refresh open pages
+        ctx.broker.publish(
+            Event("photo.updated", {"photo_ids": [p.photo_id for _, p in known.values()]})
+        )
+    return accepted, known
+
+
+# ---- web UI mirror ------------------------------------------------------------------------------
+def publish_transfer(
+    ctx: AppContext,
+    *,
+    transfer_id: str,
+    device: LocalSendDevice,
+    accepted: dict[str, FileOffer],
+    known: dict[str, tuple[FileOffer, KnownPhoto]],
+    rejected: dict[str, tuple[FileOffer, str]],
+) -> None:
+    def item(fid: str, offer: FileOffer, status: str, **extra: object) -> dict[str, object]:
+        name = safe_filename(offer.file_name)
+        return {"file_id": fid, "filename": name, "size": offer.size, "status": status, **extra}
+
+    files = [item(fid, o, "incoming") for fid, o in accepted.items()]
+    files += [
+        item(fid, o, "known", photo_id=p.photo_id, restored=p.restored)
+        for fid, (o, p) in known.items()
+    ]
+    files += [item(fid, o, "rejected", code=code) for fid, (o, code) in rejected.items()]
+    ctx.broker.publish(
+        Event(
+            "localsend.transfer",
+            {
+                "session_id": transfer_id,
+                "device_id": device.id,
+                "alias": device.alias,
+                "files": files,
+            },
+        )
+    )
+
+
+def publish_file(ctx: AppContext, session_id: str, file_id: str, **data: object) -> None:
+    """`status`: receiving | processing (`upload_id`) | known (`photo_id`) | failed (`code`)."""
+    ctx.broker.publish(
+        Event("localsend.file", {"session_id": session_id, "file_id": file_id, **data})
+    )
+
+
+# ---- in-memory state (approvals and transfer sessions) ------------------------------------------
+@dataclass(slots=True)
+class PendingRequest:
+    id: str
+    device_id: str
+    alias: str
+    device_model: str | None
+    ip: str
+    file_count: int
+    known_count: int
+    total_bytes: int
+    created_at: str
+    future: asyncio.Future[bool]
+
+    def public(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "device_id": self.device_id,
+            "alias": self.alias,
+            "device_model": self.device_model,
+            "ip": self.ip,
+            "file_count": self.file_count,
+            "known_count": self.known_count,
+            "total_bytes": self.total_bytes,
+            "created_at": self.created_at,
+        }
+
+
+@dataclass(slots=True)
+class ReceiveFile:
+    offer: FileOffer
+    token: str
+    state: str = "waiting"
+    """waiting | receiving | done"""
+
+
+@dataclass(slots=True)
+class ReceiveSession:
+    id: str
+    device_id: str
+    ip: str
+    files: dict[str, ReceiveFile]
+    touched: float = field(default_factory=time.monotonic)
+
+    @property
+    def finished(self) -> bool:
+        return all(f.state == "done" for f in self.files.values())
+
+
+class LocalSendHub:
+    """Thread-safe registry of pending approvals and active transfer sessions."""
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._pending: dict[str, PendingRequest] = {}
+        self._sessions: dict[str, ReceiveSession] = {}
+
+    # approvals
+    def pending(self) -> list[PendingRequest]:
+        with self._lock:
+            return sorted(self._pending.values(), key=lambda r: r.created_at)
+
+    async def request_approval(
+        self,
+        ctx: AppContext,
+        device: LocalSendDevice,
+        selection: Selection,
+    ) -> bool:
+        with self._lock:
+            request = next((r for r in self._pending.values() if r.device_id == device.id), None)
+            if request is None:
+                if len(self._pending) >= MAX_PENDING_REQUESTS:
+                    raise LocalSendRejection(429, "Too many pending requests")
+                request = PendingRequest(
+                    id=new_id(),
+                    device_id=device.id,
+                    alias=device.alias,
+                    device_model=device.device_model,
+                    ip=device.last_ip or "",
+                    file_count=len(selection.accepted) + len(selection.known),
+                    known_count=len(selection.known),
+                    total_bytes=sum(
+                        o.size for o in (*selection.accepted.values(), *selection.known.values())
+                    ),
+                    created_at=utcnow().isoformat(),
+                    future=asyncio.get_running_loop().create_future(),
+                )
+                self._pending[request.id] = request
+                ctx.broker.publish(Event("localsend.request", request.public()))
+        try:
+            timeout = ctx.settings.localsend_approval_timeout_seconds
+            return await asyncio.wait_for(asyncio.shield(request.future), timeout)
+        except TimeoutError:
+            self._close(ctx, request.id, approved=False)
+            return False
+
+    def decide(self, ctx: AppContext, request_id: str, approve: bool) -> PendingRequest:
+        with self._lock:
+            request = self._pending.get(request_id)
+        if request is None:
+            raise not_found("LocalSend request")
+        with ctx.db.session() as s:
+            if approve:
+                set_device_status(s, request.device_id, "approved")
+        self._close(ctx, request_id, approved=approve)
+        return request
+
+    def _close(self, ctx: AppContext, request_id: str, *, approved: bool) -> None:
+        with self._lock:
+            request = self._pending.pop(request_id, None)
+        if request is None:
+            return
+        loop = request.future.get_loop()
+
+        def resolve() -> None:
+            if not request.future.done():
+                request.future.set_result(approved)
+
+        with contextlib.suppress(RuntimeError):  # loop closed: nobody is waiting any more
+            loop.call_soon_threadsafe(resolve)
+        ctx.broker.publish(
+            Event("localsend.request_closed", {"id": request_id, "approved": approved})
+        )
+
+    # sessions
+    def open_session(
+        self,
+        device_id: str,
+        ip: str,
+        accepted: dict[str, FileOffer],
+    ) -> ReceiveSession:
+        session = ReceiveSession(
+            id=new_id(),
+            device_id=device_id,
+            ip=ip,
+            files={fid: ReceiveFile(o, secrets.token_urlsafe(24)) for fid, o in accepted.items()},
+        )
+        with self._lock:
+            now = time.monotonic()
+            for sid in [
+                s for s, v in self._sessions.items() if now - v.touched > SESSION_IDLE_SECONDS
+            ]:
+                del self._sessions[sid]
+            self._sessions[session.id] = session
+        return session
+
+    def claim_file(
+        self, session_id: str, file_id: str, token: str, ip: str
+    ) -> tuple[ReceiveSession, ReceiveFile]:
+        with self._lock:
+            session = self._sessions.get(session_id)
+            item = session.files.get(file_id) if session else None
+            if session is None or item is None:
+                raise LocalSendRejection(403, "Invalid session or file")
+            if session.ip != ip or not secrets.compare_digest(item.token, token):
+                raise LocalSendRejection(403, "Invalid token or IP address")
+            if item.state != "waiting":
+                raise LocalSendRejection(409, "File already received")
+            item.state = "receiving"
+            session.touched = time.monotonic()
+            return session, item
+
+    def release_file(self, session: ReceiveSession, item: ReceiveFile, *, done: bool) -> None:
+        with self._lock:
+            item.state = "done" if done else "waiting"
+            if session.finished:
+                self._sessions.pop(session.id, None)
+
+    def cancel(self, ctx: AppContext, session_id: str, ip: str) -> bool:
+        with self._lock:
+            session = self._sessions.get(session_id)
+            if session is None or session.ip != ip:
+                return False
+            del self._sessions[session_id]
+        ctx.broker.publish(Event("localsend.cancelled", {"session_id": session_id}))
+        return True
+
+
+# ---- received file → ingest ---------------------------------------------------------------------
+def temp_path_for(ctx: AppContext) -> tuple[str, Path]:
+    upload_id = new_id()
+    ctx.storage.uploads.mkdir(parents=True, exist_ok=True)
+    return upload_id, ctx.storage.upload_temp_path(upload_id)
+
+
+def hand_off(
+    ctx: AppContext,
+    *,
+    upload_id: str,
+    device_id: str,
+    offer: FileOffer,
+    sha256: str,
+    size: int,
+) -> KnownPhoto | None:
+    """Queue ingestion of a fully received file. Returns the photo if the file is already known
+    (sender did not announce its SHA-256)."""
+    temp = ctx.storage.upload_temp_path(upload_id)
+    with ctx.db.session() as s:
+        known = resolve_known(s, sha256)
+        if known is not None:
+            temp.unlink(missing_ok=True)
+            return known
+        s.add(
+            UploadSession(
+                id=upload_id,
+                device_key=f"{DEVICE_KEY_PREFIX}{device_id}",
+                sha256=sha256,
+                size=size,
+                filename=safe_filename(offer.file_name),
+                mime=offer.file_type[:128],
+                received_bytes=size,
+                pending_meta={"tag_ids": [], "collection_ids": [], "favorite": False},
+                state="processing",
+                expires_at=utcnow() + timedelta(hours=ctx.settings.upload_session_ttl_hours),
+            )
+        )
+    job_id = ctx.jobs.enqueue("ingest", {"upload_id": upload_id})
+    with ctx.db.session() as s:
+        row = s.get(UploadSession, upload_id)
+        if row is not None:
+            row.job_id = job_id
+    return None

@@ -1,5 +1,5 @@
 {
-  "$id": "https://the-frame-v2/schemas/archive/manifest.v1.json",
+  "$id": "https://frame-it/schemas/archive/manifest.v1.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "`manifest.json`: what this file is, what it holds and what wrote it.",
   "properties": {
@@ -26,7 +26,7 @@
       "type": "integer"
     },
     "format": {
-      "default": "the_frame_v2.archive",
+      "default": "frame_it.archive",
       "title": "Format",
       "type": "string"
     },

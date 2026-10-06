@@ -1,6 +1,6 @@
 // Frame styles and layouts applied to a document (Phase 8, docs/templates.md §3).
 //
-// PURE mirror of `backend/src/the_frame_v2/domain/templates.py`; parity pinned by
+// PURE mirror of `backend/src/frame_it/domain/templates.py`; parity pinned by
 // `conformance/geometry/templates*.json`. The editor applies a template to the working document
 // and the server applies the same one during a push update, so the two must agree field by field.
 import {

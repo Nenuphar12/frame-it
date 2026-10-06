@@ -1,0 +1,521 @@
+"""SQLAlchemy models. Spec: docs/data-model.md. Every change requires an Alembic migration."""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+from typing import Any
+
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Dialect,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    TypeDecorator,
+)
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+from frame_it.ids import new_id, utcnow
+
+
+class UTCDateTime(TypeDecorator[datetime]):
+    """Timezone-aware UTC datetimes stored as sortable ISO-8601 strings."""
+
+    impl = String(32)
+    cache_ok = True
+
+    def process_bind_param(self, value: datetime | None, dialect: Dialect) -> str | None:
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            raise ValueError("naive datetime")
+        return value.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+    def process_result_value(self, value: str | None, dialect: Dialect) -> datetime | None:
+        if value is None:
+            return None
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+class Base(DeclarativeBase):
+    type_annotation_map = {datetime: UTCDateTime(), dict[str, Any]: JSON, list[Any]: JSON}
+
+
+def _id() -> Mapped[str]:
+    return mapped_column(String(36), primary_key=True, default=new_id)
+
+
+# ---- Photos -----------------------------------------------------------------------------------
+
+
+class Photo(Base):
+    __tablename__ = "photos"
+
+    id: Mapped[str] = _id()
+    sha256: Mapped[str] = mapped_column(String(64), unique=True)
+    content_fingerprint: Mapped[str | None] = mapped_column(String(64))
+    """SHA-256 ignoring EXIF (imaging/fingerprint.py); NULL only until the startup backfill."""
+    ext: Mapped[str] = mapped_column(String(8))
+    mime: Mapped[str] = mapped_column(String(64))
+    original_filename: Mapped[str] = mapped_column(String(512))
+    file_size: Mapped[int] = mapped_column(Integer)
+    width: Mapped[int] = mapped_column(Integer)
+    height: Mapped[int] = mapped_column(Integer)
+    exif_orientation: Mapped[int] = mapped_column(Integer, default=1)
+    bit_depth: Mapped[int] = mapped_column(Integer, default=8)
+    icc_description: Mapped[str | None] = mapped_column(String(256))
+    is_wide_gamut: Mapped[bool] = mapped_column(Boolean, default=False)
+    has_gain_map: Mapped[bool] = mapped_column(Boolean, default=False)
+    taken_at: Mapped[datetime | None]
+    camera_make: Mapped[str | None] = mapped_column(String(128))
+    camera_model: Mapped[str | None] = mapped_column(String(128))
+    lens: Mapped[str | None] = mapped_column(String(128))
+    gps_lat: Mapped[float | None] = mapped_column(Float)
+    gps_lon: Mapped[float | None] = mapped_column(Float)
+    place_name: Mapped[str | None] = mapped_column(String(256))
+    place_admin1: Mapped[str | None] = mapped_column(String(256))
+    place_country: Mapped[str | None] = mapped_column(String(128))
+    uploaded_by_device_id: Mapped[str | None] = mapped_column(
+        ForeignKey("devices.id", ondelete="SET NULL")
+    )
+    imported_at: Mapped[datetime] = mapped_column(default=utcnow)
+    inbox_state: Mapped[str] = mapped_column(String(16), default="inbox")
+    quality_warnings: Mapped[list[Any]] = mapped_column(default=list)
+    deleted_at: Mapped[datetime | None]
+    trash_batch_id: Mapped[str | None] = mapped_column(String(36))
+
+    __table_args__ = (
+        Index("ix_photos_imported", "imported_at", "id"),
+        Index("ix_photos_inbox", "inbox_state", "imported_at"),
+        Index("ix_photos_taken", "taken_at"),
+        Index("ux_photos_content_fingerprint", "content_fingerprint", unique=True),
+        Index("ix_photos_deleted", "deleted_at"),
+    )
+
+
+class PhotoHashAlias(Base):
+    """SHA-256 of another copy of a photo (e.g. GPS-redacted) merged into it: re-uploads dedupe."""
+
+    __tablename__ = "photo_hash_aliases"
+
+    sha256: Mapped[str] = mapped_column(String(64), primary_key=True)
+    photo_id: Mapped[str] = mapped_column(ForeignKey("photos.id", ondelete="CASCADE"), index=True)
+
+
+class PhotoTag(Base):
+    __tablename__ = "photo_tags"
+
+    photo_id: Mapped[str] = mapped_column(
+        ForeignKey("photos.id", ondelete="CASCADE"), primary_key=True
+    )
+    tag_id: Mapped[str] = mapped_column(ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True)
+
+    # An artwork carries its photos' tags (docs/organization.md §1), so the tag filter walks
+    # `tag → photos → artworks`: without this, every tag clause scanned the whole link table.
+    __table_args__ = (Index("ix_photo_tags_tag", "tag_id", "photo_id"),)
+
+
+class PhotoPendingMeta(Base):
+    """Metadata chosen at upload time, applied when artworks are created from the photo."""
+
+    __tablename__ = "photo_pending_meta"
+
+    photo_id: Mapped[str] = mapped_column(
+        ForeignKey("photos.id", ondelete="CASCADE"), primary_key=True
+    )
+    collection_ids: Mapped[list[Any]] = mapped_column(default=list)
+    favorite: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class TagCategory(Base):
+    """A group of tags (People, Events…): one level, no nesting (docs/organization.md §1)."""
+
+    __tablename__ = "tag_categories"
+
+    id: Mapped[str] = _id()
+    name: Mapped[str] = mapped_column(String(64, collation="NOCASE"), unique=True)
+    color: Mapped[str | None] = mapped_column(String(9))
+    """The colour of its tags, unless a tag has its own."""
+    position: Mapped[float] = mapped_column(Float, default=0.0)
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+
+
+class Tag(Base):
+    __tablename__ = "tags"
+
+    id: Mapped[str] = _id()
+    name: Mapped[str] = mapped_column(String(128, collation="NOCASE"), unique=True)
+    color: Mapped[str | None] = mapped_column(String(9))
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    category_id: Mapped[str | None] = mapped_column(
+        ForeignKey("tag_categories.id", ondelete="SET NULL"), index=True
+    )
+    """NULL ⇒ the tag is uncategorised ("Other" in the UI)."""
+    last_used_at: Mapped[datetime | None]
+    """When the tag was last attached to something: the picker offers recent tags first."""
+
+
+# ---- Artworks ---------------------------------------------------------------------------------
+
+
+class Artwork(Base):
+    __tablename__ = "artworks"
+
+    id: Mapped[str] = _id()
+    title: Mapped[str] = mapped_column(String(256), default="")
+    status: Mapped[str] = mapped_column(String(16), default="draft")
+    document: Mapped[dict[str, Any]] = mapped_column(default=dict)
+    document_version: Mapped[int] = mapped_column(Integer, default=1)
+    schema_version: Mapped[int] = mapped_column(Integer, default=1)
+    favorite: Mapped[bool] = mapped_column(Boolean, default=False)
+    worst_tier: Mapped[str | None] = mapped_column(String(16))
+    min_scale: Mapped[float | None] = mapped_column(Float)
+    max_scale: Mapped[float | None] = mapped_column(Float)
+    photo_count: Mapped[int] = mapped_column(Integer, default=0)
+    is_incomplete: Mapped[bool] = mapped_column(Boolean, default=False)
+    origin_style_id: Mapped[str | None] = mapped_column(String(36))
+    origin_style_revision: Mapped[int | None] = mapped_column(Integer)
+    origin_layout_id: Mapped[str | None] = mapped_column(String(36))
+    origin_layout_revision: Mapped[int | None] = mapped_column(Integer)
+    render_hash: Mapped[str | None] = mapped_column(String(64))
+    rendered_at: Mapped[datetime | None]
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(default=utcnow, onupdate=utcnow)
+    deleted_at: Mapped[datetime | None]
+    trash_batch_id: Mapped[str | None] = mapped_column(String(36))
+
+    # Every listing filters `deleted_at IS NULL` first and then orders, so `deleted_at` leads each
+    # index: without that, SQLite sorted the whole table into a temp B-tree for every page of the
+    # grid (measured on 10k artworks: 13 ms a page, 64 ms for `created_asc`; 0.5 ms with these).
+    # They also cover the `deleted_at IS NOT NULL` half, which is why there is no single-column
+    # index on it any more.
+    __table_args__ = (
+        Index("ix_artworks_created", "deleted_at", "created_at", "id"),
+        Index("ix_artworks_updated", "deleted_at", "updated_at", "id"),
+        Index("ix_artworks_title", "deleted_at", "title", "id"),
+        Index("ix_artworks_favorite", "deleted_at", "favorite", "created_at", "id"),
+    )
+
+
+class ArtworkPhoto(Base):
+    __tablename__ = "artwork_photos"
+
+    artwork_id: Mapped[str] = mapped_column(
+        ForeignKey("artworks.id", ondelete="CASCADE"), primary_key=True
+    )
+    slot_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    photo_id: Mapped[str] = mapped_column(ForeignKey("photos.id", ondelete="CASCADE"), index=True)
+
+
+class ArtworkTag(Base):
+    __tablename__ = "artwork_tags"
+
+    artwork_id: Mapped[str] = mapped_column(
+        ForeignKey("artworks.id", ondelete="CASCADE"), primary_key=True
+    )
+    tag_id: Mapped[str] = mapped_column(ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True)
+
+    __table_args__ = (Index("ix_artwork_tags_tag", "tag_id", "artwork_id"),)
+
+
+class ArtworkSnapshot(Base):
+    __tablename__ = "artwork_snapshots"
+
+    id: Mapped[str] = _id()
+    artwork_id: Mapped[str] = mapped_column(
+        ForeignKey("artworks.id", ondelete="CASCADE"), index=True
+    )
+    document: Mapped[dict[str, Any]]
+    document_version: Mapped[int] = mapped_column(Integer)
+    reason: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+
+
+# ---- Collections ------------------------------------------------------------------------------
+
+
+class Collection(Base):
+    __tablename__ = "collections"
+
+    id: Mapped[str] = _id()
+    parent_id: Mapped[str | None] = mapped_column(
+        ForeignKey("collections.id", ondelete="CASCADE"), index=True
+    )
+    name: Mapped[str] = mapped_column(String(256))
+    description: Mapped[str] = mapped_column(Text, default="")
+    date_start: Mapped[str | None] = mapped_column(String(10))
+    date_end: Mapped[str | None] = mapped_column(String(10))
+    cover_artwork_id: Mapped[str | None] = mapped_column(
+        ForeignKey("artworks.id", ondelete="SET NULL")
+    )
+    kind: Mapped[str] = mapped_column(String(16), default="manual")
+    filter: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    position: Mapped[float] = mapped_column(Float, default=0.0)
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(default=utcnow, onupdate=utcnow)
+
+
+class CollectionItem(Base):
+    __tablename__ = "collection_items"
+
+    collection_id: Mapped[str] = mapped_column(
+        ForeignKey("collections.id", ondelete="CASCADE"), primary_key=True
+    )
+    artwork_id: Mapped[str] = mapped_column(
+        ForeignKey("artworks.id", ondelete="CASCADE"), primary_key=True, index=True
+    )
+    position: Mapped[float] = mapped_column(Float, default=0.0)
+
+    __table_args__ = (Index("ix_collection_items_order", "collection_id", "position"),)
+
+
+# ---- Templates & swatches ---------------------------------------------------------------------
+
+
+class FrameStyle(Base):
+    __tablename__ = "frame_styles"
+
+    id: Mapped[str] = _id()
+    name: Mapped[str] = mapped_column(String(128))
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    document: Mapped[dict[str, Any]]
+    builtin: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(default=utcnow, onupdate=utcnow)
+
+
+class Layout(Base):
+    __tablename__ = "layouts"
+
+    id: Mapped[str] = _id()
+    name: Mapped[str] = mapped_column(String(128))
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    document: Mapped[dict[str, Any]]
+    slot_count: Mapped[int] = mapped_column(Integer, default=1)
+    builtin: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(default=utcnow, onupdate=utcnow)
+
+
+class Swatch(Base):
+    __tablename__ = "swatches"
+
+    id: Mapped[str] = _id()
+    color: Mapped[str] = mapped_column(String(9))
+    name: Mapped[str] = mapped_column(String(64), default="")
+    position: Mapped[float] = mapped_column(Float, default=0.0)
+
+
+# ---- Devices & auth ---------------------------------------------------------------------------
+
+
+class Device(Base):
+    __tablename__ = "devices"
+
+    id: Mapped[str] = _id()
+    name: Mapped[str] = mapped_column(String(128))
+    role: Mapped[str] = mapped_column(String(16))  # uploader | admin
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    user_agent: Mapped[str] = mapped_column(String(512), default="")
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    last_seen_at: Mapped[datetime | None]
+    revoked_at: Mapped[datetime | None]
+
+
+class PairingCode(Base):
+    __tablename__ = "pairing_codes"
+
+    code_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    role: Mapped[str] = mapped_column(String(16))
+    expires_at: Mapped[datetime]
+    used_at: Mapped[datetime | None]
+
+
+class SetupCode(Base):
+    __tablename__ = "setup_codes"
+
+    code_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    expires_at: Mapped[datetime]
+    used_at: Mapped[datetime | None]
+
+
+class UploadSession(Base):
+    __tablename__ = "upload_sessions"
+
+    id: Mapped[str] = _id()
+    device_key: Mapped[str] = mapped_column(String(64))
+    """Device id, `localhost` for trusted local requests, or `localsend:<localsend device id>`."""
+    sha256: Mapped[str] = mapped_column(String(64))
+    size: Mapped[int] = mapped_column(Integer)
+    filename: Mapped[str] = mapped_column(String(512))
+    mime: Mapped[str] = mapped_column(String(128), default="")
+    received_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    pending_meta: Mapped[dict[str, Any]] = mapped_column(default=dict)
+    state: Mapped[str] = mapped_column(String(16), default="open")
+    """open | processing | failed"""
+    error: Mapped[str | None] = mapped_column(String(128))
+    job_id: Mapped[str | None] = mapped_column(String(36))
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    expires_at: Mapped[datetime]
+
+    __table_args__ = (Index("ix_upload_sessions_lookup", "device_key", "sha256", "size", "state"),)
+
+
+class ArchiveImport(Base):
+    """One import in progress: the archive received, its staging report and what came of it.
+
+    Spec: docs/archive-format.md §12.2. The archive itself lives in `imports/<id>/`, which is
+    disposable — deleting the row deletes the directory (`services/archive_import.py`).
+    """
+
+    __tablename__ = "archive_imports"
+
+    id: Mapped[str] = _id()
+    filename: Mapped[str] = mapped_column(String(512))
+    size: Mapped[int] = mapped_column(Integer)
+    received_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    state: Mapped[str] = mapped_column(String(16), default="receiving")
+    """receiving | staging | ready | applying | applied | failed"""
+    error: Mapped[str | None] = mapped_column(String(128))
+    """Problem code of the refusal (`unsupported_archive_version`, `checksum_mismatch`, …)."""
+    scope: Mapped[str | None] = mapped_column(String(16))
+    manifest: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    summary: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    """Per-kind counts from the dry run; the per-item report lives in the staging dir."""
+    job_id: Mapped[str | None] = mapped_column(String(36))
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    expires_at: Mapped[datetime]
+
+
+class LocalSendDevice(Base):
+    """A phone/computer sending through the LocalSend protocol (identified by its fingerprint)."""
+
+    __tablename__ = "localsend_devices"
+
+    id: Mapped[str] = _id()
+    fingerprint: Mapped[str] = mapped_column(String(128), unique=True)
+    alias: Mapped[str] = mapped_column(String(128))
+    device_model: Mapped[str | None] = mapped_column(String(128))
+    device_type: Mapped[str | None] = mapped_column(String(32))
+    status: Mapped[str] = mapped_column(String(16), default="pending")
+    """pending (asks an admin) | approved (auto-accepted) | blocked (always rejected)"""
+    last_ip: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    last_seen_at: Mapped[datetime | None]
+    decided_at: Mapped[datetime | None]
+
+
+class DisplayTarget(Base):
+    """A TV this library can push a set to (Phase 12, `docs/tv-display.md`).
+
+    `source` is an artwork query (the filter AST plus a sort), so a collection, a smart collection,
+    Favorites and an ad-hoc selection are all the same thing. `token` is a credential for the TV:
+    it lives here, in the data dir, and never leaves it.
+    """
+
+    __tablename__ = "display_targets"
+
+    id: Mapped[str] = _id()
+    name: Mapped[str] = mapped_column(String(128))
+    host: Mapped[str] = mapped_column(String(64))
+    mac: Mapped[str | None] = mapped_column(String(32))
+    token: Mapped[str | None] = mapped_column(Text)
+    model: Mapped[str | None] = mapped_column(String(128))
+    api_version: Mapped[str | None] = mapped_column(String(32))
+    source: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    """The query the last push used: {filter, collection_id, include_nested, favorite, sort}."""
+    source_label: Mapped[str | None] = mapped_column(String(256))
+    """What to call it in the UI ("Collection: Iceland 2026")."""
+    slideshow_minutes: Mapped[int] = mapped_column(Integer, default=60)
+    """One of `tv.SLIDESHOW_MINUTES`; anything else the TV refuses."""
+    slideshow_ordered: Mapped[bool] = mapped_column(Boolean, default=True)
+    render_format: Mapped[str] = mapped_column(String(8), default="jpg")
+    state: Mapped[str] = mapped_column(String(16), default="new")
+    """new | ready | pushing | error"""
+    last_error: Mapped[str | None] = mapped_column(String(64))
+    """Problem code of the last failure (`tv_unreachable`, `tv_art_unavailable`, …)."""
+    ours_count: Mapped[int | None] = mapped_column(Integer)
+    """Items on the TV this app uploaded, as of `checked_at` (cached: asking takes seconds)."""
+    foreign_count: Mapped[int | None] = mapped_column(Integer)
+    """Items in My Photos this app did not upload, as of `checked_at`."""
+    checked_at: Mapped[datetime | None]
+    """When the TV last answered a status probe, a plan or a push."""
+    last_result: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    """What the last push did (`PushResult.as_dict()`), so a reload still shows it."""
+    progress: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    """The running push: `{job_id, phase, done, total}`; NULL when none runs."""
+    image_clock: Mapped[datetime | None]
+    """Latest `image_date` written to this TV: the next upload is always dated after it."""
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    last_pushed_at: Mapped[datetime | None]
+    last_seen_at: Mapped[datetime | None]
+
+
+class DisplayTargetItem(Base):
+    """One render this app put on a TV: `(artwork, render_hash) -> content_id`.
+
+    The map is what makes a push idempotent (re-pushing uploads nothing) and what keeps the app
+    honest: an item on the TV that is not in this table was not put there by us, and is never
+    deleted without the user saying so. So a row lives exactly as long as its upload is on the
+    TV — it is written the moment an upload succeeds and removed only once the TV no longer holds
+    the item — whatever the set currently is.
+    """
+
+    __tablename__ = "display_target_items"
+
+    id: Mapped[str] = _id()
+    target_id: Mapped[str] = mapped_column(ForeignKey("display_targets.id", ondelete="CASCADE"))
+    artwork_id: Mapped[str] = mapped_column(String(36))
+    render_hash: Mapped[str] = mapped_column(String(64))
+    content_id: Mapped[str] = mapped_column(String(64))
+    position: Mapped[int | None] = mapped_column(Integer, default=None)
+    """Index in the current set, 0 first. NULL: ours, still on the TV, but no longer part of the
+    set — a "Don't change" push leaves everything else alone, and the next slideshow push
+    removes it."""
+    uploaded_at: Mapped[datetime] = mapped_column(default=utcnow)
+
+    __table_args__ = (
+        Index("ix_display_items_target", "target_id", "position"),
+        Index("uq_display_items_content", "target_id", "content_id", unique=True),
+        Index("ix_display_items_artwork", "target_id", "artwork_id"),
+    )
+
+
+# ---- Infrastructure ---------------------------------------------------------------------------
+
+
+class Job(Base):
+    __tablename__ = "jobs"
+
+    id: Mapped[str] = _id()
+    kind: Mapped[str] = mapped_column(String(32))
+    lane: Mapped[str] = mapped_column(String(16))
+    coalesce_key: Mapped[str | None] = mapped_column(String(128))
+    payload: Mapped[dict[str, Any]] = mapped_column(default=dict)
+    state: Mapped[str] = mapped_column(String(16), default="queued")
+    """queued | running | done | failed | cancelled"""
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    progress: Mapped[float] = mapped_column(Float, default=0.0)
+    error: Mapped[str | None] = mapped_column(Text)
+    code: Mapped[str | None] = mapped_column(String(64))
+    """Stable problem code when the handler raised `PermanentJobError` (`errors.<code>`)."""
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    started_at: Mapped[datetime | None]
+    finished_at: Mapped[datetime | None]
+
+    __table_args__ = (
+        Index("ix_jobs_claim", "lane", "state", "created_at"),
+        Index("ix_jobs_recent", "state", "created_at"),
+        Index("ix_jobs_coalesce", "coalesce_key", "state"),
+    )
+
+
+class Setting(Base):
+    __tablename__ = "settings"
+
+    key: Mapped[str] = mapped_column(String(128), primary_key=True)
+    value: Mapped[dict[str, Any]] = mapped_column(JSON)

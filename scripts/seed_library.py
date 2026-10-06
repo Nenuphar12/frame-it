@@ -23,15 +23,15 @@ from pathlib import Path
 from PIL import Image
 from sqlalchemy.orm import Session
 
-from the_frame_v2.config import Settings
-from the_frame_v2.context import AppContext
-from the_frame_v2.db.models import Artwork, ArtworkPhoto, ArtworkTag, CollectionItem, Photo, Tag
-from the_frame_v2.ids import utcnow
-from the_frame_v2.imaging.fingerprint import content_fingerprint
-from the_frame_v2.services import artworks as artworks_service
-from the_frame_v2.services import collections as collections_service
-from the_frame_v2.services import search
-from the_frame_v2.services.ingest import ensure_derivatives
+from frame_it.config import Settings
+from frame_it.context import AppContext
+from frame_it.db.models import Artwork, ArtworkPhoto, ArtworkTag, CollectionItem, Photo, Tag
+from frame_it.ids import utcnow
+from frame_it.imaging.fingerprint import content_fingerprint
+from frame_it.services import artworks as artworks_service
+from frame_it.services import collections as collections_service
+from frame_it.services import search
+from frame_it.services.ingest import ensure_derivatives
 
 PLACES = ["Kyoto", "Lisbon", "Reykjavík", "Oaxaca", "Hanoi", "Tromsø", "Valparaíso"]
 WORDS = ["dawn", "harbour", "market", "temple", "ridge", "fog", "canal", "dunes", "rooftops"]
@@ -169,7 +169,7 @@ def main() -> int:
     parser.add_argument("--data-dir", type=Path, default=None)
     args = parser.parse_args()
 
-    from the_frame_v2.app import build_context
+    from frame_it.app import build_context
 
     settings = Settings(data_dir=args.data_dir) if args.data_dir else Settings()
     print(f"seeding {settings.data_dir}")
