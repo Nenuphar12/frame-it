@@ -9,7 +9,7 @@
 Self-hosted web app to prepare pictures for a 4K art-mode TV (Samsung The Frame, 3840×2160): phone uploads in
 full quality over the LAN, pixel-perfect framing/compositions, collections, export/import.
 
-- **Status (2026-10-06): Phases 0–12 done, plus their follow-ups. Next: nothing planned**
+- **Status (2026-10-06): beta, open source. Phases 0–12 done, plus their follow-ups. Next: nothing planned**
   (`docs/PLAN.md` §16 keeps the open questions). What each phase added, with its measurements and
   migrations: `docs/progress.md`. The areas, where they are specified, and what a change there must respect:
   - **Uploads & ingest** (`docs/localsend.md`, `docs/research/phone-uploads.md`): resumable uploads, the

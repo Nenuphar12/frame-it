@@ -21,6 +21,8 @@
     "add": "Ajouter"
   },
   "nav": {
+    "beta": "Bêta",
+    "betaHint": "Frame It est en bêta : gardez votre propre copie de vos photos.",
     "label": "Navigation principale",
     "inbox": "À traiter",
     "artworks": "Œuvres",

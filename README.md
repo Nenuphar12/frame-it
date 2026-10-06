@@ -7,6 +7,12 @@ phone over Wi-Fi, frame them pixel-perfectly, group them in collections, export 
 Self-hosted, offline, one directory of files you own.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Status: beta](https://img.shields.io/badge/status-beta-orange.svg)
+
+> **Beta.** Frame It is used every day on one TV, but it is young: only a small part of it has
+> been tried on real hardware (see [*Written with AI*](#written-with-ai)), installing it still
+> takes a developer toolchain, and things may change between versions. Keep your own copy of
+> your photos, and export your library (`.tfarchive`) before upgrading.
 
 ![A three-photo composition on a linen mat, rendered at 3840x2160](docs/images/artwork.jpg)
 
@@ -81,11 +87,10 @@ what happened to each file — including the ones the library already had.
 
 ## Status
 
-**Phases 0–12 of [the plan](docs/PLAN.md) are implemented** — foundations, device pairing, uploads,
-ingest, the artwork document and renderer, the editor, parametric compositions, templates,
-organization, export/import, the hardening pass and sending to the TV — plus a round of
-improvements from daily use ([`docs/progress.md`](docs/progress.md) is the log). A few §16
-questions are the remaining open items.
+**Beta.** Phases 0–12 of [the plan](docs/PLAN.md) are implemented — foundations, device pairing,
+uploads, ingest, the artwork document and renderer, the editor, parametric compositions,
+templates, organization, export/import, the hardening pass and sending to the TV — plus a round
+of improvements from daily use ([`docs/progress.md`](docs/progress.md) is the log).
 
 ## Quick start
 
@@ -141,6 +146,10 @@ Contributors: [CONTRIBUTING.md](CONTRIBUTING.md). Coding agents: start with
 ## Licence and credits
 
 MIT — see [LICENSE](LICENSE).
+
+Frame It is an independent project. It is not affiliated with, endorsed or sponsored by Samsung;
+Samsung and The Frame are trademarks of Samsung Electronics Co., Ltd., named here only to say
+which TV the app works with.
 
 Place names © [GeoNames](https://www.geonames.org/) (CC BY 4.0). Bundled fonts are SIL Open Font
 License 1.1; mat textures are CC0. Image processing by [libvips](https://www.libvips.org/). Full

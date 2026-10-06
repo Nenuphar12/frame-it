@@ -21,6 +21,8 @@
     "add": "Add"
   },
   "nav": {
+    "beta": "Beta",
+    "betaHint": "Frame It is in beta: keep your own copy of your photos.",
     "label": "Main navigation",
     "inbox": "Inbox",
     "artworks": "Artworks",

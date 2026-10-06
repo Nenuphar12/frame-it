@@ -35,7 +35,7 @@ import { mirrorLocalSendTransfers } from "@/features/upload/uploadStore";
 import { cn } from "@/shared/cn";
 import { toast } from "@/shared/toast";
 import { Button } from "@/shared/ui/Button";
-import { Kbd } from "@/shared/ui/Misc";
+import { Badge, Kbd } from "@/shared/ui/Misc";
 import { Toaster } from "@/shared/ui/Toaster";
 
 import { CheatSheet, CommandPalette } from "./CommandPalette";
@@ -341,6 +341,9 @@ export function Shell() {
       >
         <div className="flex items-center gap-2 px-2 text-sm font-semibold tracking-wide">
           <Frame size={18} className="text-accent" /> Frame It
+          <Badge tone="accent" title={t("nav.betaHint")}>
+            {t("nav.beta")}
+          </Badge>
         </div>
         <button
           onClick={() => setPaletteOpen(true)}

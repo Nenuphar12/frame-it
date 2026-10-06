@@ -1,6 +1,6 @@
 # Frame It — Implementation Plan
 
-> Status: **Phases 0–12 implemented** (see `docs/progress.md`) ·
+> Status: **Phases 0–12 implemented, beta** (see `docs/progress.md`) ·
 > Created 2026-09-16 · Named **Frame It** on 2026-10-06 (the placeholder was `the_frame_v2`)
 >
 > This plan is the single source of truth for scope and sequencing. Specs (§5–§9, §12) live in dedicated

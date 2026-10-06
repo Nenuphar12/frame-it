@@ -3,6 +3,10 @@
 Frame It itself is MIT-licensed (`LICENSE`). Everything below ships *inside* the package and
 keeps its own licence.
 
+Frame It is not affiliated with, endorsed or sponsored by Samsung. Samsung and The Frame are
+trademarks of Samsung Electronics Co., Ltd.; they are named only to say which TV the app works
+with.
+
 ## Assets
 
 | Asset | Location | License |

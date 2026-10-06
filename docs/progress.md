@@ -1,6 +1,6 @@
 # Progress log
 
-## 2026-10-06 — Frame It
+## 2026-10-06 — Open source: Frame It, beta
 
 - **Name**: the placeholder `the_frame_v2` becomes **Frame It** — package `frame_it`, command and
   distribution `frame-it`, env prefix `FRAME_IT_`, data dir `frame-it`, Docker image `frame-it`,
@@ -16,8 +16,17 @@
   `test_an_archive_written_before_the_rename_is_read`. Not carried over: a service installed under
   the old name (reinstall it), and possibly the TV's pairing — the TV may treat "Frame It" as a
   new device and ask again (not tried on hardware; *Pair again* covers it).
+- **Beta**: said in the README (banner + badge), on the sidebar next to the name (a *Beta* badge
+  whose tooltip says to keep a copy of the photos), and as the `Development Status :: 4 - Beta`
+  classifier.
+- **Public resources**: a Samsung non-affiliation and trademark notice in the README and
+  `NOTICE.md`; the comments and docs that cited the private `remarks.md` (and a local folder of
+  reference photos) now say "user feedback". Checked and clean: no secret, token, key or home
+  path in the tracked files or the history (the GPS in tests is city centres); the screenshots
+  carry no metadata.
 
-**Verified**: `make check`, and the changed scripts' `--help`.
+**Verified**: `make check`, and the changed scripts' `--help`. Not driven in a
+browser: the sidebar badge (type-checked only).
 
 ## 2026-10-05 — Folding the sidebar's collections; keeping the images sent before
 

@@ -7,6 +7,14 @@ authors = [
 ]
 license = "MIT"
 license-files = ["LICENSE"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Framework :: FastAPI",
+    "Intended Audience :: End Users/Desktop",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Multimedia :: Graphics",
+]
 requires-python = ">=3.14"
 dependencies = [
     "alembic>=1.20.0",
