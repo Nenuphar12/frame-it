@@ -1,6 +1,6 @@
 # Frame It — Implementation Plan
 
-> Status: **Phases 0–12 implemented, beta** (see `docs/progress.md`) ·
+> Status: **Phases 0–12 implemented, beta** (see `docs/progress.md`); what comes next is §17 ·
 > Created 2026-09-16 · Named **Frame It** on 2026-10-06 (the placeholder was `the_frame_v2`)
 >
 > This plan is the single source of truth for scope and sequencing. Specs (§5–§9, §12) live in dedicated
@@ -26,6 +26,7 @@
 14. [Phases & milestones](#14-phases--milestones)
 15. [Cross-cutting conventions & Definition of Done](#15-cross-cutting-conventions--definition-of-done)
 16. [Risks, open questions, out of scope](#16-risks-open-questions-out-of-scope)
+17. [Roadmap](#17-roadmap)
 
 ---
 
@@ -782,7 +783,7 @@ API from day one.
   `THE_FRAME_V2_*` variables (below the new ones), the old data dir while no new one exists, and
   archives whose manifest says `the_frame_v2.archive`. Not unique: fastlane's `frameit`
   (screenshot frames) and several app-store "Frame It" apps exist, and the PyPI/npm name
-  `frameit` is taken — a PyPI release would need another distribution name.
+  `frameit` is taken — a PyPI release would need another distribution name (§17.2).
 - ~~License (Phase 11)~~ — **MIT**, decided 2026-09-24 (`LICENSE`).
 - Caption band factor (1.5 × size) reserved by the composition solver: implemented and pinned by
   conformance, still to be checked against a real render (Phase 7 stage 3, `docs/simple-editor.md` §10).
@@ -797,3 +798,54 @@ API from day one.
 HEIC/HEIF, RAW/TIFF/WebP inputs, AI upscaling, linear-light resampling, portrait canvas, multi-user
 accounts, native mobile apps, PWA/offline, frontend test suite, CI, HDR tone mapping, face/saliency smart crop,
 maps view, custom user fonts/textures.
+
+The roadmap (§17) moves two of these into scope: HEIC/HEIF, and the CI that releases need.
+
+---
+
+## 17. Roadmap
+
+Decided 2026-10-06, in this order of priority. Each item starts with a short spike written up in
+`docs/research/`, like the phases did; nothing below is designed yet.
+
+### 17.1 Photos from iPhones
+
+iPhones save HEIC by default, and ADR-0006 refuses HEIC (`unsupported_format_heic`): today an
+iPhone user has to switch *Settings › Camera › Formats* to *Most Compatible* first. The goal is
+that an iPhone works as it comes, through each way in.
+
+- **Spike first, on a real iPhone** — iOS was out of scope (`docs/research/phone-uploads.md`
+  covers Android only), so nothing here is measured. What Safari's picker hands the upload page:
+  our `accept` lists no HEIC type, so iOS probably transcodes to JPEG — at what quality, size and
+  with which metadata (GPS, `taken_at`)? What LocalSend for iOS sends (the original HEIC, likely).
+  Live Photos (a HEIC plus a `.MOV`: keep the still), Display P3 colour (is the ICC conversion in
+  `imaging/decode.py` enough?), HDR gain maps (iOS 17+, out of scope for v1: decide whether to
+  ignore them).
+- **Decode HEIC** — a decoder branch at the single seam in `imaging/decode.py`, with a new ADR
+  superseding ADR-0006. The prebuilt libvips has no HEVC decoder: the candidates are
+  `pillow-heif` (bundles libheif + libde265) or a libvips built with one. Settle what
+  redistributing an HEVC decoder means (LGPL notices in `NOTICE.md`, HEVC patent pools) before
+  choosing.
+- Then: accept `.heic`/`.heif` in the pickers, the fingerprint of a HEIC and of the JPEG iOS made
+  from it (are they "copies" for `photo_copies`?), golden and API tests on real iPhone files, the
+  user guide's *What can be sent*.
+
+### 17.2 An installation anyone can do
+
+Today: Python 3.14 + uv, Node 22 + pnpm and `make`, or Docker built from source. The goal is
+one download and a double-click (or one command), on Linux, macOS and Windows.
+
+- **Releases need CI** (out of scope for v1): a GitHub Actions workflow that runs `make check`,
+  builds the frontend once, and attaches the artefacts to a tagged release.
+- **A published Docker image** (`ghcr.io/…/frame-it`, amd64 + arm64 so a Raspberry Pi works) —
+  the cheapest step: `docker/compose.yaml` then pulls instead of building.
+- **Executables per OS** — Python, the built frontend, the `pyvips[binary]` libvips and the
+  bundled assets in one file or folder. Candidates to compare in the spike: PyInstaller, Nuitka,
+  PyApp. Unknowns: libvips' shared libraries inside a bundle, macOS signing/notarisation and
+  Windows SmartScreen for an unsigned binary, the size.
+- **Or a package**: `uvx frame-it` / `pipx install` from PyPI, which needs only Python. The
+  PyPI name `frameit` is taken and PyPI refuses names that normalise to an existing one, so the
+  distribution would need another name (the command can stay `frame-it`).
+- **First run without a terminal**: open the browser on start, say where the library lives, and
+  install the background service from Settings rather than `frame-it service install`.
+- The user guide's *Install* section rewritten for someone who has never used a terminal.

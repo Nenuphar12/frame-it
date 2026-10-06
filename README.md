@@ -92,6 +92,17 @@ uploads, ingest, the artwork document and renderer, the editor, parametric compo
 templates, organization, export/import, the hardening pass and sending to the TV — plus a round
 of improvements from daily use ([`docs/progress.md`](docs/progress.md) is the log).
 
+## Roadmap
+
+- **Photos from iPhones.** iPhones save HEIC by default, and Frame It refuses HEIC today: iPhone
+  users have to switch the camera to *Most Compatible* (JPEG) first. Next: accept HEIC/HEIF
+  directly.
+- **An installation anyone can do.** Today you need Python, Node and `make`, or Docker. Next:
+  ready-made downloads — an executable per operating system and a published Docker image — so
+  that running Frame It takes one download and no toolchain.
+
+The details, and what each one has to solve first, are in [`docs/PLAN.md`](docs/PLAN.md) §17.
+
 ## Quick start
 
 Requirements: Python 3.14 + [uv](https://docs.astral.sh/uv/), Node 22+ + pnpm.

@@ -103,7 +103,8 @@ real filename, that information is merged into the photo you already had.
 ### What can be sent
 
 JPEG, PNG and AVIF. **HEIC is rejected** with a message telling you to set the camera to JPEG —
-decoding it is not in this version. Format is detected from the file's bytes, so renaming something
+decoding it is not in this version (on an iPhone: *Settings › Camera › Formats › Most Compatible*;
+HEIC support is on the roadmap). Format is detected from the file's bytes, so renaming something
 to `.jpg` will not sneak it past.
 
 ---

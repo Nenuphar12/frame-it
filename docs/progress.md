@@ -1,6 +1,6 @@
 # Progress log
 
-## 2026-10-06 — Open source: Frame It, beta
+## 2026-10-06 — Open source: Frame It, beta, roadmap
 
 - **Name**: the placeholder `the_frame_v2` becomes **Frame It** — package `frame_it`, command and
   distribution `frame-it`, env prefix `FRAME_IT_`, data dir `frame-it`, Docker image `frame-it`,
@@ -24,6 +24,10 @@
   reference photos) now say "user feedback". Checked and clean: no secret, token, key or home
   path in the tracked files or the history (the GPS in tests is city centres); the screenshots
   carry no metadata.
+- **Roadmap**: `docs/PLAN.md` §17 — HEIC from iPhones (spike on a real iPhone first, then a decoder
+  superseding ADR-0006), then an installation without a toolchain (CI releases, a published Docker
+  image, executables per OS or a PyPI package). The README has the short version; the user guide
+  now names the iPhone setting that gives JPEG.
 
 **Verified**: `make check`, and the changed scripts' `--help`. Not driven in a
 browser: the sidebar badge (type-checked only).
@@ -931,6 +935,7 @@ setting you could see but not judge:
 choice), template file *import* through the file picker (a `<input type=file>` cannot be driven over
 CDP without a real file dialog — the endpoint is covered by an API test), and the Templates page on
 a narrow window.
+
 
 ## 2026-09-16 — Phases 0–3
 

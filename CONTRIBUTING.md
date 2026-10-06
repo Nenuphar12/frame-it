@@ -2,7 +2,8 @@
 
 Thanks for looking. This is a small, self-hosted app with a deliberately narrow scope — read
 [`docs/PLAN.md`](docs/PLAN.md) §1 and §16 before proposing a feature, because "out of scope for v1"
-is a real list and most of what is on it was decided on purpose.
+is a real list and most of what is on it was decided on purpose. What is planned next is §17
+(the roadmap).
 
 **If you are a coding agent, read [`AGENTS.md`](AGENTS.md) first.** It is the entry point, it is
 kept current with the code, and it carries the invariants; the subsystem-specific gotchas — the things
