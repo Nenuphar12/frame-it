@@ -40,7 +40,14 @@
 
 **Verified**: `make check`; conformance (straightened sizes, `restraighten_crop`, a straightened
 composition apply); a render test levels a 5° horizon. Not driven in a browser: the tree "+", the
-picker's keyboard, the straighten slider on the canvas.
+picker's keyboard, the straighten slider on the canvas. On the TV: one clean push after the
+handshake fix (the failures were intermittent, so one is a start, not a proof).
+
+**Straightening guides** (user feedback, same day): while the *Straighten* slider is held — and
+for a moment after it is let go, a value typed or an arrow key — a light grid (square cells, six
+across the short side, a line through the centre each way) covers the photo, in the slot's frame,
+for lining a horizon up. UI state only (`editor/guides.ts`), never in the document or the undo
+history; the grid toggles once per gesture, not per event.
 
 ## 2026-10-06 — Open source: Frame It, beta, roadmap
 

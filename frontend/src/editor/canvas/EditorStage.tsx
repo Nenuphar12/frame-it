@@ -18,6 +18,7 @@ import { availableArea } from "@/editor/core/placement.ts";
 import { snapRect, TOLERANCE_PX } from "@/editor/core/snapping.ts";
 import { dragShares, type Divider } from "@/editor/core/splits.ts";
 import { PHOTO_MIME } from "@/shared/dnd";
+import { useStraightenGuides } from "@/editor/guides";
 import { slotOriented, slotSource, type PhotoSizes } from "@/editor/operations";
 import { CaptionNode } from "./CaptionNode.tsx";
 import { captionBox } from "./fonts.ts";
@@ -35,6 +36,7 @@ import {
 } from "./hit.ts";
 import { HANDLE_HIT_PX, HANDLE_PX, ROTATE_DISTANCE_PX, SelectionOverlay } from "./SelectionOverlay";
 import { InnerShadow, SlotNode } from "./SlotNode.tsx";
+import { StraightenGuides } from "./StraightenGuides.tsx";
 import { cachedTile, tileKey, tintedTile } from "./texture.ts";
 
 export interface StageView {
@@ -217,6 +219,7 @@ export function EditorStage({
   const selectedSlots = doc.slots.filter((slot) => selectedSlotIds.includes(slot.id));
   const primaryId = selectedSlotIds[selectedSlotIds.length - 1] ?? null;
   const primary = doc.slots.find((slot) => slot.id === primaryId) ?? null;
+  const straightenGuides = useStraightenGuides((state) => state.visible);
   const caption = doc.captions.find((item) => item.id === selectedCaptionId) ?? null;
   const transformable = doc.placement === "manual" && tool === "select";
 
@@ -685,6 +688,9 @@ export function EditorStage({
                 dash={[10 / view.scale, 10 / view.scale]}
                 opacity={0.7}
               />
+            )}
+            {straightenGuides && primary?.photo_id && (
+              <StraightenGuides slot={primary} scale={view.scale} />
             )}
             {activeDivider && (
               <DividerMark divider={currentDivider ?? activeDivider} scale={view.scale} />

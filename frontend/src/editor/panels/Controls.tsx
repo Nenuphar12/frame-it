@@ -125,6 +125,7 @@ export function PercentField({
 export function Slider({
   value,
   onChange,
+  onStart,
   onCommit,
   min,
   max,
@@ -133,6 +134,8 @@ export function Slider({
 }: {
   value: number;
   onChange: (value: number) => void;
+  /** The pointer went down on it: a drag starts. */
+  onStart?: () => void;
   onCommit?: () => void;
   min: number;
   max: number;
@@ -149,6 +152,7 @@ export function Slider({
       step={step}
       disabled={disabled}
       onChange={(event) => onChange(Number(event.target.value))}
+      onPointerDown={onStart}
       onPointerUp={onCommit}
       onKeyUp={onCommit}
     />
