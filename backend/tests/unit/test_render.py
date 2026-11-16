@@ -205,6 +205,28 @@ def test_a_bevelled_band_is_four_mitred_faces(tmp_path: Path) -> None:
     assert image(189, 330) == rgb("#F2EFE8")
 
 
+def test_a_wide_bevel_keeps_its_bottom_face_whole(tmp_path: Path) -> None:
+    """A slot more than twice as wide as it is tall: the bottom face is one shade from end to end.
+
+    Renderer 3 let the top face win wherever the top edge was nearer than the *sides*, without
+    asking whether the bottom edge was nearer still — so the middle of a wide slot's bottom face
+    took the top's dark shade, a trapezoid that read as a hole in the mat (user feedback).
+    """
+    photo = synthetic(tmp_path / "p.png", 300, 60)
+    doc = single(
+        (300, 60),
+        rect={"x": 200, "y": 300, "w": 300, "h": 60},
+        quality_lock="native",
+        bands=[{"width": 10, "color": "#C0C0C0", "bevel": True}],
+    )
+    image = render_document(doc, {"p": photo}.get).image
+    face = {name: shade("#C0C0C0", amount) for name, amount in BEVEL_SHADES.items()}
+    for y in range(360, 370):
+        row = {tuple(image(x, y)) for x in range(200 + (369 - y), 500 - (369 - y))}
+        assert row == {tuple(face["bottom"])}, y
+    assert image(350, 295) == face["top"]
+
+
 def test_a_flat_band_is_unchanged_by_the_bevel_option(tmp_path: Path) -> None:
     photo = synthetic(tmp_path / "p.png", 100, 60)
     rect = {"x": 200, "y": 300, "w": 100, "h": 60}

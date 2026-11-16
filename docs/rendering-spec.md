@@ -22,8 +22,10 @@
       `−0.05` (`BEVEL_SHADES`; negative mixes towards black, positive towards white, per channel
       `floor(c + (target − c)·|k| + 0.5)`). Light from above, straight on: the top face looks down and
       is the darkest, the two sides share one lighter shade, the bottom is barely shaded. A band pixel
-      belongs to the face whose **outer** edge
-      is nearest; on a diagonal the top or bottom face wins, so a mitre is one exact pixel staircase.
+      belongs to the face whose **outer** edge is nearest **of all four** (renderer 3 compared the top
+      edge with the sides only, and painted a dark trapezoid into the bottom face of any slot over
+      twice as wide as tall); on a diagonal the top or bottom face wins, so a mitre is one exact pixel
+      staircase.
    6. **Inner shadow**: mask `m` = 255 outside layer rect / 0 inside (padded by `3σ+|offset|`), shift by offset,
       `gaussblur(σ = blur/2)`, crop back to layer rect, multiply by `opacity`, fill with shadow color, composite over layer.
       Gaussian kernels are truncated at amplitude 0.005 (libvips' default 0.2 visibly clips shadows).

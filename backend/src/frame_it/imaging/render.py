@@ -32,14 +32,15 @@ from frame_it.domain.geometry import CANVAS_HEIGHT, CANVAS_WIDTH, Rect, round_ha
 from frame_it.imaging.assets import AssetCatalog, FontAsset, catalog
 from frame_it.imaging.decode import DecodeError, load_srgb, pixel_count
 
-RENDERER_VERSION = "3"
+RENDERER_VERSION = "4"
 """Bump when the **same document** renders to different pixels. A new optional document field is
 not that: it changes the document, hence the hash, of the artworks that use it and of no other
 (`ArtworkDocument.render_identity`).
 
 2: the shadows of unrotated layers are built from 1-D profiles (`_blurred_box`) — within one
 rounding of the 2-D blur they replace, which is still a different pixel here and there.
-3: a bevel's right and bottom faces are in shade too (`BEVEL_SHADES`)."""
+3: a bevel's right and bottom faces are in shade too (`BEVEL_SHADES`).
+4: a bevel's top face no longer bleeds into the bottom one of a slot over twice as wide as tall."""
 BEVEL_SHADES = {"top": -0.30, "left": -0.12, "right": -0.12, "bottom": -0.05}
 """How a bevelled band shades its four faces (rendering-spec.md §8.1, step 3.5): a negative value
 mixes the band colour towards black, a positive one towards white. Light from above, straight on:
@@ -319,7 +320,10 @@ def _bevel(image: Any, width: int, band: Band) -> Any:
         shade(band.color, BEVEL_SHADES["left"]), shade(band.color, BEVEL_SHADES["right"])
     )
     faces = (bottom <= side).ifthenelse(shade(band.color, BEVEL_SHADES["bottom"]), faces)
-    faces = (top <= side).ifthenelse(shade(band.color, BEVEL_SHADES["top"]), faces)
+    # The top face must be nearer than the bottom one too: in a slot over twice as wide as it is
+    # tall, the middle of the bottom band is nearer the top edge than either side.
+    top_wins = (top <= side) & (top < bottom)
+    faces = top_wins.ifthenelse(shade(band.color, BEVEL_SHADES["top"]), faces)
     frame = faces.cast("uchar").copy(interpretation="srgb")
     return frame.insert(image, width, width)
 
