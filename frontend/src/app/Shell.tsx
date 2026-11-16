@@ -24,7 +24,13 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { onServerEvent } from "@/api/events";
-import { useCollectionItems, useCollections, useJobs, useLibraryStats } from "@/api/queries";
+import {
+  useCollectionItems,
+  useCollections,
+  useJobs,
+  useLibraryStats,
+  useMoveCollection,
+} from "@/api/queries";
 import { CollectionTree } from "@/features/collections/CollectionTree";
 import { PushTray } from "@/features/display/PushTray";
 import { GlobalDropZone } from "@/features/upload/DropZone";
@@ -106,6 +112,7 @@ function SidebarCollections({ item }: { item: NavItem }) {
   const navigate = useNavigate();
   const collections = useCollections();
   const items = useCollectionItems();
+  const move = useMoveCollection();
   const [open, toggle] = useCollectionsOpen();
   const rows = collections.data ?? [];
   if (rows.length === 0) return <NavLink item={item} />;
@@ -135,6 +142,10 @@ function SidebarCollections({ item }: { item: NavItem }) {
             selectedId={null}
             onSelect={(id) => void navigate({ to: "/collections", search: { id } })}
             onDropArtworks={(id, artworkIds) => items.add.mutate({ id, artwork_ids: artworkIds })}
+            // The order is set where it shows: drag a row above, below or into another.
+            onMove={(id, parentId, beforeId) =>
+              move.mutate({ id, parent_id: parentId, before_id: beforeId })
+            }
           />
         </div>
       )}

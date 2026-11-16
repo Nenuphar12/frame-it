@@ -43,6 +43,15 @@ composition apply); a render test levels a 5° horizon. Not driven in a browser:
 picker's keyboard, the straighten slider on the canvas. On the TV: one clean push after the
 handshake fix (the failures were intermittent, so one is a start, not a proof).
 
+**Drag to reorder collections** (user feedback: "how are collections sorted in the sidebar?" — by
+creation, and nothing could change it: the tree's comment promised drops *between* rows, but only
+drops *onto* a row existed). Rows have drop bands above / into / below; a line shows the landing
+spot; the sidebar's tree reorders too; the top-level zone shows only during a drag. The placement is
+`tree.moveFor` (pure: self, own subtree and no-op drops offer nothing); the server's `before_id`
+path, untested until now, has `test_drag_to_reorder_collections`. Not driven in a browser (HTML
+drag and drop cannot be scripted through CDP the way clicks are); the drop rules were run by hand
+on a sample tree (17 cases).
+
 **Straightening guides** (user feedback, same day): while the *Straighten* slider is held — and
 for a moment after it is let go, a value typed or an arrow key — a light grid (square cells, six
 across the short side, a line through the centre each way) covers the photo, in the slot's frame,

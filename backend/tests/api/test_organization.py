@@ -90,6 +90,34 @@ def test_tree_move_and_cycle_prevention(local: TestClient) -> None:
     assert moved.status_code == 200 and moved.json()["parent_id"] is None
 
 
+def test_drag_to_reorder_collections(local: TestClient) -> None:
+    """What the tree's drop line sends: `before_id` = the sibling it lands in front of."""
+    a, b, c = (collection(local, name) for name in ("A", "B", "C"))
+
+    def order(parent: str | None = None) -> list[str]:
+        rows = local.get(f"{API}/collections").json()
+        return [r["name"] for r in rows if r["parent_id"] == parent]
+
+    assert order() == ["A", "B", "C"]  # creation order, not alphabetical: new ones go last
+    move = f"{API}/collections/{c['id']}/move"
+    assert local.post(move, json={"parent_id": None, "before_id": a["id"]}).status_code == 200
+    assert order() == ["C", "A", "B"]
+    assert local.post(move, json={"parent_id": None, "before_id": None}).status_code == 200
+    assert order() == ["A", "B", "C"]
+    # "after an open parent": first among its children
+    b1 = collection(local, "B1", parent_id=b["id"])
+    res = local.post(
+        f"{API}/collections/{a['id']}/move", json={"parent_id": b["id"], "before_id": b1["id"]}
+    )
+    assert res.status_code == 200
+    assert order() == ["B", "C"] and order(b["id"]) == ["A", "B1"]
+    # a sibling from another level is not a place
+    res = local.post(
+        f"{API}/collections/{c['id']}/move", json={"parent_id": None, "before_id": b1["id"]}
+    )
+    assert res.status_code == 422 and res.json()["code"] == "unknown_sibling"
+
+
 def test_include_nested_counts(local: TestClient) -> None:
     root = collection(local, "Trips")
     child = collection(local, "Japan", parent_id=root["id"])

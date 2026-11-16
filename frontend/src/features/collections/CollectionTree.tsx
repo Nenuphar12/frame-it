@@ -6,14 +6,28 @@ import type { Collection } from "@/api/client";
 import { cn } from "@/shared/cn";
 import { ARTWORK_MIME, COLLECTION_MIME, startInternalDrag } from "@/shared/dnd";
 
-import { buildTree, type TreeNode } from "./tree";
+import { buildTree, dropWhere, moveFor, type DropWhere, type TreeNode } from "./tree";
 
+/**
+ * The collection being dragged. `getData` is unreadable during `dragover` (the browser only
+ * releases it on drop), and a drop target must know *what* comes to say where it may land — the
+ * sidebar's tree and the page's are two instances, so it lives here rather than in either.
+ */
+let dragged: string | null = null;
+
+interface DropSpot {
+  id: string;
+  where: DropWhere;
+}
 
 interface CollectionTreeProps {
   rows: Collection[];
   selectedId: string | null;
   onSelect: (id: string) => void;
-  /** Re-parent (drop *on* a row) or reorder (drop *between* rows) — the server refuses cycles. */
+  /**
+   * Drag to reorder (drop above or below a row) or to re-parent (drop *into* a manual row's middle).
+   * `beforeId` is the sibling it lands in front of, `null` for last.
+   */
   onMove?: (id: string, parentId: string | null, beforeId: string | null) => void;
   /** Artworks dropped on a manual collection are added to it. */
   onDropArtworks?: (collectionId: string, artworkIds: string[]) => void;
@@ -31,7 +45,9 @@ export function CollectionTree({
 }: CollectionTreeProps) {
   const tree = useMemo(() => buildTree(rows), [rows]);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-  const [dropTarget, setDropTarget] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<DropSpot | null>(null);
+  // Only while a collection is dragged from this tree: the top-level zone is noise otherwise.
+  const [dragging, setDragging] = useState(false);
 
   const toggle = (id: string) =>
     setCollapsed((current) => {
@@ -45,6 +61,7 @@ export function CollectionTree({
     <div>
       <ul className="space-y-0.5">
         <TreeLevel
+          rows={rows}
           nodes={tree}
           depth={0}
           collapsed={collapsed}
@@ -56,16 +73,17 @@ export function CollectionTree({
           onCreateChild={onCreateChild}
           dropTarget={dropTarget}
           setDropTarget={setDropTarget}
+          setDragging={setDragging}
         />
       </ul>
-      {onMove && <RootDropZone onMove={onMove} />}
+      {onMove && dragging && <RootDropZone onMove={onMove} />}
     </div>
   );
 }
 
 /**
- * Dropping a collection here re-parents it to the **top level**. Without it a sub-collection has
- * nowhere to go: every other target in the tree is another parent (user feedback).
+ * Dropping a collection here makes it the **last** of the top level — the one place no row offers
+ * when the last top-level collection is open (below it is its first child). Shown during a drag.
  */
 function RootDropZone({ onMove }: { onMove: NonNullable<CollectionTreeProps["onMove"]> }) {
   const { t } = useTranslation();
@@ -83,7 +101,7 @@ function RootDropZone({ onMove }: { onMove: NonNullable<CollectionTreeProps["onM
         event.preventDefault();
         setOver(false);
         const moved = event.dataTransfer.getData(COLLECTION_MIME);
-        if (moved) onMove(moved, null, null);
+        if (moved) onMove(moved, null, null); // last of the top level
       }}
       className={cn(
         "mt-1 rounded-md border border-dashed px-2 py-1.5 text-[11px] transition",
@@ -105,11 +123,13 @@ interface LevelProps extends Required<Pick<CollectionTreeProps, "rows">> {
   onMove?: CollectionTreeProps["onMove"];
   onDropArtworks?: CollectionTreeProps["onDropArtworks"];
   onCreateChild?: CollectionTreeProps["onCreateChild"];
-  dropTarget: string | null;
-  setDropTarget: (id: string | null) => void;
+  dropTarget: DropSpot | null;
+  setDropTarget: (spot: DropSpot | null) => void;
+  setDragging: (dragging: boolean) => void;
 }
 
 function TreeLevel({
+  rows,
   nodes,
   depth,
   collapsed,
@@ -121,18 +141,44 @@ function TreeLevel({
   onCreateChild,
   dropTarget,
   setDropTarget,
-}: Omit<LevelProps, "rows">) {
+  setDragging,
+}: LevelProps) {
   const { t } = useTranslation();
+
+  /** Where a collection dragged over `node` would land, and the move that is — or nothing. */
+  const spotFor = (event: DragEvent, node: TreeNode) => {
+    if (dragged === null) return null;
+    const box = event.currentTarget.getBoundingClientRect();
+    const ratio = (event.clientY - box.top) / Math.max(1, box.height);
+    const where = dropWhere(ratio, node.collection.kind === "manual");
+    const open = !collapsed.has(node.collection.id);
+    const move = moveFor(rows, dragged, node.collection.id, where, open);
+    return move ? { where, move } : null;
+  };
 
   const onDragOver = (event: DragEvent, node: TreeNode) => {
     const { types } = event.dataTransfer;
-    const artworks = types.includes(ARTWORK_MIME) && node.collection.kind === "manual";
-    const collections = types.includes(COLLECTION_MIME) && onMove !== undefined;
-    if (!artworks && !collections) return;
-    event.preventDefault();
+    if (types.includes(ARTWORK_MIME)) {
+      if (node.collection.kind !== "manual") return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.dataTransfer.dropEffect = "move"; // what the grid's drag allows
+      setDropTarget({ id: node.collection.id, where: "inside" });
+      return;
+    }
+    if (!types.includes(COLLECTION_MIME) || onMove === undefined) return;
     event.stopPropagation();
+    // Onto itself, into its own subtree, or a place it already has: no drop is offered at all.
+    const spot = spotFor(event, node);
+    if (!spot) {
+      setDropTarget(null);
+      return;
+    }
+    event.preventDefault();
     event.dataTransfer.dropEffect = "move";
-    setDropTarget(node.collection.id);
+    if (dropTarget?.id !== node.collection.id || dropTarget.where !== spot.where) {
+      setDropTarget({ id: node.collection.id, where: spot.where });
+    }
   };
 
   const onDrop = (event: DragEvent, node: TreeNode) => {
@@ -144,10 +190,8 @@ function TreeLevel({
       onDropArtworks?.(node.collection.id, artworkIds.split(",").filter(Boolean));
       return;
     }
-    const moved = event.dataTransfer.getData(COLLECTION_MIME);
-    // Dropping a collection on one of its own descendants is refused by the server
-    // (`collection_cycle`); the tree does not try to guess, it just never offers itself.
-    if (moved && moved !== node.collection.id) onMove?.(moved, node.collection.id, null);
+    const spot = spotFor(event, node);
+    if (dragged && spot) onMove?.(dragged, spot.move.parentId, spot.move.beforeId);
   };
 
   return (
@@ -156,24 +200,46 @@ function TreeLevel({
         const { collection } = node;
         const isOpen = !collapsed.has(collection.id);
         const isSmart = collection.kind === "smart";
+        const spot = dropTarget?.id === collection.id ? dropTarget.where : null;
+        // The line sits where the collection will land: "after" an open parent is its first
+        // child, so the line is indented one level there.
+        const lineDepth =
+          spot === "after" && isOpen && !isSmart && node.children.length > 0 ? depth + 1 : depth;
         return (
           <li key={collection.id}>
             <div
               draggable={onMove !== undefined}
               onDragStart={(event) => {
                 event.stopPropagation();
+                dragged = collection.id;
                 startInternalDrag(event.dataTransfer, COLLECTION_MIME, collection.id);
+                setDragging(true);
+              }}
+              onDragEnd={() => {
+                dragged = null;
+                setDragging(false);
+                setDropTarget(null);
               }}
               onDragOver={(event) => onDragOver(event, node)}
               onDragLeave={() => setDropTarget(null)}
               onDrop={(event) => onDrop(event, node)}
               style={{ paddingLeft: `${depth * 0.9 + 0.25}rem` }}
               className={cn(
-                "group flex items-center gap-1 rounded-md py-1 pr-1.5 text-sm",
+                "group relative flex items-center gap-1 rounded-md py-1 pr-1.5 text-sm",
                 selectedId === collection.id ? "bg-panel-2 text-text" : "text-muted",
-                dropTarget === collection.id && "ring-1 ring-accent",
+                spot === "inside" && "ring-1 ring-accent",
               )}
             >
+              {(spot === "before" || spot === "after") && (
+                <span
+                  aria-hidden
+                  style={{ left: `${lineDepth * 0.9 + 0.25}rem` }}
+                  className={cn(
+                    "pointer-events-none absolute right-0 h-0.5 rounded-full bg-accent",
+                    spot === "before" ? "-top-px" : "-bottom-px",
+                  )}
+                />
+              )}
               <button
                 type="button"
                 onClick={() => toggle(collection.id)}
@@ -218,6 +284,7 @@ function TreeLevel({
             {isOpen && node.children.length > 0 && (
               <ul className="space-y-0.5">
                 <TreeLevel
+                  rows={rows}
                   nodes={node.children}
                   depth={depth + 1}
                   collapsed={collapsed}
@@ -229,6 +296,7 @@ function TreeLevel({
                   onCreateChild={onCreateChild}
                   dropTarget={dropTarget}
                   setDropTarget={setDropTarget}
+                  setDragging={setDragging}
                 />
               </ul>
             )}

@@ -126,8 +126,17 @@ contribute nothing to include-nested — its artworks are matches, not rows.
 An artwork leaves a smart collection by ceasing to match it, never by being removed from it.
 
 A collection's **parent is a field, not a gesture**: the create/edit dialog offers a parent picker
-(`Top level` first, the collection's own subtree excluded), and the tree has a drop zone under it
-that re-parents to the top level. Nesting must never be the only direction available.
+(a tree, `Top level` first, the collection's own subtree excluded), and a "+" on a manual row starts
+a collection inside it. Nesting must never be the only direction available.
+
+**Siblings are in the order the user gives them**, not alphabetical: a new collection goes last,
+and dragging a row — in the sidebar or on the Collections page — reorders it. A manual row has
+three bands (above it, into it, below it), a smart one two (nothing goes inside); a line shows
+where it will land. "Below" an open parent means first among its children, so the line is drawn
+one level in. `tree.moveFor` turns a drop into `POST /collections/{id}/move` with the sibling it
+lands in front of (`before_id`, `null` = last), and offers no drop at all onto itself, into its own
+subtree or where it already is. During a drag, a zone under the tree takes it to the end of the
+top level.
 
 **One way in, two kinds.** The Collections page has a single *New collection* button (`Shift+N`);
 the dialog's first choice is *Manual | Smart*, each with the line that tells them apart. The kind is
