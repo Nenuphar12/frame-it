@@ -141,6 +141,7 @@ def _empty_slots(session: Session, artwork_id: str, photo_ids: set[str]) -> None
             slot.quality_lock = "free"
             slot.source.crop.x, slot.source.crop.y = 0, 0
             slot.source.crop.w, slot.source.crop.h = slot.rect.w, slot.rect.h
+            slot.source.straighten = 0
             changed = True
     if not changed:
         return

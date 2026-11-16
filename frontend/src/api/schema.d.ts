@@ -4202,6 +4202,11 @@ export interface components {
              */
             crop_ratio: string;
             orient?: components["schemas"]["OrientSpec"];
+            /**
+             * Straighten
+             * @default 0
+             */
+            straighten: number;
         };
         /** SwatchCreateIn */
         SwatchCreateIn: {

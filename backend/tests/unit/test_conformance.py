@@ -170,6 +170,11 @@ FUNCTIONS: dict[str, tuple[Callable[..., Any], dict[str, Callable[[Any], Any]]]]
         geometry.rotated_bounds,
         {"rect_x": float, "rect_y": float, "w": float, "h": float, "degrees": float},
     ),
+    "straightened_size": (geometry.straightened_size, {"source": _size, "degrees": float}),
+    "restraighten_crop": (
+        geometry.restraighten_crop,
+        {"crop": _rect, "source": _size, "old": float, "new": float},
+    ),
     "slot_quality": (quality.slot_quality, {"slot": _slot}),
     "artwork_quality": (quality.artwork_quality, {"slots": lambda v: [_slot(s) for s in v]}),
     "available_area": (placement.available_area, {"margins": _margins}),
@@ -514,6 +519,7 @@ def _doc_slot(
     crop: tuple[int, int, int, int] = (0, 0, 3000, 2000),
     rotate: int = 0,
     shadow: bool = False,
+    straighten: float = 0.0,
 ) -> dict[str, Any]:
     """A slot as it reaches the server: deliberately wrong geometry, real framing to preserve.
 
@@ -527,6 +533,7 @@ def _doc_slot(
         "rotation": 12.5,
         "source": {
             "orient": {"rotate": rotate, "flip_h": False},
+            "straighten": straighten,
             "crop": {"x": crop[0], "y": crop[1], "w": crop[2], "h": crop[3]},
             "crop_ratio": "3:2",
         },
@@ -810,6 +817,59 @@ CASES: dict[str, list[tuple[str, str, dict[str, Any]]]] = {
             )
             for d in (0.0, 90.0, -7.0, 45.0, 180.0, 12.3)
         ],
+        *[
+            (f"straightened {d}", "straightened_size", {"source": SRC, "degrees": d})
+            for d in (0.0, 0.1, -2.5, 3.0, 12.3, -45.0)
+        ],
+        (
+            "straightened portrait",
+            "straightened_size",
+            {"source": {"w": 3000, "h": 4000}, "degrees": 4.0},
+        ),
+        (
+            "straightened tiny",
+            "straightened_size",
+            {"source": {"w": 3, "h": 2}, "degrees": 30.0},
+        ),
+        # a small crop off-centre keeps its size and its place on the photo
+        (
+            "restraighten keeps",
+            "restraighten_crop",
+            {
+                "crop": {"x": 400, "y": 300, "w": 1200, "h": 800},
+                "source": SRC,
+                "old": 0.0,
+                "new": 3.0,
+            },
+        ),
+        # the whole photo shrinks to the straightened space, centred
+        (
+            "restraighten shrinks",
+            "restraighten_crop",
+            {
+                "crop": {"x": 0, "y": 0, "w": 6000, "h": 4000},
+                "source": SRC,
+                "old": 0.0,
+                "new": -3.0,
+            },
+        ),
+        # and back to 0: the same centre, the size it had at 3°
+        (
+            "restraighten back",
+            "restraighten_crop",
+            {"crop": {"x": 0, "y": 0, "w": 5570, "h": 3713}, "source": SRC, "old": 3.0, "new": 0.0},
+        ),
+        # a crop against an edge stays inside when the space shrinks
+        (
+            "restraighten clamps",
+            "restraighten_crop",
+            {
+                "crop": {"x": 4000, "y": 0, "w": 2000, "h": 1000},
+                "source": SRC,
+                "old": 0.0,
+                "new": 8.0,
+            },
+        ),
     ],
     "quality.json": [
         ("native", "slot_quality", {"slot": _q(3840, 2160, 3840, 2160)}),
@@ -1630,6 +1690,24 @@ CASES: dict[str, list[tuple[str, str, dict[str, Any]]]] = {
             )
             for align in ("left", "right")
         ],
+        (
+            # the angle stays with the photo, and the crop is refitted inside the straightened
+            # space (5570×3713 at 3° for p1), not the whole photo
+            "apply keeps a straightened photo inside its straightened space",
+            "composition_apply",
+            {
+                "doc": _doc(
+                    _comp("two-side-by-side", "3:2"),
+                    [
+                        _doc_slot(0, "p1", crop=(0, 0, 5570, 3713), straighten=3.0),
+                        _doc_slot(1, "p2", straighten=-1.5),
+                    ],
+                ),
+                "recipe": "two-side-by-side",
+                "photo_sizes": SIZES_3,
+                "caption": None,
+            },
+        ),
         (
             "apply writes a bevelled border and keeps the frame shadow",
             "composition_apply",

@@ -10,6 +10,16 @@ Implemented identically in `backend/src/frame_it/domain/` and `frontend/src/edit
 - Canvas: origin top-left, x → right, y → down, unit = TV pixel, integers.
 - Source space: original pixels **after** EXIF orientation, then `orient.rotate` (clockwise), then `orient.flip_h`.
 - Changing `orient` transforms the existing crop into the new space (not a reset).
+- **Straightening** (`source.straighten`, degrees clockwise, ±45, 0.1° steps, applied after `orient`):
+  the photo turns around its centre and is cut back to the largest centred rectangle **with its own
+  aspect** that holds no background corner — `straightened_size(source, degrees)`, floored. That
+  rectangle *is* the source space the crop lives in, so every rule below (largest crop, zoom, pan,
+  locks, the composition's refit) works on it unchanged: a straightened photo is just a slightly
+  smaller photo. The price: a crop of a very different aspect than the photo's gets a few percent
+  less than the best inscribed rect would allow. `restraighten_crop` carries a crop from one angle
+  to another (same centre on the photo, shrunk only if it no longer fits); a quarter turn commutes
+  with it, a mirror negates the angle. The renderer reads only the photo under the crop, shrinks it
+  (Lanczos), then turns and samples it in one bicubic pass (`_straightened_photo`).
 - Rotation: degrees clockwise around the center of `rect` (float allowed, rounded to 0.1°).
 
 ### 7.2 Scale and tiers
@@ -70,7 +80,8 @@ clamped), `native_crop_for_area` (margins edited under `native`), `margins_for_s
 ⇒ `floor(min(extra_x, extra_y) / 2)` on every side; `mirror_x` / `mirror_y` ⇒ `extra // 2` on both sides of
 that axis), `fit_in_mat`, `fill`/`fill_slot` (a lock the source
 cannot honour becomes `free`), `fit_slot`. Geometry helpers (`geometry.json`): `rect_to_oriented`,
-`rect_from_oriented`, `reorient_crop`, `crop_within`, `aspect_consistent`, `parse_ratio`, `rotated_bounds`.
+`rect_from_oriented`, `reorient_crop`, `crop_within`, `aspect_consistent`, `parse_ratio`, `rotated_bounds`,
+`straightened_size`, `restraighten_crop`.
 Constraint solver and alternatives: §7.3 and §7.6 (Phase 5).
 
 ### 7.5 Snapping (`editor/core/snapping.ts`, client only)

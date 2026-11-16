@@ -117,3 +117,61 @@ export function rotatedBounds(x: number, y: number, w: number, h: number, degree
   const bottom = Math.ceil(cy + halfH - 1e-9);
   return { x: left, y: top, w: right - left, h: bottom - top };
 }
+
+/** A straightening angle beyond this is a quarter turn's job (`Orient.rotate`). */
+export const MAX_STRAIGHTEN = 45;
+
+/**
+ * The space a straightened photo's crop lives in (§7.1): the photo turned by `degrees`
+ * (clockwise) and cut back to the largest centred rectangle with its own aspect that holds no
+ * corner of the background. Every crop rule then works on it as on a plain photo. Floored; `0`
+ * is the photo itself.
+ */
+export function straightenedSize(source: Size, degrees: number): Size {
+  if (degrees === 0) return source;
+  const radians = (degrees * Math.PI) / 180;
+  const cos = Math.abs(Math.cos(radians));
+  const sin = Math.abs(Math.sin(radians));
+  const { w, h } = source;
+  const k = Math.min(w / (w * cos + h * sin), h / (w * sin + h * cos));
+  return {
+    w: Math.max(1, Math.floor(w * k + 1e-9)),
+    h: Math.max(1, Math.floor(h * k + 1e-9)),
+  };
+}
+
+/** Where the straightened space starts inside the turned photo's own frame (centred). */
+export function straightenOffset(source: Size, degrees: number): [number, number] {
+  const inner = straightenedSize(source, degrees);
+  return [(source.w - inner.w) / 2, (source.h - inner.h) / 2];
+}
+
+/**
+ * A crop of the `old` straightened space, carried into the `new` one: same centre on the photo,
+ * same size when it still fits, otherwise the largest of its aspect that does, kept inside.
+ */
+export function restraightenCrop(crop: Rect, source: Size, old: number, next: number): Rect {
+  if (old === next) return crop;
+  const [ox0, oy0] = straightenOffset(source, old);
+  const [ox1, oy1] = straightenOffset(source, next);
+  const bounds = straightenedSize(source, next);
+  const cx = crop.x + crop.w / 2 + ox0 - ox1;
+  const cy = crop.y + crop.h / 2 + oy0 - oy1;
+  let { w, h } = crop;
+  if (w > bounds.w || h > bounds.h) {
+    const scale = Math.min(bounds.w / w, bounds.h / h);
+    w = Math.max(1, Math.min(bounds.w, roundHalfEven(w * scale)));
+    h = Math.max(1, Math.min(bounds.h, roundHalfEven(h * scale)));
+  }
+  const x = Math.min(Math.max(0, roundHalfEven(cx - w / 2)), bounds.w - w);
+  const y = Math.min(Math.max(0, roundHalfEven(cy - h / 2)), bounds.h - h);
+  return { x, y, w, h };
+}
+
+/**
+ * The space a slot's crop lives in: the photo (EXIF-oriented `photo`) after the slot's quarter
+ * turns and flip, then its straightening. Mirror of `SourceSpec.bounds`.
+ */
+export function sourceBounds(photo: Size, orient: Orient, straighten: number = 0): Size {
+  return straightenedSize(orientedSize(photo, orient), straighten);
+}

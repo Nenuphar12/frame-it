@@ -10,10 +10,11 @@ import pytest
 import pyvips
 
 from frame_it.domain.document import ArtworkDocument, EdgeShadow, Shadow
-from frame_it.domain.geometry import Rect
+from frame_it.domain.geometry import Rect, Size, straightened_size
 from frame_it.imaging.decode import load_srgb
 from frame_it.imaging.render import (
     BEVEL_SHADES,
+    RenderError,
     _blur,
     _colored_alpha,
     _drop_shadow,
@@ -360,3 +361,57 @@ def test_scaled_render_size(tmp_path: Path) -> None:
         scale=0.25,
     ).image
     assert (image.width, image.height) == (960, 540)
+
+
+def _tilted_horizon(path: Path, width: int, height: int, degrees: float) -> Path:
+    """White sky over black ground, the horizon through the centre turned `degrees` clockwise."""
+    xyz = pyvips.Image.xyz(width, height)
+    slope = math.tan(math.radians(degrees))
+    below = xyz[1] > (xyz[0] - width / 2) * slope + height / 2
+    image = below.ifthenelse(0, 255).cast("uchar")
+    image.bandjoin([image, image]).copy(interpretation="srgb").write_to_file(str(path))
+    return path
+
+
+def _horizon_row(image: Any, x: int, height: int) -> int:
+    """The first row, going down column `x`, that is darker than mid-grey."""
+    return next(y for y in range(height) if image(x, y)[0] < 128)
+
+
+def test_straightening_levels_a_tilted_horizon(tmp_path: Path) -> None:
+    """A horizon tilted 5° clockwise, straightened by −5°: level across the whole slot."""
+    photo = _tilted_horizon(tmp_path / "p.png", 1200, 800, 5.0)
+    inner = straightened_size(Size(1200, 800), -5.0)
+    rect = {"x": 100, "y": 100, "w": inner.w // 2, "h": inner.h // 2}
+    doc = single(
+        (1200, 800),
+        rect=rect,
+        source={"straighten": -5.0, "crop": {"x": 0, "y": 0, "w": inner.w, "h": inner.h}},
+    )
+    image = render_document(doc, {"p": photo}.get).image.crop(
+        rect["x"], rect["y"], rect["w"], rect["h"]
+    )
+    left = _horizon_row(image, 2, rect["h"])
+    right = _horizon_row(image, rect["w"] - 3, rect["h"])
+    assert abs(left - right) <= 1
+    assert abs(left - rect["h"] / 2) <= 2  # the horizon went through the centre and stays there
+    # Unstraightened, the same crop shows the tilt: tan 5° over the slot's width.
+    flat = single(
+        (1200, 800),
+        rect=rect,
+        source={"crop": {"x": 0, "y": 0, "w": inner.w, "h": inner.h}},
+    )
+    tilted = render_document(flat, {"p": photo}.get).image.crop(
+        rect["x"], rect["y"], rect["w"], rect["h"]
+    )
+    drop = _horizon_row(tilted, rect["w"] - 3, rect["h"]) - _horizon_row(tilted, 2, rect["h"])
+    assert drop > rect["w"] * math.tan(math.radians(5)) * 0.8
+
+
+def test_a_straightened_crop_must_fit_the_straightened_photo(tmp_path: Path) -> None:
+    photo = synthetic(tmp_path / "p.png", 600, 400)
+    doc = single(
+        (600, 400), source={"straighten": 3.0, "crop": {"x": 0, "y": 0, "w": 600, "h": 400}}
+    )
+    with pytest.raises(RenderError):
+        render_document(doc, {"p": photo}.get)

@@ -25,7 +25,8 @@ exposed through OpenAPI → TS types. **Array order = z-order (first is back-mos
       "rotation": 0,                                    // degrees clockwise around rect center, [-180, 180]
       "source": {
         "orient": { "rotate": 0, "flip_h": false },     // rotate ∈ {0,90,180,270}; applied after EXIF
-        "crop": { "x": 0, "y": 0, "w": 6000, "h": 4000 },// integers, in oriented source px
+        "straighten": 0,                                // degrees clockwise after orient, ±45 (0.1°); optional
+        "crop": { "x": 0, "y": 0, "w": 6000, "h": 4000 },// integers, in oriented (+ straightened) source px
         "crop_ratio": "original"                        // original | free | "16:9" | "4:3" | "3:2" | "1:1" | "w:h"
       },
       "quality_lock": "no_upscale",                     // native | no_upscale | free
@@ -51,7 +52,8 @@ Implementation: `backend/src/frame_it/domain/document.py`; JSON Schemas in `docs
 **Validation rules** (server rejects with 422, client never produces):
 - All rect/crop/margin/band values are integers; `rect.w, rect.h ≥ 1`. Canvas coordinates within ±20 000,
   crop values ≤ 100 000; margins leave at least 1 px (`left + right < 3840`, `top + bottom < 2160`).
-- `crop` lies within oriented source bounds (needs photo dims → validated in service layer, like photo existence,
+- `crop` lies within the oriented — and, with `straighten`, straightened (`geometry.straightened_size`) —
+  source bounds (needs photo dims → validated in service layer, like photo existence,
   fonts/weights and textures).
 - Aspect consistency: `|rect.w·crop.h − rect.h·crop.w| ≤ (rect.w + rect.h + crop.w + crop.h) / 2` — each side of
   either rectangle may be off by 0.5 from rounding. (The Phase 1 formula `≤ 1/min(crop)` rejected valid upscaled

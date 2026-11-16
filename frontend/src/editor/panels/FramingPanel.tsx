@@ -27,6 +27,7 @@ import {
 } from "@/editor/operations";
 import { Field, IconButton, NumberField, PanelSection, Segmented, Slider } from "./Controls";
 import { SlotQualityBadge } from "./QualityBadge";
+import { StraightenField } from "./StraightenField";
 
 const SIDES: Side[] = ["top", "right", "bottom", "left"];
 const LOCKS: QualityLock[] = ["native", "no_upscale", "free"];
@@ -187,6 +188,7 @@ export function FramingPanel({ doc, slot, sizes, stageScale, onSnap }: FramingPa
               />
             </Field>
           )}
+          {source && <StraightenField slot={slot} />}
           <div className="flex items-center gap-1.5">
             <IconButton title={t("editor.orient.rotateLeft")} onClick={() => actions.rotateSource(-1)}>
               <RotateCcw size={14} />

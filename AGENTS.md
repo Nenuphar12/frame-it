@@ -21,6 +21,8 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
   - **Editor** (`docs/simple-editor.md`): Konva canvas; **Simple** edits the optional `composition` block
     (a recipe + parameters, `weights` included) that the mirrored solver turns into slots, and the server
     re-solves on every save; **Advanced** is free-form and sets `detached`. 17 recipes at `GET /recipes`.
+    A straightened photo (`source.straighten`) is a smaller photo to every crop rule: the crop lives
+    in `straightened_size` (`slotSource` / `SourceSpec.bounds`), only the renderer and canvas turn it.
   - **Templates** (`docs/templates.md`): a layout is a recipe + parameters; styles and layouts have CRUD,
     "Save as", `.tf*.json` files, apply-template with the outdated badge, and push update (dry run +
     `pre_template_update` snapshots). `restyle`/`relayout` are pure and mirrored.

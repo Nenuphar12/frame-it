@@ -50,9 +50,13 @@ import type {
   Placement,
 } from "@/editor/core/document.ts";
 import {
+  MAX_STRAIGHTEN,
   orientedSize,
   parseRatio,
   reorientCrop,
+  restraightenCrop,
+  sourceBounds,
+  straightenedSize,
   type Orient,
   type Rect,
   type Size,
@@ -75,8 +79,18 @@ export type PhotoSizes = Record<string, Size>;
 
 export const CROP_RATIOS = ["original", "free", "16:9", "3:2", "4:3", "1:1", "4:5"] as const;
 
-/** Source size a slot's crop lives in: the photo after EXIF **and** the slot's own orientation. */
+/**
+ * Source size a slot's crop lives in: the photo after EXIF, the slot's own orientation **and**
+ * its straightening (`sourceBounds`). Every crop rule reads it, so a straightened photo is simply
+ * a slightly smaller one to all of them.
+ */
 export function slotSource(slot: DocSlot, sizes: PhotoSizes): Size | null {
+  const size = slot.photo_id ? sizes[slot.photo_id] : undefined;
+  return size ? sourceBounds(size, slot.source.orient, slot.source.straighten) : null;
+}
+
+/** The photo after EXIF and the slot's orientation, before straightening (what the canvas draws). */
+export function slotOriented(slot: DocSlot, sizes: PhotoSizes): Size | null {
   const size = slot.photo_id ? sizes[slot.photo_id] : undefined;
   return size ? orientedSize(size, slot.source.orient) : null;
 }
@@ -333,9 +347,14 @@ export function setOrient(
   const photo = slot.photo_id ? sizes[slot.photo_id] : undefined;
   if (!photo) return;
   const previous = slot.source.orient;
-  slot.source.crop = reorientCrop(slot.source.crop, photo, previous, orient);
+  // A quarter turn commutes with the straightening, so the crop turns inside the straightened
+  // space exactly as inside the photo; a mirror turns the angle the other way.
+  const straighten = slot.source.straighten;
+  const plain = straightenedSize(photo, straighten);
+  slot.source.crop = reorientCrop(slot.source.crop, plain, previous, orient);
   slot.source.orient = orient;
-  const source = orientedSize(photo, orient);
+  if (previous.flip_h !== orient.flip_h) slot.source.straighten = -straighten + 0;
+  const source = sourceBounds(photo, orient, slot.source.straighten);
   const turned = previous.rotate !== orient.rotate && (previous.rotate + orient.rotate) % 180 !== 0;
   if (turned) {
     // The crop swapped width and height: the slot must follow it.
@@ -487,6 +506,40 @@ export function setPhotoZoom(
   applyZoom(doc, slot, target / slot.source.crop.w, source, sizes);
 }
 
+export function clampStraighten(degrees: number): number {
+  const value = Math.round(degrees * 10) / 10;
+  return Math.min(MAX_STRAIGHTEN, Math.max(-MAX_STRAIGHTEN, value)) + 0;
+}
+
+/**
+ * Straighten the photo (the horizon, say): turn it by `degrees` clockwise, and carry the crop into
+ * the new straightened space — same centre on the photo, zoomed in only as far as the turn needs
+ * (`restraightenCrop`). `from` is the slot as it was when the gesture started: a slider dragged
+ * to 4° and back to 0 within one gesture gets its original framing back instead of keeping the
+ * zoom 4° needed.
+ */
+export function setStraighten(
+  doc: EditorDocument,
+  slot: DocSlot,
+  degrees: number,
+  sizes: PhotoSizes,
+  from: { crop: Rect; straighten: number } | null = null,
+): void {
+  const photo = slotOriented(slot, sizes);
+  if (!photo) return;
+  const value = clampStraighten(degrees);
+  const start = from ?? { crop: slot.source.crop, straighten: slot.source.straighten };
+  const crop = restraightenCrop(start.crop, photo, start.straighten, value);
+  slot.source.straighten = value;
+  const source = straightenedSize(photo, value);
+  // As for the zoom: under an attached block the cell owns the rect (lock off, then `relock`).
+  const parametric = cellOwnsRect(doc);
+  const lock = parametric ? "free" : slot.quality_lock;
+  write(slot, resizeCrop(state(slot), crop, source, lock));
+  if (parametric) relock(slot);
+  else afterCropChange(doc, slot, sizes);
+}
+
 /** `fit_in_mat` re-places the slot around the new crop; `native` pushes the change to the margins. */
 function afterCropChange(doc: EditorDocument, slot: DocSlot, sizes: PhotoSizes): void {
   if (doc.placement !== "fit_in_mat") return;
@@ -585,6 +638,7 @@ export function addSlot(
     rotation: 0,
     source: {
       orient: { rotate: 0, flip_h: false },
+      straighten: 0,
       crop: placed.crop,
       crop_ratio: source ? "original" : "free",
     },
@@ -613,6 +667,7 @@ export function setSlotPhoto(
   const wasEmpty = slot.photo_id === null;
   slot.photo_id = photoId;
   slot.source.orient = { rotate: 0, flip_h: false };
+  slot.source.straighten = 0; // a horizon belongs to a photo, not to the slot
   if (wasEmpty && photoId) slot.quality_lock = "no_upscale";
   const source = photoId ? (sizes[photoId] ?? null) : null;
   if (!source) {
@@ -645,10 +700,22 @@ export function swapPhotos(
   if (!first || !second || first === second) return;
   const photo = first.photo_id;
   const orient = { ...first.source.orient };
+  const angles = [first.source.straighten, second.source.straighten] as const;
   setSlotPhoto(doc, first, second.photo_id, sizes);
   first.source.orient = { ...second.source.orient };
   setSlotPhoto(doc, second, photo, sizes);
   second.source.orient = orient;
+  // The straightening travels with its photo.
+  carryStraighten(first, angles[1], sizes);
+  carryStraighten(second, angles[0], sizes);
+}
+
+/** Straighten a slot whose crop is still that of the unstraightened photo (same aspect kept). */
+function carryStraighten(slot: DocSlot, degrees: number, sizes: PhotoSizes): void {
+  const photo = slotOriented(slot, sizes);
+  if (!photo || degrees === 0) return;
+  slot.source.crop = restraightenCrop(slot.source.crop, photo, 0, degrees);
+  slot.source.straighten = degrees;
 }
 
 // ---- free-form geometry (manual placement) -----------------------------------------------------

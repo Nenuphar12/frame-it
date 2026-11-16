@@ -879,7 +879,9 @@
     "edgeShadow": {
       "label": "Ombre du cadre",
       "hint": "L'ombre douce qu'un cadre projette sur l'image, depuis le bord de l'écran. Restez léger : le cadre de la TV en projette déjà une."
-    }
+    },
+    "straighten": "Redresser",
+    "straightenReset": "Remettre droit (0°)"
   },
   "recipes": {
     "single": "Seule",

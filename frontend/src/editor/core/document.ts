@@ -58,7 +58,13 @@ export interface DocSlot {
   photo_id: string | null;
   rect: Rect;
   rotation: number;
-  source: { orient: Orient; crop: Rect; crop_ratio: string };
+  source: {
+    orient: Orient;
+    /** Degrees clockwise after `orient` (±45, 0.1° steps): the crop lives in `sourceBounds`. */
+    straighten: number;
+    crop: Rect;
+    crop_ratio: string;
+  };
   quality_lock: QualityLock;
   bands: Band[];
   shadow: Shadow | null;
@@ -146,6 +152,7 @@ export function normalizeDocument(raw: ApiDocument): EditorDocument {
       rotation: slot.rotation,
       source: {
         orient: slot.source.orient ?? { rotate: 0, flip_h: false },
+        straighten: slot.source.straighten ?? 0,
         crop: { ...slot.source.crop },
         crop_ratio: slot.source.crop_ratio,
       },

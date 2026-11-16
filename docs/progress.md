@@ -1,5 +1,47 @@
 # Progress log
 
+## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
+
+- **The "hole" in a bevelled mat** (renderer 4). Not stretching: `_bevel` gave a band pixel to the
+  top face when the top edge was nearer than the *sides*, without asking about the bottom edge. In
+  a slot over twice as wide as tall, the middle of the bottom face is nearer the top edge than
+  either side, so it took the top's dark shade — a trapezoid under every wide photo of a
+  Bevelled-mat artwork. `RENDERER_VERSION` 4: every hash moves, the next push re-uploads the set.
+  `test_a_wide_bevel_keeps_its_bottom_face_whole`.
+- **TV pushes failing at random.** The job history held the evidence: `tv_art_unavailable` coming
+  back in 0.1–1.5 s, then the same push succeeding a minute later (2026-10-17, 11-12, 11-15). The
+  library's art `open()` demands that the frame right after `ms.channel.connect` be
+  `ms.channel.ready`, and the TV first announces each client joining — `ms.channel.clientConnect`,
+  for *our own* connection (the frame in the old report carries our name, base64). The 2026-10-02
+  reading — "another connection of ours, TV out of art mode" — took a race for a sleeping TV.
+  `art_channel_class()` waits up to 10 s for `ready` and lets announcements go by; only a TV that
+  never says it is `tv_art_unavailable`, and the message lists the event names it saw. Every push
+  now logs one line (host, duration, what it did, or the code it failed with).
+  **Not verified on the TV** (it was off): the next pushes will say.
+- **Sub-collections** (user feedback): a "+" on each manual row of the tree and a *Sub-collection*
+  button in the header open the dialog with that parent; *Inside* is a tree picker that reads as a
+  path when closed (`ParentPicker`), never offering a smart collection or the edited one's subtree.
+- **Selecting in pickers** (user feedback): `useSelection` gains a picker mode (a click toggles)
+  and skips disabled items. *Add artworks* has Shift-click ranges, Ctrl/Cmd+A (also from the empty
+  search box; with text in it, Ctrl+A selects the text), *Pick all* / *Clear*, and loads more on
+  scroll; the Trash has ranges and Ctrl+A too. The page grid gives up its keys while the picker is
+  open. The range anchor is an id now, not an index: the Inbox changes between two clicks, which
+  is the likely cause of "Shift-click works in Photos, not in the Inbox".
+- **Straightening** (user feedback: "small rotate to adjust the horizon"). `source.straighten`
+  (±45°, 0.1°), a *Straighten* slider (±15°) + field in the Simple and Advanced panels. Design:
+  the crop lives in `straightened_size` — the largest centred rect of the photo's aspect inside the
+  turned photo — so every crop rule, the solver and the server's refit work unchanged
+  (`slotSource` / `SourceSpec.bounds`); only the renderer (`_straightened_photo`: read the region
+  under the crop, Lanczos shrink, one bicubic affine) and the canvas (`StraightenedPhoto`) turn
+  anything. A slider gesture derives each step from where it started, so 0 → 4° → 0 restores the
+  framing. The angle follows its photo on swap, resets on replace, negates on mirror. In
+  `_LATER_DEFAULTS`: checked on `.dev-data`, all 79 artworks rendered under renderer 3 keep their
+  hash with the new schema (10 older ones were already stale since September).
+
+**Verified**: `make check`; conformance (straightened sizes, `restraighten_crop`, a straightened
+composition apply); a render test levels a 5° horizon. Not driven in a browser: the tree "+", the
+picker's keyboard, the straighten slider on the canvas.
+
 ## 2026-10-06 — Open source: Frame It, beta, roadmap
 
 - **Name**: the placeholder `the_frame_v2` becomes **Frame It** — package `frame_it`, command and

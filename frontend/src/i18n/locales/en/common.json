@@ -879,7 +879,9 @@
     "edgeShadow": {
       "label": "Frame shadow",
       "hint": "The soft shadow a frame casts on the picture, from the edge of the screen. Keep it light: the TV's own frame casts one too."
-    }
+    },
+    "straighten": "Straighten",
+    "straightenReset": "Level again (0°)"
   },
   "recipes": {
     "single": "Single",

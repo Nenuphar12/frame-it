@@ -538,3 +538,33 @@ def test_create_composition_errors(local: TestClient) -> None:
         json={"photo_ids": ids, "composition": {"recipe": "two-hero-left", "balance": 3}},
     )
     assert bad_balance.status_code == 422
+
+
+def test_a_straightened_crop_lives_in_the_straightened_photo(local: TestClient) -> None:
+    """`source.straighten`: the crop must fit the turned-and-cut-back photo, not the whole one."""
+    artwork = create(local, [photo(local, 1200, 800)])
+    doc = artwork["document"]
+    slot = doc["slots"][0]
+    whole = {**slot, "quality_lock": "free", "detached": None}
+    whole.pop("detached")
+    too_big = {
+        **whole,
+        "source": {
+            **slot["source"],
+            "straighten": 3.0,
+            "crop": {"x": 0, "y": 0, "w": 1200, "h": 800},
+        },
+    }
+    doc = {**doc, "composition": None, "slots": [too_big]}
+    res = put_document(local, artwork, doc)
+    assert res.status_code == 422
+    assert res.json()["extra"]["errors"][0]["type"] == "crop_out_of_bounds"
+    rect = slot["rect"]
+    fits = {
+        **too_big,
+        "source": {**too_big["source"], "crop": {"x": 0, "y": 0, "w": 1114, "h": 742}},
+        "rect": {**rect, "w": 1114, "h": 742},
+    }
+    saved = put_document(local, artwork, {**doc, "slots": [fits]})
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["document"]["slots"][0]["source"]["straighten"] == 3.0

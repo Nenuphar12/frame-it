@@ -482,6 +482,7 @@ def remapped_document(
         slot.quality_lock = "free"
         slot.source.crop.x, slot.source.crop.y = 0, 0
         slot.source.crop.w, slot.source.crop.h = slot.rect.w, slot.rect.h
+        slot.source.straighten = 0
     return doc, warnings
 
 

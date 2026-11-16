@@ -53,6 +53,7 @@ import {
 import { SlotQualityBadge } from "./QualityBadge";
 import { RecipePicker, RecipeSchema } from "./RecipePicker";
 import { EdgeShadowFields, ShadowFields } from "./ShadowFields";
+import { StraightenField } from "./StraightenField";
 
 /** The ratio chips of §6.2, in the order they are shown. `fill` and `original` are not ratios. */
 const RATIOS = ["1:1", "5:4", "4:3", "3:2", "16:9"] as const;
@@ -886,6 +887,7 @@ function PhotosSection({
               onChange={(value) => actions.setZoom(value)}
             />
           </Field>
+          <StraightenField slot={selected} />
           {/* The tier belongs next to the zoom: it is the number the zoom actually moves (§7.2). */}
           <div className="flex items-center gap-2">
             <SlotQualityBadge slot={selected} />

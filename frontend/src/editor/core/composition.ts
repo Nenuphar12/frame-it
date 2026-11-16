@@ -7,8 +7,8 @@ import {
   type Margins,
   type Rect,
   type Size,
-  orientedSize,
   roundHalfEven,
+  sourceBounds,
 } from "./geometry.ts";
 import { cropCenter, largestCrop, type QualityLock, ratioLabel } from "./placement.ts";
 
@@ -583,7 +583,7 @@ export function captionBaseline(
 /**
  * One slot rewritten from its cell (§3.7): rect, crop, ratio, lock and the border band.
  *
- * `photo_id`, `orient`, `shadow` and the crop's framing (centre + zoom) come from the slot. An
+ * `photo_id`, `orient`, `straighten`, `shadow` and the crop's framing (centre + zoom) come from the slot. An
  * empty slot is a placeholder: crop = the cell, `free` lock — filling it takes `no_upscale` back,
  * or an emptied slot would silently allow upscaling afterwards.
  */
@@ -593,7 +593,7 @@ function solvedSlot(slot: DocSlot, cell: Cell, source: Size | null, border: Band
   let ratio = "free";
   let lock: QualityLock = "free";
   if (source !== null) {
-    const bounds = orientedSize(source, slot.source.orient);
+    const bounds = sourceBounds(source, slot.source.orient, slot.source.straighten ?? 0);
     crop = refitCrop(slot.source.crop, bounds, rect.w / rect.h);
     ratio = cell.ratio_label;
     lock = rect.w > crop.w || rect.h > crop.h ? "free" : "no_upscale";
@@ -603,7 +603,12 @@ function solvedSlot(slot: DocSlot, cell: Cell, source: Size | null, border: Band
     photo_id: slot.photo_id,
     rect: { ...rect },
     rotation: 0,
-    source: { orient: { ...slot.source.orient }, crop, crop_ratio: ratio },
+    source: {
+      orient: { ...slot.source.orient },
+      straighten: source !== null ? (slot.source.straighten ?? 0) : 0,
+      crop,
+      crop_ratio: ratio,
+    },
     quality_lock: lock,
     bands: border ? [{ ...border }] : [],
     shadow: slot.shadow ? { ...slot.shadow } : null,

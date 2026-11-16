@@ -39,7 +39,6 @@ from frame_it.domain.geometry import (
     Margins,
     Rect,
     Size,
-    oriented_size,
     round_half_even,
 )
 from frame_it.domain.placement import crop_center, largest_crop, ratio_label
@@ -623,7 +622,8 @@ def caption_baseline(composition: Composition, caption_size: int, canvas: Size =
 def _solved_slot(slot: Slot, cell: Cell, source: Size | None, border: Band | None) -> Slot:
     """One slot rewritten from its cell (§3.7): rect, crop, ratio, lock and the border band.
 
-    `photo_id`, `orient`, `shadow` and the crop's framing (centre + zoom) come from the slot.
+    `photo_id`, `orient`, `straighten`, `shadow` and the crop's framing (centre + zoom) come from
+    the slot.
     An empty slot is a placeholder: crop = the cell, `free` lock — filling it takes `no_upscale`
     back, or an emptied slot would silently allow upscaling afterwards.
     """
@@ -633,7 +633,7 @@ def _solved_slot(slot: Slot, cell: Cell, source: Size | None, border: Band | Non
     ratio = "free"
     lock: QualityLock = "free"
     if source is not None:
-        bounds = oriented_size(source, slot.source.orient.geometry())
+        bounds = slot.source.bounds(source)
         crop = refit_crop(slot.source.crop.geometry(), bounds, rect.w / rect.h)
         ratio = cell.ratio_label
         lock = "free" if rect.w > crop.w or rect.h > crop.h else "no_upscale"
@@ -644,6 +644,7 @@ def _solved_slot(slot: Slot, cell: Cell, source: Size | None, border: Band | Non
         rotation=0,
         source=SourceSpec(
             orient=slot.source.orient.model_copy(),
+            straighten=slot.source.straighten if source is not None else 0,
             crop=CropSpec(x=crop.x, y=crop.y, w=crop.w, h=crop.h),
             crop_ratio=ratio,
         ),

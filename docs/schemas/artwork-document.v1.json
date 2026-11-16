@@ -689,6 +689,13 @@
         },
         "orient": {
           "$ref": "#/$defs/OrientSpec"
+        },
+        "straighten": {
+          "default": 0,
+          "maximum": 45.0,
+          "minimum": -45.0,
+          "title": "Straighten",
+          "type": "number"
         }
       },
       "required": [

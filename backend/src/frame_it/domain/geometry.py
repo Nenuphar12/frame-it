@@ -124,6 +124,57 @@ def parse_ratio(crop_ratio: str, source: Size) -> float | None:
     return int(width) / int(height)
 
 
+MAX_STRAIGHTEN = 45.0
+"""A straightening angle beyond this is a quarter turn's job (`Orient.rotate`)."""
+
+
+def straightened_size(source: Size, degrees: float) -> Size:
+    """The space a straightened photo's crop lives in (docs/geometry-and-quality.md §7.1).
+
+    The photo turns by `degrees` (clockwise) around its centre, and is cut back to the largest
+    centred rectangle **with its own aspect** that holds no corner of the background — what a
+    phone's "straighten" does. Every crop rule then works on this smaller photo exactly as on a
+    plain one, which is the point: nothing downstream needs to know about the angle. Floored, so
+    the space never reaches past the turned photo; `0` is the photo itself, to the pixel.
+    """
+    if degrees == 0:
+        return source
+    radians = math.radians(degrees)
+    cos, sin = abs(math.cos(radians)), abs(math.sin(radians))
+    w, h = source.w, source.h
+    k = min(w / (w * cos + h * sin), h / (w * sin + h * cos))
+    return Size(max(1, math.floor(w * k + 1e-9)), max(1, math.floor(h * k + 1e-9)))
+
+
+def straighten_offset(source: Size, degrees: float) -> tuple[float, float]:
+    """Where the straightened space starts inside the turned photo's own frame (centred)."""
+    inner = straightened_size(source, degrees)
+    return (source.w - inner.w) / 2, (source.h - inner.h) / 2
+
+
+def restraighten_crop(crop: Rect, source: Size, old: float, new: float) -> Rect:
+    """A crop of the `old` straightened space, carried into the `new` one.
+
+    Same centre on the photo; same size when it still fits, otherwise the largest of its aspect
+    that does (the photo zooms in as it turns, like a phone's), and kept inside.
+    """
+    if old == new:
+        return crop
+    ox0, oy0 = straighten_offset(source, old)
+    ox1, oy1 = straighten_offset(source, new)
+    bounds = straightened_size(source, new)
+    cx = crop.x + crop.w / 2 + ox0 - ox1
+    cy = crop.y + crop.h / 2 + oy0 - oy1
+    w, h = crop.w, crop.h
+    if w > bounds.w or h > bounds.h:
+        scale = min(bounds.w / w, bounds.h / h)
+        w = max(1, min(bounds.w, round_half_even(w * scale)))
+        h = max(1, min(bounds.h, round_half_even(h * scale)))
+    x = min(max(0, round_half_even(cx - w / 2)), bounds.w - w)
+    y = min(max(0, round_half_even(cy - h / 2)), bounds.h - h)
+    return Rect(x, y, w, h)
+
+
 def rotated_bounds(rect_x: float, rect_y: float, w: float, h: float, degrees: float) -> Rect:
     """Integer bounding box of a `w×h` box at (rect_x, rect_y) rotated around its centre."""
     cx, cy = rect_x + w / 2, rect_y + h / 2

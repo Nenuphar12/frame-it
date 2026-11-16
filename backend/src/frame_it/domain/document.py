@@ -16,12 +16,14 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_vali
 from frame_it.domain.geometry import (
     CANVAS_HEIGHT,
     CANVAS_WIDTH,
+    MAX_STRAIGHTEN,
     Orient,
     Rect,
     Size,
     aspect_consistent,
     crop_within,
     oriented_size,
+    straightened_size,
 )
 from frame_it.domain.quality import ArtworkQuality, SlotGeometry, artwork_quality
 
@@ -129,8 +131,20 @@ class OrientSpec(DocModel):
 
 class SourceSpec(DocModel):
     orient: OrientSpec = Field(default_factory=OrientSpec)
+    straighten: float = Field(default=0, ge=-MAX_STRAIGHTEN, le=MAX_STRAIGHTEN)
+    """Degrees clockwise, applied after `orient`, stored rounded to 0.1°: the photo is turned and
+    cut back to `geometry.straightened_size`, the space `crop` is expressed in (§7.1)."""
     crop: CropSpec
     crop_ratio: CropRatio = "original"
+
+    @model_validator(mode="after")
+    def _round_straighten(self) -> SourceSpec:
+        self.straighten = round(self.straighten, 1) + 0.0  # normalise -0.0
+        return self
+
+    def bounds(self, photo: Size) -> Size:
+        """The space `crop` lives in, for a photo of this EXIF-oriented size."""
+        return straightened_size(oriented_size(photo, self.orient.geometry()), self.straighten)
 
 
 class Band(DocModel):
@@ -359,7 +373,7 @@ _LATER_DEFAULTS: dict[str, Any] = {
         "caption": {"align": "center"},
         "border": {"bevel": False},
     },
-    "slots": [{"bands": [{"bevel": False}]}],
+    "slots": [{"source": {"straighten": 0}, "bands": [{"bevel": False}]}],
 }
 """Fields added to schema 1 after it shipped, with the default each one is omitted at
 (`render_identity`). A dict descends into an object, a one-item list into every item of a list."""
@@ -484,7 +498,7 @@ def validate_references(
                 DocumentIssue(("slots", index, "photo_id"), "unknown photo", "unknown_photo")
             )
             continue
-        bounds = oriented_size(size, slot.source.orient.geometry())
+        bounds = slot.source.bounds(size)
         if not crop_within(slot.source.crop.geometry(), bounds):
             issues.append(
                 DocumentIssue(

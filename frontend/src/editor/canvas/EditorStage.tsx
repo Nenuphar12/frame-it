@@ -18,7 +18,7 @@ import { availableArea } from "@/editor/core/placement.ts";
 import { snapRect, TOLERANCE_PX } from "@/editor/core/snapping.ts";
 import { dragShares, type Divider } from "@/editor/core/splits.ts";
 import { PHOTO_MIME } from "@/shared/dnd";
-import { slotSource, type PhotoSizes } from "@/editor/operations";
+import { slotOriented, slotSource, type PhotoSizes } from "@/editor/operations";
 import { CaptionNode } from "./CaptionNode.tsx";
 import { captionBox } from "./fonts.ts";
 import {
@@ -655,6 +655,7 @@ export function EditorStage({
                 key={slot.id}
                 slot={slot}
                 source={slotSource(slot, sizes)}
+                oriented={slotOriented(slot, sizes)}
                 dimmed={reframing && primaryId !== null && slot.id !== primaryId}
               />
             ))}

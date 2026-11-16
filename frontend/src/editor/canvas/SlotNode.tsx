@@ -8,13 +8,15 @@ import { Group, Image as KonvaImage, Line, Rect, Shape } from "react-konva";
 
 import { bevelFaces } from "@/editor/core/bevel.ts";
 import { bandWidth, type DocSlot, type Shadow } from "@/editor/core/document.ts";
-import type { Size } from "@/editor/core/geometry.ts";
+import { straightenOffset, type Size } from "@/editor/core/geometry.ts";
 import { useOrientedImage } from "./useOrientedImage.ts";
 
 interface SlotNodeProps {
   slot: DocSlot;
-  /** Oriented source size the crop is expressed in (photo size after EXIF and `orient`). */
+  /** Source size the crop is expressed in (after EXIF, `orient` and the straightening). */
   source: Size | null;
+  /** The photo after EXIF and `orient`, before straightening — what the proxy image is. */
+  oriented: Size | null;
   /** Dim the slots that are not being edited (crop mode). */
   dimmed?: boolean;
 }
@@ -28,7 +30,7 @@ interface SlotNodeProps {
 const ringPad = (shadow: Shadow) =>
   shadow.blur * 3 + Math.abs(shadow.offset_x) + Math.abs(shadow.offset_y) + 8;
 
-export function SlotNode({ slot, source, dimmed = false }: SlotNodeProps) {
+export function SlotNode({ slot, source, oriented, dimmed = false }: SlotNodeProps) {
   const proxy = useOrientedImage(slot.photo_id, slot.source.orient);
   const { rect, shadow } = slot;
   const band = bandWidth(slot);
@@ -40,6 +42,7 @@ export function SlotNode({ slot, source, dimmed = false }: SlotNodeProps) {
   };
   // The proxy is the oriented photo scaled down: crops convert with a single factor.
   const toProxy = proxy && source ? proxy.width / source.w : 1;
+  const straighten = slot.source.straighten;
 
   return (
     <Group
@@ -91,7 +94,9 @@ export function SlotNode({ slot, source, dimmed = false }: SlotNodeProps) {
           />
         );
       })}
-      {proxy ? (
+      {proxy && straighten !== 0 && oriented ? (
+        <StraightenedPhoto slot={slot} image={proxy.image} oriented={oriented} />
+      ) : proxy ? (
         <KonvaImage
           image={proxy.image}
           x={-rect.w / 2}
@@ -118,6 +123,42 @@ export function SlotNode({ slot, source, dimmed = false }: SlotNodeProps) {
         />
       )}
       {shadow?.type === "inner" && <InnerShadow shadow={shadow} {...layer} />}
+    </Group>
+  );
+}
+
+/**
+ * A straightened photo (`source.straighten`): the whole oriented photo turned around its centre,
+ * placed so that the crop — a rect of the straightened space — fills the slot, and clipped to it.
+ * The renderer's transform (`_straightened_photo`), in the slot's frame (origin at its centre).
+ */
+function StraightenedPhoto({
+  slot,
+  image,
+  oriented,
+}: {
+  slot: DocSlot;
+  image: CanvasImageSource;
+  oriented: Size;
+}) {
+  const { rect } = slot;
+  const { crop, straighten } = slot.source;
+  const k = rect.w / crop.w;
+  const [ox, oy] = straightenOffset(oriented, straighten);
+  const width = oriented.w * k;
+  const height = oriented.h * k;
+  return (
+    <Group clipX={-rect.w / 2} clipY={-rect.h / 2} clipWidth={rect.w} clipHeight={rect.h}>
+      <KonvaImage
+        image={image}
+        width={width}
+        height={height}
+        offsetX={width / 2}
+        offsetY={height / 2}
+        rotation={straighten}
+        x={k * (oriented.w / 2 - ox - (crop.x + crop.w / 2))}
+        y={k * (oriented.h / 2 - oy - (crop.y + crop.h / 2))}
+      />
     </Group>
   );
 }

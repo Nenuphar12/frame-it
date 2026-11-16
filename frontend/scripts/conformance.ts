@@ -47,6 +47,9 @@ const FUNCTIONS: Record<string, Fn> = {
   parse_ratio: (x) => geometry.parseRatio(a(x, "crop_ratio"), a(x, "source")),
   rotated_bounds: (x) =>
     geometry.rotatedBounds(a(x, "rect_x"), a(x, "rect_y"), a(x, "w"), a(x, "h"), a(x, "degrees")),
+  straightened_size: (x) => geometry.straightenedSize(a(x, "source"), a(x, "degrees")),
+  restraighten_crop: (x) =>
+    geometry.restraightenCrop(a(x, "crop"), a(x, "source"), a(x, "old"), a(x, "new")),
   slot_quality: (x) => quality.slotQuality(a(x, "slot")),
   artwork_quality: (x) => quality.artworkQuality(a(x, "slots")),
   available_area: (x) => placement.availableArea(a(x, "margins")),

@@ -28,7 +28,15 @@ from frame_it.domain.document import (
     Shadow,
     Slot,
 )
-from frame_it.domain.geometry import CANVAS_HEIGHT, CANVAS_WIDTH, Rect, round_half_even
+from frame_it.domain.geometry import (
+    CANVAS_HEIGHT,
+    CANVAS_WIDTH,
+    Rect,
+    Size,
+    round_half_even,
+    straighten_offset,
+    straightened_size,
+)
 from frame_it.imaging.assets import AssetCatalog, FontAsset, catalog
 from frame_it.imaging.decode import DecodeError, load_srgb, pixel_count
 
@@ -276,15 +284,68 @@ def _slot_photo(slot: Slot, image: Any, scale: float) -> Any:
     if orient.flip_h:
         image = image.fliphor()
     crop = slot.source.crop
+    width = max(1, _scaled(slot.rect.w, scale))
+    height = max(1, _scaled(slot.rect.h, scale))
+    if slot.source.straighten != 0:
+        return _straightened_photo(slot, image, width, height)
     if crop.x + crop.w > image.width or crop.y + crop.h > image.height:
         raise RenderError("crop_out_of_bounds", slot.id)
     image = image.crop(crop.x, crop.y, crop.w, crop.h)
-    width = max(1, _scaled(slot.rect.w, scale))
-    height = max(1, _scaled(slot.rect.h, scale))
     if (width, height) != (crop.w, crop.h):
         image = image.resize(width / crop.w, vscale=height / crop.h, kernel="lanczos3")
         image = _force_size(image, width, height)
     return image
+
+
+def _straightened_photo(slot: Slot, image: Any, width: int, height: int) -> Any:
+    """The crop of a straightened photo (`source.straighten`), at `width × height`.
+
+    The crop lives in `straightened_size`: the photo turned clockwise around its centre and cut
+    back to the largest centred rectangle of its aspect. Only the part of the original under the
+    crop is read; it is first shrunk with the same Lanczos filter as an unturned photo (a bicubic
+    rotation alone would alias a big downscale), then turned and sampled in one bicubic pass.
+    Pixel centres at +0.5, as in `_rotate`.
+    """
+    crop = slot.source.crop
+    degrees = slot.source.straighten
+    full = Size(image.width, image.height)
+    inner = straightened_size(full, degrees)
+    if crop.x + crop.w > inner.w or crop.y + crop.h > inner.h:
+        raise RenderError("crop_out_of_bounds", slot.id)
+    ox, oy = straighten_offset(full, degrees)
+    cx, cy = full.w / 2, full.h / 2
+    radians = math.radians(degrees)
+    cos, sin = math.cos(radians), math.sin(radians)
+
+    def to_source(u: float, v: float) -> tuple[float, float]:
+        """A point of the straightened space, on the original (the inverse turn)."""
+        px, py = u + ox - cx, v + oy - cy
+        return cx + cos * px + sin * py, cy - sin * px + cos * py
+
+    corners = [to_source(crop.x + a, crop.y + b) for a in (0, crop.w) for b in (0, crop.h)]
+    left = max(0, math.floor(min(x for x, _ in corners)) - 3)
+    top = max(0, math.floor(min(y for _, y in corners)) - 3)
+    right = min(full.w, math.ceil(max(x for x, _ in corners)) + 3)
+    bottom = min(full.h, math.ceil(max(y for _, y in corners)) + 3)
+    region = image.crop(left, top, right - left, bottom - top)
+    sx, sy = width / crop.w, height / crop.h
+    shrink = max(sx, sy)
+    if shrink < 1:
+        region = region.resize(shrink, kernel="lanczos3")
+    rx, ry = region.width / (right - left), region.height / (bottom - top)
+    # Output = D · R · (x − C) + D · (C − offset − crop), with x = (left, top) + q / r for a
+    # region pixel q: the region's own scale goes into the matrix, its position into `idx`.
+    turned = region.affine(
+        [sx * cos / rx, -sx * sin / ry, sy * sin / rx, sy * cos / ry],
+        oarea=[0, 0, width, height],
+        idx=0.5 + rx * (left - cx),
+        idy=0.5 + ry * (top - cy),
+        odx=sx * (cx - ox - crop.x) - 0.5,
+        ody=sy * (cy - oy - crop.y) - 0.5,
+        interpolate=_BICUBIC,
+        extend="copy",
+    )
+    return turned.rint().cast("uchar").copy(interpretation="srgb")
 
 
 def _force_size(image: Any, width: int, height: int) -> Any:

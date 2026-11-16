@@ -10,7 +10,7 @@ import {
   type EditorDocument,
   type Placement,
 } from "@/editor/core/document.ts";
-import type { Orient } from "@/editor/core/geometry.ts";
+import type { Orient, Rect } from "@/editor/core/geometry.ts";
 import type { QualityLock } from "@/editor/core/placement.ts";
 import * as ops from "@/editor/operations";
 import type { Axis, Edge } from "@/editor/core/arrange.ts";
@@ -211,6 +211,48 @@ export const setNativeFraming = () =>
 /** Absolute photo zoom (the panel's slider, §7.5); the wheel uses `zoomCrop`. */
 export const setZoom = (zoom: number) =>
   onSlot((doc, slot) => ops.setPhotoZoom(doc, slot, zoom, sizes()), "crop-zoom");
+
+/**
+ * Where a straightening gesture started, so the slider derives every step from it: 0 → 4° → 0
+ * in one drag gives the original framing back (`ops.setStraighten`). It is only trusted while the
+ * slot still holds what the gesture last wrote — a zoom or a pan in between starts a new one.
+ */
+let straightening: {
+  slotId: string;
+  from: { crop: Rect; straighten: number };
+  wrote: { crop: Rect; straighten: number };
+} | null = null;
+
+const sameFraming = (a: { crop: Rect; straighten: number }, b: DocSlot["source"]) =>
+  a.straighten === b.straighten &&
+  a.crop.x === b.crop.x &&
+  a.crop.y === b.crop.y &&
+  a.crop.w === b.crop.w &&
+  a.crop.h === b.crop.h;
+
+/** Straighten the primary slot's photo (the Photo section's slider and field, ±45°). */
+export const setStraighten = (degrees: number) =>
+  onSlot((doc, slot) => {
+    const ongoing =
+      straightening?.slotId === slot.id && sameFraming(straightening.wrote, slot.source)
+        ? straightening
+        : null;
+    const from = ongoing?.from ?? {
+      crop: { ...slot.source.crop },
+      straighten: slot.source.straighten,
+    };
+    ops.setStraighten(doc, slot, degrees, sizes(), from);
+    straightening = {
+      slotId: slot.id,
+      from,
+      wrote: { crop: { ...slot.source.crop }, straighten: slot.source.straighten },
+    };
+  }, "straighten");
+
+/** The slider was released: the next change starts from the framing as it now is. */
+export const endStraighten = () => {
+  straightening = null;
+};
 
 export const setBands = (bands: DocSlot["bands"]) =>
   onSlots((doc, slot) => {

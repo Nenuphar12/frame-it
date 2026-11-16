@@ -669,6 +669,222 @@
         "w": 1106,
         "h": 800
       }
+    },
+    {
+      "name": "straightened 0.0",
+      "fn": "straightened_size",
+      "input": {
+        "source": {
+          "w": 6000,
+          "h": 4000
+        },
+        "degrees": 0.0
+      },
+      "expected": {
+        "w": 6000,
+        "h": 4000
+      }
+    },
+    {
+      "name": "straightened 0.1",
+      "fn": "straightened_size",
+      "input": {
+        "source": {
+          "w": 6000,
+          "h": 4000
+        },
+        "degrees": 0.1
+      },
+      "expected": {
+        "w": 5984,
+        "h": 3989
+      }
+    },
+    {
+      "name": "straightened -2.5",
+      "fn": "straightened_size",
+      "input": {
+        "source": {
+          "w": 6000,
+          "h": 4000
+        },
+        "degrees": -2.5
+      },
+      "expected": {
+        "w": 5636,
+        "h": 3757
+      }
+    },
+    {
+      "name": "straightened 3.0",
+      "fn": "straightened_size",
+      "input": {
+        "source": {
+          "w": 6000,
+          "h": 4000
+        },
+        "degrees": 3.0
+      },
+      "expected": {
+        "w": 5570,
+        "h": 3713
+      }
+    },
+    {
+      "name": "straightened 12.3",
+      "fn": "straightened_size",
+      "input": {
+        "source": {
+          "w": 6000,
+          "h": 4000
+        },
+        "degrees": 12.3
+      },
+      "expected": {
+        "w": 4627,
+        "h": 3085
+      }
+    },
+    {
+      "name": "straightened -45.0",
+      "fn": "straightened_size",
+      "input": {
+        "source": {
+          "w": 6000,
+          "h": 4000
+        },
+        "degrees": -45.0
+      },
+      "expected": {
+        "w": 3394,
+        "h": 2262
+      }
+    },
+    {
+      "name": "straightened portrait",
+      "fn": "straightened_size",
+      "input": {
+        "source": {
+          "w": 3000,
+          "h": 4000
+        },
+        "degrees": 4.0
+      },
+      "expected": {
+        "w": 2750,
+        "h": 3667
+      }
+    },
+    {
+      "name": "straightened tiny",
+      "fn": "straightened_size",
+      "input": {
+        "source": {
+          "w": 3,
+          "h": 2
+        },
+        "degrees": 30.0
+      },
+      "expected": {
+        "w": 1,
+        "h": 1
+      }
+    },
+    {
+      "name": "restraighten keeps",
+      "fn": "restraighten_crop",
+      "input": {
+        "crop": {
+          "x": 400,
+          "y": 300,
+          "w": 1200,
+          "h": 800
+        },
+        "source": {
+          "w": 6000,
+          "h": 4000
+        },
+        "old": 0.0,
+        "new": 3.0
+      },
+      "expected": {
+        "x": 185,
+        "y": 156,
+        "w": 1200,
+        "h": 800
+      }
+    },
+    {
+      "name": "restraighten shrinks",
+      "fn": "restraighten_crop",
+      "input": {
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "w": 6000,
+          "h": 4000
+        },
+        "source": {
+          "w": 6000,
+          "h": 4000
+        },
+        "old": 0.0,
+        "new": -3.0
+      },
+      "expected": {
+        "x": 0,
+        "y": 0,
+        "w": 5570,
+        "h": 3713
+      }
+    },
+    {
+      "name": "restraighten back",
+      "fn": "restraighten_crop",
+      "input": {
+        "crop": {
+          "x": 0,
+          "y": 0,
+          "w": 5570,
+          "h": 3713
+        },
+        "source": {
+          "w": 6000,
+          "h": 4000
+        },
+        "old": 3.0,
+        "new": 0.0
+      },
+      "expected": {
+        "x": 215,
+        "y": 144,
+        "w": 5570,
+        "h": 3713
+      }
+    },
+    {
+      "name": "restraighten clamps",
+      "fn": "restraighten_crop",
+      "input": {
+        "crop": {
+          "x": 4000,
+          "y": 0,
+          "w": 2000,
+          "h": 1000
+        },
+        "source": {
+          "w": 6000,
+          "h": 4000
+        },
+        "old": 0.0,
+        "new": 8.0
+      },
+      "expected": {
+        "x": 3004,
+        "y": 0,
+        "w": 2000,
+        "h": 1000
+      }
     }
   ]
 }
