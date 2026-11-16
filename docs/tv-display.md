@@ -72,7 +72,8 @@ as usual.
 Failures never retry silently: any `TvError` becomes a `PermanentJobError` whose code
 (`tv_unreachable`, `tv_art_unavailable`, `tv_unauthorized`, `tv_rejected`) reaches `/activity`,
 where the job can be run again once the TV is awake. `tv_art_unavailable` is a TV that **took the
-connection but whose art app never said it was ready** — off, or out of art mode — as opposed to a
+connection but whose art app never said it was ready within `READY_SECONDS` (10 s)** — off, or out
+of art mode (the client announcements that may come first are not an answer, `tv/client.py`) — as opposed to a
 TV that is not on the network at all; it is not looked for by MAC, since it answered where it is. A failure before the TV is reached (`empty_set`, a render error) ends the
 same way, and clears the stored progress.
 

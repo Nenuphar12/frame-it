@@ -15,11 +15,18 @@ Everything here was measured against a 2025 Frame (`TQ55LS03FAUXXC`, art API 5.0
 is why `TvRejectedError` is separate from `TvUnreachableError`. And a TV that is **off** still
 accepts the websocket — its art app just never says it is ready — which is why
 `TvArtUnavailableError` is separate too: "is it on the network?" is the wrong question there.
+
+The library's art `open()` reads **one** frame after `ms.channel.connect` and fails unless it is
+`ms.channel.ready`. But the TV also announces every client that joins the channel
+(`ms.channel.clientConnect`, our own connection included), in no fixed order with `ready`: the
+job history showed pushes failing within 0.1 s and the same push succeeding a minute later.
+`art_channel_class()` waits up to `READY_SECONDS` for `ready` and lets those announcements go by.
 """
 
 from __future__ import annotations
 
 import logging
+import time
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 
@@ -27,6 +34,10 @@ log = logging.getLogger(__name__)
 
 #: Intervals this firmware accepts, in minutes; anything else answers `-7` (measured).
 SLIDESHOW_MINUTES: tuple[int, ...] = (3, 15, 60, 720, 1440)
+
+READY_SECONDS = 10.0
+"""How long the art app has to say `ms.channel.ready` once the websocket is open. A Frame in art
+mode answers in well under a second; one that is off never does."""
 
 MY_PICTURES = "MY-C0002"
 FAVOURITES = "MY-C0004"
@@ -135,15 +146,28 @@ def _link_error(exc: Exception) -> TvError:
     return TvUnreachableError(f"{name}: {text}" if text else name)
 
 
+class ArtNotReadyError(Exception):
+    """The art channel waited `READY_SECONDS` and the art app never said `ms.channel.ready`.
+
+    Carries the events that came instead — their names only: a frame carries the pairing token.
+    """
+
+    def __init__(self, events: list[str]) -> None:
+        self.events = events
+        seen = ", ".join(events) if events else "nothing"
+        super().__init__(f"no ms.channel.ready within {READY_SECONDS:g} s, got: {seen}")
+
+
 def _art_is_silent(exc: Exception) -> bool:
     """The websocket opened (the TV is there), then the art app did not answer.
 
-    The library says so in two ways, both a `ConnectionFailure`: the frame it got while waiting
-    for `ms.channel.ready` (in practice `ms.channel.clientConnect`: another connection of ours
-    joining the channel — what a push answered on 2026-10-02 with the TV out of art mode), or
-    `Websocket Time out` when nothing came at all. A TV that is off the network never gets that
-    far: it fails in the socket, with another exception.
+    Our channel says so with `ArtNotReadyError`. The library's own two ways, both a
+    `ConnectionFailure`, are kept in case another of its paths raises them: the frame it got while
+    waiting for `ms.channel.ready`, or `Websocket Time out` when nothing came at all. A TV that is
+    off the network never gets that far: it fails in the socket, with another exception.
     """
+    if isinstance(exc, ArtNotReadyError):
+        return True
     if type(exc).__name__ != "ConnectionFailure":
         return False
     frame = exc.args[0] if exc.args else None
@@ -158,10 +182,69 @@ def _art_error(exc: Exception) -> TvError:
     Its message is ours: the library's is the raw frame, which carries the pairing token.
     """
     if _art_is_silent(exc):
+        detail = f" ({exc})" if isinstance(exc, ArtNotReadyError) else ""
         return TvArtUnavailableError(
             "the TV answered but its art mode did not: turn it on, or switch it to art mode"
+            + detail
         )
     return _link_error(exc)
+
+
+_ART_CHANNEL: type | None = None
+
+
+def art_channel_class() -> type:
+    """`SamsungTVArt` whose `open()` waits for `ms.channel.ready` instead of demanding it next.
+
+    Built on first use, so that importing this module does not import the library.
+    """
+    global _ART_CHANNEL
+    if _ART_CHANNEL is not None:
+        return _ART_CHANNEL
+    from samsungtvws import exceptions
+    from samsungtvws.art import SamsungTVArt
+    from samsungtvws.connection import SamsungTVWSConnection
+    from samsungtvws.event import MS_CHANNEL_READY_EVENT, MS_CHANNEL_UNAUTHORIZED
+
+    class ArtChannel(SamsungTVArt):
+        ready_seconds = READY_SECONDS
+
+        def open(self) -> Any:
+            # The handshake, up to `ms.channel.connect` (it also sets `self.connection`).
+            connection = SamsungTVWSConnection.open(self)
+            started = time.monotonic()
+            deadline = started + self.ready_seconds
+            events: list[str] = []
+            try:
+                while True:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise ArtNotReadyError(events)
+                    connection.settimeout(min(remaining, self.timeout or remaining))
+                    try:
+                        event, _frame = self._recv_frame()
+                    except exceptions.ConnectionFailure as exc:
+                        if str(exc).startswith("Websocket Time out"):
+                            raise ArtNotReadyError(events) from exc
+                        raise
+                    if event == MS_CHANNEL_READY_EVENT:
+                        connection.settimeout(self.timeout)
+                        log.info(
+                            "TV art channel ready in %.2f s%s",
+                            time.monotonic() - started,
+                            f", after {', '.join(events)}" if events else "",
+                        )
+                        return connection
+                    if event == MS_CHANNEL_UNAUTHORIZED:
+                        raise exceptions.UnauthorizedError({"event": event})
+                    events.append(str(event))
+            except BaseException:
+                log.warning("TV art channel not ready; events seen: %s", events or "none")
+                self.close()
+                raise
+
+    _ART_CHANNEL = ArtChannel
+    return ArtChannel
 
 
 class SamsungTvClient:
@@ -175,25 +258,20 @@ class SamsungTvClient:
         self.host = host
         self.token = token
         self._timeout = timeout
-        self._tv: Any | None = None
         self._art: Any | None = None
 
     # ---- plumbing ----------------------------------------------------------------------------
     def _connect(self) -> Any:
+        """The art channel object; its websocket opens on the first request."""
         if self._art is not None:
             return self._art
         try:
-            from samsungtvws import SamsungTVWS
+            channel = art_channel_class()
         except ImportError as exc:  # pragma: no cover - the dependency is declared
             raise TvError("samsungtvws is not installed") from exc
-        self._tv = SamsungTVWS(
-            host=self.host,
-            port=8002,
-            token=self.token,
-            timeout=self._timeout,
-            name="Frame It",
+        self._art = channel(
+            self.host, token=self.token, port=8002, timeout=self._timeout, name="Frame It"
         )
-        self._art = self._tv.art()
         return self._art
 
     def _rest(self) -> dict[str, Any]:
@@ -209,15 +287,12 @@ class SamsungTvClient:
         return payload
 
     def close(self) -> None:
-        for handle in (self._art, self._tv):
-            if handle is None:
-                continue
+        if self._art is not None:
             try:
-                handle.close()
+                self._art.close()
             except Exception:
                 log.debug("closing the TV connection failed", exc_info=True)
         self._art = None
-        self._tv = None
 
     def __enter__(self) -> SamsungTvClient:
         return self

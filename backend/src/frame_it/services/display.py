@@ -807,9 +807,12 @@ def push(
     Whatever fails — an empty set as much as a sleeping TV — the target ends in `error` with the
     code, and without the progress `enqueue_push` stored (or the tray would wait forever).
     """
+    started = time.monotonic()
+    host: str | None = None
     try:
         with ctx.db.session() as s:
             target = get_target(s, target_id)
+            host = target.host
             source = dict(target.source or {})
             if not source:
                 raise ProblemError(422, "no_source", "This TV has no set to show yet")
@@ -852,6 +855,15 @@ def push(
         )
     except Exception as exc:
         code = getattr(exc, "code", None) or "push_failed"
+        # One line per push in the server log: what the job history cannot say is *when* in the
+        # push it failed, which is what tells a sleeping TV from a dropped connection.
+        log.warning(
+            "push to %s failed after %.1f s (%s): %s",
+            host,
+            time.monotonic() - started,
+            code,
+            exc,
+        )
         with ctx.db.session() as s:
             failed = s.get(DisplayTarget, target_id)
             if failed is not None:  # a target deleted while its push was queued has no state
@@ -874,6 +886,15 @@ def push(
         target.last_pushed_at = utcnow()
         target.last_result = {**result.as_dict(), "finished_at": utcnow().isoformat()}
 
+    log.info(
+        "push to %s done in %.1f s: %d in the set, %d uploaded, %d reused, %d of ours deleted",
+        host if moved is None else moved.new_host,
+        time.monotonic() - started,
+        result.total,
+        result.uploaded,
+        result.reused,
+        result.deleted_ours,
+    )
     ctx.broker.publish(Event("display.pushed", result.as_dict()))
     return result
 

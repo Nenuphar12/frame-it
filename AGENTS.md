@@ -41,9 +41,10 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
     cannot be scoped to a subset, so a push **mirrors** the set (`keep_ours` spares our earlier
     uploads); a push is stop → select → start, uploads go in reverse (the TV lists newest first), and
     "Don't change" (`slideshow_minutes = 0`) rotates and deletes nothing. A TV is followed by MAC when its address changes. `FRAME_IT_FAKE_TV=1` drives it
-    all without a TV.
+    all without a TV. The art channel waits for `ms.channel.ready` (`art_channel_class`): the
+    library's own `open()` failed on the TV's client announcements.
   - **i18n**: English and French catalogs; server data (built-in style names, place names) stays as stored.
-- **Not yet verified on hardware**: deleting foreign photos, whether the pairing token survives a TV power
+- **Not yet verified on hardware**: the art-channel wait for `ready` (2026-11-16), deleting foreign photos, whether the pairing token survives a TV power
   cut (hence "pair again" in the UI), discovery on the real LAN, following a TV that moved, a "Don't
   change" push. **Verified by the user** (2026-09-17): Android uploads (both pickers keep full quality, but
   Android zeroes GPS → no place), Docker image build/run/persistence.

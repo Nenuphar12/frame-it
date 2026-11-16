@@ -299,11 +299,14 @@ These bite whatever you are working on.
 - `_with_tv` **commits the TV's new address from its own session** when it follows a TV by MAC.
   SQLite has one writer: a caller must not have written in the request's session before calling it
   (same reflex as `retry_job`), and must `session.refresh(target)` afterwards to see the new host.
-- **A Frame that is off still accepts the websocket**; only its art app stays silent. `samsungtvws`
-  then raises a bare `ConnectionFailure` carrying whatever frame arrived instead of
-  `ms.channel.ready` — typically `ms.channel.clientConnect`, i.e. *another connection of ours*
-  joining (a dry run and a push, or a status probe) — or `Websocket Time out`. `_art_error` maps
-  both to `tv_art_unavailable`; never let that frame reach a message: it carries the pairing token.
+- **Never use `samsungtvws`' own art `open()`**: it reads *one* frame after `ms.channel.connect`
+  and fails unless it is `ms.channel.ready`, but the TV announces every client joining the channel
+  (`ms.channel.clientConnect`, our own connection included) in no fixed order with `ready` — the
+  "art mode did not answer in 0.1 s, then the retry works" failures. `tv/client.art_channel_class()`
+  waits up to `READY_SECONDS` and lets those go by. A Frame that is **off** still accepts the
+  websocket and never says `ready`: that, and only that, is `tv_art_unavailable`
+  (`ArtNotReadyError`, which lists the event *names* seen). Never let a frame reach a message: it
+  carries the pairing token.
 - `enqueue_push` stores `progress = queued` before the job runs, so **every** failure path of `push`
   — including `empty_set` before the TV is reached — must clear it, or the tray waits forever after a
   reload.
