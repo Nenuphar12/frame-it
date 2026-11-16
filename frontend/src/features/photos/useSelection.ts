@@ -1,18 +1,41 @@
 import { useCallback, useState, type MouseEvent } from "react";
 
-/** Grid selection with click, Ctrl/Cmd-click toggle and Shift-click ranges. */
-export function useSelection(orderedIds: string[]) {
+interface SelectionOptions {
+  /**
+   * A picker (tick what you want, then confirm): a plain click toggles one item instead of
+   * replacing the selection. Shift-click still adds a range, Ctrl/Cmd-click still toggles.
+   */
+  toggle?: boolean;
+  /** Shown but not selectable (already in the collection): ranges and select-all skip them. */
+  disabled?: ReadonlySet<string>;
+}
+
+/**
+ * Grid selection with click, Ctrl/Cmd-click toggle and Shift-click ranges.
+ *
+ * The range anchor is an **id**, not an index: a list can change between two clicks — a photo
+ * lands in the Inbox or leaves it — and an index would then point at another item, so the range
+ * started somewhere else or nowhere (user feedback: Shift-click "works in Photos, not in the
+ * Inbox", the one grid that moves under the pointer).
+ */
+export function useSelection(orderedIds: string[], options: SelectionOptions = {}) {
+  const { toggle = false, disabled } = options;
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [anchor, setAnchor] = useState<number | null>(null);
+  const [anchor, setAnchor] = useState<string | null>(null);
 
   const click = useCallback(
     (id: string, index: number, event: MouseEvent) => {
+      const flip = toggle || event.metaKey || event.ctrlKey;
+      const from = anchor === null ? -1 : orderedIds.indexOf(anchor);
+      const at = orderedIds[index] === id ? index : orderedIds.indexOf(id);
       setSelected((current) => {
-        const next = new Set(event.metaKey || event.ctrlKey || event.shiftKey ? current : []);
-        if (event.shiftKey && anchor !== null) {
-          const [from, to] = anchor < index ? [anchor, index] : [index, anchor];
-          orderedIds.slice(from, to + 1).forEach((value) => next.add(value));
-        } else if (event.metaKey || event.ctrlKey) {
+        const next = new Set(flip || event.shiftKey ? current : []);
+        if (event.shiftKey && from >= 0 && at >= 0) {
+          const [start, end] = from < at ? [from, at] : [at, from];
+          for (const value of orderedIds.slice(start, end + 1)) {
+            if (!disabled?.has(value)) next.add(value);
+          }
+        } else if (flip) {
           if (next.has(id)) next.delete(id);
           else next.add(id);
         } else {
@@ -20,12 +43,15 @@ export function useSelection(orderedIds: string[]) {
         }
         return next;
       });
-      if (!event.shiftKey) setAnchor(index);
+      if (!event.shiftKey || from < 0) setAnchor(id);
     },
-    [anchor, orderedIds],
+    [anchor, disabled, orderedIds, toggle],
   );
 
-  const selectAll = useCallback(() => setSelected(new Set(orderedIds)), [orderedIds]);
+  const selectAll = useCallback(
+    () => setSelected(new Set(orderedIds.filter((id) => !disabled?.has(id)))),
+    [disabled, orderedIds],
+  );
   const clear = useCallback(() => setSelected(new Set()), []);
   const prune = useCallback(
     (validIds: Set<string>) =>

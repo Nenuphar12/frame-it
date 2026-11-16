@@ -1,9 +1,11 @@
 import { Frame, Images, Trash2, Undo2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 
 import { artworkThumbUrl, photoThumbUrl } from "@/api/client";
 import { useTrash, useTrashActions } from "@/api/queries";
+import { useRegisterCommands, type Command } from "@/app/commands";
+import { useSelection } from "@/features/photos/useSelection";
 import { formatBytes } from "@/shared/format";
 import { Button } from "@/shared/ui/Button";
 import { Dialog } from "@/shared/ui/Dialog";
@@ -17,19 +19,39 @@ export function TrashPage() {
   const { t } = useTranslation();
   const trash = useTrash();
   const { restore, purge } = useTrashActions();
-  const [picked, setPicked] = useState<Set<string>>(new Set());
   const [confirmEmpty, setConfirmEmpty] = useState(false);
   const [freed, setFreed] = useState<number | null>(null);
   const data = trash.data;
   const empty = (data?.photo_total ?? 0) === 0 && (data?.artwork_total ?? 0) === 0;
-
-  const toggle = (key: string) =>
-    setPicked((current) => {
-      const next = new Set(current);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+  // One list in the order shown — artworks, then photos — so a Shift-click range can run from
+  // one section into the other, and Ctrl/Cmd+A takes everything.
+  const keys = useMemo(
+    () => [
+      ...(data?.artworks ?? []).map((a) => `artwork:${a.id}`),
+      ...(data?.photos ?? []).map((p) => `photo:${p.id}`),
+    ],
+    [data],
+  );
+  const position = useMemo(() => new Map(keys.map((key, index) => [key, index])), [keys]);
+  const { selected: picked, click, selectAll, clear, prune } = useSelection(keys, { toggle: true });
+  useEffect(() => prune(new Set(keys)), [keys, prune]);
+  const pick = (key: string) => (event: MouseEvent) => {
+    event.preventDefault(); // the label would toggle the checkbox a second time
+    click(key, position.get(key) ?? -1, event);
+  };
+  const commands = useMemo<Command[]>(
+    () => [
+      {
+        id: "trash.selectAll",
+        label: "trash.selectAll",
+        group: "commands.groups.library",
+        shortcut: "$mod+a",
+        run: selectAll,
+      },
+    ],
+    [selectAll],
+  );
+  useRegisterCommands(commands);
 
   const selection = useMemo(() => {
     const photo_ids: string[] = [];
@@ -44,7 +66,7 @@ export function TrashPage() {
 
   const restoreSelection = () => {
     restore.mutate(selection);
-    setPicked(new Set());
+    clear();
   };
 
   return (
@@ -111,12 +133,13 @@ export function TrashPage() {
                   {data?.artworks.map((artwork) => (
                     <label
                       key={artwork.id}
-                      className="flex cursor-pointer items-center gap-2 rounded-md border border-border bg-panel p-2"
+                      onClick={pick(`artwork:${artwork.id}`)}
+                      className="flex cursor-pointer items-center gap-2 rounded-md border border-border bg-panel p-2 select-none"
                     >
                       <input
                         type="checkbox"
+                        readOnly
                         checked={picked.has(`artwork:${artwork.id}`)}
-                        onChange={() => toggle(`artwork:${artwork.id}`)}
                       />
                       <img
                         src={artworkThumbUrl(
@@ -136,6 +159,7 @@ export function TrashPage() {
                         aria-label={t("trash.restore")}
                         onClick={(event) => {
                           event.preventDefault();
+                          event.stopPropagation(); // not a click on the row: no selection
                           restore.mutate({ batch_ids: artwork.trash_batch_id ? [artwork.trash_batch_id] : [], artwork_ids: [artwork.id] });
                         }}
                       >
@@ -155,12 +179,13 @@ export function TrashPage() {
                   {data?.photos.map((photo) => (
                     <label
                       key={photo.id}
-                      className="flex cursor-pointer items-center gap-2 rounded-md border border-border bg-panel p-2"
+                      onClick={pick(`photo:${photo.id}`)}
+                      className="flex cursor-pointer items-center gap-2 rounded-md border border-border bg-panel p-2 select-none"
                     >
                       <input
                         type="checkbox"
+                        readOnly
                         checked={picked.has(`photo:${photo.id}`)}
-                        onChange={() => toggle(`photo:${photo.id}`)}
                       />
                       <img
                         src={photoThumbUrl(photo.id, 256)}
@@ -177,6 +202,7 @@ export function TrashPage() {
                         aria-label={t("trash.restore")}
                         onClick={(event) => {
                           event.preventDefault();
+                          event.stopPropagation(); // not a click on the row: no selection
                           // The batch brings back what was deleted together: the photo *and* the
                           // artworks that went with it (docs/organization.md §5).
                           restore.mutate({

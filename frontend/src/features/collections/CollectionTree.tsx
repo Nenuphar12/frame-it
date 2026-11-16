@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, Folder, FolderOpen, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronRight, Folder, FolderOpen, Plus, Sparkles } from "lucide-react";
 import { useMemo, useState, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -17,6 +17,8 @@ interface CollectionTreeProps {
   onMove?: (id: string, parentId: string | null, beforeId: string | null) => void;
   /** Artworks dropped on a manual collection are added to it. */
   onDropArtworks?: (collectionId: string, artworkIds: string[]) => void;
+  /** The "+" on a manual row: start a new collection inside it. */
+  onCreateChild?: (parentId: string) => void;
 }
 
 export function CollectionTree({
@@ -25,6 +27,7 @@ export function CollectionTree({
   onSelect,
   onMove,
   onDropArtworks,
+  onCreateChild,
 }: CollectionTreeProps) {
   const tree = useMemo(() => buildTree(rows), [rows]);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -50,6 +53,7 @@ export function CollectionTree({
           onSelect={onSelect}
           onMove={onMove}
           onDropArtworks={onDropArtworks}
+          onCreateChild={onCreateChild}
           dropTarget={dropTarget}
           setDropTarget={setDropTarget}
         />
@@ -100,6 +104,7 @@ interface LevelProps extends Required<Pick<CollectionTreeProps, "rows">> {
   onSelect: (id: string) => void;
   onMove?: CollectionTreeProps["onMove"];
   onDropArtworks?: CollectionTreeProps["onDropArtworks"];
+  onCreateChild?: CollectionTreeProps["onCreateChild"];
   dropTarget: string | null;
   setDropTarget: (id: string | null) => void;
 }
@@ -113,6 +118,7 @@ function TreeLevel({
   onSelect,
   onMove,
   onDropArtworks,
+  onCreateChild,
   dropTarget,
   setDropTarget,
 }: Omit<LevelProps, "rows">) {
@@ -163,7 +169,7 @@ function TreeLevel({
               onDrop={(event) => onDrop(event, node)}
               style={{ paddingLeft: `${depth * 0.9 + 0.25}rem` }}
               className={cn(
-                "flex items-center gap-1 rounded-md py-1 pr-1.5 text-sm",
+                "group flex items-center gap-1 rounded-md py-1 pr-1.5 text-sm",
                 selectedId === collection.id ? "bg-panel-2 text-text" : "text-muted",
                 dropTarget === collection.id && "ring-1 ring-accent",
               )}
@@ -195,6 +201,19 @@ function TreeLevel({
                     : collection.item_count || ""}
                 </span>
               </button>
+              {/* A sub-collection starts from its parent, in one click (user feedback). Only a
+                  manual collection can hold others. Shown on hover, and on keyboard focus. */}
+              {onCreateChild && !isSmart && (
+                <button
+                  type="button"
+                  onClick={() => onCreateChild(collection.id)}
+                  title={t("collections.newSubIn", { name: collection.name })}
+                  aria-label={t("collections.newSubIn", { name: collection.name })}
+                  className="shrink-0 rounded p-0.5 text-muted opacity-0 group-hover:opacity-100 hover:bg-panel-2 hover:text-text focus-visible:opacity-100"
+                >
+                  <Plus size={13} />
+                </button>
+              )}
             </div>
             {isOpen && node.children.length > 0 && (
               <ul className="space-y-0.5">
@@ -207,6 +226,7 @@ function TreeLevel({
                   onSelect={onSelect}
                   onMove={onMove}
                   onDropArtworks={onDropArtworks}
+                  onCreateChild={onCreateChild}
                   dropTarget={dropTarget}
                   setDropTarget={setDropTarget}
                 />

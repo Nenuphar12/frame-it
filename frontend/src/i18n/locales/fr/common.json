@@ -1042,7 +1042,16 @@
     },
     "saveAsSmart": "Enregistrer comme collection intelligente",
     "savedSmart": "Collection intelligente créée.",
-    "open": "Ouvrir"
+    "open": "Ouvrir",
+    "newSub": "Nouvelle sous-collection",
+    "newSubIn": "Nouvelle collection dans « {{name}} »",
+    "subCollection": "Sous-collection",
+    "changeParent": "Changer",
+    "pickAll": "Choisir toutes les œuvres affichées",
+    "pickAllCount_one": "Choisir l’œuvre affichée ({{count}})",
+    "pickAllCount_other": "Choisir les {{count}} affichées",
+    "pickNone": "Effacer",
+    "pickHint": "Maj-clic : une plage · Ctrl+A : tout"
   },
   "trash": {
     "summary": "{{photos}} photo(s), {{artworks}} œuvre(s) · purgées après {{days}} jours",
@@ -1081,7 +1090,8 @@
     "emptiedCount_one": "{{count}} œuvre gardée avec un emplacement vide",
     "emptiedCount_other": "{{count}} œuvres gardées avec un emplacement vide",
     "emptiedHint": "L'historique de chacune peut remettre la photo dans son emplacement",
-    "confirmKeys": "Confirmer avec"
+    "confirmKeys": "Confirmer avec",
+    "selectAll": "Tout sélectionner dans la corbeille"
   },
   "archive": {
     "pageSubtitle": "Sauvegarder la bibliothèque, la déplacer sur un autre ordinateur, ou en extraire les images finies.",

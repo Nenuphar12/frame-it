@@ -1042,7 +1042,16 @@
     },
     "saveAsSmart": "Save as smart collection",
     "savedSmart": "Smart collection created.",
-    "open": "Open"
+    "open": "Open",
+    "newSub": "New sub-collection",
+    "newSubIn": "New collection inside “{{name}}”",
+    "subCollection": "Sub-collection",
+    "changeParent": "Change",
+    "pickAll": "Pick every artwork listed",
+    "pickAllCount_one": "Pick the {{count}} listed",
+    "pickAllCount_other": "Pick all {{count}} listed",
+    "pickNone": "Clear",
+    "pickHint": "Shift-click: a range · Ctrl+A: all"
   },
   "trash": {
     "summary": "{{photos}} photo(s), {{artworks}} artwork(s) · purged after {{days}} days",
@@ -1081,7 +1090,8 @@
     "emptiedCount_one": "{{count}} artwork kept with an empty slot",
     "emptiedCount_other": "{{count}} artworks kept with an empty slot",
     "emptiedHint": "Each one's history can bring the photo back into its slot",
-    "confirmKeys": "Confirm with"
+    "confirmKeys": "Confirm with",
+    "selectAll": "Select everything in the trash"
   },
   "archive": {
     "pageSubtitle": "Back the library up, move it to another computer, or pull finished images out.",

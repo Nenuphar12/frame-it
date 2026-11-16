@@ -68,7 +68,8 @@ export function CollectionsPage() {
   const [sort, setSort] = useState<ArtworkSort>("manual");
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Collection | null>(null);
-  const [creating, setCreating] = useState(false);
+  // `undefined`: closed; `null`: a new top-level collection; an id: a new one inside it.
+  const [creatingIn, setCreatingIn] = useState<string | null | undefined>(undefined);
   const [confirmDelete, setConfirmDelete] = useState<Collection | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -126,7 +127,8 @@ export function CollectionsPage() {
     openCollectionMenu: () => setCollectionMenuOpen(true),
     openTagMenu: () => setTagMenuOpen(true),
     removeFromCollection: isManual ? removeFromCollection : undefined,
-    suspended: openId !== null,
+    // The viewer and the artwork picker register keys of their own (Ctrl/Cmd+A among them).
+    suspended: openId !== null || adding,
   });
   const commands = useMemo<Command[]>(
     () => [
@@ -135,10 +137,20 @@ export function CollectionsPage() {
         label: "collections.new",
         group: "commands.groups.library",
         shortcut: openId === null ? "Shift+N" : undefined,
-        run: () => setCreating(true),
+        run: () => setCreatingIn(null),
       },
+      ...(isManual && selected
+        ? [
+            {
+              id: "collections.newSub",
+              label: "collections.newSub",
+              group: "commands.groups.library",
+              run: () => setCreatingIn(selected.id),
+            },
+          ]
+        : []),
     ],
-    [openId],
+    [isManual, openId, selected],
   );
   useRegisterCommands(commands);
 
@@ -150,7 +162,7 @@ export function CollectionsPage() {
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => setCreating(true)}
+            onClick={() => setCreatingIn(null)}
             title={t("collections.new")}
             aria-label={t("collections.new")}
           >
@@ -171,6 +183,7 @@ export function CollectionsPage() {
               onDropArtworks={(collectionId, artworkIds) =>
                 items.add.mutate({ id: collectionId, artwork_ids: artworkIds })
               }
+              onCreateChild={setCreatingIn}
             />
           )}
           {move.isError && (
@@ -221,6 +234,16 @@ export function CollectionsPage() {
                 {isManual && (
                   <Button size="sm" variant="ghost" onClick={() => setAdding(true)}>
                     <ImagePlus size={14} /> {t("collections.addArtworks")}
+                  </Button>
+                )}
+                {isManual && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setCreatingIn(selected.id)}
+                    title={t("collections.newSubIn", { name: selected.name })}
+                  >
+                    <FolderPlus size={14} /> {t("collections.subCollection")}
                   </Button>
                 )}
                 {picked.size > 0 && (
@@ -284,7 +307,7 @@ export function CollectionsPage() {
               title={t("collections.emptyTitle")}
               description={t("collections.emptyDescription")}
               action={
-                <Button variant="primary" onClick={() => setCreating(true)}>
+                <Button variant="primary" onClick={() => setCreatingIn(null)}>
                   {t("collections.new")}
                 </Button>
               }
@@ -344,14 +367,15 @@ export function CollectionsPage() {
         onOpenChange={setExporting}
         collectionIds={selected ? [selected.id] : []}
       />
-      {/* New collections land at the top level by default; the dialog's own picker nests them
-          (a "+" next to the selected collection used to be the *only* way, user feedback), and
-          its first choice is the kind — one button for both (user feedback). */}
+      {/* New collections land at the top level by default; a sub-collection starts from its
+          parent — the "+" on its row in the tree, or "Sub-collection" in its header (user
+          feedback) — and the dialog's tree picker can still put it anywhere. Its first choice is
+          the kind: one button for both (user feedback). */}
       <CollectionDialog
-        open={creating}
-        onOpenChange={setCreating}
+        open={creatingIn !== undefined}
+        onOpenChange={(open) => !open && setCreatingIn(undefined)}
         kind="manual"
-        parentId={null}
+        parentId={creatingIn ?? null}
         onSaved={select}
       />
       <CollectionDialog

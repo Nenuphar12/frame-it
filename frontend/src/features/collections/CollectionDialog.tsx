@@ -16,6 +16,7 @@ import { cn } from "@/shared/cn";
 import { Button } from "@/shared/ui/Button";
 import { Dialog } from "@/shared/ui/Dialog";
 
+import { ParentPicker } from "./ParentPicker";
 import { subtreeIds } from "./tree";
 
 /**
@@ -82,12 +83,10 @@ function CollectionForm({
   const [chosenKind, setChosenKind] = useState(kind);
   const effectiveKind = collection?.kind ?? chosenKind;
   // A smart collection holds no children, and nothing may become its own descendant.
-  const descendants = useMemo(
-    () => (collection ? new Set(subtreeIds(collections.data ?? [], collection.id)) : new Set()),
+  const descendants = useMemo<ReadonlySet<string>>(
+    () =>
+      collection ? new Set(subtreeIds(collections.data ?? [], collection.id)) : new Set<string>(),
     [collection, collections.data],
-  );
-  const parents = (collections.data ?? []).filter(
-    (c) => c.kind === "manual" && !descendants.has(c.id),
   );
   const group = toGroup(chips);
   const validation = useValidateFilter(
@@ -129,7 +128,9 @@ function CollectionForm({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
-      title={t(collection ? "collections.edit" : "collections.new")}
+      title={t(
+        collection ? "collections.edit" : parentId ? "collections.newSub" : "collections.new",
+      )}
       description={collection && effectiveKind === "smart" ? t("collections.smartHint") : undefined}
       className={effectiveKind === "smart" ? "w-[min(94vw,52rem)]" : undefined}
     >
@@ -181,21 +182,15 @@ function CollectionForm({
             className={field}
           />
         </label>
-        <label className="block space-y-1">
+        <div className="space-y-1">
           <span className="text-xs text-muted">{t("collections.parent")}</span>
-          <select
+          <ParentPicker
+            rows={collections.data ?? []}
             value={parent}
-            onChange={(event) => setParent(event.target.value)}
-            className={field}
-          >
-            <option value="">{t("collections.topLevel")}</option>
-            {parents.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            onChange={setParent}
+            excluded={descendants}
+          />
+        </div>
         <label className="block space-y-1">
           <span className="text-xs text-muted">{t("collections.description")}</span>
           <textarea
