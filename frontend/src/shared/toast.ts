@@ -12,6 +12,18 @@ import { ApiError } from "@/api/client";
 
 export type ToastTone = "error" | "success" | "info";
 
+/**
+ * Toasts are drawn above dialogs, so a click on one — *Undo* after a delete in a viewer — lands
+ * outside the open dialog, which would close it. Dialogs ask this first and stay open.
+ *
+ * It asks the **card**, not the toaster around it: a modal dialog judges a press "outside" only
+ * at the `click`, and *Undo* has removed its toast by then — the button is detached from the
+ * toaster, but still inside its card.
+ */
+export function isInToaster(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest("[data-toast]") !== null;
+}
+
 export interface ToastAction {
   /** i18n key for the button. */
   label: string;

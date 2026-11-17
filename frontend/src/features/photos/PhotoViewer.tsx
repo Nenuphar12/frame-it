@@ -26,6 +26,7 @@ import { useTranslation } from "react-i18next";
 import { photoOriginalUrl, photoProxyUrl, photoThumbUrl, type Photo } from "@/api/client";
 import { useRegisterCommands, type Command } from "@/app/commands";
 import { cn } from "@/shared/cn";
+import { isInToaster } from "@/shared/toast";
 import { formatCaptureTime, megapixels } from "@/shared/format";
 import { Button } from "@/shared/ui/Button";
 import { Badge, Kbd, Spinner } from "@/shared/ui/Misc";
@@ -95,7 +96,15 @@ export function PhotoViewer({
   const isSelected = selected.has(photoId);
 
   const contentRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  // Also in state: the dialog's portal mounts its content one render late, so an effect run on the
+  // viewer's first render found no element and never measured it — the photo never showed, only
+  // the spinner. The observer starts when the element does.
+  const [scroller, setScroller] = useState<HTMLDivElement | null>(null);
+  const attachScroller = useCallback((element: HTMLDivElement | null) => {
+    scrollRef.current = element;
+    setScroller(element);
+  }, []);
   const boxRef = useRef<HTMLDivElement>(null);
   const [area, setArea] = useState<{ width: number; height: number } | null>(null);
   const [zoomed, setZoomed] = useState(false);
@@ -108,14 +117,13 @@ export function PhotoViewer({
   const movedRef = useRef(false);
 
   useEffect(() => {
-    const element = scrollRef.current;
-    if (!element) return;
+    if (!scroller) return;
     const observer = new ResizeObserver(([entry]) =>
       setArea({ width: entry!.contentRect.width, height: entry!.contentRect.height }),
     );
-    observer.observe(element);
+    observer.observe(scroller);
     return () => observer.disconnect();
-  }, []);
+  }, [scroller]);
 
   useEffect(() => {
     if (index >= photos.length - 3) onEndReached?.();
@@ -160,7 +168,7 @@ export function PhotoViewer({
     anchorRef.current = null;
     element.scrollLeft = box.offsetLeft + anchor.rx * boxWidth - anchor.px;
     element.scrollTop = box.offsetTop + anchor.ry * boxHeight - anchor.py;
-  }, [photoId, isZoomed, boxWidth, boxHeight]);
+  }, [scroller, photoId, isZoomed, boxWidth, boxHeight]);
 
   const zoomTo = useCallback((next: boolean, anchor: ZoomAnchor | null = null) => {
     anchorRef.current = anchor;
@@ -334,6 +342,8 @@ export function PhotoViewer({
               zoomTo(false);
             }
           }}
+          // *Undo* in the toast after a trash: the viewer stays open.
+          onInteractOutside={(event) => isInToaster(event.target) && event.preventDefault()}
           className="fixed inset-0 z-50 flex flex-col outline-none"
         >
           <RadixDialog.Title className="sr-only">
@@ -344,7 +354,7 @@ export function PhotoViewer({
           </RadixDialog.Description>
           <div className="relative min-h-0 flex-1">
             <div
-              ref={scrollRef}
+              ref={attachScroller}
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
               onPointerUp={endDrag}

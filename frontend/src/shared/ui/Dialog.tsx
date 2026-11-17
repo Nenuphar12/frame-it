@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/cn";
+import { isInToaster } from "@/shared/toast";
 
 type DialogSize = "default" | "full";
 
@@ -51,6 +52,7 @@ export function Dialog({
           // the document, the command registry listens on `window` (bubble) — see ColorField.
           onEscapeKeyDown={(event) => event.stopPropagation()}
           onOpenAutoFocus={onOpenAutoFocus}
+          onInteractOutside={(event) => isInToaster(event.target) && event.preventDefault()}
           className={cn(
             "fixed z-50 rounded-xl border border-border bg-panel p-5 shadow-2xl",
             sizes[size],

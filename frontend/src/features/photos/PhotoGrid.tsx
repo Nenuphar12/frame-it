@@ -12,6 +12,8 @@ import { coversTv } from "./quality";
 /** Tiles keep this size whatever the width (e.g. when the details drawer opens); only columns change. */
 const TILE = 220;
 const GAP = 8;
+/** Above the first row and below the last (the virtualizer's, not CSS: it scrolls rows into view). */
+const PAD_Y = 16;
 
 interface PhotoGridProps {
   photos: Photo[];
@@ -65,6 +67,8 @@ export function PhotoGrid({
     getScrollElement: () => scrollRef.current,
     estimateSize: () => tile + GAP,
     overscan: 4,
+    paddingStart: PAD_Y,
+    paddingEnd: PAD_Y,
   });
 
   useEffect(() => virtualizer.measure(), [tile, virtualizer]);
@@ -84,7 +88,7 @@ export function PhotoGrid({
   }, [lastRow, rowCount, onEndReached]);
 
   return (
-    <div ref={scrollRef} className="h-full overflow-y-auto px-5 py-4">
+    <div ref={scrollRef} className="h-full overflow-y-auto px-5">
       <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
         {virtualRows.map((row) => (
           <div

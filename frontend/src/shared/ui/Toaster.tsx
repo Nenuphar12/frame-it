@@ -28,6 +28,7 @@ function ToastCard({ toast }: { toast: Toast }) {
 
   return (
     <div
+      data-toast="" // see `isInToaster`
       className={cn(
         "pointer-events-auto flex w-80 items-start gap-2.5 rounded-lg border p-3 shadow-lg",
         "bg-panel/95 backdrop-blur",
@@ -38,13 +39,19 @@ function ToastCard({ toast }: { toast: Toast }) {
         size={16}
         className={cn(
           "mt-px shrink-0",
-          toast.tone === "error" ? "text-danger" : toast.tone === "success" ? "text-accent" : "text-info",
+          toast.tone === "error"
+            ? "text-danger"
+            : toast.tone === "success"
+              ? "text-accent"
+              : "text-info",
         )}
         aria-hidden
       />
       <div className="min-w-0 flex-1 space-y-1">
         {title && <p className="text-sm font-medium">{title}</p>}
-        {body && <p className={cn("text-xs break-words", title ? "text-muted" : "text-text")}>{body}</p>}
+        {body && (
+          <p className={cn("text-xs break-words", title ? "text-muted" : "text-text")}>{body}</p>
+        )}
         {toast.action && (
           <button
             onClick={() => {
@@ -71,6 +78,7 @@ function ToastCard({ toast }: { toast: Toast }) {
 /**
  * Bottom-left, above the upload tray's corner. `role="status"` + `aria-live="polite"` so a
  * failure raised by a background job is announced rather than only drawn (phase 11, §14.2).
+ * Above dialogs too (z-60): *Undo* after a delete in a full-screen viewer was hidden behind it.
  */
 export function Toaster() {
   const toasts = useToasts((s) => s.toasts);
@@ -79,7 +87,7 @@ export function Toaster() {
       role="status"
       aria-live="polite"
       aria-relevant="additions text"
-      className="pointer-events-none fixed bottom-4 left-4 z-50 flex flex-col gap-2"
+      className="pointer-events-none fixed bottom-4 left-4 z-[60] flex flex-col gap-2"
     >
       {toasts.map((toast) => (
         <ToastCard key={toast.id} toast={toast} />

@@ -241,8 +241,11 @@ whatever you are touching before you touch it.** These few bite whatever you are
   harness cannot drive this app (the SSE stream keeps the page from ever going idle, so `executeScript`,
   screenshots and `--dump-dom` time out). CDP works: headless `chromium --remote-debugging-port` +
   `Runtime.evaluate` against the production build on trusted localhost. Read results back through the
-  **API**, not off the screen — a Konva canvas can capture black although its pixels are correct. No
-  harness ⇒ verify what you can and write in `docs/progress.md` what was not driven in a browser.
+  **API**, not off the screen — a Konva canvas can capture black although its pixels are correct.
+  Chromium dying on `GLIBC_2.43 not found` is the shell's `LD_LIBRARY_PATH` (an alsa-lib), not the
+  browser: `env -u LD_LIBRARY_PATH chromium …`. Close each CDP tab when done: every open tab holds an
+  SSE stream, and past six per host the next requests hang. No harness ⇒ verify what you can and
+  write in `docs/progress.md` what was not driven in a browser.
 - `editor/operations.ts` and `editor/core/` import each other with **relative `.ts` paths**: Node runs them
   as they are (`pnpm test`, `pnpm conformance`) and cannot resolve the `@/` alias. A type-only import may use it.
 - `make format` runs prettier over the whole frontend, but `make lint` only runs ESLint: a lot of editor

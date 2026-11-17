@@ -35,6 +35,7 @@ import { TagDot } from "@/features/tags/TagDot";
 import { TagPicker } from "@/features/tags/TagPicker";
 import { useTagCategoryIndex } from "@/features/tags/useTagCategories";
 import { useTrashWithUndo } from "@/features/trash/useTrashWithUndo";
+import { isInToaster } from "@/shared/toast";
 import { Badge, Kbd, Spinner } from "@/shared/ui/Misc";
 import { Button } from "@/shared/ui/Button";
 
@@ -195,6 +196,8 @@ export function ArtworkViewer({ artworkId, ids, onNavigate, onEdit, onClose }: A
               setEditingTagsFor(null);
             }
           }}
+          // *Undo* in the toast after a trash: the viewer stays open.
+          onInteractOutside={(event) => isInToaster(event.target) && event.preventDefault()}
           className="fixed inset-0 z-50 flex flex-col outline-none"
         >
           <RadixDialog.Title className="sr-only">

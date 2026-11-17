@@ -145,6 +145,28 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
   `Escape` first goes back to fit. A photo already at 100% when fitted offers no zoom: it is never
   blown up. The neighbours' proxies are fetched ahead. **Not driven in a browser** (local Chromium
   broken): type-checked, linted, and the layout and focus code read twice.
+- **…and it never showed a photo** (user feedback: "it keeps loading"). The viewer measured its
+  area in an effect run on its first render, but Radix's `Portal` mounts the dialog's content one
+  render later: no element, no `ResizeObserver`, no size — so no photo, only the spinner, forever.
+  The observer now starts when the element mounts (a callback ref into state). The server was never
+  the problem (proxy 10–25 ms, a 42 MB original 0.1 s on localhost). Two more found by driving it:
+  - **Undo was hidden behind the viewer**: toasts sat at `z-50` like the dialogs, under the one
+    opened last. They are above dialogs now (`z-[60]`), and a click on one no longer closes the
+    dialog under it (`isInToaster`, in `Dialog`, `ArtworkViewer` and `PhotoViewer`). It asks the
+    toast **card**: a modal dialog judges a press "outside" only at the `click`, and *Undo* has
+    removed its toast by then — detached from the toaster, the button is still in its card.
+  - **Closing left the photo 8 px out of view**: the grid's top padding was CSS, unknown to the
+    virtualizer that scrolls a row into view; it is the virtualizer's `paddingStart`/`paddingEnd`
+    now (same 16 px, same layout).
+
+  **Driven in headless Chromium** (CDP, on a copy of `.dev-data`): the proxy shows 240 ms after the
+  double-click; `z` centres the 3840 px original; a drag pans without un-zooming; → keeps the same
+  spot on the next photo; a click at (¼, ¼) of the photo keeps that point under the pointer;
+  `Escape` un-zooms first; `s` selects; `v` opens the focused tile; `Delete` moves on, shows Undo,
+  and twice fast trashes one photo; on a photo an artwork uses, the cascade opens over the viewer
+  and ← waits; *Undo* restores and the viewer stays (the artwork viewer too); closing focuses the
+  last photo, in view. The "local Chromium broken" of the entries above was the shell's
+  `LD_LIBRARY_PATH` (see `AGENTS.md`).
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 
