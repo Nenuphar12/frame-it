@@ -3,8 +3,8 @@
 
 Usage: uv run --with fonttools python scripts/build_fonts.py [--source-dir DIR]
 
-Downloads the variable fonts from google/fonts at a pinned commit (unless present in DIR), creates one
-static TTF per weight with fontTools' instancer and gives each file a unique family name
+Downloads the variable fonts from google/fonts at a pinned commit (unless present in DIR),
+creates one static TTF per weight with fontTools' instancer and gives each file a unique family name
 (`TF <font id> <weight>`) so fontconfig/Pango never mixes them with fonts installed on the machine.
 Writes backend/src/frame_it/assets/fonts/<id>/<weight>.ttf, OFL.txt per font and manifest.json.
 Spec: docs/rendering-spec.md (captions).
@@ -135,7 +135,9 @@ def main() -> None:
             }
         )
         print(f"{font_id}: {weights}")
-    (OUT / "manifest.json").write_text(json.dumps({"version": 1, "fonts": manifest}, indent=2) + "\n")
+    (OUT / "manifest.json").write_text(
+        json.dumps({"version": 1, "fonts": manifest}, indent=2) + "\n"
+    )
 
 
 if __name__ == "__main__":

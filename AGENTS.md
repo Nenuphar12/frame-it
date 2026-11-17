@@ -236,8 +236,8 @@ whatever you are touching before you touch it.** These few bite whatever you are
 - `make format` runs prettier over the whole frontend, but `make lint` only runs ESLint: a lot of editor
   files have never been prettier-formatted, so `make format` rewrites ~20 files you did not touch. Format
   your own files, then `git checkout --` the rest.
-- `make check` neither lints nor runs `scripts/` (ruff covers `backend/src` and `backend/tests` only), so a
-  broken script goes unnoticed: run a script you changed.
+- `make check` lints `scripts/` but never runs them (no tests, no mypy), so a broken script goes unnoticed:
+  run a script you changed.
 - Dev over the Vite proxy is **not** trusted as localhost (`xfwd` adds `X-Forwarded-For`, invariant 5): the
   first load asks for the setup code printed in the server log. Point Vite at another backend with
   `FRAME_IT_BACKEND=http://127.0.0.1:<port>`.

@@ -5,8 +5,8 @@ Usage: cd backend && uv run python ../scripts/generate_textures.py
 
 A tile is neutral around 128: the renderer adds `strength × (t − 128)` to the mat colour
 (docs/rendering-spec.md §8.1). Periodic blurs (`extend=repeat`) and integer frequencies keep tiles
-seamless. Outputs are committed: regenerating with another libvips version may change the noise, which
-is why `manifest.json` carries a version that is part of the render hash.
+seamless. Outputs are committed: regenerating with another libvips version may change the noise,
+which is why `manifest.json` carries a version that is part of the render hash.
 """
 
 from __future__ import annotations
@@ -63,7 +63,9 @@ def to_tile(image: Any, deviation: float) -> Any:
 
 
 def paper() -> Any:
-    return to_tile(noise(11, 0.8) * 0.7 + noise(12, 6.0) * 0.5 + stretch(1.0, 18.0, 1.2, 13) * 0.3, 7.0)
+    return to_tile(
+        noise(11, 0.8) * 0.7 + noise(12, 6.0) * 0.5 + stretch(1.0, 18.0, 1.2, 13) * 0.3, 7.0
+    )
 
 
 def linen() -> Any:

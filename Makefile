@@ -30,11 +30,11 @@ test: ## Backend unit + API tests
 	cd $(BACKEND) && uv run pytest
 
 lint: ## Ruff + ESLint
-	cd $(BACKEND) && $(RUFF) check src tests && $(RUFF) format --check src tests
+	cd $(BACKEND) && $(RUFF) check src tests ../scripts && $(RUFF) format --check src tests ../scripts
 	cd $(FRONTEND) && pnpm lint
 
 format: ## Auto-format backend and frontend
-	cd $(BACKEND) && $(RUFF) format src tests && $(RUFF) check --fix src tests
+	cd $(BACKEND) && $(RUFF) format src tests ../scripts && $(RUFF) check --fix src tests ../scripts
 	cd $(FRONTEND) && pnpm format
 
 typecheck: ## mypy (strict) + tsc

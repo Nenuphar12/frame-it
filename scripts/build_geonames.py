@@ -2,8 +2,8 @@
 """Build the compact offline reverse-geocoding dataset from GeoNames (CC BY 4.0).
 
 Usage: python scripts/build_geonames.py [--source-dir DIR]
-Downloads cities1000.zip, admin1CodesASCII.txt and countryInfo.txt (unless present in DIR) and writes
-backend/src/frame_it/assets/geonames/cities1000.tsv.gz with columns:
+Downloads cities1000.zip, admin1CodesASCII.txt and countryInfo.txt (unless present in DIR) and
+writes backend/src/frame_it/assets/geonames/cities1000.tsv.gz with columns:
 name, lat, lon, admin1 name, country name.
 """
 
@@ -17,7 +17,8 @@ import zipfile
 from pathlib import Path
 
 BASE = "https://download.geonames.org/export/dump/"
-# Sections of cities (e.g. "Lyon 01") and historical/abandoned/destroyed places are not useful names.
+# Sections of cities (e.g. "Lyon 01") and historical/abandoned/destroyed places are not useful
+# names.
 EXCLUDED_FEATURE_CODES = {"PPLX", "PPLH", "PPLQ", "PPLW", "PPLCH"}
 OUT = Path(__file__).resolve().parents[1] / "backend/src/frame_it/assets/geonames/cities1000.tsv.gz"
 

@@ -25,6 +25,8 @@
   whole timeout — and `stop()` lost its notify the same way (the 5 s of the crash-recovery test
   were that). A per-lane flag, set and read under the condition, closes the gap.
   `test_a_job_queued_while_a_worker_looks_is_picked_up_at_once` (failed before, deterministic).
+- **`scripts/` is linted** (`make lint`/`make format`): 22 ruff findings, nearly all long lines in
+  the render-parity spike; `scenes.py` checked to write byte-identical output after formatting.
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 
