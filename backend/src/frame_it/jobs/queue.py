@@ -71,6 +71,8 @@ class JobQueue:
         self._handlers: dict[str, HandlerSpec] = {}
         self._claim_lock = threading.Lock()
         self._conditions = {lane: threading.Condition() for lane in lanes}
+        self._woken = dict.fromkeys(lanes, False)
+        """Per lane, set under its condition: a job was queued since a worker last looked."""
         self._threads: list[threading.Thread] = []
         self._schedules: list[Schedule] = []
         self._stopping = threading.Event()
@@ -132,6 +134,7 @@ class JobQueue:
             job_id = job.id
         cond = self._conditions[spec.lane]
         with cond:
+            self._woken[spec.lane] = True
             cond.notify()
         return job_id
 
@@ -178,7 +181,12 @@ class JobQueue:
             claimed = self._claim(lane)
             if claimed is None:
                 with cond:
-                    cond.wait(timeout=5.0)
+                    # A notify sent while `_claim` ran (its SELECT may predate the new job's
+                    # commit) would be lost to a plain `wait`: the job sat for the whole timeout,
+                    # and `stop()` waited as long. The flag and `_stopping` are read under the lock.
+                    if not self._woken[lane] and not self._stopping.is_set():
+                        cond.wait(timeout=5.0)
+                    self._woken[lane] = False
                 continue
             self._execute(*claimed)
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import threading
+import time
 from pathlib import Path
 from typing import Any
 
@@ -167,5 +168,30 @@ def test_job_queue_threads_and_crash_recovery(queue: JobQueue) -> None:
     queue.start()
     try:
         assert done.wait(5)
+    finally:
+        started = time.monotonic()
+        queue.stop()
+        # Not the workers' 5 s idle wait: `stop` reaches a worker however it is busy.
+        assert time.monotonic() - started < 2
+
+
+def test_a_job_queued_while_a_worker_looks_is_picked_up_at_once(queue: JobQueue) -> None:
+    done = threading.Event()
+    queue.register("ping", lambda ctx: done.set(), lane="a")
+    claim = queue._claim
+    raced: list[str] = []
+
+    def racing_claim(lane: str) -> tuple[str, str, dict[str, Any], int] | None:
+        found = claim(lane)
+        if lane == "a" and found is None and not raced:
+            # The job lands after this worker's SELECT saw nothing, before it starts waiting:
+            # the notify had nobody to wake, and the job sat for the whole idle timeout.
+            raced.append(queue.enqueue("ping", {}))
+        return found
+
+    queue._claim = racing_claim  # type: ignore[method-assign]
+    queue.start()
+    try:
+        assert done.wait(2)
     finally:
         queue.stop()

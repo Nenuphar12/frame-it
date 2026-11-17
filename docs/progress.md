@@ -20,6 +20,11 @@
   `cancelled` and `dismissed` rows older than 30 days (`HISTORY_DAYS`); failures stay until
   acknowledged, and export rows stay (the Export dialog lists them).
   `test_finished_jobs_are_pruned_after_the_history_window`.
+- **A queued job could wait 5 s for nothing.** A worker that found no job went to `wait(5)`; a
+  job committed while its `_claim` ran notified a condition nobody waited on yet, so it sat for the
+  whole timeout — and `stop()` lost its notify the same way (the 5 s of the crash-recovery test
+  were that). A per-lane flag, set and read under the condition, closes the gap.
+  `test_a_job_queued_while_a_worker_looks_is_picked_up_at_once` (failed before, deterministic).
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 
