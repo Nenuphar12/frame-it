@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import io
+import shutil
 from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
@@ -13,6 +14,8 @@ from PIL import Image
 from frame_it.app import create_app
 from frame_it.config import Settings
 from frame_it.context import AppContext
+from frame_it.db.migrate import upgrade_to_head
+from frame_it.db.session import Database
 
 LOCAL = ("127.0.0.1", 50000)
 REMOTE = ("192.168.1.50", 50000)
@@ -68,11 +71,26 @@ def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+@pytest.fixture(scope="session")
+def migrated_db(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """An empty library database at the head migration, made once per test session (or worker).
+
+    Running every migration costs ~0.1 s, once per test; a copy of this file costs nothing, and
+    `create_app` then finds the schema up to date.
+    """
+    path = tmp_path_factory.mktemp("template") / "library.db"
+    db = Database(path)
+    upgrade_to_head(db.engine)
+    db.dispose()
+    return path
+
+
 @pytest.fixture
-def settings(tmp_path: Path) -> Settings:
-    return Settings(
-        data_dir=tmp_path / "data", allowed_hosts=["testserver"], public_url="http://testserver"
-    )
+def settings(tmp_path: Path, migrated_db: Path) -> Settings:
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    shutil.copyfile(migrated_db, data_dir / "library.db")
+    return Settings(data_dir=data_dir, allowed_hosts=["testserver"], public_url="http://testserver")
 
 
 @pytest.fixture
