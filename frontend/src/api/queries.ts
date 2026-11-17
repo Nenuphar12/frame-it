@@ -1228,14 +1228,21 @@ export function useDisplayCapabilities() {
  * and the error is the answer (`tv_unreachable`).
  */
 export function useDisplayStatus(targetId: string | null) {
+  const qc = useQueryClient();
   return useQuery({
     queryKey: queryKeys.displayStatus(targetId ?? ""),
-    queryFn: () =>
-      unwrap(
-        api.GET("/api/v1/display/targets/{target_id}/status", {
-          params: { path: { target_id: targetId as string } },
-        }),
-      ),
+    queryFn: async () => {
+      try {
+        return await unwrap(
+          api.GET("/api/v1/display/targets/{target_id}/status", {
+            params: { path: { target_id: targetId as string } },
+          }),
+        );
+      } finally {
+        // Answered or not, the check is written on the target (counts, state, `last_error`).
+        void qc.invalidateQueries({ queryKey: queryKeys.displayTargets });
+      }
+    },
     enabled: Boolean(targetId),
     retry: false,
     staleTime: 10_000,
@@ -1288,6 +1295,8 @@ function useDisplayMutation<TVariables, TResult>(
   return useMutation({
     mutationFn,
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["display"] }),
+    // A failure is remembered on the target too (a refused pairing's `last_error`).
+    onError: () => void qc.invalidateQueries({ queryKey: queryKeys.displayTargets }),
   });
 }
 

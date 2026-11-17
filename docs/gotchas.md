@@ -299,6 +299,9 @@ These bite whatever you are working on.
 - `_with_tv` **commits the TV's new address from its own session** when it follows a TV by MAC.
   SQLite has one writer: a caller must not have written in the request's session before calling it
   (same reflex as `retry_job`), and must `session.refresh(target)` afterwards to see the new host.
+- **A failure written in the request's session vanishes**: the error response rolls it back.
+  `status()` and `pair()` record theirs through `_record_failure` (own transaction), which is why
+  `last_error` survives a 502; the same one-writer rule as above applies.
 - **Never use `samsungtvws`' own art `open()`**: it reads *one* frame after `ms.channel.connect`
   and fails unless it is `ms.channel.ready`, but the TV announces every client joining the channel
   (`ms.channel.clientConnect`, our own connection included) in no fixed order with `ready` — the

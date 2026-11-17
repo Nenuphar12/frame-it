@@ -17,7 +17,7 @@ from frame_it.app import use_fake_tv
 from frame_it.db.models import DisplayTarget, DisplayTargetItem, Job
 from frame_it.events import Event
 from frame_it.services import display
-from frame_it.tv import DiscoveredTv, FakeTv
+from frame_it.tv import DiscoveredTv, FakeTv, TvUnauthorizedError
 from tests.api.test_artworks import create, photo
 from tests.conftest import ctx_of, pair
 
@@ -475,6 +475,27 @@ def test_a_push_follows_the_tv_to_its_new_address(local: TestClient) -> None:
     assert listed["last_result"]["moved_to"] == "192.0.2.80"
     assert "tv_moved" in listed["last_result"]["warnings"]
     assert len(fake.uploads) == 1
+
+
+def test_a_failed_status_check_is_remembered(local: TestClient) -> None:
+    # The error response rolls the request's session back: the failure is written apart from it.
+    use_fake(local, FakeTv(reachable=False))
+    target = make_target(local)
+    assert local.get(f"{API}/display/targets/{target['id']}/status").status_code == 502
+    listed = local.get(f"{API}/display/targets").json()["targets"][0]
+    assert (listed["state"], listed["last_error"]) == ("error", "tv_unreachable")
+
+
+def test_a_failed_pairing_is_remembered(local: TestClient) -> None:
+    def refuse(_host: str) -> str:
+        raise TvUnauthorizedError("the prompt was declined")
+
+    ctx_of(local).tv_pairer = refuse
+    target = make_target(local)
+    assert local.post(f"{API}/display/targets/{target['id']}/pair").status_code == 409
+    listed = local.get(f"{API}/display/targets").json()["targets"][0]
+    # Pairing says why it failed, but a TV that was working is not put in error by a refusal.
+    assert (listed["state"], listed["last_error"]) == ("new", "tv_unauthorized")
 
 
 def test_status_follows_the_tv_too(local: TestClient) -> None:

@@ -195,7 +195,7 @@ def pair(
     try:
         token = pairer(target.host)
     except TvError as exc:
-        target.last_error = exc.code
+        _record_failure(ctx, target_id, exc.code, set_error_state=False)
         raise _problem(exc) from exc
     target.token = token
     target.last_error = None
@@ -244,6 +244,23 @@ class _Tv:
     def as_target(self) -> DisplayTarget:
         """A detached row, for the factory (`TvFactory` takes a `DisplayTarget`)."""
         return DisplayTarget(id=self.id, host=self.host, token=self.token, mac=self.mac)
+
+
+def _record_failure(
+    ctx: AppContext, target_id: str, code: str, *, set_error_state: bool = True
+) -> None:
+    """Keep why the TV failed, in a transaction of its own.
+
+    The caller raises next, and that rolls its own session back: written there, the error would
+    vanish with it. A push in progress keeps its `pushing` state — it ends in its own way.
+    """
+    with ctx.db.session() as s:
+        target = s.get(DisplayTarget, target_id)
+        if target is None:
+            return
+        target.last_error = code[:64]
+        if set_error_state and target.state != "pushing":
+            target.state = "error"
 
 
 @dataclass(frozen=True, slots=True)
@@ -510,8 +527,7 @@ def status(ctx: AppContext, session: Session, target_id: str) -> TargetStatus:
     try:
         (info, on_tv), moved = _with_tv(ctx, _Tv.of(target), probe)
     except TvError as exc:
-        target.last_error = exc.code
-        target.state = "error"
+        _record_failure(ctx, target_id, exc.code)
         raise _problem(exc) from exc
     if moved is not None:
         session.refresh(target)  # the new host was committed by `_with_tv`

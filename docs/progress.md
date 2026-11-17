@@ -1,5 +1,14 @@
 # Progress log
 
+## 2026-11-17 — Project review follow-ups
+
+- **A TV that failed a status check or a pairing forgot why.** `status()` and `pair()` set
+  `last_error` (and `error`) in the request's session, then raised — and the error response rolled
+  that session back: the card kept saying `new`, no error. They write it in a transaction of their
+  own now (`_record_failure`; a push in progress keeps `pushing`), and the TV page refetches the
+  targets after every check and every failed action. `test_a_failed_status_check_is_remembered`,
+  `test_a_failed_pairing_is_remembered` (both failed before).
+
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 
 - **The "hole" in a bevelled mat** (renderer 4). Not stretching: `_bevel` gave a band pixel to the
