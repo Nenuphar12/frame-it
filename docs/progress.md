@@ -52,6 +52,11 @@
   (actions at their current majors, uv 0.11.21, pnpm from `packageManager`, Node 24). **Not run
   yet**: it first runs when pushed; the golden tests compare with tolerances, so a runner's libvips
   (the same `pyvips[binary]` wheel) should pass them.
+- **The built frontend went raw and was revalidated on every load**: `/assets` (Vite's hashed
+  names) had no `Cache-Control`, and nothing was compressed. They are `immutable` now, and gzipped
+  — that mount only, so renders, photos and the SSE stream are untouched. The main chunk on the
+  production build: 1 354 kB → 408 kB on the wire, then not fetched again. The shell
+  (`index.html`) keeps `no-cache`, and a missing chunk stays a 404. `tests/api/test_spa.py`.
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 

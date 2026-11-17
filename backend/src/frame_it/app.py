@@ -11,6 +11,8 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.gzip import GZipMiddleware
+from starlette.types import Scope
 
 from frame_it import __version__
 from frame_it.api import (
@@ -234,6 +236,16 @@ def create_app(settings: Settings, *, start_workers: bool = True) -> FastAPI:
     return app
 
 
+class HashedAssets(StaticFiles):
+    """Vite's build output: every name carries a hash of its content, so it may be kept forever."""
+
+    async def get_response(self, path: str, scope: Scope) -> Response:
+        response = await super().get_response(path, scope)
+        if response.status_code == 200:
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
+
+
 def _mount_spa(app: FastAPI) -> None:
     index = STATIC_DIR / "index.html"
     if not index.is_file():
@@ -248,7 +260,8 @@ def _mount_spa(app: FastAPI) -> None:
         return
     assets = STATIC_DIR / "assets"
     if assets.is_dir():
-        app.mount("/assets", StaticFiles(directory=assets), name="assets")
+        # Gzip here only: renders and photos are already compressed, and SSE must not be buffered.
+        app.mount("/assets", GZipMiddleware(HashedAssets(directory=assets)), name="assets")
 
     @app.get("/{path:path}", include_in_schema=False)
     def spa(path: str) -> FileResponse:
