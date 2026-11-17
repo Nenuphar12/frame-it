@@ -139,9 +139,10 @@ class JobQueue:
         return job_id
 
     def set_progress(self, job_id: str, value: float) -> None:
+        """Stored on the row, which the pages showing it poll. No event: an export reports once per
+        photo, and nobody listened (a TV push publishes its own, throttled `display.progress`)."""
         with self._db.session() as s:
             s.execute(update(Job).where(Job.id == job_id).values(progress=value))
-        self._broker.publish(Event("job.progress", {"job_id": job_id, "progress": value}))
 
     def run_pending_sync(self) -> int:
         """Run all queued jobs in the calling thread (tests, CLI). Returns the number executed."""

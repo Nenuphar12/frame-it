@@ -50,7 +50,6 @@ from frame_it.db.models import (
 from frame_it.domain import archive
 from frame_it.domain.document import SCHEMA_VERSION
 from frame_it.errors import ProblemError, not_found
-from frame_it.events import Event
 from frame_it.ids import utcnow
 from frame_it.jobs.queue import JobContext, JobHandler, PermanentJobError
 from frame_it.services import archive_import, library, render
@@ -549,26 +548,14 @@ def export_job(ctx: AppContext) -> JobHandler:
         directory = ctx.storage.export_dir(job.job_id)
         directory.mkdir(parents=True, exist_ok=True)
         target = directory / filename_for(options)
+        # No event when done: the Export dialog follows the job row (`GET /exports/{job_id}`).
         try:
-            result = (
+            if options.kind == "renders":
                 write_render_zip(ctx, options, target, progress=job.progress)
-                if options.kind == "renders"
-                else write_archive(ctx, options, target, progress=job.progress)
-            )
+            else:
+                write_archive(ctx, options, target, progress=job.progress)
         except ProblemError as exc:
             raise PermanentJobError(exc.code, str(exc)) from exc
-        ctx.broker.publish(
-            Event(
-                "export.ready",
-                {
-                    "job_id": job.job_id,
-                    "filename": target.name,
-                    "bytes": result.bytes_written,
-                    "counts": result.counts,
-                    "warnings": list(result.warnings),
-                },
-            )
-        )
 
     return handler
 

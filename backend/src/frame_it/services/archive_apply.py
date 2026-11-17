@@ -44,7 +44,6 @@ from frame_it.db.models import (
 )
 from frame_it.domain import archive
 from frame_it.errors import ProblemError
-from frame_it.events import Event
 from frame_it.ids import new_id, utcnow
 from frame_it.services import artworks as artworks_service
 from frame_it.services import render, search
@@ -144,7 +143,6 @@ def apply_import(ctx: AppContext, import_id: str, policies: Policies) -> ApplyRe
         row = row_of(session, import_id)
         row.state = "applied"
         row.error = None
-    ctx.broker.publish(Event("import.applied", {"import_id": import_id} | result.as_dict()))
     return result
 
 

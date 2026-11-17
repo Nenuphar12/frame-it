@@ -256,7 +256,7 @@ the UI). Lists use keyset pagination (`?cursor=&limit=`). All payloads are Pydan
 | trash | `GET /trash`, `POST /trash/restore`, `POST /trash/purge`, `DELETE` flows use `?cascade=trash_artworks|empty_slots` | admin |
 | exports | `POST /exports` ({kind: library/renders, selection, options}) → job; `GET /exports`, `GET /exports/{job_id}`, `GET /exports/{job_id}/download` (streaming), `DELETE /exports/{job_id}` | admin |
 | imports | `POST /imports` then `PATCH /imports/{id}` (chunks, `Upload-Offset`) → staging job; `GET /imports`, `GET /imports/{id}`, `GET /imports/{id}/report`; `POST /imports/{id}/apply` ({default, per_kind, per_item}); `DELETE /imports/{id}` | admin |
-| events | `GET /events` (SSE): `photo.ingested`, `photo.ingest_failed`, `upload.completed`, `artwork.rendered`, `job.progress`, `job.failed`, `entity.changed`, `export.ready`, `import.staged`, `import.failed`, `import.applied` | uploader+ (filtered) |
+| events | `GET /events` (SSE): the names and payloads are `ServerEvents` in `frontend/src/api/events.ts` (only events a page listens to are published); `ready` first, `resync` when a client fell behind | uploader+ (filtered) |
 | jobs | `GET /jobs?state=`, `POST /jobs/{id}/retry` | admin |
 
 CLI (`frame-it`): `serve`, `doctor`, `setup-code`, `openapi`, `schemas`, `export`, `import`, `service install|uninstall|status`

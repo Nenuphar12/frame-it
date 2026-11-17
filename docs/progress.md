@@ -72,6 +72,10 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
   gotcha fixed; the Glossary section `PLAN.md` §3.2 requires, added). This log kept only what
   follows the beta: 128 → 13 kB, the rest unchanged in `progress-before-beta.md`. `PLAN.md` §4.2's
   tree, stale since Phase 1, points at the repo map; the four-line `docs/architecture.md` is gone.
+- **Events nobody listened to, removed**: `job.progress` (one per exported photo, to every admin —
+  with `resync`, a flood a sleeping tab would answer by refetching everything), `export.ready`,
+  `import.staged`, `import.failed`, `import.applied`. Those pages poll their rows, which still
+  carry the progress. What is published and `ServerEvents` now list the same 16 events.
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 

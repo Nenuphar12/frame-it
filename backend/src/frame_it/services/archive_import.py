@@ -63,7 +63,6 @@ from frame_it.db.models import (
 from frame_it.domain import archive, filters
 from frame_it.domain.document import SCHEMA_VERSION, ArtworkDocument, parse_document
 from frame_it.errors import ProblemError, not_found
-from frame_it.events import Event
 from frame_it.ids import new_id, utcnow
 from frame_it.jobs.queue import JobContext, JobHandler, PermanentJobError
 
@@ -790,14 +789,13 @@ def stage_job(ctx: AppContext) -> JobHandler:
         import_id = str(job.payload["import_id"])
         try:
             stage(ctx, import_id)
+        # No events: the import page polls the row while it is `staging`.
         except archive.ArchiveError as exc:
             set_failed(ctx, import_id, exc.code)
-            ctx.broker.publish(Event("import.failed", {"import_id": import_id, "code": exc.code}))
             raise PermanentJobError(exc.code, str(exc)) from exc
         except Exception:
             set_failed(ctx, import_id, "staging_failed")
             raise
-        ctx.broker.publish(Event("import.staged", {"import_id": import_id}))
 
     return handler
 
