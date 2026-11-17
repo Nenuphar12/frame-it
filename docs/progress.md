@@ -102,6 +102,16 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
   `the_frame_v2` data dir and `the_frame_v2.archive` archives. The rename came with the public
   release, so only the author ever had it, and nothing on this machine used it (no old data dir,
   variable, service unit or archive).
+- **The editor's rules have tests** (user's decision, "in a small form"): 20 cases in
+  `frontend/src/editor/operations.test.ts`, run by Node's own runner (`pnpm test`, in `make test`
+  and so in CI) — margins and native linking, the lock against rotation and stretching, quarter
+  turns, mirror and straightening, the wheel's bounds, swap/replace, decorations of a new slot, a
+  cell that zoom and native framing never move, balance clamping, the recipe following the photo
+  count, detach / re-apply, a caption kept on attach. No new dependency: `operations.ts` imports
+  `editor/core` relatively now, as `core` itself does. Three rules broken on purpose (mirror,
+  straighten reset, recipe family) each made a test fail. Two first expectations were mine and
+  wrong, not the code: under `no_upscale` the wheel stops where the photo would be stretched
+  (2.35 here), not at 8.
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 

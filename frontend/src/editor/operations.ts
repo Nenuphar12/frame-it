@@ -17,8 +17,8 @@ import {
   zoomCrop as zoomCropSolver,
   type Anchor,
   type SlotState,
-} from "@/editor/core/constraints.ts";
-import type { Alternative } from "@/editor/core/alternatives.ts";
+} from "./core/constraints.ts";
+import type { Alternative } from "./core/alternatives.ts";
 import {
   applyComposition,
   captionStyleOf,
@@ -27,13 +27,13 @@ import {
   splits,
   type Composition,
   type Recipe,
-} from "@/editor/core/composition.ts";
+} from "./core/composition.ts";
 import {
   relayout,
   restyle,
   type LayoutDocument as CoreLayout,
   type StyleDocument as CoreStyle,
-} from "@/editor/core/templates.ts";
+} from "./core/templates.ts";
 import {
   align,
   distribute,
@@ -41,14 +41,14 @@ import {
   newSlotSize,
   type Axis,
   type Edge,
-} from "@/editor/core/arrange.ts";
+} from "./core/arrange.ts";
 import type {
   DocCaption,
   DocMargins,
   DocSlot,
   EditorDocument,
   Placement,
-} from "@/editor/core/document.ts";
+} from "./core/document.ts";
 import {
   MAX_STRAIGHTEN,
   orientedSize,
@@ -60,7 +60,7 @@ import {
   type Orient,
   type Rect,
   type Size,
-} from "@/editor/core/geometry.ts";
+} from "./core/geometry.ts";
 import {
   availableArea,
   fill,
@@ -72,7 +72,7 @@ import {
   ratioLabel,
   type QualityLock,
   type SlotPlacement,
-} from "@/editor/core/placement.ts";
+} from "./core/placement.ts";
 
 /** EXIF-oriented photo sizes, by photo id (from `GET /photos/{id}`). */
 export type PhotoSizes = Record<string, Size>;

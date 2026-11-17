@@ -26,8 +26,9 @@ dev-frontend:
 
 check: lint typecheck i18n conformance generated test ## Everything that must pass before committing
 
-test: ## Backend unit + API tests (in parallel, one worker per core)
+test: ## Backend unit + API tests (in parallel, one worker per core), then the editor's rules
 	cd $(BACKEND) && uv run pytest -n auto
+	cd $(FRONTEND) && pnpm test
 
 lint: ## Ruff + ESLint
 	cd $(BACKEND) && $(RUFF) check src tests ../scripts && $(RUFF) format --check src tests ../scripts

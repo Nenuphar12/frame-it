@@ -341,7 +341,9 @@ Moved to [`docs/archive-format.md`](archive-format.md) — maintained there.
 ## 13. Testing strategy
 
 Scope decided with the user: **backend unit + API tests** and **very light golden-image tests**. No frontend test
-suite, no CI in v1 (local `make check`; since 2026-11-17 GitHub Actions runs the same, §17.2).
+suite, no CI in v1 (local `make check`; since 2026-11-17 GitHub Actions runs the same, §17.2). One exception,
+decided 2026-11-17: ~20 Node tests of the editor's propagation rules (`editor/operations.test.ts`, `pnpm test`) —
+pure functions, no component or DOM tests.
 
 ### 13.1 Backend unit tests (`tests/unit`)
 
@@ -377,7 +379,7 @@ AVIF) are small, owned by the user and licensed CC0 in-repo.
 
 ### 13.6 Manual verification in a browser (soft requirement)
 
-There is no frontend test suite (§13), so UI work is verified by hand. Phases 1–6 were each driven in a real
+There are no component tests (§13), so UI work is verified by hand. Phases 1–6 were each driven in a real
 browser and that is still the **preferred** evidence — it found bugs no backend test could (render loops, a
 frozen tab, snapping that swallowed typed values, a caption drawn 14 px too high).
 

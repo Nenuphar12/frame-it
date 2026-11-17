@@ -63,7 +63,8 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
 |---|---|
 | Install | `make install` (uv + pnpm) |
 | Dev (API :8765 + Vite :5173) | `make dev` — open http://localhost:5173 |
-| Everything that must pass | `make check` (ruff, ESLint, mypy strict, tsc, i18n keys, geometry conformance, generated files, pytest) |
+| Everything that must pass | `make check` (ruff, ESLint, mypy strict, tsc, i18n keys, geometry conformance, generated files, pytest, editor rules) |
+| Editor rules only | `cd frontend && pnpm test` (`src/**/*.test.ts`, Node's own runner) |
 | Geometry fixtures | `make conformance` (TS); regenerate from Python: `cd backend && CONFORMANCE_UPDATE=1 uv run pytest tests/unit/test_conformance.py` |
 | Golden images | `make golden-update` after an intended pixel change (review PNGs, bump `RENDERER_VERSION`) |
 | Render budgets + peak RSS | `cd backend && uv run python ../scripts/bench_render.py` |
@@ -110,7 +111,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `frontend/src/api/` | `client.ts` (openapi-fetch + `ApiError`), `queries.ts` (TanStack Query hooks), `events.ts` (SSE), generated `schema.d.ts` |
 | `frontend/src/app/` | `router.tsx`, `AuthGate.tsx` (role routing), `Shell.tsx` (sidebar), `commands.ts` (shortcuts/palette registry), `theme.ts` |
 | `frontend/src/editor/core/` | PURE TS mirror of `domain/` (same module names, plus `bevel`); client-only `snapping`, `bounds`, `splits`, `document` (every optional field filled in). Relative imports with `.ts`: Node runs them in `frontend/scripts/conformance.ts` |
-| `frontend/src/editor/` | `EditorPage.tsx` (layout, shortcuts, review queue), `store.ts` (working document, undo/redo on Immer patches, autosave + conflicts), `operations.ts` (pure document mutations: how a change propagates), `actions.ts` (what the UI calls), `TvPreview.tsx` |
+| `frontend/src/editor/` | `EditorPage.tsx` (layout, shortcuts, review queue), `store.ts` (working document, undo/redo on Immer patches, autosave + conflicts), `operations.ts` (pure document mutations: how a change propagates; its rules pinned in `operations.test.ts`), `actions.ts` (what the UI calls), `TvPreview.tsx` |
 | `…/editor/canvas/` | `EditorStage.tsx` (Konva stage, one pointer pipeline for every gesture), `SlotNode.tsx`, `CaptionNode.tsx`, `SelectionOverlay.tsx`, `StraightenGuides.tsx`, `hit.ts` (rotation-aware hit tests), `texture.ts`, `fonts.ts`, `useOrientedImage.ts` |
 | `…/editor/panels/` | `SimplePanel` (the parametric editor) + `RecipePicker`, `SlotsPanel`, `PhotoPicker`, `ArrangePanel`, `CaptionsPanel`, `FramingPanel`, `StylePanel`, `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`; shared with the template editor: `ColorField`, `ShadowFields`, `Controls` (every slider has a typed twin) |
 | `frontend/src/features/` | One folder per page or flow: `display/`, `activity/`, `archive/`, `upload/` (queue engine `uploadStore.ts`), `photos/`, `inbox/`, `artworks/`, `templates/`, `library/` (filter AST + chip bar), `collections/`, `trash/` (`useTrashWithUndo`), `tags/` (`TagMenu`, `PlacesView`), `devices/`, `auth/`, `mobile/`, `settings/`, `localsend/`. The editor lives in `src/editor/`, not here |
@@ -242,6 +243,8 @@ whatever you are touching before you touch it.** These few bite whatever you are
   `Runtime.evaluate` against the production build on trusted localhost. Read results back through the
   **API**, not off the screen — a Konva canvas can capture black although its pixels are correct. No
   harness ⇒ verify what you can and write in `docs/progress.md` what was not driven in a browser.
+- `editor/operations.ts` and `editor/core/` import each other with **relative `.ts` paths**: Node runs them
+  as they are (`pnpm test`, `pnpm conformance`) and cannot resolve the `@/` alias. A type-only import may use it.
 - `make format` runs prettier over the whole frontend, but `make lint` only runs ESLint: a lot of editor
   files have never been prettier-formatted, so `make format` rewrites ~20 files you did not touch. Format
   your own files, then `git checkout --` the rest.

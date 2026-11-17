@@ -62,12 +62,14 @@ and `docs/PLAN.md` §15.
 
 ## Tests
 
-Backend unit + API tests, geometry conformance in both languages, and a few golden images. There is
-no frontend test suite by design (`docs/PLAN.md` §13), so UI work is verified by hand in a browser
+Backend unit + API tests, geometry conformance in both languages, a few golden images, and a small
+Node test file for the editor's propagation rules (`frontend/src/editor/operations.test.ts`). There
+are no component tests by design (`docs/PLAN.md` §13), so UI work is verified by hand in a browser
 and what was *not* verified is written down in `docs/progress.md`.
 
 ```sh
 cd backend && uv run pytest -n auto    # in parallel; one file or -k name runs fine without -n
+cd frontend && pnpm test               # the editor's rules (Node's test runner)
 make conformance                       # the TypeScript half of the geometry fixtures
 make golden-update                     # after an intended pixel change — review the PNGs!
 ```
