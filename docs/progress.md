@@ -36,6 +36,9 @@
   1 is slower, 2 no faster) and a test-only PNG level (7 % on the render-heavy files). The slowest
   tests now are the ones rendering real 3840×2160 artworks (TV pushes, archives), which is what
   they are for.
+- **Stale generated files fail `make check`** (`make generated`, `scripts/check_generated.py`):
+  it regenerates the OpenAPI JSON, `schema.d.ts` and `docs/schemas/` into a temporary directory and
+  compares. It would have caught the `/events` description committed without `make gen-api` today.
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 

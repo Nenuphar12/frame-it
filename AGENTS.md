@@ -60,7 +60,7 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
 |---|---|
 | Install | `make install` (uv + pnpm) |
 | Dev (API :8765 + Vite :5173) | `make dev` — open http://localhost:5173 |
-| Everything that must pass | `make check` (ruff, ESLint, mypy strict, tsc, i18n keys, geometry conformance, pytest) |
+| Everything that must pass | `make check` (ruff, ESLint, mypy strict, tsc, i18n keys, geometry conformance, generated files, pytest) |
 | Geometry fixtures | `make conformance` (TS); regenerate from Python: `cd backend && CONFORMANCE_UPDATE=1 uv run pytest tests/unit/test_conformance.py` |
 | Golden images | `make golden-update` after an intended pixel change (review PNGs, bump `RENDERER_VERSION`) |
 | Render budgets + peak RSS | `cd backend && uv run python ../scripts/bench_render.py` |
@@ -103,7 +103,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `…/assets/geonames/` | Offline place dataset (built by `scripts/build_geonames.py`, CC BY 4.0) |
 | `backend/tests/` | `unit/`, `api/`, `golden/` (reference PNGs in `refs/`); fixtures & helpers in `conftest.py` (`make_jpeg`, `pair`, `upload_bytes`) |
 | `conformance/geometry/` | Shared JSON fixtures: Python domain ↔ `frontend/src/editor/core` (`render.json`: the two renderer constants the canvas mirrors) |
-| `scripts/` | `build_geonames.py`, `build_fonts.py`, `generate_textures.py`, `bench_render.py` (time **and** peak RSS), `bench_library.py` (§8.6 budgets), `seed_library.py`, `render_parity/` (S3 page), `tv_probe.py` (S5 spike: probes the Frame's art channel, `--fake` self-tests it without hardware — `docs/research/tv-display.md`) |
+| `scripts/` | `check_generated.py` (`make generated`: the API types and `docs/schemas/` match the backend), `build_geonames.py`, `build_fonts.py`, `generate_textures.py`, `bench_render.py` (time **and** peak RSS), `bench_library.py` (§8.6 budgets), `seed_library.py`, `render_parity/` (S3 page), `tv_probe.py` (S5 spike: probes the Frame's art channel, `--fake` self-tests it without hardware — `docs/research/tv-display.md`) |
 | `frontend/src/api/` | `client.ts` (openapi-fetch + `ApiError`), `queries.ts` (TanStack Query hooks), `events.ts` (SSE), generated `schema.d.ts` |
 | `frontend/src/app/` | `router.tsx`, `AuthGate.tsx` (role routing), `Shell.tsx` (sidebar), `commands.ts` (shortcuts/palette registry), `theme.ts` |
 | `frontend/src/editor/core/` | PURE TS mirror of `domain/` (`geometry`, `quality`, `placement`, `constraints`, `alternatives`, `arrange`, `composition`, `templates`, `bevel` = the renderer's bevel shades) + `snapping.ts`, `bounds.ts` and `splits.ts` (client-only: the gaps of a Fill layout, a drag in shares, a cell's row/column) and `document.ts` (the document with every optional field filled in); relative imports with `.ts` extension (run by Node in `frontend/scripts/conformance.ts`) |

@@ -6,7 +6,7 @@ FRONTEND := frontend
 RUFF ?= uv run ruff
 DATA_DIR ?= $(CURDIR)/.dev-data
 
-.PHONY: help install dev dev-backend dev-frontend check test lint format typecheck i18n conformance golden-update gen-api build serve docker
+.PHONY: help install dev dev-backend dev-frontend check test lint format typecheck i18n conformance generated golden-update gen-api build serve docker
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -24,7 +24,7 @@ dev-backend:
 dev-frontend:
 	cd $(FRONTEND) && pnpm dev
 
-check: lint typecheck i18n conformance test ## Everything that must pass before committing
+check: lint typecheck i18n conformance generated test ## Everything that must pass before committing
 
 test: ## Backend unit + API tests (in parallel, one worker per core)
 	cd $(BACKEND) && uv run pytest -n auto
@@ -49,6 +49,9 @@ conformance: ## TypeScript geometry vs shared fixtures (Python side runs in pyte
 
 golden-update: ## Regenerate golden reference renders (review the diff before committing!)
 	cd $(BACKEND) && GOLDEN_UPDATE=1 uv run pytest tests/golden
+
+generated: ## Fail when the API types or docs/schemas/ are older than the backend (fix: make gen-api)
+	cd $(BACKEND) && uv run python ../scripts/check_generated.py
 
 gen-api: ## Regenerate frontend API types and docs/schemas/ (JSON Schemas) from the backend
 	cd $(BACKEND) && uv run frame-it openapi -o ../$(FRONTEND)/src/api/openapi.json

@@ -148,7 +148,7 @@ Originals are content-addressed and never modified. The cache is always safe to 
 
 ```sh
 make dev     # API on :8765 with reload + Vite on :5173
-make check   # ruff, ESLint, mypy strict, tsc, i18n keys, geometry conformance, pytest
+make check   # ruff, ESLint, mypy strict, tsc, i18n keys, geometry conformance, generated files, pytest
 ```
 
 Contributors: [CONTRIBUTING.md](CONTRIBUTING.md). Coding agents: start with
