@@ -52,9 +52,9 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
   dependency swapped; same API), and Starlette 1.10 no longer touches anyio's deprecated
   `BlockingPortal` alias (1.6 → 1.10, allowed by FastAPI 0.141).
 - **CI**: `.github/workflows/check.yml` runs `make check` on pushes to master and pull requests
-  (actions at their current majors, uv 0.11.21, pnpm from `packageManager`, Node 24). **Not run
-  yet**: it first runs when pushed; the golden tests compare with tolerances, so a runner's libvips
-  (the same `pyvips[binary]` wheel) should pass them.
+  (uv 0.11.21, pnpm from `packageManager`, Node 24, `ubuntu-24.04`). Its first run failed at
+  setup: `astral-sh/setup-uv` publishes no moving `v10` tag. Every action is pinned to its release
+  commit now (version in a comment) — a tag can also be moved under us.
 - **The built frontend went raw and was revalidated on every load**: `/assets` (Vite's hashed
   names) had no `Cache-Control`, and nothing was compressed. They are `immutable` now, and gzipped
   — that mount only, so renders, photos and the SSE stream are untouched. The main chunk on the
