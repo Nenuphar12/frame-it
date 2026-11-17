@@ -59,7 +59,8 @@
       "library": "Library",
       "inbox": "Inbox",
       "artworks": "Artworks",
-      "editor": "Editor"
+      "editor": "Editor",
+      "photoViewer": "Photo viewer"
     },
     "toggleTheme": "Toggle light/dark theme",
     "uploadFiles": "Add photos",
@@ -183,7 +184,23 @@
     "backToInboxHint": "Put the selected photos back on the inbox's to-do list",
     "backToInboxToast": "Back in the inbox.",
     "openDraft": "Open draft {{n}}",
-    "artworksNearHere": "Artworks within {{km}} km"
+    "artworksNearHere": "Artworks within {{km}} km",
+    "viewer": {
+      "view": "View large",
+      "viewHint": "Open the photo full screen (V, or double-click it)",
+      "hint": "Arrow keys switch photos; S selects, Z shows 100%, Delete moves to the trash.",
+      "next": "Next photo",
+      "previous": "Previous photo",
+      "position": "{{index}} of {{total}}",
+      "select": "Select",
+      "selected": "Selected",
+      "selectHint": "Add to the grid's selection, to act on it once the viewer is closed (S)",
+      "toggleSelect": "Select or deselect the photo",
+      "actualSize": "100%",
+      "fit": "Fit",
+      "zoomHint": "The original's own pixels; the zoom stays on from one photo to the next (Z, or click the photo)",
+      "toggleZoom": "Toggle 100% / fit to screen"
+    }
   },
   "tags": {
     "placeholder": "Add tags…",

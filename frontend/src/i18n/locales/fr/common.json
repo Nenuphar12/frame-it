@@ -59,7 +59,8 @@
       "library": "Bibliothèque",
       "inbox": "À traiter",
       "artworks": "Œuvres",
-      "editor": "Éditeur"
+      "editor": "Éditeur",
+      "photoViewer": "Visionneuse"
     },
     "toggleTheme": "Basculer entre thème clair et sombre",
     "uploadFiles": "Ajouter des photos",
@@ -183,7 +184,23 @@
     "backToInboxHint": "Remettre les photos sélectionnées dans la liste « À traiter »",
     "backToInboxToast": "De retour dans « À traiter ».",
     "openDraft": "Ouvrir le brouillon {{n}}",
-    "artworksNearHere": "Œuvres à moins de {{km}} km"
+    "artworksNearHere": "Œuvres à moins de {{km}} km",
+    "viewer": {
+      "view": "Voir en grand",
+      "viewHint": "Ouvrir la photo en plein écran (V, ou double-clic dessus)",
+      "hint": "Les flèches passent d'une photo à l'autre ; S sélectionne, Z affiche à 100 %, Suppr met à la corbeille.",
+      "next": "Photo suivante",
+      "previous": "Photo précédente",
+      "position": "{{index}} sur {{total}}",
+      "select": "Sélectionner",
+      "selected": "Sélectionnée",
+      "selectHint": "Ajouter à la sélection de la grille, pour agir dessus une fois la visionneuse fermée (S)",
+      "toggleSelect": "Sélectionner ou désélectionner la photo",
+      "actualSize": "100 %",
+      "fit": "Ajuster",
+      "zoomHint": "Les pixels mêmes de l'original ; le zoom reste d'une photo à la suivante (Z, ou clic sur la photo)",
+      "toggleZoom": "Basculer entre 100 % et l'ajustement à l'écran"
+    }
   },
   "tags": {
     "placeholder": "Ajouter des étiquettes…",

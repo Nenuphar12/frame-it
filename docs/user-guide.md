@@ -115,6 +115,12 @@ to `.jpg` will not sneak it past.
 **finished**. Review them, tag them (`t`), and make artworks; `i` shows the details of the selected
 photo.
 
+To sort a burst, open a photo big — double-click it, or press `v`. The arrows go from one photo to
+the next; `Delete` moves the one on screen to the trash and shows the next, `d` dismisses it, and
+`s` selects it, to act on the selection once you are back in the grid. `z` (or a click) shows the
+original at 100%: the zoom stays at the same spot as you move on, so you can compare sharpness
+from one shot to the next. The Photos page opens photos the same way.
+
 Select one or more photos and press `n` (or *Create artworks*). With several photos selected the
 dialog offers **one artwork holding all of them** — pick the arrangement from the schemas — or one
 artwork per photo.

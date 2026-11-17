@@ -16,6 +16,7 @@ const GAP = 8;
 interface PhotoGridProps {
   photos: Photo[];
   selected?: Set<string>;
+  /** Ringed, and scrolled into view when it changes (the drawer's photo, the viewer's). */
   focusedId?: string | null;
   onTileClick: (photo: Photo, index: number, event: MouseEvent) => void;
   onTileDoubleClick?: (photo: Photo) => void;
@@ -67,6 +68,14 @@ export function PhotoGrid({
   });
 
   useEffect(() => virtualizer.measure(), [tile, virtualizer]);
+
+  // The photo viewer walks the grid behind it: closed, it leaves the last photo shown in view.
+  const focusedRow = focusedId
+    ? Math.floor(photos.findIndex((p) => p.id === focusedId) / columns)
+    : -1;
+  useEffect(() => {
+    if (focusedRow >= 0) virtualizer.scrollToIndex(focusedRow, { align: "auto" });
+  }, [focusedRow, virtualizer]);
 
   const virtualRows = virtualizer.getVirtualItems();
   const lastRow = virtualRows.at(-1)?.index ?? 0;

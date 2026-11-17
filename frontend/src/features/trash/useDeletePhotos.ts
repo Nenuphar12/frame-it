@@ -14,7 +14,7 @@ import { useTrashWithUndo } from "./useTrashWithUndo";
  *
  * Render `<TrashPhotosDialog {...dialog} />` beside the grid.
  */
-export function useDeletePhotos(onDone?: () => void) {
+export function useDeletePhotos(onDone?: (photoIds: string[]) => void) {
   const qc = useQueryClient();
   const { trashPhotos } = useTrashWithUndo();
   const [asking, setAsking] = useState<string[] | null>(null);
@@ -30,7 +30,7 @@ export function useDeletePhotos(onDone?: () => void) {
         })
         .catch(() => null);
       if (preview && preview.artworks.length === 0) {
-        onDone?.();
+        onDone?.(photoIds);
         await trashPhotos(photoIds);
         return;
       }
@@ -47,7 +47,9 @@ export function useDeletePhotos(onDone?: () => void) {
       onOpenChange: (open: boolean) => {
         if (!open) setAsking(null);
       },
-      onDone,
+      // Told which photos left: the photo viewer moves on from *that* photo, not whichever one
+      // is on screen by the time the server answered.
+      onDone: () => onDone?.(asking ?? []),
     },
   };
 }

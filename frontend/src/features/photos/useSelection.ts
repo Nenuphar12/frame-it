@@ -48,6 +48,21 @@ export function useSelection(orderedIds: string[], options: SelectionOptions = {
     [anchor, disabled, orderedIds, toggle],
   );
 
+  /** One item in or out, whatever the click mode (the photo viewer's `s`). */
+  const toggleOne = useCallback(
+    (id: string) => {
+      if (disabled?.has(id)) return;
+      setSelected((current) => {
+        const next = new Set(current);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+      setAnchor(id);
+    },
+    [disabled],
+  );
+
   const selectAll = useCallback(
     () => setSelected(new Set(orderedIds.filter((id) => !disabled?.has(id)))),
     [disabled, orderedIds],
@@ -59,5 +74,6 @@ export function useSelection(orderedIds: string[], options: SelectionOptions = {
     [],
   );
 
-  return { selected, click, selectAll, clear, prune };
+  // `anchor`: the item last clicked or toggled — what a keyboard "open this one" means.
+  return { selected, anchor, click, toggleOne, selectAll, clear, prune };
 }

@@ -130,6 +130,21 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
   What was opened lasts while the app stays loaded, not across a reload. The Collections page
   still unfolds every level. Dropping artworks into a sub-collection from the sidebar now takes a
   click to open its parent first. **Not driven in a browser** (local Chromium broken).
+- **Photos open full screen** (user feedback: "to select the one I want to keep and the ones I
+  want to trash"). `PhotoViewer`, on the Photos page and the Inbox: a double-click (it opened the
+  details drawer, which stays on `i` and ⓘ), `v` or the header's ⤢. ←/→ walk the grid, and the
+  grid scrolls along behind it, so closing lands on the last photo shown (with the keyboard focus
+  on it). `Delete` trashes the photo (Undo; the cascade dialog, over the viewer, when an artwork
+  uses it) and `d` dismisses it from the Inbox; both then show the next photo, else the previous
+  one. `useDeletePhotos` now tells its callback *which* photos left, so the viewer moves on from
+  that photo even if the server answers late, and a second `Delete` before the answer is ignored.
+  `s` toggles the photo in the grid's selection. Fitted, the viewer shows the 2560 px proxy over the
+  768 px thumbnail; `z` or a click shows the original at 100% (one photo pixel per device pixel)
+  around the point clicked, panned by dragging (scroll positions written straight to the element)
+  or scrolling. The zoom and its spot carry over to the next photo, to compare a burst's sharpness.
+  `Escape` first goes back to fit. A photo already at 100% when fitted offers no zoom: it is never
+  blown up. The neighbours' proxies are fetched ahead. **Not driven in a browser** (local Chromium
+  broken): type-checked, linted, and the layout and focus code read twice.
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 

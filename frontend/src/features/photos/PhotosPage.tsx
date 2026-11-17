@@ -1,4 +1,4 @@
-import { Images, Inbox, Info, Search, Trash2, Wand2, X } from "lucide-react";
+import { Images, Inbox, Info, Maximize2, Search, Trash2, Wand2, X } from "lucide-react";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -18,6 +18,8 @@ import { EmptyState, PageHeader, Spinner } from "@/shared/ui/Misc";
 
 import { PhotoDrawer } from "./PhotoDrawer";
 import { PhotoGrid } from "./PhotoGrid";
+import { PhotoViewer } from "./PhotoViewer";
+import { usePhotoViewer } from "./usePhotoViewer";
 import { useSelection } from "./useSelection";
 
 export function PhotosPage() {
@@ -39,7 +41,7 @@ export function PhotosPage() {
   const items = useMemo(() => photos.data?.pages.flatMap((p) => p.items) ?? [], [photos.data]);
   const ids = useMemo(() => items.map((p) => p.id), [items]);
   const selection = useSelection(ids);
-  const { selected, clear, selectAll, prune } = selection;
+  const { selected, anchor, toggleOne, clear, selectAll, prune } = selection;
   const selectedInOrder = useMemo(() => ids.filter((id) => selected.has(id)), [ids, selected]);
   const selectedPhotos = useMemo(() => items.filter((p) => selected.has(p.id)), [items, selected]);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -60,6 +62,8 @@ export function PhotosPage() {
   }, [clear]);
   /** Nothing uses them ⇒ straight to the trash with Undo; otherwise the cascade dialog asks. */
   const deletion = useDeletePhotos(afterDelete);
+  const viewer = usePhotoViewer(ids);
+  const { viewingId, viewCurrent } = viewer;
 
   useEffect(() => prune(new Set(ids)), [ids, prune]);
 
@@ -86,34 +90,44 @@ export function PhotosPage() {
     );
   }, [backToInbox, inbox]);
 
-  const commands = useMemo<Command[]>(
-    () => [
+  const commands = useMemo<Command[]>(() => {
+    // The viewer has keys of its own (`Delete`, `Escape`…): the grid keeps its palette entries
+    // but gives up the keys while it is open — one press must not act twice.
+    const key = (shortcut: string) => (viewingId ? undefined : shortcut);
+    return [
+      {
+        id: "photos.view",
+        label: "photos.viewer.view",
+        group: "commands.groups.library",
+        shortcut: key("v"),
+        run: () => viewCurrent(anchor),
+      },
       {
         id: "photos.selectAll",
         label: "photos.selectAll",
         group: "commands.groups.library",
-        shortcut: "$mod+a",
+        shortcut: key("$mod+a"),
         run: selectAll,
       },
       {
         id: "photos.clear",
         label: "photos.clearSelection",
         group: "commands.groups.library",
-        shortcut: "Escape",
+        shortcut: key("Escape"),
         run: clear,
       },
       {
         id: "photos.createArtworks",
         label: "photos.createArtworks",
         group: "commands.groups.library",
-        shortcut: "n",
+        shortcut: key("n"),
         run: createFromSelection,
       },
       {
         id: "photos.tag",
         label: "tags.tagSelection",
         group: "commands.groups.library",
-        shortcut: "t",
+        shortcut: key("t"),
         run: () => {
           if (selectedInOrder.length > 0) setTagMenuOpen(true);
         },
@@ -122,7 +136,7 @@ export function PhotosPage() {
         id: "photos.trash",
         label: "trash.moveToTrash",
         group: "commands.groups.library",
-        shortcut: "Delete",
+        shortcut: key("Delete"),
         run: trashSelection,
       },
       {
@@ -135,19 +149,28 @@ export function PhotosPage() {
         id: "photos.search",
         label: "artworks.focusSearch",
         group: "commands.groups.library",
-        shortcut: "/",
+        shortcut: key("/"),
         run: () => searchRef.current?.focus(),
       },
       {
         id: "photos.details",
         label: "photos.toggleDetails",
         group: "commands.groups.library",
-        shortcut: "i",
+        shortcut: key("i"),
         run: () => setOpenId((current) => (current ? null : (selectedInOrder[0] ?? null))),
       },
-    ],
-    [clear, createFromSelection, selectAll, selectedInOrder, sendBackToInbox, trashSelection],
-  );
+    ];
+  }, [
+    anchor,
+    clear,
+    createFromSelection,
+    selectAll,
+    selectedInOrder,
+    sendBackToInbox,
+    trashSelection,
+    viewCurrent,
+    viewingId,
+  ]);
   useRegisterCommands(commands);
 
   return (
@@ -234,6 +257,15 @@ export function PhotosPage() {
               </Button>
               <Button
                 variant="ghost"
+                disabled={items.length === 0}
+                onClick={() => viewCurrent(anchor)}
+                aria-label={t("photos.viewer.view")}
+                title={t("photos.viewer.viewHint")}
+              >
+                <Maximize2 size={16} />
+              </Button>
+              <Button
+                variant="ghost"
                 disabled={selected.size === 0 && !openId}
                 onClick={() => setOpenId(openId ? null : (selectedInOrder[0] ?? null))}
                 aria-label={t("photos.toggleDetails")}
@@ -266,12 +298,13 @@ export function PhotosPage() {
             <PhotoGrid
               photos={items}
               selected={selected}
-              focusedId={openId}
+              focusedId={viewingId ?? openId}
               onTileClick={(photo, index, event) => {
                 selection.click(photo.id, index, event);
                 if (openId) setOpenId(photo.id);
               }}
-              onTileDoubleClick={(photo) => setOpenId(photo.id)}
+              // Big, like an artwork (user feedback); the details stay on `i` and the ⓘ button.
+              onTileDoubleClick={(photo) => viewer.view(photo.id)}
               onEndReached={loadMore}
             />
           )}
@@ -284,7 +317,25 @@ export function PhotosPage() {
           onCreateArtwork={(id) => setCreatingIds([id])}
         />
       )}
+      {viewingId && (
+        <PhotoViewer
+          photoId={viewingId}
+          photos={items}
+          selected={selected}
+          onToggleSelected={toggleOne}
+          onNavigate={viewer.view}
+          onClose={() => {
+            // An open details drawer follows: it shows the photo the grid is now on.
+            if (openId) setOpenId(viewingId);
+            viewer.close();
+          }}
+          onTrash={viewer.trash}
+          onEndReached={loadMore}
+          suspended={viewer.deletion.dialog.open}
+        />
+      )}
       <TrashPhotosDialog {...deletion.dialog} />
+      <TrashPhotosDialog {...viewer.deletion.dialog} />
       <CreateArtworksDialog
         photoIds={creatingIds ?? []}
         open={creatingIds !== null}
