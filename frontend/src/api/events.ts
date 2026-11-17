@@ -63,6 +63,12 @@ export interface ServerEvents {
   "display.pushed": DisplayPushResult;
   /** How far a push is (throttled): `queued` → `rendering` → `uploading` → `removing` → `starting`. */
   "display.progress": DisplayProgress & { target_id: string };
+  /**
+   * Events were lost — the server dropped what this client was too slow to take, or the stream
+   * reconnected: every query is refetched, and a store fed by events falls back on what the
+   * server stored.
+   */
+  resync: Record<string, never>;
 }
 
 type EventName = keyof ServerEvents;
@@ -192,8 +198,24 @@ export function useServerEvents(enabled: boolean) {
       source.addEventListener(name, handler);
       return [name, handler] as const;
     });
+    const resync = () => {
+      void qc.invalidateQueries();
+      emit("resync", {});
+    };
+    // `ready` opens every stream. The first one follows the page's own fetches; a later one is a
+    // reconnection (the laptop slept, the Wi-Fi dropped, the server restarted), and whatever
+    // happened in between was never sent.
+    let connected = false;
+    const onReady = () => {
+      if (connected) resync();
+      connected = true;
+    };
+    source.addEventListener("ready", onReady);
+    source.addEventListener("resync", resync);
     return () => {
       handlers.forEach(([name, handler]) => source.removeEventListener(name, handler));
+      source.removeEventListener("ready", onReady);
+      source.removeEventListener("resync", resync);
       source.close();
       timers.forEach((timer) => clearTimeout(timer));
     };

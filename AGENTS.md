@@ -135,8 +135,9 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
   → `GET /exports/{job_id}/download`; `POST /imports` + `PATCH` chunks → staging job (validate, then classify
   every row against the library) → `GET /imports/{id}/report` → `POST /imports/{id}/apply`, which writes
   everything in one transaction through the id maps. Both staging areas are swept by `archive.sweep`.
-- Frontend: server state only in TanStack Query; SSE invalidates `["photos"]`; upload queue is a Zustand store
-  outside React (hash → open/resume → chunks with retry → wait for SSE, polling fallback).
+- Frontend: server state only in TanStack Query; SSE events invalidate their keys, and a `resync` (the
+  broker dropped what a slow client could not take) or a reconnection refetches everything; upload queue is a
+  Zustand store outside React (hash → open/resume → chunks with retry → wait for SSE, polling fallback).
 - Compositions (Phase 7, `docs/simple-editor.md`): an optional `composition` block holds a recipe id
   plus parameters (balance, outer, gutter, format, border, caption). `domain/composition.solve` turns it
   into cells — **footprints** (photo rect + border) so `gutter`/`outer` describe what the eye sees, then

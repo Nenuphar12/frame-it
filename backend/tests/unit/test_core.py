@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import threading
 from pathlib import Path
 from typing import Any
@@ -13,7 +14,7 @@ from frame_it.config import load_settings
 from frame_it.db.migrate import upgrade_to_head
 from frame_it.db.models import Job
 from frame_it.db.session import Database
-from frame_it.events import EventBroker
+from frame_it.events import QUEUE_SIZE, RESYNC, Event, EventBroker
 from frame_it.ids import new_human_code, new_id, normalize_human_code
 from frame_it.jobs.queue import JobContext, JobQueue, PermanentJobError
 from frame_it.services.geocode import Geocoder
@@ -91,6 +92,28 @@ def test_geocoder_nearest_place() -> None:
     assert geo.reverse(0.0, -140.0) is None  # middle of the Pacific
     north = geo.reverse(78.2232, 15.6267)  # Longyearbyen, high latitude
     assert north is not None and north.country in ("Svalbard and Jan Mayen", "Norway")
+
+
+def test_a_subscriber_too_far_behind_gets_one_resync() -> None:
+    async def scenario() -> list[Event]:
+        broker = EventBroker()
+        broker.bind_loop(asyncio.get_running_loop())
+        stream = broker.subscribe(is_admin=True, device_key=None)
+        waiting = asyncio.ensure_future(anext(stream))  # subscribes, then waits
+        await asyncio.sleep(0)
+        broker.publish(Event("e", {"n": -1}))
+        await waiting
+        # Nobody reads while one more event than the queue holds, then two more, arrive.
+        for n in range(QUEUE_SIZE + 3):
+            broker.publish(Event("e", {"n": n}))
+        await asyncio.sleep(0)
+        received = [await anext(stream) for _ in range(3)]
+        await stream.aclose()
+        return received
+
+    received = asyncio.run(scenario())
+    assert received[0] is RESYNC
+    assert [e.data["n"] for e in received[1:]] == [QUEUE_SIZE + 1, QUEUE_SIZE + 2]
 
 
 @pytest.fixture

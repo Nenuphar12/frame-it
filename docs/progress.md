@@ -8,6 +8,13 @@
   own now (`_record_failure`; a push in progress keeps `pushing`), and the TV page refetches the
   targets after every check and every failed action. `test_a_failed_status_check_is_remembered`,
   `test_a_failed_pairing_is_remembered` (both failed before).
+- **Lost server events went unnoticed.** A subscriber whose queue (256) was full lost events one by
+  one, counted in a field nobody read, and a reconnected stream (laptop asleep, Wi-Fi drop, server
+  restart) never learned what it had missed: pages stayed stale until a reload, and a push tray
+  that missed `display.pushed` spun forever. The broker now drops what waits and sends one
+  `resync`; the client refetches every query on `resync` and on every `ready` after the first, and
+  the push tray falls back on the targets' stored progress.
+  `test_a_subscriber_too_far_behind_gets_one_resync`.
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 

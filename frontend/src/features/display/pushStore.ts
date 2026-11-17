@@ -82,10 +82,13 @@ export function watchPushes(onDone: (result: DisplayPushResult) => void): () => 
     const targetId = Object.keys(live).find((id) => live[id]?.job_id === event.job_id);
     if (targetId) end(targetId, event.job_id);
   });
+  // Events were lost, maybe the end of a push: trust the refetched targets' `progress` again.
+  const offResync = onServerEvent("resync", () => usePushes.setState({ live: {}, ended: {} }));
   return () => {
     offProgress();
     offPushed();
     offFailed();
+    offResync();
     watching = false;
   };
 }

@@ -13,7 +13,10 @@ router = APIRouter(tags=["events"])
 
 @router.get("/events", response_class=EventSourceResponse)
 async def events(principal: Uploader, ctx: Ctx) -> EventSourceResponse:
-    """Server-sent events: `photo.ingested`, `photo.ingest_failed`, `job.progress`, `job.failed`."""
+    """Server-sent events. Names and payloads: `ServerEvents` in `frontend/src/api/events.ts`.
+
+    `ready` opens every stream; `resync` replaces the events a client was too slow to take.
+    """
 
     async def stream() -> AsyncIterator[ServerSentEvent]:
         yield ServerSentEvent(event="ready", data="{}")

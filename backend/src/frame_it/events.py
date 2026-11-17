@@ -5,8 +5,8 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import threading
-from collections.abc import AsyncIterator
-from dataclasses import dataclass, field
+from collections.abc import AsyncGenerator
+from dataclasses import dataclass
 from typing import Any, Literal
 
 Audience = Literal["admin", "all"]
@@ -21,12 +21,17 @@ class Event:
     """When set, uploaders only receive the event if it concerns their own device."""
 
 
+RESYNC = Event("resync", {}, audience="all")
+"""Sent instead of the events a subscriber was too slow to take: refetch everything."""
+
+QUEUE_SIZE = 256
+
+
 @dataclass(slots=True, eq=False)
 class _Subscriber:
     queue: asyncio.Queue[Event]
     is_admin: bool
     device_key: str | None
-    dropped: int = field(default=0)
 
 
 class EventBroker:
@@ -54,7 +59,12 @@ class EventBroker:
             try:
                 sub.queue.put_nowait(event)
             except asyncio.QueueFull:
-                sub.dropped += 1
+                # Too far behind to catch up event by event (a tab asleep, a slow phone): what
+                # waits is dropped, and one `resync` makes the client refetch instead — a silent
+                # gap would leave its pages stale until a reload.
+                while not sub.queue.empty():
+                    sub.queue.get_nowait()
+                sub.queue.put_nowait(RESYNC)
 
     @staticmethod
     def _visible(sub: _Subscriber, event: Event) -> bool:
@@ -64,8 +74,8 @@ class EventBroker:
             return True
         return event.device_key is not None and event.device_key == sub.device_key
 
-    async def subscribe(self, *, is_admin: bool, device_key: str | None) -> AsyncIterator[Event]:
-        sub = _Subscriber(asyncio.Queue(maxsize=256), is_admin, device_key)
+    async def subscribe(self, *, is_admin: bool, device_key: str | None) -> AsyncGenerator[Event]:
+        sub = _Subscriber(asyncio.Queue(maxsize=QUEUE_SIZE), is_admin, device_key)
         with self._lock:
             self._subscribers.add(sub)
         try:
