@@ -174,4 +174,4 @@ the model rejects `invalid_template`.
   until pushed, then everything it owns and nothing else, undoable), the skip reasons, template files
   round-tripping, and admin-only access.
 - Not covered by an automated test: the Templates page itself (no component tests in this project);
-  driven in a browser instead — see `progress.md`.
+  driven in a browser instead — see `progress-before-beta.md` (Phase 8).

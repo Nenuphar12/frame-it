@@ -143,60 +143,8 @@ agent produce relevant changes **without re-exploring the whole codebase**, savi
 
 ### 4.2 Repository layout
 
-```
-frame-it/
-├── AGENTS.md                 # §3 — always up to date
-├── CLAUDE.md                 # "@AGENTS.md"
-├── README.md
-├── Makefile                  # dev, test, lint, typecheck, gen-api, build, docker, conformance
-├── docs/
-│   ├── PLAN.md               # this file
-│   ├── architecture.md
-│   ├── artwork-document.md   # §6
-│   ├── geometry-and-quality.md # §7
-│   ├── rendering-spec.md     # §8
-│   ├── security.md           # §9
-│   ├── archive-format.md     # §12
-│   ├── research/             # spike findings (Phase 0)
-│   ├── adr/                  # NNNN-title.md
-│   └── schemas/              # JSON Schemas (artwork document, archive entities, template files)
-├── backend/
-│   ├── pyproject.toml, uv.lock
-│   ├── src/frame_it/
-│   │   ├── __main__.py, cli.py (Typer), config.py (pydantic-settings), app.py (factory)
-│   │   ├── api/              # routers only: auth, devices, uploads, photos, artworks, collections,
-│   │   │                     #   tags, templates, render, exports, imports, trash, events, system
-│   │   ├── auth/             # device tokens, localhost trust, host/origin checks, dependencies
-│   │   ├── db/               # models.py, session.py, migrations/ (Alembic)
-│   │   ├── domain/           # PURE: document.py, geometry.py, quality.py, placement.py,
-│   │   │                     #   filters.py (smart-collection AST), templates.py, ordering.py
-│   │   ├── imaging/          # decode.py, color.py, metadata.py, proxies.py, render.py,
-│   │   │                     #   textures.py, text.py, palette.py, capabilities.py
-│   │   ├── services/         # ingest, library, artworks, collections, tags, trash, templates,
-│   │   │                     #   export, import_, geocode, devices
-│   │   ├── jobs/             # queue.py, worker.py, handlers/
-│   │   ├── events.py         # SSE broadcaster
-│   │   └── assets/           # textures/, fonts/, icc/, geonames/, presets/
-│   │   └── static/           # built frontend (generated, git-ignored)
-│   └── tests/ unit/ api/ golden/ fixtures/
-├── frontend/
-│   ├── package.json, pnpm-lock.yaml, vite.config.ts, tsconfig.json
-│   └── src/
-│       ├── api/              # schema.d.ts (generated), client.ts (openapi-fetch), queries/
-│       ├── app/              # router, providers, shell (sidebar), theme, shortcuts registry
-│       ├── editor/
-│       │   ├── core/         # PURE TS mirror of domain: geometry.ts, quality.ts, placement.ts,
-│       │   │                 #   constraints.ts, snapping.ts, alternatives.ts, history.ts
-│       │   ├── canvas/       # react-konva stage, slot nodes, mat/texture, shadows, guides
-│       │   └── panels/       # slots, properties, colors, captions, loupe, alternatives
-│       ├── features/         # inbox, library, photos, collections, tags, templates, trash,
-│       │                     #   devices, settings, export-import, tv-preview, mobile
-│       ├── i18n/             # i18next setup, locales/en/*.json
-│       └── shared/           # UI kit (Radix + Tailwind), hooks, utils
-├── conformance/geometry/     # shared JSON fixtures for Python/TS geometry parity (§13.3)
-├── docker/ Dockerfile, compose.yaml
-└── scripts/ gen_api_types, build_geonames.py, generate_textures.py, seed_library.py
-```
+The map of the repository, one line per module, is [`AGENTS.md` (*Repo map*)](../AGENTS.md#repo-map):
+it is kept up to date with the code (§3), which a tree drawn here before Phase 1 could not be.
 
 ### 4.3 Key libraries
 
@@ -555,7 +503,7 @@ render within S3 tolerances.
 **State (2026-09-19)**: done. All nine items are implemented, `make check` is green and the AC were
 exercised in a real browser (client-vs-server parity measured: MAE ≤ 1.5/255, `docs/research/render-parity.md`),
 except the "40 photos" scale of the review run (done on 11 drafts). Captions stay read-only here (editing them
-is Phase 6, item 4). Verification notes and the three bugs it found: `docs/progress.md` (2026-09-19).
+is Phase 6, item 4). Verification notes and the three bugs it found: `docs/progress-before-beta.md` (2026-09-19).
 
 ### Phase 6 — Multi-photo compositions
 
@@ -573,7 +521,7 @@ fit/fill), free-form move/resize/rotate on the canvas with smart guides (canvas,
 gaps**, `Alt` to disable), multi-selection (Shift-click) with align/distribute/same size/copy decorations
 (`domain/arrange.py` ↔ `editor/core/arrange.ts`, §7.7), caption editing (panel + double-click inline on the
 canvas, drag to move) and the shortcuts `a`, `t`, `[`, `]`, `Delete`, `$mod+a`. Verified in a browser over CDP
-(see `docs/progress.md` for what was exercised and the three bugs it found).
+(see `docs/progress-before-beta.md` for what was exercised and the three bugs it found).
 
 ### Phase 7 — Simple editor & parametric layouts
 

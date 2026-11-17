@@ -9,18 +9,19 @@
 Self-hosted web app to prepare pictures for a 4K art-mode TV (Samsung The Frame, 3840×2160): phone uploads in
 full quality over the LAN, pixel-perfect framing/compositions, collections, export/import.
 
-- **Status (2026-10-06): beta, open source. Phases 0–12 done, plus their follow-ups. Next: the roadmap,
-  `docs/PLAN.md` §17** — HEIC from iPhones, then an installation without a toolchain (releases,
-  executables). What each phase added, with its measurements and migrations: `docs/progress.md`.
+- **Status (2026-11-17): beta, open source since 2026-10-06. Phases 0–12 done, plus their follow-ups.
+  Next: the roadmap, `docs/PLAN.md` §17** — HEIC from iPhones, then an installation without a
+  toolchain (CI runs `make check`; releases and executables to come). What each phase added, with its
+  measurements and migrations: `docs/progress.md` (before the beta: `docs/progress-before-beta.md`).
   The areas, where they are specified, and what a change there must respect:
   - **Uploads & ingest** (`docs/localsend.md`, `docs/research/phone-uploads.md`): resumable uploads, the
     LocalSend receiver, the phone upload page.
   - **Artwork document, geometry, renderer** (`docs/artwork-document.md`, `docs/geometry-and-quality.md`,
     `docs/rendering-spec.md`): the render hash reads `render_identity()`, so a schema addition moves no
-    cache, TV or outdated badge. Frame styles carry `edge_shadow` (drawn last) and `bevel`.
+    cache, TV or outdated badge.
   - **Editor** (`docs/simple-editor.md`): Konva canvas; **Simple** edits the optional `composition` block
     (a recipe + parameters, `weights` included) that the mirrored solver turns into slots, and the server
-    re-solves on every save; **Advanced** is free-form and sets `detached`. 17 recipes at `GET /recipes`.
+    re-solves on every save; **Advanced** is free-form and sets `detached`. Recipes: `GET /recipes`.
     A straightened photo (`source.straighten`) is a smaller photo to every crop rule: the crop lives
     in `straightened_size` (`slotSource` / `SourceSpec.bounds`), only the renderer and canvas turn it.
   - **Templates** (`docs/templates.md`): a layout is a recipe + parameters; styles and layouts have CRUD,
@@ -42,15 +43,18 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
   - **TV** (`docs/tv-display.md`, measurements in `docs/research/tv-display.md`): the Frame's slideshow
     cannot be scoped to a subset, so a push **mirrors** the set (`keep_ours` spares our earlier
     uploads); a push is stop → select → start, uploads go in reverse (the TV lists newest first), and
-    "Don't change" (`slideshow_minutes = 0`) rotates and deletes nothing. A TV is followed by MAC when its address changes. `FRAME_IT_FAKE_TV=1` drives it
-    all without a TV. The art channel waits for `ms.channel.ready` (`art_channel_class`): the
-    library's own `open()` failed on the TV's client announcements.
+    "Don't change" (`slideshow_minutes = 0`) rotates and deletes nothing. A TV is followed by MAC when
+    its address changes. `FRAME_IT_FAKE_TV=1` drives it all without a TV. The art channel waits for
+    `ms.channel.ready` (`art_channel_class`): the library's own `open()` failed on the TV's client
+    announcements.
   - **i18n**: English and French catalogs; server data (built-in style names, place names) stays as stored.
 - **Not yet verified on hardware**: that the art-channel wait for `ready` ends the random failures (one
-  clean push so far, 2026-11-16; they were intermittent), deleting foreign photos, whether the pairing token survives a TV power
-  cut (hence "pair again" in the UI), discovery on the real LAN, following a TV that moved, a "Don't
-  change" push. **Verified by the user** (2026-09-17): Android uploads (both pickers keep full quality, but
-  Android zeroes GPS → no place), Docker image build/run/persistence.
+  clean push so far, 2026-11-16; they were intermittent), deleting foreign photos, whether the pairing
+  token survives a TV power cut (hence "pair again" in the UI), discovery on the real LAN, following a
+  TV that moved, a "Don't change" push. **Verified by the user** (2026-09-17): Android uploads (both
+  pickers keep full quality, but Android zeroes GPS → no place), Docker image build/run/persistence —
+  the image then failed to build from 2026-09-24 to 11-17 (`license-files`); rebuilt and started since,
+  persistence not re-checked.
 - **Written with AI, and said so** (`README.md` *Written with AI*, `CONTRIBUTING.md`): keep the README's
   "checked on real hardware" list in step with the one above.
 
@@ -87,13 +91,13 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `backend/src/frame_it/app.py` | App factory: context, routers, SPA serving, lifespan (jobs, setup code) |
 | `…/config.py` | Settings (env `FRAME_IT_*` > `<data_dir>/config.toml` > defaults), LAN IP, allowed hosts |
 | `…/context.py` | `AppContext` service container (`app.state.ctx`) |
-| `…/api/` | Thin routers + `schemas.py` (Pydantic API models = OpenAPI source) + `deps.py` (auth deps); `templates.py` = styles/layouts CRUD, usage, push update, template files; `library.py` = tags + collections + `POST /filters/validate`; `trash.py` = preview/trash/restore/purge; `archive.py` = exports + imports; `jobs.py` = the activity centre (list/retry/dismiss) |
+| `…/api/` | Thin routers, one per area + `schemas.py` (Pydantic API models = the OpenAPI source) + `deps.py` (auth dependencies); `jobs.py` is the activity centre |
 | `…/auth/` | `principal.py` (cookie/localhost → role), `middleware.py` (Host/CSRF/headers), `ratelimit.py` |
-| `…/services/` | Use cases: `devices`, `uploads`, `ingest`, `photo_copies` (merge copies), `localsend`, `photos` (incl. the batch meta of an upload, duplicates too; `around` = taken the same days or at the same spot), `tags` (bulk tagging, categories, unused, the own/inherited counts), `places` (the derived country → region → place view, the `place near` picker's search), `geocode` (reverse at ingest, search by name), `artworks` (create/save/snapshots), `render` (cache, jobs, region), `templates` (presets, CRUD, template files, artwork defaults; the artwork-writing half — apply/push update — is in `artworks`), `recipes` (the bundled composition catalogue, no DB), `colors` (photo palette, swatches, curated presets), `library` (the filter compiler + the artwork listing), `collections` (tree, items, smart filters), `search` (FTS index, versioned: `INDEX_VERSION`), `trash` (soft delete, cascade, restore, purge), `archive_export` (the `.tfarchive` writer + the rendered-image ZIP), `archive_import` (receive, validate, classify), `archive_apply` (the import transaction and its id maps), `display` (display targets: pair, status, and the push that mirrors a set onto a TV), `jobs_admin` (what failed, running it again, pruning finished rows after 30 days) |
-| `…/domain/` | PURE: `document` (artwork document v1 + the `composition` block + reference checks), `geometry`, `quality` (tiers), `placement`, `constraints` (editor solver §7.3), `alternatives` (§7.6), `arrange` (align/distribute/new slot, §7.7), `composition` (recipe trees, the parametric solver and `apply` = what it writes into a document, `docs/simple-editor.md` §3), `templates` (style/layout docs, `restyle`/`relayout`/save-as, `build_composition_document`), `filters` (the library filter AST, `docs/data-model.md` §5.2), `geo` (great-circle distance, the `place near` bounding box), `archive` (the archive's records, file layout and member-name safety, `docs/archive-format.md`) |
+| `…/services/` | Use cases, one module per area (each docstring says what it owns): `uploads` → `ingest` → `photos`, `photo_copies` (merge copies), `localsend`, `devices`; `artworks` (create/save/snapshots, and the artwork-writing half of templates: apply, push update), `templates` (presets, CRUD, files, defaults), `recipes` (bundled catalogue, no DB), `render` (cache, jobs, region), `colors`; `library` (filter compiler + listing), `collections`, `tags`, `places`, `geocode`, `search` (FTS, `INDEX_VERSION`), `trash`; `archive_export`, `archive_import`, `archive_apply` (id maps); `display` (TV targets, the push); `jobs_admin` (failures, retry, pruning) |
+| `…/domain/` | PURE: `document` (document v1, the `composition` block, reference checks), `geometry`, `quality`, `placement`, `constraints` (editor solver), `alternatives`, `arrange`, `composition` (recipe trees, the solver, `apply`), `templates` (`restyle`/`relayout`, `build_composition_document`), `filters` (library filter AST), `geo`, `archive` (records, file layout, member-name safety) |
 | `…/imaging/` | `sniff` (magic bytes), `decode` (the only pixel access), `metadata` (EXIF/ICC), `fingerprint` (hash ignoring EXIF), `capabilities`, `render` (the renderer), `palette` (OKLab k-means), `assets` (fonts/textures catalog) |
 | `…/assets/` | `geonames/`, `fonts/` (OFL, `scripts/build_fonts.py`), `textures/` (CC0, `scripts/generate_textures.py`), `presets/` (built-in styles/layouts + `recipes.json`) |
-| `…/tv/` | Samsung Frame art channel: `client.py` (`TvClient` + `SamsungTvClient` over `samsungtvws`, pairing, `SLIDESHOW_MINUTES`, `normalize_mac`), `discovery.py` (SSDP + /24 sweep of `:8001/api/v2/`, `subnet_prefix`, `find_by_mac`), `fake.py` (`FakeTv` — the firmware's quirks, used by every test and by `FRAME_IT_FAKE_TV`). The push itself is `services/display.py` (`plan_push` pure, `push`, `plan`, `_with_tv` = follow by MAC) |
+| `…/tv/` | `client.py` (`TvClient`, `SamsungTvClient` over `samsungtvws`, pairing), `discovery.py` (SSDP + /24 sweep, `find_by_mac`), `fake.py` (`FakeTv`: the firmware's quirks, for tests and `FRAME_IT_FAKE_TV`). The push itself: `services/display.py` |
 | `…/localsend/` | LocalSend v2 receiver: `app.py` (protocol routes, own TLS port), `discovery.py` (multicast), `identity.py` (cert/fingerprint), `client.py` (outgoing TLS), `runner.py` (lifespan); logic in `services/localsend.py`, admin API `api/localsend.py` |
 | `…/jobs/` | `queue.py` persistent in-process job queue (lanes, retries, coalescing); `gate.py` render concurrency |
 | `…/events.py` | Thread-safe SSE broker (`/api/v1/events`) |
@@ -103,15 +107,14 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `…/assets/geonames/` | Offline place dataset (built by `scripts/build_geonames.py`, CC BY 4.0) |
 | `backend/tests/` | `unit/`, `api/`, `golden/` (reference PNGs in `refs/`); fixtures & helpers in `conftest.py` (`make_jpeg`, `pair`, `upload_bytes`) |
 | `conformance/geometry/` | Shared JSON fixtures: Python domain ↔ `frontend/src/editor/core` (`render.json`: the two renderer constants the canvas mirrors) |
-| `scripts/` | `check_generated.py` (`make generated`: the API types and `docs/schemas/` match the backend), `build_geonames.py`, `build_fonts.py`, `generate_textures.py`, `bench_render.py` (time **and** peak RSS), `bench_library.py` (§8.6 budgets), `seed_library.py`, `render_parity/` (S3 page), `tv_probe.py` (S5 spike: probes the Frame's art channel, `--fake` self-tests it without hardware — `docs/research/tv-display.md`) |
+| `scripts/` | `check_generated.py` (`make generated`), asset builders (`build_geonames`, `build_fonts`, `generate_textures`), benches (`bench_render`: time **and** peak RSS, `bench_library`), `seed_library.py`, spikes (`render_parity/`, `tv_probe.py --fake`) |
 | `frontend/src/api/` | `client.ts` (openapi-fetch + `ApiError`), `queries.ts` (TanStack Query hooks), `events.ts` (SSE), generated `schema.d.ts` |
 | `frontend/src/app/` | `router.tsx`, `AuthGate.tsx` (role routing), `Shell.tsx` (sidebar), `commands.ts` (shortcuts/palette registry), `theme.ts` |
-| `frontend/src/editor/core/` | PURE TS mirror of `domain/` (`geometry`, `quality`, `placement`, `constraints`, `alternatives`, `arrange`, `composition`, `templates`, `bevel` = the renderer's bevel shades) + `snapping.ts`, `bounds.ts` and `splits.ts` (client-only: the gaps of a Fill layout, a drag in shares, a cell's row/column) and `document.ts` (the document with every optional field filled in); relative imports with `.ts` extension (run by Node in `frontend/scripts/conformance.ts`) |
+| `frontend/src/editor/core/` | PURE TS mirror of `domain/` (same module names, plus `bevel`); client-only `snapping`, `bounds`, `splits`, `document` (every optional field filled in). Relative imports with `.ts`: Node runs them in `frontend/scripts/conformance.ts` |
 | `frontend/src/editor/` | `EditorPage.tsx` (layout, shortcuts, review queue), `store.ts` (working document, undo/redo on Immer patches, autosave + conflicts), `operations.ts` (pure document mutations: how a change propagates), `actions.ts` (what the UI calls), `TvPreview.tsx` |
-| `…/editor/canvas/` | `EditorStage.tsx` (Konva stage, one pointer pipeline for every gesture, overlays), `SlotNode.tsx` (bands, photo — turned when straightened —, shadows), `StraightenGuides.tsx` (the grid while straightening, shown by `editor/guides.ts`), `CaptionNode.tsx`, `SelectionOverlay.tsx` (outlines + transform handles), `hit.ts` (rotation-aware hit tests, handle maths), `texture.ts`, `fonts.ts`, `useOrientedImage.ts` |
-| `…/editor/panels/` | `SimplePanel` (the parametric editor, §6.2) + `RecipePicker` (schemas drawn by the solver), `SlotsPanel` (z-order, add/remove, photos), `PhotoPicker`, `ArrangePanel` (align/distribute), `CaptionsPanel` + `CaptionTypography` (shared with Simple), `FramingPanel`, `StylePanel`, `ColorField` (picker + swatches + palette + presets), `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`, `ShadowFields` (shared with the template editor), `Controls` (`NumberField`, `PercentField`: every slider has a typed twin) |
-| `frontend/src/features/` | `display/` (the TV page + "Show on the TV"), `activity/` (failed jobs + retry), `archive/` (export dialog, import report + policies), `upload/` (queue engine `uploadStore.ts`, tray, drop zone), `photos/` (grid, selection, drawer; "Create artworks" from any photo), `inbox/`, `artworks/` (page, grid, viewer, create dialog), `templates/` (page, editors, push update, `.tf*.json` files), `library/` (the filter AST + chip bar, `PlacePicker`), `collections/` (page, tree, create/edit dialog), `trash/` (page, the cascade dialog, `useTrashWithUndo` / `useDeletePhotos`), `tags/` (picker, the tri-state `TagMenu`, category grouping, the manager page + `PlacesView`), `devices/`, `auth/`, `mobile/` (upload + read-only browse), `settings/`, `localsend/` (the editor lives in `src/editor/`, not here) |
-| `…/features/display/` | `DisplayPage` (TV cards, scanning Add-TV dialog, Send = dry run then confirm), `ShowOnTvDialog` (dry-run numbers, collapsed rotation, drafts, the remove-previous and foreign checkboxes only when there are some), `SlideshowSettings` (interval incl. "Don't change", *In order \| Shuffle*), `PushTray` (sidebar progress + summary toast), `pushStore.ts` (`display.progress` outside React), `summary.ts` (result/phase sentences) |
+| `…/editor/canvas/` | `EditorStage.tsx` (Konva stage, one pointer pipeline for every gesture), `SlotNode.tsx`, `CaptionNode.tsx`, `SelectionOverlay.tsx`, `StraightenGuides.tsx`, `hit.ts` (rotation-aware hit tests), `texture.ts`, `fonts.ts`, `useOrientedImage.ts` |
+| `…/editor/panels/` | `SimplePanel` (the parametric editor) + `RecipePicker`, `SlotsPanel`, `PhotoPicker`, `ArrangePanel`, `CaptionsPanel`, `FramingPanel`, `StylePanel`, `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`; shared with the template editor: `ColorField`, `ShadowFields`, `Controls` (every slider has a typed twin) |
+| `frontend/src/features/` | One folder per page or flow: `display/`, `activity/`, `archive/`, `upload/` (queue engine `uploadStore.ts`), `photos/`, `inbox/`, `artworks/`, `templates/`, `library/` (filter AST + chip bar), `collections/`, `trash/` (`useTrashWithUndo`), `tags/` (`TagMenu`, `PlacesView`), `devices/`, `auth/`, `mobile/`, `settings/`, `localsend/`. The editor lives in `src/editor/`, not here |
 | `frontend/src/shared/` | UI primitives (`ui/`, incl. `Toaster.tsx`), `toast.ts` (the store, outside React), `problem.ts` (`problemMessage`), `format.ts`, `cn.ts`, `dnd.ts` (the MIME types our own drags carry) |
 | `frontend/src/i18n/` | i18next setup (Settings choice, else the browser's language); strings in `locales/en/common.json` and `locales/fr/common.json` |
 | `.github/workflows/check.yml` | CI: `make check` on pushes to master and pull requests (uv and pnpm pinned like Docker) |
@@ -190,6 +193,12 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 16. Colour is a token, never a literal, and a new pair must pass AA (4.5:1 for text, 3:1 for a control's
     boundary — `--color-border-strong`) in **both** themes.
 
+## Glossary
+
+Photo, artwork, draft, slot, mat, margins, band, quality tier and lock, placement, frame style, layout,
+recipe, composition, proxy, render hash: [`docs/PLAN.md` §2](docs/PLAN.md#2-glossary). A display
+target is a TV the app pushes to (`docs/tv-display.md`).
+
 ## Conventions
 
 - Python: ruff (line 100), mypy strict, `from __future__ import annotations`, pure functions where possible.
@@ -242,6 +251,6 @@ whatever you are touching before you touch it.** These few bite whatever you are
 - Dev over the Vite proxy is **not** trusted as localhost (`xfwd` adds `X-Forwarded-For`, invariant 5): the
   first load asks for the setup code printed in the server log. Point Vite at another backend with
   `FRAME_IT_BACKEND=http://127.0.0.1:<port>`.
-- `pkill -f "frame-it serve"` also matches your own shell command line: use `pkill -f "[t]he_frame_v2 serve"`.
+- `pkill -f "frame-it serve"` also matches your own shell command line: use `pkill -f "[f]rame-it serve"`.
 - TypeScript stays on major 6 (`^6.0.3` in `frontend/package.json`) because typescript-eslint did not support
   7.x when this was written: check its support before moving to 7.
