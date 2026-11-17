@@ -48,6 +48,10 @@
 - **No deprecation warnings left in the test run**: Starlette's `TestClient` wants `httpx2` (dev
   dependency swapped; same API), and Starlette 1.10 no longer touches anyio's deprecated
   `BlockingPortal` alias (1.6 → 1.10, allowed by FastAPI 0.141).
+- **CI**: `.github/workflows/check.yml` runs `make check` on pushes to master and pull requests
+  (actions at their current majors, uv 0.11.21, pnpm from `packageManager`, Node 24). **Not run
+  yet**: it first runs when pushed; the golden tests compare with tolerances, so a runner's libvips
+  (the same `pyvips[binary]` wheel) should pass them.
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 

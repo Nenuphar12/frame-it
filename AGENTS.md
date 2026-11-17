@@ -114,6 +114,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `…/features/display/` | `DisplayPage` (TV cards, scanning Add-TV dialog, Send = dry run then confirm), `ShowOnTvDialog` (dry-run numbers, collapsed rotation, drafts, the remove-previous and foreign checkboxes only when there are some), `SlideshowSettings` (interval incl. "Don't change", *In order \| Shuffle*), `PushTray` (sidebar progress + summary toast), `pushStore.ts` (`display.progress` outside React), `summary.ts` (result/phase sentences) |
 | `frontend/src/shared/` | UI primitives (`ui/`, incl. `Toaster.tsx`), `toast.ts` (the store, outside React), `problem.ts` (`problemMessage`), `format.ts`, `cn.ts`, `dnd.ts` (the MIME types our own drags carry) |
 | `frontend/src/i18n/` | i18next setup (Settings choice, else the browser's language); strings in `locales/en/common.json` and `locales/fr/common.json` |
+| `.github/workflows/check.yml` | CI: `make check` on pushes to master and pull requests (uv and pnpm pinned like Docker) |
 | `docs/` | Plan, specs, ADRs (`adr/`), research findings (`research/`), progress |
 
 ## Architecture essentials

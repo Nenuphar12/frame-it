@@ -202,7 +202,7 @@ frame-it/
 
 **Backend**: fastapi, uvicorn[standard], pydantic v2, pydantic-settings, sqlalchemy 2 (sync, run in
 threadpool), alembic, pyvips + pyvips-binary, pillow, typer, platformdirs, sse-starlette,
-segno (QR for CLI/terminal only). Dev: pytest, pytest-cov, httpx, mypy (strict), ruff.
+segno (QR for CLI/terminal only). Dev: pytest, pytest-cov, pytest-xdist, httpx2, mypy (strict), ruff.
 
 **Frontend**: react, react-dom, @tanstack/react-query, @tanstack/react-router, @tanstack/react-virtual,
 zustand + immer (patches for undo), konva + react-konva, @radix-ui/*, tailwindcss, cmdk, tinykeys,
@@ -393,7 +393,7 @@ Moved to [`docs/archive-format.md`](archive-format.md) — maintained there.
 ## 13. Testing strategy
 
 Scope decided with the user: **backend unit + API tests** and **very light golden-image tests**. No frontend test
-suite, no CI in v1 (local `make check`).
+suite, no CI in v1 (local `make check`; since 2026-11-17 GitHub Actions runs the same, §17.2).
 
 ### 13.1 Backend unit tests (`tests/unit`)
 
@@ -836,7 +836,9 @@ Today: Python 3.14 + uv, Node 22 + pnpm and `make`, or Docker built from source.
 one download and a double-click (or one command), on Linux, macOS and Windows.
 
 - **Releases need CI** (out of scope for v1): a GitHub Actions workflow that runs `make check`,
-  builds the frontend once, and attaches the artefacts to a tagged release.
+  builds the frontend once, and attaches the artefacts to a tagged release. The first half exists
+  (2026-11-17): `.github/workflows/check.yml` runs `make check` on pushes to master and on pull
+  requests; building and attaching release artefacts is still to do.
 - **A published Docker image** (`ghcr.io/…/frame-it`, amd64 + arm64 so a Raspberry Pi works) —
   the cheapest step: `docker/compose.yaml` then pulls instead of building.
 - **Executables per OS** — Python, the built frontend, the `pyvips[binary]` libvips and the
