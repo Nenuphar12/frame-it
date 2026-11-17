@@ -18,7 +18,7 @@ def test_keyset_pagination_is_stable(local: TestClient) -> None:
     seen: list[str] = []
     cursor = None
     while True:
-        params: dict[str, object] = {"limit": 2}
+        params: dict[str, str | int] = {"limit": 2}
         if cursor:
             params["cursor"] = cursor
         page = local.get("/api/v1/photos", params=params).json()

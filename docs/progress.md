@@ -45,6 +45,9 @@
   (2026-09-17) predates it. The root `LICENSE` is copied in now; image built, started, answered
   `/system/info` and served the SPA. Pinned while there: the uv image (`0.11.21`, was `latest`) and
   pnpm (`packageManager: pnpm@12.14.0`, which pnpm 12 also records, with hashes, in the lockfile).
+- **No deprecation warnings left in the test run**: Starlette's `TestClient` wants `httpx2` (dev
+  dependency swapped; same API), and Starlette 1.10 no longer touches anyio's deprecated
+  `BlockingPortal` alias (1.6 → 1.10, allowed by FastAPI 0.141).
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 

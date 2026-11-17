@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import io
 
-import httpx
+import httpx2
 import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
@@ -21,8 +21,8 @@ def _open(client: TestClient, data: bytes, **extra: object) -> dict[str, object]
     return body
 
 
-def _patch(client: TestClient, upload_id: object, offset: int, part: bytes) -> httpx.Response:
-    res: httpx.Response = client.patch(
+def _patch(client: TestClient, upload_id: object, offset: int, part: bytes) -> httpx2.Response:
+    res: httpx2.Response = client.patch(
         f"/api/v1/uploads/{upload_id}",
         content=part,
         headers={"Upload-Offset": str(offset), "Content-Type": "application/offset+octet-stream"},

@@ -12,7 +12,7 @@ import threading
 import time
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 from fastapi.testclient import TestClient
 
@@ -62,8 +62,8 @@ def phone(local: TestClient) -> TestClient:
     return TestClient(create_localsend_app(ctx, identity, 53317), client=(PHONE_IP, 40000))
 
 
-def _prepare(phone: TestClient, files: list[dict[str, Any]], **info: Any) -> httpx.Response:
-    res: httpx.Response = phone.post(
+def _prepare(phone: TestClient, files: list[dict[str, Any]], **info: Any) -> httpx2.Response:
+    res: httpx2.Response = phone.post(
         f"{PREFIX}/prepare-upload",
         json={"info": _info(**info), "files": {f["id"]: f for f in files}},
     )
@@ -72,8 +72,8 @@ def _prepare(phone: TestClient, files: list[dict[str, Any]], **info: Any) -> htt
 
 def _prepare_and_decide(
     local: TestClient, phone: TestClient, files: list[dict[str, Any]], *, approve: bool
-) -> httpx.Response:
-    result: dict[str, httpx.Response] = {}
+) -> httpx2.Response:
+    result: dict[str, httpx2.Response] = {}
     thread = threading.Thread(target=lambda: result.update(res=_prepare(phone, files)))
     thread.start()
     hub = ctx_of(local).localsend
@@ -101,9 +101,9 @@ def _record_events(local: TestClient, monkeypatch: pytest.MonkeyPatch) -> list[E
     return events
 
 
-def _upload(phone: TestClient, body: dict[str, Any], file_id: str, data: bytes) -> httpx.Response:
+def _upload(phone: TestClient, body: dict[str, Any], file_id: str, data: bytes) -> httpx2.Response:
     params = {"sessionId": body["sessionId"], "fileId": file_id, "token": body["files"][file_id]}
-    res: httpx.Response = phone.post(f"{PREFIX}/upload", params=params, content=data)
+    res: httpx2.Response = phone.post(f"{PREFIX}/upload", params=params, content=data)
     return res
 
 
@@ -441,7 +441,7 @@ def test_unknown_device_must_be_allowed_before_learning_a_photo_was_sent(
     _send_photo_once(local, phone)
     ctx = ctx_of(local)
     stranger = TestClient(phone.app, client=("192.168.1.77", 40000))
-    result: dict[str, httpx.Response] = {}
+    result: dict[str, httpx2.Response] = {}
     offers = [_offer("a", "w.jpg", PHOTO, with_hash=True)]
     thread = threading.Thread(
         target=lambda: result.update(res=_prepare(stranger, offers, fingerprint="OTHER-FP"))
