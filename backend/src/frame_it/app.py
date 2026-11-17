@@ -196,6 +196,9 @@ def create_app(settings: Settings, *, start_workers: bool = True) -> FastAPI:
         openapi_url=f"{API_PREFIX}/openapi.json",
         docs_url=f"{API_PREFIX}/docs",
         redoc_url=None,
+        # Self-hosted and offline: FastAPI's OpenTelemetry stays off whatever the environment says
+        # (`FASTAPI_OTEL_AUTO_CONFIGURE`, a global provider) — nothing is traced or exported.
+        telemetry={"tracing": False, "metrics": False, "logs": False, "auto_configure": False},
     )
     app.state.ctx = ctx
     install_error_handlers(app)
