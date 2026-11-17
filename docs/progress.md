@@ -15,6 +15,11 @@
   `resync`; the client refetches every query on `resync` and on every `ready` after the first, and
   the push tray falls back on the targets' stored progress.
   `test_a_subscriber_too_far_behind_gets_one_resync`.
+- **The `jobs` table only grew**: every render and ingest leaves a row (`.dev-data`: ~2 400 rows,
+  1 903 of them finished renders, for 96 artworks). A daily `jobs.prune` deletes `done`,
+  `cancelled` and `dismissed` rows older than 30 days (`HISTORY_DAYS`); failures stay until
+  acknowledged, and export rows stay (the Export dialog lists them).
+  `test_finished_jobs_are_pruned_after_the_history_window`.
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 

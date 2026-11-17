@@ -47,6 +47,7 @@ from frame_it.services import (
     archive_export,
     archive_import,
     ingest,
+    jobs_admin,
     photo_copies,
     render,
     search,
@@ -106,6 +107,8 @@ def build_context(settings: Settings) -> AppContext:
         use_fake_tv(ctx)
     jobs.register(archive_export.SWEEP_JOB, archive_export.sweep_job(ctx), lane="ingest")
     jobs.schedule_every(archive_export.SWEEP_JOB, archive_export.SWEEP_INTERVAL_SECONDS, {})
+    jobs.register(jobs_admin.PRUNE_JOB, jobs_admin.prune_job(ctx), lane="ingest")
+    jobs.schedule_every(jobs_admin.PRUNE_JOB, jobs_admin.PRUNE_INTERVAL_SECONDS, {})
     with db.session() as s:
         templates.seed_builtins(s)
         if search.needs_rebuild(s):

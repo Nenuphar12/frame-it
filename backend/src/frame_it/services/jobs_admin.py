@@ -3,27 +3,40 @@
 The queue itself (`jobs/queue.py`) only knows how to *run* a job. This is the other half: what a
 human needs when one did not run — what failed, why, and a way to ask for it again. A retry is a
 new row rather than a reset of the old one, so the history of what failed is never rewritten; the
-failed row is marked `dismissed` and points at its replacement through `retry_of`.
+failed row is marked `dismissed`.
+
+Finished rows are history, kept `HISTORY_DAYS` (`prune_job`): every render and every ingest leaves
+one, which made a library of a hundred artworks collect two thousand rows in two months.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from frame_it.context import AppContext
 from frame_it.db.models import Job
 from frame_it.errors import ProblemError
 from frame_it.ids import utcnow
+from frame_it.jobs.queue import JobContext, JobHandler
+from frame_it.services.archive_export import EXPORT_JOB
 
 #: States a client may ask for; `dismissed` is ours (a failure the user has acknowledged).
 STATES = ("queued", "running", "done", "failed", "cancelled", "dismissed")
 #: A traceback is trimmed before it travels: the code is what a client acts on.
 MAX_ERROR_CHARS = 2000
+
+PRUNE_JOB = "jobs.prune"
+PRUNE_INTERVAL_SECONDS = 24 * 3600
+#: How long a finished job stays. Failures stay until acknowledged: they are `/activity`.
+HISTORY_DAYS = 30
+_PRUNABLE = ("done", "cancelled", "dismissed")
+#: The Export dialog lists past exports from their job rows: a few, and kept.
+_KEPT_KINDS = (EXPORT_JOB,)
 
 
 @dataclass(frozen=True, slots=True)
@@ -139,3 +152,22 @@ def dismiss_all(session: Session) -> int:
         job.state = "dismissed"
         job.finished_at = job.finished_at or now
     return len(rows)
+
+
+def prune_history(session: Session, *, now: datetime | None = None) -> int:
+    """Delete finished jobs older than `HISTORY_DAYS`. Returns how many went."""
+    cutoff = (now or utcnow()) - timedelta(days=HISTORY_DAYS)
+    result = session.execute(
+        delete(Job).where(
+            Job.state.in_(_PRUNABLE), Job.created_at < cutoff, Job.kind.not_in(_KEPT_KINDS)
+        )
+    )
+    return int(getattr(result, "rowcount", 0) or 0)
+
+
+def prune_job(ctx: AppContext) -> JobHandler:
+    def handler(_: JobContext) -> None:
+        with ctx.db.session() as s:
+            prune_history(s)
+
+    return handler

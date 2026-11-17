@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 
+from frame_it.db.models import Job
+from frame_it.ids import utcnow
 from frame_it.jobs.queue import JobContext, PermanentJobError
+from frame_it.services import jobs_admin
+from frame_it.services.archive_export import EXPORT_JOB
 from tests.conftest import ctx_of, pair
 
 FAILING = "test_failing"
@@ -134,3 +139,27 @@ def test_jobs_are_admin_only(local: TestClient, method: str, path: str) -> None:
     uploader = pair(local, "uploader")
     res = getattr(uploader, method)(f"/api/v1/jobs{path}")
     assert res.status_code == 403
+
+
+def test_finished_jobs_are_pruned_after_the_history_window(local: TestClient) -> None:
+    ctx = ctx_of(local)
+    old = utcnow() - timedelta(days=jobs_admin.HISTORY_DAYS + 1)
+    rows = {
+        "old_done": Job(kind="render", lane="render", state="done", created_at=old),
+        "old_cancelled": Job(kind="render", lane="render", state="cancelled", created_at=old),
+        "old_dismissed": Job(kind="ingest", lane="ingest", state="dismissed", created_at=old),
+        # Kept: an unacknowledged failure is `/activity`; past exports are the Export dialog's list.
+        "old_failed": Job(kind="ingest", lane="ingest", state="failed", created_at=old),
+        "old_export": Job(kind=EXPORT_JOB, lane="ingest", state="done", created_at=old),
+        "recent_done": Job(kind="render", lane="render", state="done"),
+    }
+    with ctx.db.session() as s:
+        s.add_all(rows.values())
+        s.flush()
+        ids = {name: job.id for name, job in rows.items()}
+
+    with ctx.db.session() as s:
+        assert jobs_admin.prune_history(s) == 3
+    with ctx.db.session() as s:
+        left = {name for name, job_id in ids.items() if s.get(Job, job_id) is not None}
+    assert left == {"old_failed", "old_export", "recent_done"}
