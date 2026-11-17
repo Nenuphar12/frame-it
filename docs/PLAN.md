@@ -272,7 +272,8 @@ CLI (`frame-it`): `serve`, `doctor`, `setup-code`, `openapi`, `schemas`, `export
 - Editor state: Zustand store holding the working document; every edit is an Immer produce with patches →
   undo/redo stack (inverse patches), grouped per gesture (drag = 1 step). Max 200 steps.
 - Autosave: debounce 800 ms after last change → `PUT document` with `If-Match`; 409 ⇒ reload dialog (keep mine / take server).
-  On editor open: `POST snapshots {reason: opened}` ⇒ "Revert to when opened".
+  On editor open: `POST snapshots {reason: opened}` ⇒ "Revert to when opened" (reopening an unchanged artwork
+  returns the existing snapshot). The editor's History lists every kept snapshot with its time.
 - Routing: TanStack Router, typed search params for filters (shareable URLs).
 
 ### 11.2 Desktop screens

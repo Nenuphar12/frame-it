@@ -777,12 +777,14 @@
     "history": {
       "revertToOpened": "Revenir à l'ouverture",
       "restore": "Restaurer",
+      "current": "Actuelle",
       "reasons": {
         "opened": "Ouverte dans l'éditeur",
         "manual": "Instantané manuel",
         "pre_restore": "Avant une restauration",
         "pre_template_update": "Avant une mise à jour du modèle",
-        "pre_import": "Avant un import"
+        "pre_import": "Avant un import",
+        "pre_trash": "Avant la mise à la corbeille"
       }
     },
     "commands": {

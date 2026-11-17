@@ -19,7 +19,7 @@ Soft delete via `deleted_at` (+ `trash_batch_id` to restore related items togeth
 | `localsend_devices` | id, fingerprint (unique), alias, device_model, device_type, status (`pending`/`approved`/`blocked`), last_ip, created_at, last_seen_at, decided_at | LocalSend senders (`docs/localsend.md`); their uploads use `upload_sessions.device_key = localsend:<id>` |
 | `artwork_photos` | artwork_id, slot_id, photo_id | Derived index for usage queries |
 | `artwork_tags` | artwork_id, tag_id | The artwork's **own** tags; index `(tag_id, artwork_id)` |
-| `artwork_snapshots` | id, artwork_id, document, document_version, reason (`opened`/`manual`/`pre_restore`/`pre_template_update`/`pre_import`), created_at | Keep last 20 per artwork |
+| `artwork_snapshots` | id, artwork_id, document, document_version, reason (`opened`/`manual`/`pre_restore`/`pre_template_update`/`pre_import`/`pre_trash`), created_at | Keep last 20 per artwork; the same document is not kept twice in a row for the same reason, and restoring the current version changes nothing |
 | `collections` | id, parent_id, name, description, date_start, date_end, cover_artwork_id, kind (`manual`/`smart`), filter (JSON AST, smart only), position (REAL, among siblings), created_at, updated_at | Cycle prevention on move; deletion is not trashed (artworks unaffected). `date_start`/`date_end` are kept for archives but no longer edited or shown (`docs/organization.md` §2) |
 | `collection_items` | collection_id, artwork_id, position (REAL) | Manual collections only; renormalize when gaps < 1e-9 |
 | `frame_styles` | id, name, revision, document (JSON), builtin, created_at, updated_at | Built-ins seeded at startup from `assets/presets/` (id `builtin-style-*`, revision + 1 when the preset changes) |

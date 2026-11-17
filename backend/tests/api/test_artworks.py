@@ -271,9 +271,32 @@ def test_snapshots_duplicate_validate_trash(local: TestClient) -> None:
 
 def test_snapshots_are_capped(local: TestClient) -> None:
     artwork = create(local, [photo(local)])
-    for _ in range(23):
-        local.post(f"{API}/artworks/{artwork['id']}/snapshots", json={})
+    for i in range(23):  # alternating reasons: the same one twice in a row would be one entry
+        reason = "manual" if i % 2 else "opened"
+        local.post(f"{API}/artworks/{artwork['id']}/snapshots", json={"reason": reason})
     assert len(local.get(f"{API}/artworks/{artwork['id']}/snapshots").json()) == 20
+
+
+def test_an_unchanged_artwork_is_not_snapshotted_twice(local: TestClient) -> None:
+    artwork = create(local, [photo(local)])
+    url = f"{API}/artworks/{artwork['id']}/snapshots"
+    first = local.post(url, json={"reason": "opened"}).json()
+    again = local.post(url, json={"reason": "opened"}).json()  # reopened, nothing changed
+    assert again["id"] == first["id"]
+    manual = local.post(url, json={"reason": "manual"}).json()  # another reason: its own entry
+    assert manual["id"] != first["id"]
+    assert [s["reason"] for s in local.get(url).json()] == ["manual", "opened"]
+
+    # Restoring the version the artwork already is changes nothing: no version, no entry.
+    restored = local.post(f"{url}/{first['id']}/restore")
+    assert restored.status_code == 200
+    assert restored.json()["document_version"] == artwork["document_version"]
+    assert len(local.get(url).json()) == 2
+
+    doc = {**artwork["document"], "mat": {**artwork["document"]["mat"], "color": "#222222"}}
+    assert put_document(local, artwork, doc).status_code == 200
+    changed = local.post(url, json={"reason": "opened"}).json()  # changed since: a new entry
+    assert changed["id"] != first["id"]
 
 
 def test_roles(local: TestClient) -> None:

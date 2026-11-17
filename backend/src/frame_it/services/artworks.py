@@ -624,9 +624,24 @@ def trash_artwork(session: Session, artwork_id: str) -> Artwork:
 
 # ---- snapshots ----------------------------------------------------------------------------------
 def create_snapshot(session: Session, artwork_id: str, reason: str) -> ArtworkSnapshot:
+    """Keep the current document, unless the latest snapshot already holds it for this reason.
+
+    Opening the editor again without changing anything (or React mounting it twice in
+    development) used to stack identical "opened" entries, which pushed the useful ones out of
+    the history. Another reason still gets its own entry: "before template update" is how a user
+    finds the way back, even when the content matches the opening just before.
+    """
     if reason not in SNAPSHOT_REASONS:
         raise ProblemError(422, "invalid_reason", "Invalid snapshot reason")
     artwork = get_artwork(session, artwork_id)
+    latest = session.scalars(
+        select(ArtworkSnapshot)
+        .where(ArtworkSnapshot.artwork_id == artwork.id)
+        .order_by(ArtworkSnapshot.created_at.desc(), ArtworkSnapshot.id.desc())
+        .limit(1)
+    ).first()
+    if latest is not None and latest.reason == reason and latest.document == artwork.document:
+        return latest
     snapshot = ArtworkSnapshot(
         artwork_id=artwork.id,
         document=artwork.document,
@@ -663,6 +678,8 @@ def restore_snapshot(session: Session, artwork_id: str, snapshot_id: str) -> Art
     snapshot = session.get(ArtworkSnapshot, snapshot_id)
     if snapshot is None or snapshot.artwork_id != artwork.id:
         raise not_found("Snapshot")
+    if snapshot.document == artwork.document:
+        return artwork  # already that version: no new version, nothing to keep
     document = dict(snapshot.document)
     create_snapshot(session, artwork_id, "pre_restore")
     return save_document(session, artwork_id, document, artwork.document_version)

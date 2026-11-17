@@ -777,12 +777,14 @@
     "history": {
       "revertToOpened": "Revert to when opened",
       "restore": "Restore",
+      "current": "Current",
       "reasons": {
         "opened": "Opened in the editor",
         "manual": "Manual snapshot",
         "pre_restore": "Before a restore",
         "pre_template_update": "Before a template update",
-        "pre_import": "Before an import"
+        "pre_import": "Before an import",
+        "pre_trash": "Before moving to the trash"
       }
     },
     "commands": {

@@ -112,6 +112,19 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
   straighten reset, recipe family) each made a test fail. Two first expectations were mine and
   wrong, not the code: under `no_upscale` the wheel stops where the photo would be stretched
   (2.35 here), not at 8.
+- **The editor's history showed 5 lines, often the same one** (user feedback). The panel cut the
+  list at 5 of the 20 kept, and identical snapshots piled up: one per opening even with nothing
+  changed (two under `make dev`: StrictMode mounts the editor twice), one per restore even of the
+  version already there — 50 of the library's 183 were copies of the one before. On artwork #12 of
+  the TV set all five visible lines were the same document, so the version that was on the TV
+  (v70, 8th) could not be reached and three restores put the document back onto itself. Now the
+  server returns the latest snapshot instead of an identical one for the same reason (another
+  reason keeps its own entry: "before template update" is how one finds the way back), restoring
+  the current version is a no-op, and the panel lists every snapshot, scrollable, with its local
+  time; the one matching the saved version reads "Current" instead of offering Restore. The
+  `pre_trash` reason had no label. Existing duplicates were left in place.
+  `test_an_unchanged_artwork_is_not_snapshotted_twice` (failed before). **Not driven in a
+  browser** (local Chromium broken).
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 

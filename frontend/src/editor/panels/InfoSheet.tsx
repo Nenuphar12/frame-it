@@ -9,6 +9,8 @@ import { useArtworkActions, useRestoreSnapshot, useSnapshots } from "@/api/queri
 import { TagDot } from "@/features/tags/TagDot";
 import { TagPicker } from "@/features/tags/TagPicker";
 import { useTagCategoryIndex } from "@/features/tags/useTagCategories";
+import { useEditor } from "@/editor/store";
+import { formatDateTime } from "@/shared/format";
 import { Button } from "@/shared/ui/Button";
 import { PanelSection } from "./Controls";
 
@@ -22,6 +24,9 @@ export function InfoSheet({ artwork, photos, openedSnapshotId }: InfoSheetProps)
   const { t } = useTranslation();
   const { update } = useArtworkActions();
   const snapshots = useSnapshots(artwork.id);
+  // The editor's own version, not the query's: autosave moves it on every save.
+  const version = useEditor((state) => state.version);
+  const upToDate = useEditor((state) => state.saveState === "idle" || state.saveState === "saved");
   const restore = useRestoreSnapshot();
   const { colorOf } = useTagCategoryIndex();
   // A draft over the stored title: no effect is needed to follow the server's value.
@@ -97,31 +102,37 @@ export function InfoSheet({ artwork, photos, openedSnapshotId }: InfoSheetProps)
           <Button
             size="sm"
             variant="secondary"
-            onClick={() =>
-              restore.mutate({ artworkId: artwork.id, snapshotId: openedSnapshotId })
-            }
+            onClick={() => restore.mutate({ artworkId: artwork.id, snapshotId: openedSnapshotId })}
           >
             <History size={13} /> {t("editor.history.revertToOpened")}
           </Button>
         )}
-        <ul className="flex flex-col gap-1 text-[11px] text-muted">
-          {(snapshots.data ?? []).slice(0, 5).map((snapshot) => (
-            <li key={snapshot.id} className="flex items-center gap-2">
-              <span className="flex-1 truncate">
-                {t(`editor.history.reasons.${snapshot.reason}`, {
-                  defaultValue: snapshot.reason,
-                })}{" "}
-                · v{snapshot.document_version}
+        {/* Every snapshot the server keeps (20 at most), newest first. */}
+        <ul className="flex max-h-60 flex-col gap-1.5 overflow-y-auto text-[11px] text-muted">
+          {(snapshots.data ?? []).map((snapshot) => (
+            <li key={snapshot.id} className="flex items-start gap-2">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-text">
+                  {t(`editor.history.reasons.${snapshot.reason}`, {
+                    defaultValue: snapshot.reason,
+                  })}
+                </span>
+                <span className="block">
+                  v{snapshot.document_version} · {formatDateTime(snapshot.created_at)}
+                </span>
               </span>
-              <button
-                type="button"
-                className="hover:text-text"
-                onClick={() =>
-                  restore.mutate({ artworkId: artwork.id, snapshotId: snapshot.id })
-                }
-              >
-                {t("editor.history.restore")}
-              </button>
+              {/* Versions only grow, so the saved version's snapshot *is* the document. */}
+              {snapshot.document_version === version && upToDate ? (
+                <span>{t("editor.history.current")}</span>
+              ) : (
+                <button
+                  type="button"
+                  className="hover:text-text"
+                  onClick={() => restore.mutate({ artworkId: artwork.id, snapshotId: snapshot.id })}
+                >
+                  {t("editor.history.restore")}
+                </button>
+              )}
             </li>
           ))}
         </ul>
