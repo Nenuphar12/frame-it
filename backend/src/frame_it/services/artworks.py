@@ -195,13 +195,14 @@ def inherited_tags_for(session: Session, artwork_ids: Sequence[str]) -> dict[str
     result: dict[str, list[Tag]] = {i: [] for i in artwork_ids}
     if not artwork_ids:
         return result
-    own = set(
-        session.execute(
+    own = {
+        (a, b)
+        for a, b in session.execute(
             select(ArtworkTag.artwork_id, ArtworkTag.tag_id).where(
                 ArtworkTag.artwork_id.in_(artwork_ids)
             )
-        ).tuples()
-    )
+        )
+    }
     rows = session.execute(
         select(ArtworkPhoto.artwork_id, Tag)
         .join(PhotoTag, PhotoTag.photo_id == ArtworkPhoto.photo_id)

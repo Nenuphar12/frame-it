@@ -108,8 +108,8 @@ def _around(session: Session, photo_id: str) -> ColumnElement[bool]:
 
 
 def _apply_filter(
-    session: Session, stmt: Select[tuple[Photo]], flt: PhotoFilter
-) -> Select[tuple[Photo]]:
+    session: Session, stmt: Select[Photo], flt: PhotoFilter
+) -> Select[Photo]:
     stmt = stmt.where(Photo.deleted_at.is_not(None) if flt.trashed else Photo.deleted_at.is_(None))
     if flt.inbox_state:
         if flt.inbox_state not in INBOX_STATES:

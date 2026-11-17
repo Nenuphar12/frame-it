@@ -376,13 +376,14 @@ def tag_photos(
             delete(PhotoTag).where(PhotoTag.photo_id.in_(ids), PhotoTag.tag_id.in_(to_remove))
         )
     if to_add:
-        have = set(
-            session.execute(
+        have = {
+            (a, b)
+            for a, b in session.execute(
                 select(PhotoTag.photo_id, PhotoTag.tag_id).where(
                     PhotoTag.photo_id.in_(ids), PhotoTag.tag_id.in_(to_add)
                 )
-            ).tuples()
-        )
+            )
+        }
         session.add_all(
             PhotoTag(photo_id=p, tag_id=t) for p in ids for t in to_add if (p, t) not in have
         )
@@ -414,13 +415,14 @@ def tag_artworks(
             )
         )
     if to_add:
-        have = set(
-            session.execute(
+        have = {
+            (a, b)
+            for a, b in session.execute(
                 select(ArtworkTag.artwork_id, ArtworkTag.tag_id).where(
                     ArtworkTag.artwork_id.in_(ids), ArtworkTag.tag_id.in_(to_add)
                 )
-            ).tuples()
-        )
+            )
+        }
         session.add_all(
             ArtworkTag(artwork_id=a, tag_id=t) for a in ids for t in to_add if (a, t) not in have
         )

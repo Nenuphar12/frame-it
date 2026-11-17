@@ -226,7 +226,7 @@ def parse_query_filter(raw: Any) -> Group | None:
         raise ProblemError(422, "invalid_filter", "Invalid filter", str(exc)) from exc
 
 
-def _base(session: Session, query: ArtworkQuery) -> Select[tuple[Artwork]]:
+def _base(session: Session, query: ArtworkQuery) -> Select[Artwork]:
     stmt = select(Artwork)
     stmt = stmt.where(
         Artwork.deleted_at.is_not(None) if query.trashed else Artwork.deleted_at.is_(None)
@@ -291,8 +291,8 @@ def _decode_cursor(cursor: str) -> tuple[str, str]:
 
 
 def _manual_order(
-    session: Session, stmt: Select[tuple[Artwork]], collection_id: str
-) -> Select[tuple[Any, ...]]:
+    session: Session, stmt: Select[Artwork], collection_id: str
+) -> Select[Artwork, float]:
     return stmt.join(
         CollectionItem,
         and_(

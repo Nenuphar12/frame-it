@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import Engine, create_engine, event
+from sqlalchemy import URL, Engine, create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 
 from frame_it.domain.geo import haversine_km
@@ -27,7 +27,8 @@ def _distance_km(
 
 def create_sqlite_engine(db_path: Path) -> Engine:
     engine = create_engine(
-        f"sqlite:///{db_path}",
+        # Not an f-string: a data dir with `%`, `?` or `#` in its path must reach SQLite unchanged.
+        URL.create("sqlite", database=str(db_path)),
         connect_args={"check_same_thread": False, "timeout": 30},
         pool_size=10,
         max_overflow=10,
