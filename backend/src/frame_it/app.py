@@ -8,7 +8,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import APIRouter, FastAPI
+from fastapi import FastAPI
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
@@ -198,7 +198,9 @@ def create_app(settings: Settings, *, start_workers: bool = True) -> FastAPI:
     app.state.ctx = ctx
     install_error_handlers(app)
 
-    api = APIRouter(prefix=API_PREFIX)
+    # Straight onto the app, not through an intermediate prefixed router: FastAPI rebuilds every
+    # route at each `include_router`, and a second level doubled the cost of creating an app
+    # (most of the per-test setup time).
     for module in (
         system,
         auth,
@@ -217,8 +219,7 @@ def create_app(settings: Settings, *, start_workers: bool = True) -> FastAPI:
         colors,
         events,
     ):
-        api.include_router(module.router)
-    app.include_router(api)
+        app.include_router(module.router, prefix=API_PREFIX)
 
     @app.api_route(
         f"{API_PREFIX}/{{path:path}}",
