@@ -57,6 +57,13 @@
   — that mount only, so renders, photos and the SSE stream are untouched. The main chunk on the
   production build: 1 354 kB → 408 kB on the wire, then not fetched again. The shell
   (`index.html`) keeps `no-cache`, and a missing chunk stays a 404. `tests/api/test_spa.py`.
+- **The editor is its own chunk** (`lazyRouteComponent`): main chunk 1 354 → 878 kB (270 kB
+  gzipped), editor 480 kB, Konva only in the latter — phones on `/m` no longer download or parse
+  it. A tab left open across a rebuild asks for a chunk that is gone: TanStack's loader reloads the
+  page once (per session and error) — the boundary `vite.config.ts` said this needed. **Not driven
+  in a browser**: this machine's Chromium no longer starts (`GLIBC_2.43 not found` in a Nix
+  library); checked in the build instead (the route imports the chunk dynamically, `index.html`
+  does not preload it, no Konva in the main chunk).
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 

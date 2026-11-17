@@ -21,11 +21,11 @@ export default defineConfig({
     outDir: "../backend/src/frame_it/static",
     emptyOutDir: true,
     sourcemap: false,
-    // The main chunk is ~1010 kB raw / ~318 kB gzip, half of it Konva + its React reconciler for
-    // the editor. Served from the LAN under immutable hashed names, that is a few milliseconds, so
-    // the editor route is deliberately *not* lazy yet: it would need a stale-chunk error boundary
-    // (`emptyOutDir` removes the old chunks on rebuild) — see `docs/progress.md`. The limit sits
-    // just above today's size so the warning still trips when a new dependency lands.
-    chunkSizeWarningLimit: 1100,
+    // The main chunk is ~880 kB raw / ~270 kB gzip; the editor (Konva + its React reconciler) is
+    // its own ~480 kB chunk, loaded by its route (`lazyRouteComponent`, which reloads the page
+    // once when a rebuild removed the chunk an open tab asks for). The server gzips `/assets` and
+    // marks it immutable. The limit sits just above today's size so the warning still trips when a
+    // new dependency lands.
+    chunkSizeWarningLimit: 950,
   },
 });

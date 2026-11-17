@@ -1,6 +1,11 @@
-import { createRootRoute, createRoute, createRouter, Navigate } from "@tanstack/react-router";
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  lazyRouteComponent,
+  Navigate,
+} from "@tanstack/react-router";
 
-import { EditorPage } from "@/editor/EditorPage";
 import { ActivityPage } from "@/features/activity/ActivityPage";
 import { BackupPage } from "@/features/archive/BackupPage";
 import { ArtworksPage, type ArtworksSearch } from "@/features/artworks/ArtworksPage";
@@ -64,7 +69,9 @@ const routeTree = rootRoute.addChildren([
     createRoute({
       getParentRoute: () => shellRoute,
       path: "/editor/$artworkId",
-      component: EditorPage,
+      // Its own chunk: the editor is half the bundle (Konva and its renderer), and phones on
+      // `/m` never open it. A chunk gone with a rebuild reloads the page once (TanStack's own).
+      component: lazyRouteComponent(() => import("@/editor/EditorPage"), "EditorPage"),
       validateSearch: (search: Record<string, unknown>): EditorSearch =>
         typeof search.queue === "string" ? { queue: search.queue } : {},
     }),
