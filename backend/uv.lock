@@ -494,7 +494,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.14.3" },
     { name = "pydantic-settings", specifier = ">=2.16.3" },
     { name = "pyvips", extras = ["binary"], specifier = ">=3.2.0" },
-    { name = "samsungtvws", specifier = ">=3.0.6" },
+    { name = "samsungtvws", specifier = ">=3.0.7" },
     { name = "sqlalchemy", specifier = ">=2.1.9" },
     { name = "sse-starlette", specifier = ">=3.7.0" },
     { name = "typer", specifier = ">=0.29.1" },
@@ -1340,16 +1340,16 @@ wheels = [
 
 [[package]]
 name = "samsungtvws"
-version = "3.0.6"
+version = "3.0.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "requests" },
     { name = "websocket-client" },
     { name = "yarl" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/35/10/83c2d17e8643c262acc8b9e24581a44699862bb6c0ef0683b4bf682ee53a/samsungtvws-3.0.6.tar.gz", hash = "sha256:166111d8370443cd2021b74cdfac9495896dfc41e3a87ea023289f24f922bb91", size = 48757, upload-time = "2026-09-11T22:41:04.031Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b3/f6/cfe421b69e7ff9c1d4a5ae2f2ee24567581d696ebcdc27e7c6233bfdff6d/samsungtvws-3.0.7.tar.gz", hash = "sha256:979a61f64221f7ddf8cb3b254a41cabfc6eae1331182aaee941948b3b7d0b918", size = 54259, upload-time = "2026-11-02T15:47:38.592Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/76/49/60b2993a26e78f5d2716b4df1c3fb8fae54d19acf79197280df9088ddc15/samsungtvws-3.0.6-py3-none-any.whl", hash = "sha256:6e3a1b23f928b3035570cc976b64b8c2a218b06022a333855fd7cd02dc74891d", size = 48791, upload-time = "2026-09-11T22:41:02.375Z" },
+    { url = "https://files.pythonhosted.org/packages/a1/86/f83163083acb7c47cc225d37f942f2ae51c460304d350a9fec64ba167fec/samsungtvws-3.0.7-py3-none-any.whl", hash = "sha256:3ab372cdd8fae8f097e9b580d28a653bbd42b8de9b6d32ccf55b8eaf86531001", size = 51682, upload-time = "2026-11-02T15:47:37.355Z" },
 ]
 
 [[package]]
