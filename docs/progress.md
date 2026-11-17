@@ -97,7 +97,11 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
     the backend minors. `pnpm audit`: 14 advisories (6 high) → 1 moderate, in the lint toolchain.
   - Left: TypeScript 7 (typescript-eslint still requires `<6.1`) and `@types/node` 26 (the
     project supports Node 22). **Not driven in a browser** (local Chromium broken): the UI after
-    the Radix and Konva updates.
+    the Radix and Konva updates. CI ran green on GitHub (2 min 26 s) once the actions were pinned.
+- **The placeholder name is no longer read** (user's decision): `THE_FRAME_V2_*` variables, the
+  `the_frame_v2` data dir and `the_frame_v2.archive` archives. The rename came with the public
+  release, so only the author ever had it, and nothing on this machine used it (no old data dir,
+  variable, service unit or archive).
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 

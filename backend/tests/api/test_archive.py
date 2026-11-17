@@ -506,19 +506,11 @@ def test_a_newer_format_version_is_refused(local: TestClient) -> None:
     assert _refused(local, future) == "unsupported_archive_version"
 
 
-def test_an_archive_written_before_the_rename_is_read(local: TestClient) -> None:
-    """Archives of the placeholder name (`the_frame_v2.archive`) still import."""
+def test_an_archive_of_another_format_is_refused(local: TestClient) -> None:
     photo(local)
     path = export_archive(local)
     with zipfile.ZipFile(path) as zf:
         manifest = json.loads(zf.read(archive.MANIFEST_NAME))
-    manifest["format"] = "the_frame_v2.archive"
-    old = _rewrite(
-        path,
-        path.with_name("old.tfarchive"),
-        extra={archive.MANIFEST_NAME: json.dumps(manifest).encode()},
-    )
-    assert receive(local, old)["state"] == "ready"
     manifest["format"] = "someone_else.archive"
     alien = _rewrite(
         path,

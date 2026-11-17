@@ -38,8 +38,6 @@ from frame_it.domain import document as document_schema
 from frame_it.domain import templates as template_schema
 
 FORMAT = "frame_it.archive"
-LEGACY_FORMATS = frozenset({"the_frame_v2.archive"})
-"""Written before the rename (2026-10), same layout: read as `FORMAT`."""
 FORMAT_VERSION = 1
 MANIFEST_NAME = "manifest.json"
 CHECKSUMS_NAME = "checksums.sha256"

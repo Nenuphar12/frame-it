@@ -727,9 +727,8 @@ API from day one.
   on the S5a–S5d spikes on the real TV — the one real risk is `send_image` on 2025 firmware.
 - ~~Final project name~~ — **Frame It**, decided 2026-10-06 for the open-source release (Python
   package `frame_it`, command and distribution `frame-it`, env prefix `FRAME_IT_`, data dir
-  `frame-it`). The placeholder `the_frame_v2` is still read where a library depends on it: the
-  `THE_FRAME_V2_*` variables (below the new ones), the old data dir while no new one exists, and
-  archives whose manifest says `the_frame_v2.archive`. Not unique: fastlane's `frameit`
+  `frame-it`). The placeholder `the_frame_v2` was read for compatibility (its variables, data dir
+  and archive format) until 2026-11-17: nobody else ever had it. Not unique: fastlane's `frameit`
   (screenshot frames) and several app-store "Frame It" apps exist, and the PyPI/npm name
   `frameit` is taken — a PyPI release would need another distribution name (§17.2).
 - ~~License (Phase 11)~~ — **MIT**, decided 2026-09-24 (`LICENSE`).

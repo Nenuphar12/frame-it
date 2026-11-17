@@ -38,8 +38,7 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
   - **Hardening** (`docs/user-guide.md`, `docs/security.md`): `MAX_RENDER_PIXELS` (320 Mpx of distinct
     sources), AA in both themes, `/activity` for failed jobs, `frame-it service install`. Licence MIT.
   - **Name**: Frame It (package `frame_it`, command `frame-it`, env `FRAME_IT_*`) since 2026-10-06; the
-    placeholder `the_frame_v2` is still **read** — `THE_FRAME_V2_*` env, its data dir, its archive
-    format (`config.py`, `domain/archive.LEGACY_FORMATS`). Never write the old name anywhere new.
+    placeholder `the_frame_v2` is no longer read anywhere (env, data dir, archives: removed 2026-11-17).
   - **TV** (`docs/tv-display.md`, measurements in `docs/research/tv-display.md`): the Frame's slideshow
     cannot be scoped to a subset, so a push **mirrors** the set (`keep_ours` spares our earlier
     uploads); a push is stop → select → start, uploads go in reverse (the TV lists newest first), and

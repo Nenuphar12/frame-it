@@ -2,9 +2,6 @@
 
 Precedence: explicit overrides (CLI) > environment (`FRAME_IT_*`) >
 `<data_dir>/config.toml` > defaults.
-
-Until 2026-10 the app was called `the_frame_v2`: its `THE_FRAME_V2_*` variables are still read
-(below the new ones) and its data directory is still used while the new one does not exist.
 """
 
 from __future__ import annotations
@@ -22,25 +19,14 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ENV_PREFIX = "FRAME_IT_"
-LEGACY_ENV_PREFIX = "THE_FRAME_V2_"
 APP_DIR_NAME = "frame-it"
-LEGACY_APP_DIR_NAME = "the_frame_v2"
 CANVAS_WIDTH = 3840
 CANVAS_HEIGHT = 2160
 
 
 def default_data_dir() -> Path:
-    """The platform's data dir, or the placeholder name's one when only that exists."""
-    current = Path(user_data_dir(APP_DIR_NAME, appauthor=False))
-    legacy = Path(user_data_dir(LEGACY_APP_DIR_NAME, appauthor=False))
-    return legacy if not current.exists() and legacy.is_dir() else current
-
-
-def adopt_legacy_env() -> None:
-    """Copy each `THE_FRAME_V2_*` variable to its `FRAME_IT_*` name unless that one is set."""
-    for key, value in list(os.environ.items()):
-        if key.startswith(LEGACY_ENV_PREFIX):
-            os.environ.setdefault(ENV_PREFIX + key.removeprefix(LEGACY_ENV_PREFIX), value)
+    """The platform's data dir (`~/.local/share/frame-it` on Linux)."""
+    return Path(user_data_dir(APP_DIR_NAME, appauthor=False))
 
 
 class Settings(BaseSettings):
@@ -166,7 +152,6 @@ def detect_lan_ip() -> str | None:
 
 def load_settings(**overrides: Any) -> Settings:
     """Build settings, merging `<data_dir>/config.toml` below env vars and above defaults."""
-    adopt_legacy_env()
     explicit = {k: v for k, v in overrides.items() if v is not None}
     data_dir = explicit.get("data_dir") or os.environ.get(f"{ENV_PREFIX}DATA_DIR")
     base = Path(data_dir) if data_dir else default_data_dir()

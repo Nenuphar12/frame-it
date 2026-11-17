@@ -198,7 +198,7 @@ def _read_manifest(zf: zipfile.ZipFile) -> archive.Manifest:
         manifest = archive.Manifest.model_validate(raw)
     except (ValueError, ValidationError) as exc:
         raise archive.ArchiveError("invalid_manifest", str(exc)) from exc
-    if manifest.format != archive.FORMAT and manifest.format not in archive.LEGACY_FORMATS:
+    if manifest.format != archive.FORMAT:
         raise archive.ArchiveError("unknown_format", manifest.format)
     if manifest.format_version > archive.FORMAT_VERSION:
         raise archive.ArchiveError(
