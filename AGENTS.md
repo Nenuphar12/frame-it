@@ -70,7 +70,7 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
 | Seed a big library (Phase 9 AC) | `cd backend && uv run python ../scripts/seed_library.py --data-dir /tmp/seed --artworks 10000` |
 | Export / import a library | `uv run frame-it export -o lib.tfarchive` · `uv run frame-it import lib.tfarchive --dry-run` |
 | Editor E2E against a copy of the library | `cp -r .dev-data /tmp/e2e && cd backend && FRAME_IT_DATA_DIR=/tmp/e2e FRAME_IT_PORT=8799 uv run frame-it serve`, then `cd frontend && FRAME_IT_BACKEND=http://127.0.0.1:8799 pnpm dev --port 5199` |
-| Backend tests only | `cd backend && uv run pytest` (add `-k name`) |
+| Backend tests only | `cd backend && uv run pytest -n auto` (~1 min 20 s on 16 cores, ~4 min 30 s serial); one file or `-k name` without `-n` |
 | TV pages without a TV | `FRAME_IT_FAKE_TV=1 uv run frame-it serve` (one in-memory `FakeTv`; never reaches a real TV) · `uv run frame-it tv scan` lists the TVs on the LAN |
 | Regenerate API types + `docs/schemas/` (after any API/document schema change) | `make gen-api` |
 | Production build + serve | `make serve` (frontend built into `backend/src/frame_it/static`) |

@@ -67,7 +67,7 @@ no frontend test suite by design (`docs/PLAN.md` §13), so UI work is verified b
 and what was *not* verified is written down in `docs/progress.md`.
 
 ```sh
-cd backend && uv run pytest            # add -k name
+cd backend && uv run pytest -n auto    # in parallel; one file or -k name runs fine without -n
 make conformance                       # the TypeScript half of the geometry fixtures
 make golden-update                     # after an intended pixel change — review the PNGs!
 ```

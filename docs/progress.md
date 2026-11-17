@@ -27,6 +27,15 @@
   `test_a_job_queued_while_a_worker_looks_is_picked_up_at_once` (failed before, deterministic).
 - **`scripts/` is linted** (`make lint`/`make format`): 22 ruff findings, nearly all long lines in
   the render-parity spike; `scenes.py` checked to write byte-identical output after formatting.
+- **The backend suite: 4 min 42 s → about 1 min 20 s.** Where the time went, measured: each test
+  built its app in ~0.35 s — FastAPI rebuilt every route twice (module router → a prefixed `api`
+  router → the app) and Alembic ran every migration on a fresh database. Routers now go straight
+  onto the app with the prefix (app creation 0.30 → 0.125 s, same OpenAPI), and tests copy one
+  migrated template database (0.105 → 0.006 s): median setup 0.35 → 0.06 s. Then `pytest-xdist`
+  (`make test` runs `-n auto`). Measured and dropped: capping libvips threads (`VIPS_CONCURRENCY`
+  1 is slower, 2 no faster) and a test-only PNG level (7 % on the render-heavy files). The slowest
+  tests now are the ones rendering real 3840×2160 artworks (TV pushes, archives), which is what
+  they are for.
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 
