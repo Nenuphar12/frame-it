@@ -76,6 +76,28 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
   with `resync`, a flood a sleeping tab would answer by refetching everything), `export.ready`,
   `import.staged`, `import.failed`, `import.applied`. Those pages poll their rows, which still
   carry the progress. What is published and `ServerEvents` now list the same 16 events.
+- **Dependencies brought up to date**, one commit per risky step, release notes read first:
+  - FastAPI 0.141 → 0.163: its breaking changes are about forms, `Body()` parameters and
+    `root_path`, none used here; the OpenAPI document is byte-identical. It now ships OpenTelemetry
+    hooks (off unless configured): switched off explicitly in `create_app`, so no environment
+    variable can turn exporting on.
+  - SQLAlchemy 2.1: `Select[tuple[X]]` annotations become `Select[X]`; `Result.tuples()` is
+    deprecated (rows unpack directly); autoflush now precedes every statement. The engine URL is
+    built with `URL.create`: 2.1 decodes `%` escapes in the database part, so an f-string URL
+    would have opened another file for a data dir with `%`, `?` or `#` in its path. Every listing
+    endpoint answered on a copy of `.dev-data`'s database.
+  - Pillow 13: security fixes in its JPEG decoder and Exif parser, which read every upload's
+    metadata; the Exif of 60 random `.dev-data` originals reads the same as what was stored.
+  - samsungtvws 3.0.7: its diff touches URL building only — not the `open()` and `_recv_frame`
+    our art channel builds on; the TV tests and `tv_probe.py --fake` pass. **Not tried on the TV.**
+  - i18next 27 / react-i18next 18: none of the breaking changes applies (`fallbackLng` and
+    `escapeValue` were already set, no `<Trans>`, no empty strings, no typed resources); plurals
+    checked in Node with the real catalogs, French millions included.
+  - Everything else within its range (Radix 1.1 → 1.3, Konva 10.5 → 10.9, TanStack, Vite…) and
+    the backend minors. `pnpm audit`: 14 advisories (6 high) → 1 moderate, in the lint toolchain.
+  - Left: TypeScript 7 (typescript-eslint still requires `<6.1`) and `@types/node` 26 (the
+    project supports Node 22). **Not driven in a browser** (local Chromium broken): the UI after
+    the Radix and Konva updates.
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 

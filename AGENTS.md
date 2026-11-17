@@ -252,5 +252,5 @@ whatever you are touching before you touch it.** These few bite whatever you are
   first load asks for the setup code printed in the server log. Point Vite at another backend with
   `FRAME_IT_BACKEND=http://127.0.0.1:<port>`.
 - `pkill -f "frame-it serve"` also matches your own shell command line: use `pkill -f "[f]rame-it serve"`.
-- TypeScript stays on major 6 (`^6.0.3` in `frontend/package.json`) because typescript-eslint did not support
-  7.x when this was written: check its support before moving to 7.
+- TypeScript stays on major 6 (`frontend/package.json`): typescript-eslint requires `<6.1` (still so in
+  8.73, checked 2026-11-17). `@types/node` stays on 22, the oldest Node the project supports.
