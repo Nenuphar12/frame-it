@@ -33,6 +33,12 @@ interface CollectionTreeProps {
   onDropArtworks?: (collectionId: string, artworkIds: string[]) => void;
   /** The "+" on a manual row: start a new collection inside it. */
   onCreateChild?: (parentId: string) => void;
+  /**
+   * Sub-collections start folded (the sidebar, where the tree must stay short); otherwise every
+   * level starts unfolded. Either way a click on a chevron flips that row for as long as the tree
+   * stays mounted.
+   */
+  defaultCollapsed?: boolean;
 }
 
 export function CollectionTree({
@@ -42,15 +48,18 @@ export function CollectionTree({
   onMove,
   onDropArtworks,
   onCreateChild,
+  defaultCollapsed = false,
 }: CollectionTreeProps) {
   const tree = useMemo(() => buildTree(rows), [rows]);
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  // The rows flipped away from the default: a collection created later follows the default.
+  const [flipped, setFlipped] = useState<Set<string>>(new Set());
   const [dropTarget, setDropTarget] = useState<DropSpot | null>(null);
   // Only while a collection is dragged from this tree: the top-level zone is noise otherwise.
   const [dragging, setDragging] = useState(false);
 
+  const isOpen = (id: string) => flipped.has(id) === defaultCollapsed;
   const toggle = (id: string) =>
-    setCollapsed((current) => {
+    setFlipped((current) => {
       const next = new Set(current);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -64,7 +73,7 @@ export function CollectionTree({
           rows={rows}
           nodes={tree}
           depth={0}
-          collapsed={collapsed}
+          isOpen={isOpen}
           toggle={toggle}
           selectedId={selectedId}
           onSelect={onSelect}
@@ -116,7 +125,7 @@ function RootDropZone({ onMove }: { onMove: NonNullable<CollectionTreeProps["onM
 interface LevelProps extends Required<Pick<CollectionTreeProps, "rows">> {
   nodes: TreeNode[];
   depth: number;
-  collapsed: Set<string>;
+  isOpen: (id: string) => boolean;
   toggle: (id: string) => void;
   selectedId: string | null;
   onSelect: (id: string) => void;
@@ -132,7 +141,7 @@ function TreeLevel({
   rows,
   nodes,
   depth,
-  collapsed,
+  isOpen,
   toggle,
   selectedId,
   onSelect,
@@ -151,8 +160,7 @@ function TreeLevel({
     const box = event.currentTarget.getBoundingClientRect();
     const ratio = (event.clientY - box.top) / Math.max(1, box.height);
     const where = dropWhere(ratio, node.collection.kind === "manual");
-    const open = !collapsed.has(node.collection.id);
-    const move = moveFor(rows, dragged, node.collection.id, where, open);
+    const move = moveFor(rows, dragged, node.collection.id, where, isOpen(node.collection.id));
     return move ? { where, move } : null;
   };
 
@@ -198,13 +206,13 @@ function TreeLevel({
     <>
       {nodes.map((node) => {
         const { collection } = node;
-        const isOpen = !collapsed.has(collection.id);
+        const open = isOpen(collection.id);
         const isSmart = collection.kind === "smart";
         const spot = dropTarget?.id === collection.id ? dropTarget.where : null;
         // The line sits where the collection will land: "after" an open parent is its first
         // child, so the line is indented one level there.
         const lineDepth =
-          spot === "after" && isOpen && !isSmart && node.children.length > 0 ? depth + 1 : depth;
+          spot === "after" && open && !isSmart && node.children.length > 0 ? depth + 1 : depth;
         return (
           <li key={collection.id}>
             <div
@@ -243,10 +251,10 @@ function TreeLevel({
               <button
                 type="button"
                 onClick={() => toggle(collection.id)}
-                aria-label={t(isOpen ? "collections.collapse" : "collections.expand")}
+                aria-label={t(open ? "collections.collapse" : "collections.expand")}
                 className={cn("shrink-0 rounded p-0.5", node.children.length === 0 && "invisible")}
               >
-                {isOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
               </button>
               <button
                 type="button"
@@ -255,7 +263,7 @@ function TreeLevel({
               >
                 {isSmart ? (
                   <Sparkles size={14} className="shrink-0 text-accent" />
-                ) : isOpen && node.children.length > 0 ? (
+                ) : open && node.children.length > 0 ? (
                   <FolderOpen size={14} className="shrink-0" />
                 ) : (
                   <Folder size={14} className="shrink-0" />
@@ -281,13 +289,13 @@ function TreeLevel({
                 </button>
               )}
             </div>
-            {isOpen && node.children.length > 0 && (
+            {open && node.children.length > 0 && (
               <ul className="space-y-0.5">
                 <TreeLevel
                   rows={rows}
                   nodes={node.children}
                   depth={depth + 1}
-                  collapsed={collapsed}
+                  isOpen={isOpen}
                   toggle={toggle}
                   selectedId={selectedId}
                   onSelect={onSelect}

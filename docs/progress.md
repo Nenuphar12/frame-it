@@ -125,6 +125,11 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
   `pre_trash` reason had no label. Existing duplicates were left in place.
   `test_an_unchanged_artwork_is_not_snapshotted_twice` (failed before). **Not driven in a
   browser** (local Chromium broken).
+- **The sidebar's collection tree starts folded** (user feedback: it took too much room): only
+  top-level collections show until a chevron opens one (`CollectionTree`'s `defaultCollapsed`).
+  What was opened lasts while the app stays loaded, not across a reload. The Collections page
+  still unfolds every level. Dropping artworks into a sub-collection from the sidebar now takes a
+  click to open its parent first. **Not driven in a browser** (local Chromium broken).
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 

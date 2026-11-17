@@ -140,6 +140,9 @@ function SidebarCollections({ item }: { item: NavItem }) {
           <CollectionTree
             rows={rows}
             selectedId={null}
+            // Top-level collections only until a chevron opens one, so the tree stays short
+            // (user feedback); the Collections page shows every level.
+            defaultCollapsed
             onSelect={(id) => void navigate({ to: "/collections", search: { id } })}
             onDropArtworks={(id, artworkIds) => items.add.mutate({ id, artwork_ids: artworkIds })}
             // The order is set where it shows: drag a row above, below or into another.

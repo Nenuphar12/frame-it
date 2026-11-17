@@ -307,7 +307,7 @@ rule were not changed retroactively: photos already `processed` stay so, drafts 
 
 | Place | What |
 |---|---|
-| Sidebar | the collection tree under the library links; a row opens *that* collection (`/collections?id=…`), and dropping artworks on one files them |
+| Sidebar | the collection tree under the library links, sub-collections folded until a chevron opens them; a row opens *that* collection (`/collections?id=…`), and dropping artworks on one files them |
 | Artworks / Favorites | the filter bar (chips, incl. *Place near* with the place picker), search, sort, *Save as smart collection*, multi-select, *Add to collection*, the tag menu (`t`), *Move to trash* (with Undo); `/artworks?place=…` / `?tag=<id>` / `?near=lat,lon,km&label=…` open it with that chip |
 | Collections page | tree with drag-and-drop (re-parent, reorder, drop-to-top-level), a parent picker in the dialog, sort picker, include-nested toggle (only where there *are* children), manual ordering by dragging a card, *Add artworks* |
 | Artwork viewer | two rows — what it is and what you can do to it, then where it is filed: manual collections as plain badges, smart ones in accent with a sparkle (read-only), its own tags (editable in place — *Done* or `Esc` closes the editor, and moving to another artwork does too) and its photos' tags, dashed |
