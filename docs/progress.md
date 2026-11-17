@@ -39,6 +39,12 @@
 - **Stale generated files fail `make check`** (`make generated`, `scripts/check_generated.py`):
   it regenerates the OpenAPI JSON, `schema.d.ts` and `docs/schemas/` into a temporary directory and
   compares. It would have caught the `/events` description committed without `make gen-api` today.
+- **The Docker image did not build since 2026-09-24**: `license-files = ["LICENSE"]` (added with
+  the MIT licence) names `backend/LICENSE`, a symlink to the root file that the image never copied
+  — `uv sync` stopped on "glob `LICENSE` did not match any files". The user's check of the image
+  (2026-09-17) predates it. The root `LICENSE` is copied in now; image built, started, answered
+  `/system/info` and served the SPA. Pinned while there: the uv image (`0.11.21`, was `latest`) and
+  pnpm (`packageManager: pnpm@12.14.0`, which pnpm 12 also records, with hashes, in the lockfile).
 
 ## 2026-11-16 — Bevel hole, TV handshake, sub-collections, picker selection, straightening
 

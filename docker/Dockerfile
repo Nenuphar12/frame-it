@@ -10,13 +10,16 @@ RUN mkdir -p ../backend/src/frame_it/static && pnpm exec vite build
 
 # ---- runtime -----------------------------------------------------------------------------------------
 FROM python:3.14-slim AS runtime
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+# Pinned like everything else the image is built from (bump with `uv_build` in pyproject.toml).
+COPY --from=ghcr.io/astral-sh/uv:0.11.21 /uv /usr/local/bin/uv
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never \
     PATH=/app/.venv/bin:$PATH FRAME_IT_DATA_DIR=/data FRAME_IT_HOST=0.0.0.0 FRAME_IT_PORT=8765
 WORKDIR /app
 COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 COPY backend/src ./src
+# `license-files` in pyproject.toml: backend/LICENSE is a symlink to this file, dangling in /app.
+COPY LICENSE ./
 COPY --from=frontend /src/backend/src/frame_it/static ./src/frame_it/static
 RUN uv sync --frozen --no-dev && useradd --system --uid 1000 frame && mkdir /data && chown frame /data
 USER frame
