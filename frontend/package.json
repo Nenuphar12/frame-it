@@ -28,7 +28,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "hash-wasm": "^4.13.0",
-    "i18next": "^26.7.2",
+    "i18next": "^27.1.3",
     "immer": "^11.2.10",
     "konva": "^10.9.1",
     "lucide-react": "^1.73.0",
@@ -37,7 +37,7 @@
     "react": "^19.3.1",
     "react-colorful": "^5.8.1",
     "react-dom": "^19.3.1",
-    "react-i18next": "^17.1.13",
+    "react-i18next": "^18.0.1",
     "react-konva": "^19.3.2",
     "tinykeys": "^4.0.1",
     "zustand": "^5.1.0"
