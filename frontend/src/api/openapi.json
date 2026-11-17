@@ -8806,7 +8806,7 @@
     },
     "/api/v1/events": {
       "get": {
-        "description": "Server-sent events: `photo.ingested`, `photo.ingest_failed`, `job.progress`, `job.failed`.",
+        "description": "Server-sent events. Names and payloads: `ServerEvents` in `frontend/src/api/events.ts`.\n\n`ready` opens every stream; `resync` replaces the events a client was too slow to take.",
         "operationId": "events_api_v1_events_get",
         "responses": {
           "200": {

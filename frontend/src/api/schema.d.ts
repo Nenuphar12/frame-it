@@ -703,7 +703,9 @@ export interface paths {
         };
         /**
          * Events
-         * @description Server-sent events: `photo.ingested`, `photo.ingest_failed`, `job.progress`, `job.failed`.
+         * @description Server-sent events. Names and payloads: `ServerEvents` in `frontend/src/api/events.ts`.
+         *
+         *     `ready` opens every stream; `resync` replaces the events a client was too slow to take.
          */
         get: operations["events_api_v1_events_get"];
         put?: never;
