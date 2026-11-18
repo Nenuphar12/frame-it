@@ -28,12 +28,22 @@ review the code line by line.**
 
 What I checked myself, on real hardware:
 
-- uploads from an Android phone in full quality, through both of Android's pickers;
-- the Docker image: build, run, and the library surviving a restart;
+- uploads from an Android phone in full quality, through both of Android's pickers (Android
+  removes the GPS position on the way, so those photos have no place);
+- the Docker image: build, run, and the library surviving a restart — on 2026-09-17. The image
+  then failed to build until 2026-11-17; since the fix it builds and starts, but I have not checked
+  persistence again;
 - my own TV, a 2025 Frame (`TQ55LS03FAUXXC`): pairing, uploading, selecting a picture, the
   slideshow.
 
-What has not been tried on hardware yet is listed in [AGENTS.md](AGENTS.md) (*Purpose & status*).
+What has not been tried on hardware yet:
+
+- that waiting for the TV's art channel to be ready ends the random push failures (one clean push
+  so far, on 2026-11-16; they were intermittent);
+- deleting photos on the TV that the app did not upload;
+- whether the pairing survives a power cut of the TV (hence *Pair again* in the app);
+- finding the TV on a real LAN, and following a TV whose address changed;
+- a push with *Don't change* (nothing rotated, nothing deleted).
 What stands in for a line-by-line review is `make check`: about 1 100 backend tests, the geometry
 rules written twice (Python and TypeScript) and compared on shared fixtures, and a few reference
 images. That is evidence, not a guarantee: read the code before you rely on it for anything that

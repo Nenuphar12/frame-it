@@ -3,7 +3,7 @@
 Newest first. Phases 0–12 and everything before the beta (2026-10-06):
 [`progress-before-beta.md`](progress-before-beta.md).
 
-## 2026-11-18 — Timeline, photos by place, removing a date, aligned tags
+## 2026-11-18 — Timeline, photos by place, removing a date, aligned tags, lighter AGENTS.md
 
 - **A Timeline tab beside Places** (Tags page): year → month, the most recent first, with photo and
   artwork counts per level and the number of undated photos. Years fold open on their months (the
@@ -22,6 +22,13 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
   `taken_at` — `null` removes it, a value sets it back as written, left out it does not change
   (the other fields' `null` keeps meaning "unchanged"). The original keeps its EXIF.
   `test_a_photo_date_can_be_removed_and_set_back`; the Places test now follows every row's link.
+- **Agent context, lighter**: `AGENTS.md` 26.0 → 12.1 kB, loaded into every session. It keeps
+  what most tasks need (status, the main commands, a map by directory, the layers, the invariants
+  word for word, conventions, the cross-cutting gotchas); each area's rules, the module-by-module
+  map, the flows and the rarer commands moved verbatim to `docs/codebase.md`, seven subsystem
+  gotchas to `docs/gotchas.md`. The hardware lists moved to the README's *Written with AI*, now
+  the one list of what was and was not checked on real hardware. `docs/PLAN.md` §3.2, §4.2 and §15
+  follow.
 - **The Tags tab's columns line up.** Each category is its own table, and the automatic layout
   sized each one to its own names: the colours, the category menu and the counts moved from one
   category to the next (measured: the colour column started anywhere from x = 433 to 717). The

@@ -1,8 +1,9 @@
 # AGENTS.md — Frame It
 
 > Entry point for coding agents and contributors. **Read this first, trust it, and update it in the same change
-> as the code it describes** (rules: `docs/PLAN.md` §3). Keep it under ~300 lines; link to `docs/` for
-> details — the subsystem gotchas live in [`docs/gotchas.md`](docs/gotchas.md).
+> as the code it describes** (rules: `docs/PLAN.md` §3). It keeps what most tasks need; the rest is one link
+> away: [`docs/codebase.md`](docs/codebase.md) (each area's rules, the full repo map, the flows, more commands)
+> and [`docs/gotchas.md`](docs/gotchas.md) (pitfalls by subsystem — read the section before you touch it).
 
 ## Purpose & status
 
@@ -11,52 +12,13 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
 
 - **Status (2026-11-17): beta, open source since 2026-10-06. Phases 0–12 done, plus their follow-ups.
   Next: the roadmap, `docs/PLAN.md` §17** — HEIC from iPhones, then an installation without a
-  toolchain (CI runs `make check`; releases and executables to come). What each phase added, with its
-  measurements and migrations: `docs/progress.md` (before the beta: `docs/progress-before-beta.md`).
-  The areas, where they are specified, and what a change there must respect:
-  - **Uploads & ingest** (`docs/localsend.md`, `docs/research/phone-uploads.md`): resumable uploads, the
-    LocalSend receiver, the phone upload page.
-  - **Artwork document, geometry, renderer** (`docs/artwork-document.md`, `docs/geometry-and-quality.md`,
-    `docs/rendering-spec.md`): the render hash reads `render_identity()`, so a schema addition moves no
-    cache, TV or outdated badge.
-  - **Editor** (`docs/simple-editor.md`): Konva canvas; **Simple** edits the optional `composition` block
-    (a recipe + parameters, `weights` included) that the mirrored solver turns into slots, and the server
-    re-solves on every save; **Advanced** is free-form and sets `detached`. Recipes: `GET /recipes`.
-    A straightened photo (`source.straighten`) is a smaller photo to every crop rule: the crop lives
-    in `straightened_size` (`slotSource` / `SourceSpec.bounds`), only the renderer and canvas turn it.
-  - **Templates** (`docs/templates.md`): a layout is a recipe + parameters; styles and layouts have CRUD,
-    "Save as", `.tf*.json` files, apply-template with the outdated badge, and push update (dry run +
-    `pre_template_update` snapshots). `restyle`/`relayout` are pure and mirrored.
-  - **Organization** (`docs/organization.md`): one filter AST (`domain/filters.py` validates,
-    `services/library.py` compiles) behind the filter bar, `POST /artworks/query` and smart collections;
-    collections as a tree; FTS search; tags with categories, and an artwork **carries its photos' tags**
-    (read, never copied); `place near` on the photos' GPS; Places and Timeline (year → month) tabs
-    derived from photo metadata; the trash acts, then offers Undo. A photo leaves
-    the inbox only when an artwork using it is marked **ready** (one-way).
-  - **Export / import** (`docs/archive-format.md`): the `.tfarchive` is a ZIP of JSON + JSON Lines + the
-    originals; staging → dry-run report → apply under `keep_mine | take_theirs | keep_both`; the CLI does
-    the same without a browser.
-  - **Hardening** (`docs/user-guide.md`, `docs/security.md`): `MAX_RENDER_PIXELS` (320 Mpx of distinct
-    sources), AA in both themes, `/activity` for failed jobs, `frame-it service install`. Licence MIT.
-  - **Name**: Frame It (package `frame_it`, command `frame-it`, env `FRAME_IT_*`) since 2026-10-06; the
-    placeholder `the_frame_v2` is no longer read anywhere (env, data dir, archives: removed 2026-11-17).
-  - **TV** (`docs/tv-display.md`, measurements in `docs/research/tv-display.md`): the Frame's slideshow
-    cannot be scoped to a subset, so a push **mirrors** the set (`keep_ours` spares our earlier
-    uploads); a push is stop → select → start, uploads go in reverse (the TV lists newest first), and
-    "Don't change" (`slideshow_minutes = 0`) rotates and deletes nothing. A TV is followed by MAC when
-    its address changes. `FRAME_IT_FAKE_TV=1` drives it all without a TV. The art channel waits for
-    `ms.channel.ready` (`art_channel_class`): the library's own `open()` failed on the TV's client
-    announcements.
-  - **i18n**: English and French catalogs; server data (built-in style names, place names) stays as stored.
-- **Not yet verified on hardware**: that the art-channel wait for `ready` ends the random failures (one
-  clean push so far, 2026-11-16; they were intermittent), deleting foreign photos, whether the pairing
-  token survives a TV power cut (hence "pair again" in the UI), discovery on the real LAN, following a
-  TV that moved, a "Don't change" push. **Verified by the user** (2026-09-17): Android uploads (both
-  pickers keep full quality, but Android zeroes GPS → no place), Docker image build/run/persistence —
-  the image then failed to build from 2026-09-24 to 11-17 (`license-files`); rebuilt and started since,
-  persistence not re-checked.
-- **Written with AI, and said so** (`README.md` *Written with AI*, `CONTRIBUTING.md`): keep the README's
-  "checked on real hardware" list in step with the one above.
+  toolchain (CI runs `make check`; releases and executables to come). What each phase added:
+  `docs/progress.md` (before the beta: `docs/progress-before-beta.md`).
+- **Areas** — uploads, the artwork document and renderer, the editor, templates, organization, export/import,
+  hardening, the TV, i18n: what each is, its spec, and what a change there must respect are in
+  [`docs/codebase.md` §Areas](docs/codebase.md#areas). Read that entry before working in an area.
+- **Written with AI, and said so** (`README.md` *Written with AI*, `CONTRIBUTING.md`). That README section
+  is also the one list of what is and is not checked on real hardware: update it when that changes.
 
 ## Quick commands
 
@@ -65,101 +27,49 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
 | Install | `make install` (uv + pnpm) |
 | Dev (API :8765 + Vite :5173) | `make dev` — open http://localhost:5173 |
 | Everything that must pass | `make check` (ruff, ESLint, mypy strict, tsc, i18n keys, geometry conformance, generated files, pytest, editor rules) |
+| Backend tests only | `cd backend && uv run pytest -n auto` (~1 min 20 s on 16 cores); one file or `-k name` without `-n` |
 | Editor rules only | `cd frontend && pnpm test` (`src/**/*.test.ts`, Node's own runner) |
-| Geometry fixtures | `make conformance` (TS); regenerate from Python: `cd backend && CONFORMANCE_UPDATE=1 uv run pytest tests/unit/test_conformance.py` |
-| Golden images | `make golden-update` after an intended pixel change (review PNGs, bump `RENDERER_VERSION`) |
-| Render budgets + peak RSS | `cd backend && uv run python ../scripts/bench_render.py` |
-| Library budgets (seeded 10k) | `cd backend && uv run python ../scripts/bench_library.py --data-dir /tmp/seed` |
-| Dependency audit | `cd frontend && pnpm audit`; backend: `uv export --no-emit-project --no-dev --format requirements.txt -o /tmp/r.txt && uv run --with pip-audit pip-audit -r /tmp/r.txt` |
-| Run at login | `uv run frame-it service install` (`--show` prints the unit; `status`, `uninstall`) |
-| Seed a big library (Phase 9 AC) | `cd backend && uv run python ../scripts/seed_library.py --data-dir /tmp/seed --artworks 10000` |
-| Export / import a library | `uv run frame-it export -o lib.tfarchive` · `uv run frame-it import lib.tfarchive --dry-run` |
-| Editor E2E against a copy of the library | `cp -r .dev-data /tmp/e2e && cd backend && FRAME_IT_DATA_DIR=/tmp/e2e FRAME_IT_PORT=8799 uv run frame-it serve`, then `cd frontend && FRAME_IT_BACKEND=http://127.0.0.1:8799 pnpm dev --port 5199` |
-| Backend tests only | `cd backend && uv run pytest -n auto` (~1 min 20 s on 16 cores, ~4 min 30 s serial); one file or `-k name` without `-n` |
-| TV pages without a TV | `FRAME_IT_FAKE_TV=1 uv run frame-it serve` (one in-memory `FakeTv`; never reaches a real TV) · `uv run frame-it tv scan` lists the TVs on the LAN |
 | Regenerate API types + `docs/schemas/` (after any API/document schema change) | `make gen-api` |
+| Geometry fixtures | `make conformance` (TS); regenerate from Python: `cd backend && CONFORMANCE_UPDATE=1 uv run pytest tests/unit/test_conformance.py` |
+| New migration | edit `db/models.py`, then `cd backend && uv run python -m frame_it.db.migrate "message"`, rename to `NNNN_message.py`, replace custom types by `sa.String` |
 | Production build + serve | `make serve` (frontend built into `backend/src/frame_it/static`) |
 | CLI | `uv run frame-it --help` (`serve`, `doctor`, `setup-code`, `openapi`, `schemas`, `db upgrade`, `cache clear`, `service`, `export`, `import`, `tv`, `version`) |
-| New migration | edit `db/models.py`, then `cd backend && uv run python -m frame_it.db.migrate "message"`, rename to `NNNN_message.py`, replace custom types by `sa.String` |
-| Docker | `make docker`; `docker/compose.yaml` (set `FRAME_IT_PUBLIC_URL`) |
 
-NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint RUFF=ruff` with a Nix ruff.
+Benches, seeding, golden images, Docker, the fake TV, the E2E setup, the dependency audit:
+[`docs/codebase.md` §More commands](docs/codebase.md#more-commands).
 
 ## Repo map
 
 | Path | Responsibility |
 |---|---|
-| `backend/src/frame_it/app.py` | App factory: context, routers, SPA serving, lifespan (jobs, setup code) |
-| `…/config.py` | Settings (env `FRAME_IT_*` > `<data_dir>/config.toml` > defaults), LAN IP, allowed hosts |
-| `…/context.py` | `AppContext` service container (`app.state.ctx`) |
-| `…/api/` | Thin routers, one per area + `schemas.py` (Pydantic API models = the OpenAPI source) + `deps.py` (auth dependencies); `jobs.py` is the activity centre |
-| `…/auth/` | `principal.py` (cookie/localhost → role), `middleware.py` (Host/CSRF/headers), `ratelimit.py` |
-| `…/services/` | Use cases, one module per area (each docstring says what it owns): `uploads` → `ingest` → `photos`, `photo_copies` (merge copies), `localsend`, `devices`; `artworks` (create/save/snapshots, and the artwork-writing half of templates: apply, push update), `templates` (presets, CRUD, files, defaults), `recipes` (bundled catalogue, no DB), `render` (cache, jobs, region), `colors`; `library` (filter compiler + listing), `collections`, `tags`, `places`, `timeline`, `geocode`, `search` (FTS, `INDEX_VERSION`), `trash`; `archive_export`, `archive_import`, `archive_apply` (id maps); `display` (TV targets, the push); `jobs_admin` (failures, retry, pruning) |
-| `…/domain/` | PURE: `document` (document v1, the `composition` block, reference checks), `geometry`, `quality`, `placement`, `constraints` (editor solver), `alternatives`, `arrange`, `composition` (recipe trees, the solver, `apply`), `templates` (`restyle`/`relayout`, `build_composition_document`), `filters` (library filter AST), `geo`, `archive` (records, file layout, member-name safety) |
-| `…/imaging/` | `sniff` (magic bytes), `decode` (the only pixel access), `metadata` (EXIF/ICC), `fingerprint` (hash ignoring EXIF), `capabilities`, `render` (the renderer), `palette` (OKLab k-means), `assets` (fonts/textures catalog) |
-| `…/assets/` | `geonames/`, `fonts/` (OFL, `scripts/build_fonts.py`), `textures/` (CC0, `scripts/generate_textures.py`), `presets/` (built-in styles/layouts + `recipes.json`) |
-| `…/tv/` | `client.py` (`TvClient`, `SamsungTvClient` over `samsungtvws`, pairing), `discovery.py` (SSDP + /24 sweep, `find_by_mac`), `fake.py` (`FakeTv`: the firmware's quirks, for tests and `FRAME_IT_FAKE_TV`). The push itself: `services/display.py` |
-| `…/localsend/` | LocalSend v2 receiver: `app.py` (protocol routes, own TLS port), `discovery.py` (multicast), `identity.py` (cert/fingerprint), `client.py` (outgoing TLS), `runner.py` (lifespan); logic in `services/localsend.py`, admin API `api/localsend.py` |
-| `…/jobs/` | `queue.py` persistent in-process job queue (lanes, retries, coalescing); `gate.py` render concurrency |
-| `…/events.py` | Thread-safe SSE broker (`/api/v1/events`) |
-| `…/db/` | `models.py`, `session.py` (WAL), `migrate.py`, `migrations/versions/` |
-| `…/storage.py` | Data-dir layout (originals, cache, uploads) |
-| `…/service.py` | Generates this machine's systemd unit / launchd plist (`frame-it service`) |
-| `…/assets/geonames/` | Offline place dataset (built by `scripts/build_geonames.py`, CC BY 4.0) |
-| `backend/tests/` | `unit/`, `api/`, `golden/` (reference PNGs in `refs/`); fixtures & helpers in `conftest.py` (`make_jpeg`, `pair`, `upload_bytes`) |
-| `conformance/geometry/` | Shared JSON fixtures: Python domain ↔ `frontend/src/editor/core` (`render.json`: the two renderer constants the canvas mirrors) |
-| `scripts/` | `check_generated.py` (`make generated`), asset builders (`build_geonames`, `build_fonts`, `generate_textures`), benches (`bench_render`: time **and** peak RSS, `bench_library`), `seed_library.py`, spikes (`render_parity/`, `tv_probe.py --fake`) |
-| `frontend/src/api/` | `client.ts` (openapi-fetch + `ApiError`), `queries.ts` (TanStack Query hooks), `events.ts` (SSE), generated `schema.d.ts` |
-| `frontend/src/app/` | `router.tsx`, `AuthGate.tsx` (role routing), `Shell.tsx` (sidebar), `commands.ts` (shortcuts/palette registry), `theme.ts` |
-| `frontend/src/editor/core/` | PURE TS mirror of `domain/` (same module names, plus `bevel`); client-only `snapping`, `bounds`, `splits`, `document` (every optional field filled in). Relative imports with `.ts`: Node runs them in `frontend/scripts/conformance.ts` |
-| `frontend/src/editor/` | `EditorPage.tsx` (layout, shortcuts, review queue), `store.ts` (working document, undo/redo on Immer patches, autosave + conflicts), `operations.ts` (pure document mutations: how a change propagates; its rules pinned in `operations.test.ts`), `actions.ts` (what the UI calls), `TvPreview.tsx` |
-| `…/editor/canvas/` | `EditorStage.tsx` (Konva stage, one pointer pipeline for every gesture), `SlotNode.tsx`, `CaptionNode.tsx`, `SelectionOverlay.tsx`, `StraightenGuides.tsx`, `hit.ts` (rotation-aware hit tests), `texture.ts`, `fonts.ts`, `useOrientedImage.ts` |
-| `…/editor/panels/` | `SimplePanel` (the parametric editor) + `RecipePicker`, `SlotsPanel`, `PhotoPicker`, `ArrangePanel`, `CaptionsPanel`, `FramingPanel`, `StylePanel`, `AlternativesPanel`, `Loupe`, `QualityBadge`, `InfoSheet`; shared with the template editor: `ColorField`, `ShadowFields`, `Controls` (every slider has a typed twin) |
-| `frontend/src/features/` | One folder per page or flow: `display/`, `activity/`, `archive/`, `upload/` (queue engine `uploadStore.ts`), `photos/`, `inbox/`, `artworks/`, `templates/`, `library/` (filter AST + chip bar), `collections/`, `trash/` (`useTrashWithUndo`), `tags/` (`TagMenu`, `PlacesView`), `devices/`, `auth/`, `mobile/`, `settings/`, `localsend/`. The editor lives in `src/editor/`, not here |
-| `frontend/src/shared/` | UI primitives (`ui/`, incl. `Toaster.tsx`), `toast.ts` (the store, outside React), `problem.ts` (`problemMessage`), `format.ts`, `cn.ts`, `dnd.ts` (the MIME types our own drags carry) |
-| `frontend/src/i18n/` | i18next setup (Settings choice, else the browser's language); strings in `locales/en/common.json` and `locales/fr/common.json` |
-| `.github/workflows/check.yml` | CI: `make check` on pushes to master and pull requests (uv and pnpm pinned like Docker) |
-| `docs/` | Plan, specs, ADRs (`adr/`), research findings (`research/`), progress |
+| `backend/src/frame_it/` | `app.py` (factory, lifespan), `config.py` (env `FRAME_IT_*` > `<data_dir>/config.toml` > defaults), `context.py` (`AppContext`), `events.py` (SSE broker), `storage.py` (data-dir layout) |
+| `…/api/` | Thin routers, one per area; `schemas.py` (Pydantic API models = the OpenAPI source); `deps.py` (auth) |
+| `…/services/` | Use cases and transactions, one module per area — each docstring says what it owns |
+| `…/domain/` | PURE: the document, geometry, quality, constraints (editor solver), composition, templates, filters, archive |
+| `…/imaging/` | `decode` (the only pixel access), `sniff` (magic bytes), `metadata`, `render` (the renderer) |
+| `…/tv/` · `…/localsend/` · `…/jobs/` · `…/db/` · `…/auth/` | TV client, discovery, `FakeTv` · LocalSend receiver · job queue · models + migrations · principal, middleware |
+| `backend/tests/` | `unit/`, `api/`, `golden/`; helpers in `conftest.py` (`make_jpeg`, `pair`, `upload_bytes`) |
+| `conformance/geometry/` | Shared JSON fixtures: Python `domain/` ↔ `frontend/src/editor/core` |
+| `frontend/src/api/` | `client.ts`, `queries.ts` (TanStack Query hooks), `events.ts` (SSE), generated `schema.d.ts` |
+| `frontend/src/app/` | `router.tsx`, `AuthGate.tsx`, `Shell.tsx`, `commands.ts` (shortcuts registry) |
+| `frontend/src/editor/` | `core/` (PURE TS mirror of `domain/`), `store.ts`, `operations.ts` (how a change propagates), `actions.ts`, `canvas/`, `panels/` |
+| `frontend/src/features/` · `shared/` · `i18n/` | One folder per page or flow · UI primitives, `toast.ts`, `format.ts` · `locales/{en,fr}/common.json` |
+| `scripts/` · `docs/` | Asset builders, benches, seeding · specs, ADRs, research, progress |
+
+One line per module: [`docs/codebase.md` §Repo map](docs/codebase.md#repo-map).
 
 ## Architecture essentials
 
 - Layers: `api` (HTTP only) → `services` (transactions, rules) → `domain` (pure) / `imaging` / `db`. Jobs call services.
-- Artwork flow: `POST /artworks` (photos + style + a layout or a composition → `build_composition_document`) or `PUT /artworks/{id}/document`
-  (`If-Match: <document_version>`) → validate (structure + references) → derived columns + `artwork_photos` →
-  commit → coalesced `render` job → `cache/renders/<id>/<render_hash>.png` → SSE `artwork.rendered`. Render
-  endpoints render on demand; URLs carry `?v=<render_hash>` for immutable caching.
 - `db.session()` is a transactional context manager (commit/rollback). Routers get a request-scoped session via
   `DbSession`; long work runs in jobs or `run_in_threadpool`.
-- LocalSend flow (`docs/localsend.md`): multicast discovery → `prepare-upload` (unknown device → admin approval
-  via SSE `localsend.request`) → `upload` streamed → `UploadSession(state=processing)` → same `ingest` job.
-  Already-sent files are not transferred again (no token; when nothing is new, the smallest one is transferred
-  and dropped so the app still shows a transfer), and the web tray (`localsend.*` events) tells what happened.
-- Ingest flow: `POST /uploads` → `PATCH` chunks (`Upload-Offset`) → SHA-256 verified → `ingest` job → photo in
-  inbox → SSE `photo.ingested` (or `photo.ingest_failed` with a problem code).
-- Export/import flow (`docs/archive-format.md`): `POST /exports` → job → `exports/<job_id>/<name>.tfarchive`
-  → `GET /exports/{job_id}/download`; `POST /imports` + `PATCH` chunks → staging job (validate, then classify
-  every row against the library) → `GET /imports/{id}/report` → `POST /imports/{id}/apply`, which writes
-  everything in one transaction through the id maps. Both staging areas are swept by `archive.sweep`.
-- Frontend: server state only in TanStack Query; SSE events invalidate their keys, and a `resync` (the
-  broker dropped what a slow client could not take) or a reconnection refetches everything; upload queue is a
-  Zustand store outside React (hash → open/resume → chunks with retry → wait for SSE, polling fallback).
-- Compositions (Phase 7, `docs/simple-editor.md`): an optional `composition` block holds a recipe id
-  plus parameters (balance, outer, gutter, format, border, caption). `domain/composition.solve` turns it
-  into cells — **footprints** (photo rect + border) so `gutter`/`outer` describe what the eye sees, then
-  deflated by the border into the slot rects. The block is the source of truth while `detached = false`:
-  `services/artworks.validated()` parses, checks references, then **re-solves** (`composition.apply`),
-  so no client can persist a rect the composition does not imply. `POST /artworks` is always
-  parametric: a `layout_id` supplies a saved recipe + parameters (recorded as the origin layout),
-  otherwise the catalogue and the Settings defaults do.
-- Editor selection: `selectedSlotIds` (Shift/Ctrl-click adds; the **last** id is the *primary* one the
-  property panels edit) and `selectedCaptionId` are exclusive. Nothing selected is a normal state
-  with several photos (the mat, `Escape`): panels must cope with no primary slot. Framing and cropping act on the primary slot,
-  locks/decorations on every selected slot, arranging on the selection (`editor/operations.ts`).
-- Editor flow: `EditorPage` loads the artwork + its photos' sizes → `openArtwork` puts the working document in
-  the Zustand store (outside React) → a control calls `editor/actions` → `editor/operations` mutates an Immer
-  draft → `store.edit()` records patches (undo/redo, grouped per gesture) and debounces a `PUT document` with
-  `If-Match`. Only `operations.ts` knows how a change propagates (margins re-place the slot, a crop edit under
-  `native` pushes into the margins…), so the rules stay testable and replayable.
+- Frontend: server state only in TanStack Query; SSE events invalidate their keys, and a `resync` or a
+  reconnection refetches everything. Client state lives in Zustand stores outside React (upload queue, editor).
+- Editor: a control calls `editor/actions` → `editor/operations` mutates an Immer draft → `store.edit()` records
+  patches (undo/redo) and debounces a `PUT document` with `If-Match`. Only `operations.ts` knows how a change
+  propagates.
+- The flows end to end — artwork save → render, ingest, LocalSend, export/import, compositions, editor
+  selection: [`docs/codebase.md` §Flows](docs/codebase.md#flows).
 
 ## Invariants (never break)
 
@@ -221,42 +131,24 @@ target is a TV the app pushes to (`docs/tv-display.md`).
 `docs/user-guide.md` (phase 11: install, pairing, tiers, troubleshooting, settings) ·
 `docs/tv-display.md` (Phase 12: the TV, what it allows, and how a push works) ·
 `docs/schemas/` (generated) · `docs/adr/` · `docs/research/` · `NOTICE.md` (third-party notices) ·
-`docs/gotchas.md` (the subsystem-specific ones) · `CONTRIBUTING.md` · `LICENSE` (MIT)
+`docs/gotchas.md` (the subsystem-specific ones) · `docs/codebase.md` (areas, full repo map, flows, more commands) · `CONTRIBUTING.md` · `LICENSE` (MIT)
 
 ## Gotchas
 
 **The subsystem-specific ones live in [`docs/gotchas.md`](docs/gotchas.md) — read the section for
-whatever you are touching before you touch it.** These few bite whatever you are working on:
+whatever you are touching before you touch it.** These bite whatever you are working on:
 
-- Geometry change ⇒ change Python **and** TS, add a case to `CASES` in `tests/unit/test_conformance.py`,
-  regenerate fixtures, check the new expected values by hand.
-- The **same document** rendering to different pixels ⇒ bump `RENDERER_VERSION` (render hash) and
-  `make golden-update`; asset file changes ⇒ bump the manifest `version`. Golden sources are PNG.
-- A **new optional document field** ⇒ no bump, but list it in `_LATER_DEFAULTS` (`domain/document.py`)
-  or every artwork's render hash changes: caches dropped, the whole set re-uploaded to the TV.
-- Alembic autogenerate proposes dropping the FTS5 `search_index*` tables: delete those lines by hand.
-- **Editor performance is a correctness issue**: one React render + canvas redraw per mouse event makes the tab
-  unresponsive for tens of seconds (the event queue outruns the renderer). Crop dragging, stage panning and the
-  loupe's pointer all batch into `requestAnimationFrame` in `EditorStage`; keep any new gesture that way.
-- **Verifying in a browser is expected but never blocking** (`docs/PLAN.md` §13.6): the Chrome-extension
-  harness cannot drive this app (the SSE stream keeps the page from ever going idle, so `executeScript`,
-  screenshots and `--dump-dom` time out). CDP works: headless `chromium --remote-debugging-port` +
-  `Runtime.evaluate` against the production build on trusted localhost. Read results back through the
-  **API**, not off the screen — a Konva canvas can capture black although its pixels are correct.
-  Chromium dying on `GLIBC_2.43 not found` is the shell's `LD_LIBRARY_PATH` (an alsa-lib), not the
-  browser: `env -u LD_LIBRARY_PATH chromium …`. Close each CDP tab when done: every open tab holds an
-  SSE stream, and past six per host the next requests hang. No harness ⇒ verify what you can and
-  write in `docs/progress.md` what was not driven in a browser.
-- `editor/operations.ts` and `editor/core/` import each other with **relative `.ts` paths**: Node runs them
-  as they are (`pnpm test`, `pnpm conformance`) and cannot resolve the `@/` alias. A type-only import may use it.
-- `make format` runs prettier over the whole frontend, but `make lint` only runs ESLint: a lot of editor
-  files have never been prettier-formatted, so `make format` rewrites ~20 files you did not touch. Format
+- A change that implies another: geometry ⇒ Python **and** TS, a case in `CASES`
+  (`tests/unit/test_conformance.py`), regenerated fixtures checked by hand · the same document rendering
+  to different pixels ⇒ bump `RENDERER_VERSION` + `make golden-update` (asset files ⇒ the manifest
+  `version`) · a new optional document field ⇒ `_LATER_DEFAULTS` (`domain/document.py`), or every render
+  hash moves and the whole set is re-uploaded to the TV.
+- **Verify in a browser when you can, never blocking** (`docs/PLAN.md` §13.6): the Chrome extension
+  cannot drive this app; headless Chromium over CDP against the production build can. Read results back
+  through the API. How, and what bites: `docs/gotchas.md` §Driving the app in a browser.
+- `make format` runs prettier over the whole frontend and rewrites ~20 files you did not touch: format
   your own files, then `git checkout --` the rest.
-- `make check` lints `scripts/` but never runs them (no tests, no mypy), so a broken script goes unnoticed:
-  run a script you changed.
 - Dev over the Vite proxy is **not** trusted as localhost (`xfwd` adds `X-Forwarded-For`, invariant 5): the
   first load asks for the setup code printed in the server log. Point Vite at another backend with
   `FRAME_IT_BACKEND=http://127.0.0.1:<port>`.
 - `pkill -f "frame-it serve"` also matches your own shell command line: use `pkill -f "[f]rame-it serve"`.
-- TypeScript stays on major 6 (`frontend/package.json`): typescript-eslint requires `<6.1` (still so in
-  8.73, checked 2026-11-17). `@types/node` stays on 22, the oldest Node the project supports.

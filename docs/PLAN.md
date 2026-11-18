@@ -106,7 +106,7 @@ agent produce relevant changes **without re-exploring the whole codebase**, savi
 |---|---|
 | Purpose & status | 3 lines of purpose; **current phase**, what is done, what is next (link to plan section). |
 | Quick commands | install, dev (both servers), test, lint, typecheck, regenerate API types, build, docker, conformance check. |
-| Repo map | One line per important directory/module: responsibility. |
+| Repo map | One line per important directory; one per module in `docs/codebase.md`. |
 | Architecture essentials | Layers and dependency rules (e.g. `domain/` is pure, no IO). |
 | Invariants | Must-never-break rules (see §4.4) — short list. |
 | Glossary | Link to §2 (or its extracted doc) + any new term. |
@@ -143,8 +143,9 @@ agent produce relevant changes **without re-exploring the whole codebase**, savi
 
 ### 4.2 Repository layout
 
-The map of the repository, one line per module, is [`AGENTS.md` (*Repo map*)](../AGENTS.md#repo-map):
-it is kept up to date with the code (§3), which a tree drawn here before Phase 1 could not be.
+The map of the repository, one line per module, is [`docs/codebase.md` (*Repo map*)](codebase.md#repo-map)
+(one line per directory in `AGENTS.md`): it is kept up to date with the code (§3), which a tree drawn
+here before Phase 1 could not be.
 
 ### 4.3 Key libraries
 
@@ -702,7 +703,7 @@ API from day one.
 4. User-facing strings in i18n files; keyboard shortcut + palette command for new actions.
 5. UI changes driven in a browser **when a harness is available** (§13.6 — soft, never blocking); when none is,
    what was not driven is written down in `docs/progress.md` instead of being assumed to work.
-6. **`AGENTS.md` updated** (commands, repo map, invariants, gotchas, phase status) when anything it describes changed.
+6. **`AGENTS.md` (or the doc it links) updated** (commands, repo map, invariants, gotchas, phase status) when anything it describes changed.
 7. No TODO without an issue/plan reference.
 
 ---

@@ -17,6 +17,11 @@ These bite whatever you are working on.
   on ids/shortcuts and calls the latest `run` via a ref — keep it that way.
 - Two libraries in a test are two apps over **two data dirs** (`app_factory(data_dir=…)`), or you
   are importing an archive into the library that wrote it.
+- `make check` lints `scripts/` but never runs them (no tests, no mypy), so a broken script goes unnoticed:
+  run a script you changed.
+- TypeScript stays on major 6 (`frontend/package.json`): typescript-eslint requires `<6.1` (still so in
+  8.73, checked 2026-11-17). `@types/node` stays on 22, the oldest Node the project supports.
+- NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint RUFF=ruff` with a Nix ruff.
 
 ## Uploads, phones & LocalSend
 
@@ -50,7 +55,7 @@ These bite whatever you are working on.
   made from one as outdated.
 - **`RENDERER_VERSION` is for "the same document now renders differently"**, not for a new field:
   prove it by regenerating the goldens (`make golden-update`) and checking `git status` shows the
-  old references untouched.
+  old references untouched. Golden sources are PNG.
 - A bevel's shades live twice, like the texture formula: `BEVEL_SHADES`/`shade` in
   `imaging/render.py` and `editor/core/bevel.ts`, pinned by `conformance/geometry/render.json`.
   The frame's shadow is the inner shadow of the whole canvas, on the server and on the canvas
@@ -107,6 +112,11 @@ These bite whatever you are working on.
 - A `<select>` left transparent gets a native popup Chrome paints from the *control's* colours —
   light popup, near-white options, visible only on hover. `styles.css` sets `select`/`option`
   colours at element level as the floor; utilities on a specific select still win.
+- **Editor performance is a correctness issue**: one React render + canvas redraw per mouse event makes the tab
+  unresponsive for tens of seconds (the event queue outruns the renderer). Crop dragging, stage panning and the
+  loupe's pointer all batch into `requestAnimationFrame` in `EditorStage`; keep any new gesture that way.
+- `editor/operations.ts` and `editor/core/` import each other with **relative `.ts` paths**: Node runs them
+  as they are (`pnpm test`, `pnpm conformance`) and cannot resolve the `@/` alias. A type-only import may use it.
 
 ## Geometry, crops & quality
 
@@ -234,6 +244,7 @@ These bite whatever you are working on.
   derived and read-only: `smart_collection_ids` is reported apart from `collection_ids`.
 - Every grid of artworks takes its keyboard from **`useArtworkGridCommands`** so the three pages
   cannot drift; a page adds a key by passing a handler (the collection page's `Backspace`).
+- Alembic autogenerate proposes dropping the FTS5 `search_index*` tables: delete those lines by hand.
 
 ## Archive: export & import (phase 10)
 
@@ -327,6 +338,15 @@ These bite whatever you are working on.
   openapi-fetch binds `globalThis.fetch` at `createClient` time, so patching `window.fetch` later
   intercepts nothing (read results back through the API); and dispatch a synthetic key **once**, on
   the focused element — dispatching on `body` *and* `window` makes tinykeys see every key twice.
+- **Verifying in a browser is expected but never blocking** (`docs/PLAN.md` §13.6): the Chrome-extension
+  harness cannot drive this app (the SSE stream keeps the page from ever going idle, so `executeScript`,
+  screenshots and `--dump-dom` time out). CDP works: headless `chromium --remote-debugging-port` +
+  `Runtime.evaluate` against the production build on trusted localhost. Read results back through the
+  **API**, not off the screen — a Konva canvas can capture black although its pixels are correct.
+  Chromium dying on `GLIBC_2.43 not found` is the shell's `LD_LIBRARY_PATH` (an alsa-lib), not the
+  browser: `env -u LD_LIBRARY_PATH chromium …`. Close each CDP tab when done: every open tab holds an
+  SSE stream, and past six per host the next requests hang. No harness ⇒ verify what you can and
+  write in `docs/progress.md` what was not driven in a browser.
 
 ## Documents & serialization
 
