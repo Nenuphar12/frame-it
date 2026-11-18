@@ -77,8 +77,13 @@ written to the TV.
 | Content | 64 in My Photos, 66 in `MY-C0008` | My Photos = exactly the 42 items the app recorded as its own; `MY-C0008` holds 28, 26 of them the same ids. Same pattern as on Tizen 9 (66 for 64): `MY-C0008` is not the store but a second list of the user's photos, and the app never touches it |
 | Slideshow | — | kept across the update: every 3 min, shuffled |
 
-**Not re-checked on Tizen 10**, because they write to the TV: upload, select, delete, stopping and
-starting the slideshow — a push.
+**Writes, re-checked the same day** (with the user's go-ahead): `tv_probe.py --make-chart
+--upload … --file-type both --select-uploaded` uploaded the chart as PNG (5.3 s) and JPEG (4.0 s),
+listed both, showed one (`is_shown: Yes`) and deleted both — 21 of 23 requests, the two that never
+answer as before. Then `frame-it tv push` re-pushed the current set from the real library: 42
+reused, 0 uploaded, 0 deleted, the slideshow back to every 3 min, shuffled, in 5.8 s. A push that
+uploads through the app was not exercised (nothing had changed), but the upload call it makes is
+the one the probe just ran.
 
 **The date badge.** Since the update, art mode shows a date in a bottom corner for about two
 seconds at every slideshow transition. Samsung's forum has the same report (The Frame
@@ -87,7 +92,9 @@ Mode"): nothing in the Slideshow or Display options, no answer from Samsung. The
 nothing either — `get_artmode_settings` lists the same five items as before. The badge most
 likely shows each item's `image_date`, and this app writes a technical one: the push time plus
 one minute per position (`docs/tv-display.md` §4.2) — the day of the push, not of the photo.
-Untested leads, each needing someone to watch the TV through a transition:
+Leads, each needing someone to watch the TV through a transition — `scripts/tv_date_test.py`
+tests the first two at once (three labelled images: `1999:12:31`, blank, and a later date
+uploaded first, then an ordered slideshow; `cleanup` deletes exactly those):
 
 1. a blank `image_date` — the badge may disappear, or the TV may refuse the upload, or date it now;
 2. the photo's own capture date — the badge would at least be true; whether the TV orders the

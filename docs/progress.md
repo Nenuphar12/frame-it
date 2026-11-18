@@ -28,10 +28,12 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
   now leaves `name` and `modelName` empty, so the scan listed `? — ?`. Discovery and `tv status`
   take them from the TV's UPnP description instead (`fetch_description`, `with_description`;
   `test_a_tizen_10_answer_takes_its_name_and_model_from_the_description`) — re-run against the TV:
-  `55" The Frame — TQ55LS03FAUXXC`. Not re-checked, because it writes to the TV: a push. The new
-  date badge on slideshow transitions cannot be switched off through the art API (the same five
-  settings as before), nor, by Samsung's forum, on the TV; leads in `docs/research/tv-display.md`
-  §2c.
+  `55" The Frame — TQ55LS03FAUXXC`. Then, with the user's go-ahead, the writes: the probe
+  uploaded a chart as PNG and JPEG, showed it and deleted it; `frame-it tv push` re-pushed the
+  current set (42 reused, slideshow restored). The new date badge on slideshow transitions cannot
+  be switched off through the art API (the same five settings as before), nor, by Samsung's
+  forum, on the TV; `scripts/tv_date_test.py` tests what it shows (leads in
+  `docs/research/tv-display.md` §2c) — run, not yet: it needs someone watching the TV.
 - **A tag's photo count opens its photos** (Tags tab), as its artwork count opens its artworks:
   `/photos?tag=<id>`. The Photos page's tag filter moved from component state into the URL, like
   the period and the place — the select writes it, a reload keeps it. Driven in a browser:
