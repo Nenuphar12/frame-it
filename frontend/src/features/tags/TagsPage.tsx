@@ -39,6 +39,56 @@ const COLORS = ["#ef4444", "#f59e0b", "#22c55e", "#3b82f6", "#a855f7", "#64748b"
 /** The `<select>` value meaning "no category". */
 const OTHER = "";
 
+/**
+ * One set of column widths for every category: each is its own table, and an automatic layout
+ * sized each one to its own names, so nothing lined up down the page. The name takes the rest.
+ * The category headers and the labels row use the same widths, so they line up too.
+ */
+const COL = {
+  select: "w-7",
+  color: "w-32",
+  category: "w-44",
+  photos: "w-20",
+  artworks: "w-24",
+  actions: "w-20",
+} as const;
+
+function TagColumns() {
+  return (
+    <colgroup>
+      <col className={COL.select} />
+      <col />
+      <col className={COL.color} />
+      <col className={COL.category} />
+      <col className={COL.photos} />
+      <col className={COL.artworks} />
+      <col className={COL.actions} />
+    </colgroup>
+  );
+}
+
+/**
+ * The column labels, once above every category (each table also has its own, for readers).
+ * It covers the list's top padding (`-mt-4`, `-top-4`): stuck at `top-0`, rows showed above it.
+ */
+function ColumnLabels() {
+  const { t } = useTranslation();
+  return (
+    <div
+      aria-hidden
+      className="sticky -top-4 z-10 -mx-5 -mt-4 flex items-center border-b border-border bg-bg px-5 pt-5.5 pb-1.5 text-[11px] text-muted uppercase"
+    >
+      <span className={cn(COL.select, "shrink-0")} />
+      <span className="min-w-0 flex-1 px-1">{t("tags.name")}</span>
+      <span className={cn(COL.color, "shrink-0")}>{t("tags.color")}</span>
+      <span className={cn(COL.category, "shrink-0")}>{t("tags.category")}</span>
+      <span className={cn(COL.photos, "shrink-0 pr-3 text-right")}>{t("nav.photos")}</span>
+      <span className={cn(COL.artworks, "shrink-0 pr-3 text-right")}>{t("nav.artworks")}</span>
+      <span className={cn(COL.actions, "shrink-0")} />
+    </div>
+  );
+}
+
 type Tab = "tags" | "places" | "timeline";
 
 const TABS: { value: Tab; label: string; subtitle?: string; Icon: typeof MapPin }[] = [
@@ -253,38 +303,41 @@ export function TagsPage() {
                 description={t("tags.emptyDescription")}
               />
             ) : (
-              sections.map(({ category, tags: inSection }) => (
-                <CategorySection
-                  key={category?.id ?? "other"}
-                  category={category}
-                  tags={inSection}
-                  hideWhenEmpty={query.trim().length > 0}
-                  categories={categories}
-                  selectedIds={selectedIds}
-                  colorOf={colorOf}
-                  onToggle={toggle}
-                  onToggleAll={(ids, on) =>
-                    setSelectedIds((current) => {
-                      const next = new Set(current);
-                      ids.forEach((id) => (on ? next.add(id) : next.delete(id)));
-                      return next;
-                    })
-                  }
-                  onRenameCategory={(id, name) => categoryActions.update.mutate({ id, name })}
-                  onRecolorCategory={(id, color) => categoryActions.update.mutate({ id, color })}
-                  onDeleteCategory={setConfirmCategory}
-                  onRename={(id, name) => update.mutateAsync({ id, name }).catch(() => undefined)}
-                  onRecolor={(id, color) => update.mutate({ id, color })}
-                  onMove={(id, value) =>
-                    update.mutate({ id, category_id: value === OTHER ? null : value })
-                  }
-                  onMerge={(tag) => {
-                    setMerging(tag);
-                    setMergeTarget("");
-                  }}
-                  onDelete={setConfirmDelete}
-                />
-              ))
+              <>
+                <ColumnLabels />
+                {sections.map(({ category, tags: inSection }) => (
+                  <CategorySection
+                    key={category?.id ?? "other"}
+                    category={category}
+                    tags={inSection}
+                    hideWhenEmpty={query.trim().length > 0}
+                    categories={categories}
+                    selectedIds={selectedIds}
+                    colorOf={colorOf}
+                    onToggle={toggle}
+                    onToggleAll={(ids, on) =>
+                      setSelectedIds((current) => {
+                        const next = new Set(current);
+                        ids.forEach((id) => (on ? next.add(id) : next.delete(id)));
+                        return next;
+                      })
+                    }
+                    onRenameCategory={(id, name) => categoryActions.update.mutate({ id, name })}
+                    onRecolorCategory={(id, color) => categoryActions.update.mutate({ id, color })}
+                    onDeleteCategory={setConfirmCategory}
+                    onRename={(id, name) => update.mutateAsync({ id, name }).catch(() => undefined)}
+                    onRecolor={(id, color) => update.mutate({ id, color })}
+                    onMove={(id, value) =>
+                      update.mutate({ id, category_id: value === OTHER ? null : value })
+                    }
+                    onMerge={(tag) => {
+                      setMerging(tag);
+                      setMergeTarget("");
+                    }}
+                    onDelete={setConfirmDelete}
+                  />
+                ))}
+              </>
             )}
             <form
               className="flex items-center gap-1.5"
@@ -508,51 +561,60 @@ function CategorySection({
 
   return (
     <section aria-label={title}>
-      <header className="mb-1 flex flex-wrap items-center gap-2 border-b border-border pb-1">
-        <input
-          type="checkbox"
-          checked={allOn}
-          disabled={ids.length === 0}
-          onChange={(event) => onToggleAll(ids, event.target.checked)}
-          aria-label={t("tags.selectCategory", { name: title })}
-        />
-        <TagDot color={category?.color ?? null} className="size-2.5" />
-        {category && renaming ? (
+      <header className="mb-1 flex items-center border-b border-border pb-1">
+        <span className={cn(COL.select, "flex shrink-0")}>
           <input
-            autoFocus
-            value={draft}
-            maxLength={64}
-            onChange={(event) => setDraft(event.target.value)}
-            onBlur={commitCategory}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") commitCategory();
-              if (event.key === "Escape") setRenaming(false);
-            }}
-            aria-label={t("tags.renameCategory")}
-            className="h-7 w-40 rounded border border-border bg-bg px-1.5 text-sm font-semibold outline-none"
+            type="checkbox"
+            checked={allOn}
+            disabled={ids.length === 0}
+            onChange={(event) => onToggleAll(ids, event.target.checked)}
+            aria-label={t("tags.selectCategory", { name: title })}
           />
-        ) : category ? (
-          <button
-            type="button"
-            onClick={() => {
-              setDraft(category.name);
-              setRenaming(true);
-            }}
-            title={t("tags.renameCategory")}
-            className="rounded px-1 text-sm font-semibold hover:bg-panel-2"
-          >
-            {category.name}
-          </button>
-        ) : (
-          <h2 className="px-1 text-sm font-semibold" title={t("tags.otherHint")}>
-            {title}
-          </h2>
-        )}
-        <span className="text-xs text-muted">{t("tags.count", { count: tags.length })}</span>
-        <span className="flex-1" />
+        </span>
+        <div className="flex min-w-0 flex-1 items-center gap-2 pr-3">
+          <TagDot color={category?.color ?? null} className="size-2.5" />
+          {!category?.color && <span aria-hidden className="size-2.5 shrink-0" />}
+          {category && renaming ? (
+            <input
+              autoFocus
+              value={draft}
+              maxLength={64}
+              onChange={(event) => setDraft(event.target.value)}
+              onBlur={commitCategory}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") commitCategory();
+                if (event.key === "Escape") setRenaming(false);
+              }}
+              aria-label={t("tags.renameCategory")}
+              className="h-7 w-40 rounded border border-border bg-bg px-1.5 text-sm font-semibold outline-none"
+            />
+          ) : category ? (
+            <button
+              type="button"
+              onClick={() => {
+                setDraft(category.name);
+                setRenaming(true);
+              }}
+              title={t("tags.renameCategory")}
+              className="rounded px-1 text-sm font-semibold hover:bg-panel-2"
+            >
+              {category.name}
+            </button>
+          ) : (
+            <h2 className="px-1 text-sm font-semibold" title={t("tags.otherHint")}>
+              {title}
+            </h2>
+          )}
+          <span className="shrink-0 text-xs text-muted">
+            {t("tags.count", { count: tags.length })}
+          </span>
+        </div>
         {category && (
           <>
-            <div className="flex items-center gap-1" aria-label={t("tags.categoryColor")}>
+            <div
+              className={cn(COL.color, "flex shrink-0 items-center gap-1 pr-3")}
+              aria-label={t("tags.categoryColor")}
+            >
               {COLORS.map((color) => (
                 <button
                   key={color}
@@ -569,22 +631,30 @@ function CategorySection({
                 />
               ))}
             </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              title={t("tags.deleteCategory")}
-              aria-label={t("tags.deleteCategory")}
-              onClick={() => onDeleteCategory(category)}
-            >
-              <Trash2 size={13} />
-            </Button>
+            {/* The columns the header leaves empty, so its colours and its delete sit above
+                the rows' own. */}
+            <span className={cn(COL.category, "shrink-0")} />
+            <span className={cn(COL.photos, "shrink-0")} />
+            <span className={cn(COL.artworks, "shrink-0")} />
+            <div className={cn(COL.actions, "flex shrink-0 justify-end")}>
+              <Button
+                size="sm"
+                variant="ghost"
+                title={t("tags.deleteCategory")}
+                aria-label={t("tags.deleteCategory")}
+                onClick={() => onDeleteCategory(category)}
+              >
+                <Trash2 size={13} />
+              </Button>
+            </div>
           </>
         )}
       </header>
       {tags.length === 0 ? (
         <p className="px-1 py-1.5 text-xs text-muted">{t("tags.emptyCategory")}</p>
       ) : (
-        <table className="w-full text-sm">
+        <table className="w-full table-fixed text-sm">
+          <TagColumns />
           <thead className="sr-only">
             <tr>
               <th>{t("tags.select")}</th>
@@ -601,7 +671,7 @@ function CategorySection({
               const inherited = (tag.artwork_count ?? 0) - (tag.own_artwork_count ?? 0);
               return (
                 <tr key={tag.id} className="border-t border-border/60">
-                  <td className="w-6 py-1">
+                  <td className="py-1">
                     <input
                       type="checkbox"
                       checked={selectedIds.has(tag.id)}
@@ -621,7 +691,7 @@ function CategorySection({
                           if (event.key === "Enter") void commitTag(tag);
                           if (event.key === "Escape") setEditingId(null);
                         }}
-                        className="h-7 w-48 rounded border border-border bg-bg px-1.5 outline-none"
+                        className="h-7 w-full max-w-64 rounded border border-border bg-bg px-1.5 outline-none"
                       />
                     ) : (
                       <button
@@ -630,10 +700,13 @@ function CategorySection({
                           setEditingId(tag.id);
                           setDraftName(tag.name);
                         }}
-                        className="inline-flex items-center gap-1.5 rounded px-1 py-0.5 hover:bg-panel-2"
+                        title={tag.name}
+                        className="inline-flex max-w-full items-center gap-1.5 rounded px-1 py-0.5 hover:bg-panel-2"
                       >
+                        {/* No colour still takes the dot's room, or the name starts further left. */}
                         <TagDot color={colorOf(tag)} />
-                        {tag.name}
+                        {!colorOf(tag) && <span aria-hidden className="size-2 shrink-0" />}
+                        <span className="truncate">{tag.name}</span>
                       </button>
                     )}
                   </td>
@@ -660,7 +733,7 @@ function CategorySection({
                       value={tag.category_id ?? OTHER}
                       onChange={(event) => onMove(tag.id, event.target.value)}
                       aria-label={t("tags.categoryOf", { name: tag.name })}
-                      className="h-7 rounded border border-border bg-bg px-1 text-xs"
+                      className="h-7 w-full rounded border border-border bg-bg px-1 text-xs"
                     >
                       {categories.map((option) => (
                         <option key={option.id} value={option.id}>
@@ -670,11 +743,11 @@ function CategorySection({
                       <option value={OTHER}>{t("tags.other")}</option>
                     </select>
                   </td>
-                  <td className="py-1 text-right tabular-nums" title={t("nav.photos")}>
+                  <td className="py-1 pr-3 text-right tabular-nums" title={t("nav.photos")}>
                     {tag.photo_count}
                   </td>
                   <td
-                    className="py-1 text-right tabular-nums"
+                    className="py-1 pr-3 text-right tabular-nums"
                     title={t("tags.artworkCountHint", {
                       own: tag.own_artwork_count ?? 0,
                       inherited,

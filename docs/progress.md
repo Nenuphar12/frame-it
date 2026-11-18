@@ -3,7 +3,7 @@
 Newest first. Phases 0–12 and everything before the beta (2026-10-06):
 [`progress-before-beta.md`](progress-before-beta.md).
 
-## 2026-11-18 — Timeline, photos by place, removing a date
+## 2026-11-18 — Timeline, photos by place, removing a date, aligned tags
 
 - **A Timeline tab beside Places** (Tags page): year → month, the most recent first, with photo and
   artwork counts per level and the number of undated photos. Years fold open on their months (the
@@ -22,6 +22,13 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
   `taken_at` — `null` removes it, a value sets it back as written, left out it does not change
   (the other fields' `null` keeps meaning "unchanged"). The original keeps its EXIF.
   `test_a_photo_date_can_be_removed_and_set_back`; the Places test now follows every row's link.
+- **The Tags tab's columns line up.** Each category is its own table, and the automatic layout
+  sized each one to its own names: the colours, the category menu and the counts moved from one
+  category to the next (measured: the colour column started anywhere from x = 433 to 717). The
+  tables share one set of widths now (`COL`, `table-fixed`), the category headers put their
+  colours and delete button on the same columns, a name without a colour keeps the dot's room,
+  long names truncate, and one sticky row labels the columns (the two counts had no visible label).
+  Checked at 1400 and 1024 px wide: every column starts at the same x in all five categories.
 - **Driven in a browser** (headless Chromium over CDP, production build, a copy of `.dev-data`):
   the tab lists 2026 → 2008 with 17 undated photos; November 2026's links open 74 photos and 12
   artworks, the counts the row shows; the chip's × goes back to `/photos`. Places: France → 56
