@@ -8,7 +8,9 @@ Two searches run together and end in the same request:
   `scripts/tv_probe.py --scan` found the user's Frame with (`docs/research/tv-display.md` §2b).
 
 Either way the facts come from that REST answer: the name, the model, whether it is a Frame, and
-the Wi-Fi MAC, which is what recognises the TV again once DHCP has given it another address.
+the Wi-Fi MAC, which is what recognises the TV again once DHCP has given it another address. Since
+One UI Tizen 10 that answer leaves the name and the model empty; the TV's UPnP description fills
+them in (`with_description`).
 
 The /24 is the **LAN's**, not this process's: inside Docker the container's own address is on the
 bridge network, so `subnet_prefix` prefers an explicit setting, then the public URL's address.
@@ -25,11 +27,11 @@ import urllib.error
 import urllib.request
 from collections.abc import Callable, Iterable, Mapping
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 from urllib.parse import urlsplit
 
-from frame_it.tv.client import normalize_mac
+from frame_it.tv.client import fetch_description, normalize_mac
 
 log = logging.getLogger(__name__)
 
@@ -96,7 +98,26 @@ def parse_ssdp_response(data: bytes) -> str | None:
     return None
 
 
-def fetch_device(host: str, timeout: float = 0.8) -> DiscoveredTv | None:
+Describe = Callable[[str, float], tuple[str | None, str | None]]
+"""`(host, timeout)` → the TV's `(name, model)` from its UPnP description."""
+
+
+def with_description(
+    tv: DiscoveredTv | None, describe: Describe, timeout: float
+) -> DiscoveredTv | None:
+    """The REST answer, with the name and model it lacks taken from the UPnP description.
+
+    One UI Tizen 10 (art API 6.0.0.0) answers `name: ""` and `modelName: ""`; asked only then.
+    """
+    if tv is None or (tv.name and tv.model):
+        return tv
+    name, model = describe(tv.host, timeout)
+    return replace(tv, name=tv.name or name, model=tv.model or model)
+
+
+def fetch_device(
+    host: str, timeout: float = 0.8, *, describe: Describe = fetch_description
+) -> DiscoveredTv | None:
     """Ask one address for `/api/v2/`. Anything that is not a Samsung answer is None."""
     try:
         with urllib.request.urlopen(
@@ -107,7 +128,7 @@ def fetch_device(host: str, timeout: float = 0.8) -> DiscoveredTv | None:
         return None
     if not isinstance(payload, Mapping):
         return None
-    return parse_device(host, payload)
+    return with_description(parse_device(host, payload), describe, timeout)
 
 
 def ssdp_hosts(timeout: float = 2.0) -> set[str]:

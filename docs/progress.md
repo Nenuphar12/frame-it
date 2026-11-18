@@ -22,6 +22,16 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
   `taken_at` — `null` removes it, a value sets it back as written, left out it does not change
   (the other fields' `null` keeps meaning "unchanged"). The original keeps its EXIF.
   `test_a_photo_date_can_be_removed_and_set_back`; the Places test now follows every row's link.
+- **The TV updated itself to One UI Tizen 10: read-only checks.** The pairing survived, the art
+  API went 5.0.1.0 → 6.0.0.0 and answers the same 14 of 16 read requests, My Photos holds exactly
+  the 42 items the app recorded, the slideshow settings were kept. One regression: the REST answer
+  now leaves `name` and `modelName` empty, so the scan listed `? — ?`. Discovery and `tv status`
+  take them from the TV's UPnP description instead (`fetch_description`, `with_description`;
+  `test_a_tizen_10_answer_takes_its_name_and_model_from_the_description`) — re-run against the TV:
+  `55" The Frame — TQ55LS03FAUXXC`. Not re-checked, because it writes to the TV: a push. The new
+  date badge on slideshow transitions cannot be switched off through the art API (the same five
+  settings as before), nor, by Samsung's forum, on the TV; leads in `docs/research/tv-display.md`
+  §2c.
 - **A tag's photo count opens its photos** (Tags tab), as its artwork count opens its artworks:
   `/photos?tag=<id>`. The Photos page's tag filter moved from component state into the URL, like
   the period and the place — the select writes it, a reload keeps it. Driven in a browser:

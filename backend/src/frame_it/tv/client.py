@@ -1,7 +1,8 @@
 """The Frame's art channel, reduced to what this app needs.
 
-Everything here was measured against a 2025 Frame (`TQ55LS03FAUXXC`, art API 5.0.1.0) — see
-`docs/research/tv-display.md`. The three findings that shape this module:
+Everything here was measured against a 2025 Frame (`TQ55LS03FAUXXC`, art API 5.0.1.0, then
+6.0.0.0 under One UI Tizen 10 — reads re-checked 2026-11-18) — see `docs/research/tv-display.md`.
+The three findings that shape this module:
 
 - **Pairing happens on the remote-control channel**, not the art channel: the art channel needs a
   token but never raises the TV's "allow this device" dialog. The TV must be ON (not art mode) to
@@ -25,7 +26,9 @@ job history showed pushes failing within 0.1 s and the same push succeeding a mi
 
 from __future__ import annotations
 
+import html
 import logging
+import re
 import time
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
@@ -314,10 +317,15 @@ class SamsungTvClient:
         except Exception as exc:
             raise _art_error(exc) from exc
         value = str(status.get("value", "off"))
+        name = str(device.get("name") or "") or None
+        model = str(device.get("modelName") or "") or None
+        if name is None or model is None:  # One UI Tizen 10 leaves them out of the REST answer
+            described_name, described_model = fetch_description(self.host, timeout=3)
+            name, model = name or described_name, model or described_model
         return TvInfo(
-            model=str(device.get("modelName") or "") or None,
+            model=model,
             model_code=str(device.get("model") or "") or None,
-            name=str(device.get("name") or "") or None,
+            name=name,
             mac=normalize_mac(device.get("wifiMac")),
             api_version=api_version,
             frame_support=str(device.get("FrameTVSupport", "")).lower() == "true",
@@ -430,6 +438,42 @@ def pair_with_tv(host: str, timeout: float = 45.0) -> str:
     if not token:
         raise TvUnauthorizedError("the TV did not hand over a token — was the prompt accepted?")
     return token
+
+
+#: The UPnP description every Samsung TV serves (its media renderer): its own name and model.
+DESCRIPTION_PORT = 9197
+
+
+def parse_description(text: str) -> tuple[str | None, str | None]:
+    """`friendlyName` and `modelName` of a UPnP device description.
+
+    Read with a pattern, not an XML parser: it is a LAN answer, and two fields is all we want.
+    """
+
+    def field(tag: str) -> str | None:
+        found = re.search(rf"<{tag}>([^<]*)</{tag}>", text)
+        return (html.unescape(found.group(1)).strip() or None) if found else None
+
+    return field("friendlyName"), field("modelName")
+
+
+def fetch_description(host: str, timeout: float = 0.8) -> tuple[str | None, str | None]:
+    """The TV's name and model from its UPnP description, `(None, None)` if it does not answer.
+
+    Since One UI Tizen 10 (art API 6.0.0.0, measured 2026-11-18) the REST answer leaves `name` and
+    `modelName` empty; this description still carries both (`docs/research/tv-display.md` §2c).
+    """
+    import urllib.error
+    import urllib.request
+
+    try:
+        with urllib.request.urlopen(
+            f"http://{host}:{DESCRIPTION_PORT}/dmr", timeout=timeout
+        ) as response:
+            text = response.read(65536).decode("utf-8", errors="replace")
+    except urllib.error.URLError, OSError, ValueError:
+        return None, None
+    return parse_description(text)
 
 
 def normalize_mac(value: Any) -> str | None:

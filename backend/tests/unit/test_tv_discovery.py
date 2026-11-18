@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from frame_it.tv import normalize_mac
+from frame_it.tv.client import parse_description
 from frame_it.tv.discovery import (
     DiscoveredTv,
     discover,
@@ -11,6 +12,7 @@ from frame_it.tv.discovery import (
     parse_device,
     parse_ssdp_response,
     subnet_prefix,
+    with_description,
 )
 
 #: The REST answer of the user's Frame, as `tv_probe.py --scan` printed it (2026-09-25).
@@ -42,6 +44,57 @@ def test_parse_device_reads_a_frame() -> None:
         mac="04:cb:88:1a:2b:3c",
         power_state="standby",
     )
+
+
+#: The same TV after One UI Tizen 10 (2026-11-18): the REST answer lost its name and model.
+TIZEN_10_PAYLOAD = {
+    "device": {
+        **FRAME_PAYLOAD["device"],  # type: ignore[dict-item]
+        "model": "25_PTM_FTV_T10",
+        "modelName": "",
+        "name": "",
+    },
+    "type": "Samsung SmartTV",
+}
+
+#: Its UPnP description (`http://<tv>:9197/dmr`) still has both, as captured that day.
+TIZEN_10_DESCRIPTION = """<?xml version="1.0"?>
+<root xmlns="urn:schemas-upnp-org:device-1-0" xmlns:dlna="urn:schemas-dlna-org:device-1-0">
+<device><deviceType>urn:schemas-upnp-org:device:MediaRenderer:1</deviceType>
+<friendlyName>55&quot; The Frame</friendlyName><manufacturer>Samsung Electronics</manufacturer>
+<modelDescription>Samsung TV DMR</modelDescription><modelName>TQ55LS03FAUXXC</modelName>
+<modelNumber>AllShare1.0</modelNumber></device></root>"""
+
+
+def test_parse_description_reads_the_name_and_model() -> None:
+    assert parse_description(TIZEN_10_DESCRIPTION) == ('55" The Frame', "TQ55LS03FAUXXC")
+    assert parse_description("<root><friendlyName> </friendlyName></root>") == (None, None)
+    assert parse_description("not xml at all") == (None, None)
+
+
+def test_a_tizen_10_answer_takes_its_name_and_model_from_the_description() -> None:
+    asked: list[str] = []
+
+    def describe(host: str, timeout: float) -> tuple[str | None, str | None]:
+        asked.append(host)
+        return parse_description(TIZEN_10_DESCRIPTION)
+
+    tv = with_description(parse_device("192.168.1.71", TIZEN_10_PAYLOAD), describe, 0.8)
+    assert tv is not None
+    assert (tv.name, tv.model, tv.model_code) == (
+        '55" The Frame',
+        "TQ55LS03FAUXXC",
+        "25_PTM_FTV_T10",
+    )
+    # a complete REST answer (Tizen 9) is not asked twice; a TV that is silent there keeps None
+    assert with_description(parse_device("192.168.1.71", FRAME_PAYLOAD), describe, 0.8) == (
+        parse_device("192.168.1.71", FRAME_PAYLOAD)
+    )
+    assert asked == ["192.168.1.71"]
+    silent = with_description(
+        parse_device("192.168.1.72", TIZEN_10_PAYLOAD), lambda h, t: (None, None), 0.8
+    )
+    assert silent is not None and (silent.name, silent.model) == (None, None)
 
 
 def test_parse_device_ignores_what_is_not_a_samsung_tv() -> None:

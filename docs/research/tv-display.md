@@ -60,6 +60,40 @@ First real run of `scripts/tv_probe.py` against the TV (`192.168.1.71`), reports
 | `get_slideshow_status` | ✅ answers; empty `category_id`/`content_list` = no slideshow running |
 | `get_auto_rotation_status` | ❌ **never answers** (the pre-2022 API; 5.x replaced it with `slideshow_status`). The probe now bounds every request and carries on |
 
+### 2c. Re-measured after the update to One UI Tizen 10 — 2026-11-18
+
+The TV updated itself from One UI Tizen 9 to 10. Read-only checks only — the default
+`tv_probe.py` run, `frame-it tv scan` and `tv status` on a copy of the library; nothing was
+written to the TV.
+
+| What | Tizen 9 (2026-09-25) | Tizen 10 (2026-11-18) |
+|---|---|---|
+| REST `/api/v2/` | `name`, `modelName` filled; `model` `25_PTM_FTV` | **`name` and `modelName` empty**, `model` **`25_PTM_FTV_T10`**; `FrameTVSupport`, `TokenAuthSupport`, `wifiMac` unchanged. Discovery and the client now take the name and model from the UPnP description (`http://<tv>:9197/dmr`), which still has both |
+| Pairing | token on the remote channel | **survived the update**: no prompt, the art channel ready at once |
+| `get_api_version` | 5.0.1.0 | **6.0.0.0**. `samsungtvws` 3.0.7 only branches on `0.97`, so uploads take the same socket path |
+| Read requests | 14 of 16 | **the same 14 of 16**: `get_auto_rotation_status` and `get_thumbnail` still never answer |
+| `get_artmode_settings` | brightness, colour temperature, motion sensitivity, motion timer, brightness sensor | **the same five** — no clock or date setting |
+| `get_device_info` | — | `art_effect_support`, `support_brightness_sensor`, `support_color_tone`, `support_motion_sensor` TRUE; `support_myshelf`, `support_subscription_hub` FALSE |
+| Content | 64 in My Photos, 66 in `MY-C0008` | My Photos = exactly the 42 items the app recorded as its own; `MY-C0008` holds 28, 26 of them the same ids. Same pattern as on Tizen 9 (66 for 64): `MY-C0008` is not the store but a second list of the user's photos, and the app never touches it |
+| Slideshow | — | kept across the update: every 3 min, shuffled |
+
+**Not re-checked on Tizen 10**, because they write to the TV: upload, select, delete, stopping and
+starting the slideshow — a push.
+
+**The date badge.** Since the update, art mode shows a date in a bottom corner for about two
+seconds at every slideshow transition. Samsung's forum has the same report (The Frame
+QE55LS03HW, August–October 2026, "Photo date badge pops up on every slideshow transition in Art
+Mode"): nothing in the Slideshow or Display options, no answer from Samsung. The art API offers
+nothing either — `get_artmode_settings` lists the same five items as before. The badge most
+likely shows each item's `image_date`, and this app writes a technical one: the push time plus
+one minute per position (`docs/tv-display.md` §4.2) — the day of the push, not of the photo.
+Untested leads, each needing someone to watch the TV through a transition:
+
+1. a blank `image_date` — the badge may disappear, or the TV may refuse the upload, or date it now;
+2. the photo's own capture date — the badge would at least be true; whether the TV orders the
+   slideshow by `image_date`, which the push relies on, has to be checked first;
+3. "Don't change" (no rotation) has no transitions, hence no badge.
+
 ### S5b — upload & selection, measured 2026-09-25 ✅
 
 | Request | Result on `TQ55LS03FAUXXC`, API 5.0.1.0 |

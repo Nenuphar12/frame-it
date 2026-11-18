@@ -34,7 +34,9 @@ What I checked myself, on real hardware:
   then failed to build until 2026-11-17; since the fix it builds and starts, but I have not checked
   persistence again;
 - my own TV, a 2025 Frame (`TQ55LS03FAUXXC`): pairing, uploading, selecting a picture, the
-  slideshow.
+  slideshow — under One UI Tizen 9. The TV updated itself to Tizen 10 on 2026-11-18: reading it
+  still works (the pairing survived, the art API, now 6.0.0.0, answers as before), but no push
+  has been tried since.
 
 What has not been tried on hardware yet:
 
