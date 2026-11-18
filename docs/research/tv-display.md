@@ -101,6 +101,26 @@ uploaded first, then an ordered slideshow; `cleanup` deletes exactly those):
    slideshow by `image_date`, which the push relies on, has to be checked first;
 3. "Don't change" (no rotation) has no transitions, hence no badge.
 
+**Run the same day — settled** (the user watched; `MY_F0180`–`0182`, deleted afterwards and the
+set re-pushed):
+
+| Image | `image_date` sent | Badge |
+|---|---|---|
+| A | `1999:12:31 12:00:00` | **31/12/1999** |
+| B | `""` | **01/01/0001** — a blank date is the TV's minimum date, not no badge |
+| C | `2015:06:15 09:30:00` | **15/06/2015** |
+
+- **The badge is the item's `image_date`**, as sent. It cannot be hidden — blank is worse — but
+  the app chooses what it says. Today it says the day of the push.
+- **The order is the upload order, not the dates**: after the run the TV listed A, B, C, then the
+  app's items newest upload first, and the slideshow had walked on to the third of those
+  (`MY_F0175`). C, dated after A, did not jump ahead. So the push's dates are free to carry
+  something else than its ordering clock.
+- **The app's items, uploaded before the update, show two dates**: `16/11/2026` and, smaller
+  beneath, `11/16/2026` (US order); the three test images, uploaded after it, showed one. Our
+  JPEGs carry no EXIF or XMP (only the ICC profile), so the second line comes from the TV: the
+  upload date, or something the update attached to the items it found. Unsettled.
+
 ### S5b — upload & selection, measured 2026-09-25 ✅
 
 | Request | Result on `TQ55LS03FAUXXC`, API 5.0.1.0 |
