@@ -38,7 +38,8 @@ area you are working in before you change it.
   placeholder `the_frame_v2` is no longer read anywhere (env, data dir, archives: removed 2026-11-17).
 - **TV** (`docs/tv-display.md`, measurements in `docs/research/tv-display.md`): the Frame's slideshow
   cannot be scoped to a subset, so a push **mirrors** the set (`keep_ours` spares our earlier
-  uploads); a push is stop → select → start, uploads go in reverse (the TV lists newest first), and
+  uploads); a push is stop → select → start, uploads go in reverse (the TV lists newest first), each dated with its artwork's date (Tizen
+    10 shows it at every transition: the earliest photo's capture time, else the creation day), and
   "Don't change" (`slideshow_minutes = 0`) rotates and deletes nothing. A TV is followed by MAC when
   its address changes. `FRAME_IT_FAKE_TV=1` drives it all without a TV. The art channel waits for
   `ms.channel.ready` (`art_channel_class`): the library's own `open()` failed on the TV's client

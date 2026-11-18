@@ -121,6 +121,10 @@ set re-pushed):
   JPEGs carry no EXIF or XMP (only the ICC profile), so the second line comes from the TV: the
   upload date, or something the update attached to the items it found. Unsettled.
 
+**Implemented** (user's choice, 2026-11-18): each upload carries its artwork's date — the
+earliest capture time of its photos, else the day it was made — and `image_clock` is gone
+(`docs/tv-display.md` §4.2, migration `0012`).
+
 ### S5b — upload & selection, measured 2026-09-25 ✅
 
 | Request | Result on `TQ55LS03FAUXXC`, API 5.0.1.0 |

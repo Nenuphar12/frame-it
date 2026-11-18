@@ -22,6 +22,17 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
   `taken_at` — `null` removes it, a value sets it back as written, left out it does not change
   (the other fields' `null` keeps meaning "unchanged"). The original keeps its EXIF.
   `test_a_photo_date_can_be_removed_and_set_back`; the Places test now follows every row's link.
+- **The date the Frame shows is the artwork's.** The test on the TV (`scripts/tv_date_test.py`,
+  research §2c) settled it: the badge shows each item's `image_date` as sent (a blank one reads
+  01/01/0001), and the slideshow plays the upload order, not the dates. The push dated uploads by
+  an ordering clock, so the badge read the day of the push. Each upload now carries its artwork's
+  date — the earliest capture time of its photos, else the day it was made (the user's choice for
+  artworks without a dated photo) — and an upload is reused only with the same date, so removing
+  a photo's date sends its artwork again. `display_target_items.image_date` (migration `0012`);
+  `display_targets.image_clock` dropped. Existing uploads have no recorded date: the next push
+  sends the whole set once. `test_each_upload_carries_its_artworks_date`,
+  `test_another_date_is_sent_again_like_another_render`,
+  `test_uploads_from_before_dates_were_recorded_all_go_up_once`.
 - **The TV updated itself to One UI Tizen 10: read-only checks.** The pairing survived, the art
   API went 5.0.1.0 → 6.0.0.0 and answers the same 14 of 16 read requests, My Photos holds exactly
   the 42 items the app recorded, the slideshow settings were kept. One regression: the REST answer

@@ -311,6 +311,12 @@ uv run frame-it import library.tfarchive --dry-run
   single artwork starts with. The images it leaves behind are still known to be yours: the next
   slideshow push tidies them away.
 
+**The date in the corner.** Since its One UI Tizen 10 update, the Frame shows a date for a
+moment at every change of picture, and has no setting to turn it off. The app makes it say
+something true: when the artwork's photo was taken (its oldest one, if it has several), or the day
+you made the artwork when no photo has a date — after *Remove the date* on a painting, for
+instance. Change a photo's date and its artwork is sent again at the next push.
+
 **Drafts.** When a collection holds artworks not yet marked ready, *Leave out N drafts* is ticked:
 only finished artworks go to the wall. Untick it to send them too (a hand-picked selection is
 sent as picked).

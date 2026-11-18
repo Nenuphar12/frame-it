@@ -7,6 +7,7 @@ deleting somebody else's photos, and idempotence.
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 import pytest
@@ -19,7 +20,7 @@ from frame_it.events import Event
 from frame_it.services import display
 from frame_it.tv import DiscoveredTv, FakeTv, TvUnauthorizedError
 from tests.api.test_artworks import create, photo
-from tests.conftest import ctx_of, pair
+from tests.conftest import ctx_of, make_jpeg, pair, upload_bytes
 
 API = "/api/v1"
 
@@ -404,18 +405,45 @@ def test_a_changed_middle_artwork_keeps_the_order(local: TestClient) -> None:
     assert len(fake.my_ids()) == 3
 
 
-def test_image_dates_always_increase(local: TestClient) -> None:
+def test_each_upload_carries_its_artworks_date(local: TestClient) -> None:
+    """The Frame shows each item's `image_date` at every transition (research §2c): the earliest
+    capture time of the artwork's photos, else the day the artwork was made."""
     fake = use_fake(local)
     target = make_target(local)
-    a, b = artworks(local, 2)
-    set_of(local, target["id"], [a, b])
-    push(local, target["id"], slideshow_minutes=3)
-    set_of(local, target["id"], [b, a])
+    stamps = {"old": "2019:05:04 08:00:00", "new": "2021:01:01 10:00:00"}
+    for i, (name, stamp) in enumerate(stamps.items()):
+        upload_bytes(local, make_jpeg(1300 + i, 800, (i, 9, 9), taken=stamp), f"{name}.jpg")
+    upload_bytes(local, make_jpeg(1400, 800, (5, 5, 5), make=None, taken=None), "painting.jpg")
+    by_name = {
+        p["original_filename"].removesuffix(".jpg"): p["id"]
+        for p in local.get(f"{API}/photos").json()["items"]
+    }
+    trip = create(local, [by_name["new"], by_name["old"]])
+    painting = create(local, [by_name["painting"]])
+    set_of(local, target["id"], [trip["id"], painting["id"]])
+    assert push(local, target["id"], slideshow_minutes=3)["state"] == "done"
+
+    def dates() -> dict[str, str | None]:
+        on_tv = {i.content_id: i.image_date for i in fake.items_}
+        with ctx_of(local).db.session() as s:
+            items = s.scalars(select(DisplayTargetItem)).all()
+            return {it.artwork_id: on_tv.get(it.content_id) for it in items}
+
+    made = datetime.fromisoformat(painting["created_at"].replace("Z", "+00:00"))
+    assert dates() == {
+        trip["id"]: "2019:05:04 08:00:00",  # the earliest photo, as the camera wrote it
+        painting["id"]: made.astimezone().strftime("%Y:%m:%d %H:%M:%S"),
+    }
+
+    # The old photo's date goes: the trip now dates from the other one, and goes up again.
+    local.patch(f"{API}/photos/{by_name['old']}", json={"taken_at": None})
+    uploads = len([c for c in fake.calls if c.startswith("upload:")])
     push(local, target["id"])
-    # Newest first, by date too: a TV that sorts on image_date plays the same order.
-    dates = [i.image_date or "" for i in fake.items_ if i.category_id == "MY-C0002"]
-    assert dates == sorted(dates, reverse=True)
-    assert len(set(dates)) == len(dates)
+    assert len([c for c in fake.calls if c.startswith("upload:")]) == uploads + 1
+    assert dates() == {
+        trip["id"]: "2021:01:01 10:00:00",
+        painting["id"]: made.astimezone().strftime("%Y:%m:%d %H:%M:%S"),
+    }
 
 
 def test_an_interrupted_push_keeps_track_of_what_it_uploaded(local: TestClient) -> None:

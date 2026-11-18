@@ -448,8 +448,6 @@ class DisplayTarget(Base):
     """What the last push did (`PushResult.as_dict()`), so a reload still shows it."""
     progress: Mapped[dict[str, Any] | None] = mapped_column(JSON)
     """The running push: `{job_id, phase, done, total}`; NULL when none runs."""
-    image_clock: Mapped[datetime | None]
-    """Latest `image_date` written to this TV: the next upload is always dated after it."""
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
     last_pushed_at: Mapped[datetime | None]
     last_seen_at: Mapped[datetime | None]
@@ -477,6 +475,9 @@ class DisplayTargetItem(Base):
     set — a "Don't change" push leaves everything else alone, and the next slideshow push
     removes it."""
     uploaded_at: Mapped[datetime] = mapped_column(default=utcnow)
+    image_date: Mapped[str | None] = mapped_column(String(19), default=None)
+    """The `image_date` it was uploaded with (`YYYY:MM:DD HH:MM:SS`) — the date the Frame shows
+    at every slideshow transition. NULL: uploaded before the app recorded it."""
 
     __table_args__ = (
         Index("ix_display_items_target", "target_id", "position"),

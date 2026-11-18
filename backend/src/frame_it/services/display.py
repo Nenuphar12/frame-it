@@ -14,8 +14,10 @@ A push, in order (every step measured, none of it guessed):
 1. resolve the set (an artwork query: a collection, a smart collection, Favorites, an ad-hoc list);
 2. render every member and take the `jpg`/`png` derivative;
 3. plan it (`plan_push`, pure — the dry run the UI shows is the same function);
-4. upload what the TV does not already have, **oldest member last** — the TV lists newest first,
-   so uploading in reverse makes its order our order (`image_date` is written to match);
+4. upload what the TV does not already have, **oldest member last** — the TV lists (and an
+   ordered slideshow plays) newest upload first, so uploading in reverse makes its order our
+   order. Each upload carries its artwork's date (`artwork_dates`): One UI Tizen 10 shows it in a
+   corner at every slideshow transition, and nothing turns that off;
 5. slideshow mode only: delete our own uploads that left the set (unless the caller passed
    `keep_ours`: then they play along with it), and foreign items **only** when the caller passed
    `allow_delete_foreign` (the UI asks, `--yes-delete-others` on the CLI);
@@ -35,16 +37,16 @@ import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
 
 from sqlalchemy import delete as sql_delete
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from frame_it.context import AppContext
-from frame_it.db.models import Artwork, DisplayTarget, DisplayTargetItem
+from frame_it.db.models import Artwork, ArtworkPhoto, DisplayTarget, DisplayTargetItem, Photo
 from frame_it.errors import ProblemError
 from frame_it.events import Event
 from frame_it.ids import utcnow
@@ -312,6 +314,12 @@ class MapRow:
     content_id: str
     position: int | None
     uploaded_at: datetime
+    image_date: str | None = None
+    """What it was uploaded with; None for uploads from before the app recorded it."""
+
+
+Wanted = tuple[str, str, str]
+"""A member of the set as it must reach the TV: `(artwork_id, render_hash, image_date)`."""
 
 
 def _map_rows(session: Session, target_id: str) -> list[MapRow]:
@@ -326,6 +334,7 @@ def _map_rows(session: Session, target_id: str) -> list[MapRow]:
             content_id=row.content_id,
             position=row.position,
             uploaded_at=row.uploaded_at,
+            image_date=row.image_date,
         )
         for row in rows
     ]
@@ -336,8 +345,8 @@ class PushPlan:
     """What a push will do, decided before anything is touched (`plan_push`)."""
 
     static: bool
-    wanted: list[tuple[str, str]]
-    """`(artwork_id, render_hash)` by position, 0 first."""
+    wanted: list[Wanted]
+    """`(artwork_id, render_hash, image_date)` by position, 0 first."""
     gone: list[str] = field(default_factory=list)
     """Rows whose upload the TV no longer holds (deleted with the remote): forgotten."""
     reuse: dict[int, MapRow] = field(default_factory=dict)
@@ -357,7 +366,7 @@ class PushPlan:
 
 
 def plan_push(
-    wanted: list[tuple[str, str]],
+    wanted: list[Wanted],
     rows: list[MapRow],
     on_tv: set[str] | None,
     *,
@@ -367,7 +376,8 @@ def plan_push(
     """Decide a push. Pure: the push executes it and the dry run (`plan`) reports it.
 
     `on_tv` is what My Photos holds right now; None means the TV was not asked, and the map is
-    taken at its word.
+    taken at its word. An upload serves a member only with the same render **and** the same
+    `image_date` — the date the TV shows — so changing a photo's date sends its artwork again.
 
     **Slideshow mode** must leave the TV's newest-first list in set order. New uploads are always
     newer than everything already there, so only a *tail* of the set can be reused: walking from
@@ -387,9 +397,9 @@ def plan_push(
         plan.gone = [r.id for r in rows if r.content_id not in on_tv]
         known = {r.content_id for r in rows}
         plan.foreign = sorted(on_tv - known)
-    candidates: dict[tuple[str, str], list[MapRow]] = {}
+    candidates: dict[tuple[str, str, str | None], list[MapRow]] = {}
     for row in sorted(present, key=lambda r: r.uploaded_at):
-        candidates.setdefault((row.artwork_id, row.render_hash), []).append(row)
+        candidates.setdefault((row.artwork_id, row.render_hash, row.image_date), []).append(row)
     used: set[str] = set()
     count = len(plan.wanted)
     if static:
@@ -571,12 +581,49 @@ class PlanSummary:
     moved: Moved | None = None
 
 
-def _wanted_hashes(ctx: AppContext, session: Session, set_: list[Artwork]) -> list[tuple[str, str]]:
-    """The render hash each member would be pushed with — computed, not rendered."""
+TV_DATE = "%Y:%m:%d %H:%M:%S"
+
+
+def artwork_dates(session: Session, artworks: list[Artwork]) -> dict[str, str]:
+    """The `image_date` each artwork goes to the TV with, `YYYY:MM:DD HH:MM:SS`.
+
+    One UI Tizen 10 shows it in a corner at every slideshow transition, and a blank one reads
+    01/01/0001 (`docs/research/tv-display.md` §2c), so it says something true: the capture time
+    of the artwork's earliest dated photo — floating camera time, written as it is (invariant 9) —
+    else the day the artwork was made here, in this machine's time zone.
+    """
+    ids = [a.id for a in artworks]
+    taken: dict[str, datetime] = {}
+    if ids:
+        rows = session.execute(
+            select(ArtworkPhoto.artwork_id, func.min(Photo.taken_at))
+            .join(Photo, Photo.id == ArtworkPhoto.photo_id)
+            .where(
+                ArtworkPhoto.artwork_id.in_(ids),
+                Photo.deleted_at.is_(None),
+                Photo.taken_at.is_not(None),
+            )
+            .group_by(ArtworkPhoto.artwork_id)
+        )
+        taken = {artwork_id: stamp for artwork_id, stamp in rows if stamp is not None}
+    return {
+        a.id: (
+            taken[a.id].strftime(TV_DATE)
+            if a.id in taken
+            else a.created_at.astimezone().strftime(TV_DATE)
+        )
+        for a in artworks
+    }
+
+
+def _wanted(ctx: AppContext, session: Session, set_: list[Artwork]) -> list[Wanted]:
+    """What each member would be pushed with — the render hash computed, not rendered."""
+    dates = artwork_dates(session, set_)
     return [
         (
             a.id,
             render.inputs_for(ctx, session, artworks_service.document_of(a), a.id).hash,
+            dates[a.id],
         )
         for a in set_
     ]
@@ -601,7 +648,7 @@ def plan(
         target.slideshow_minutes if slideshow_minutes is None else slideshow_minutes
     )
     members = resolve_set(session, effective)
-    wanted = _wanted_hashes(ctx, session, members)
+    wanted = _wanted(ctx, session, members)
     drafts = count_drafts(session, effective)
 
     on_tv: set[str] | None = None
@@ -686,32 +733,12 @@ class PushResult:
         }
 
 
-def _date(stamp: datetime) -> str:
-    return stamp.strftime("%Y:%m:%d %H:%M:%S")
-
-
-def _image_base(target: DisplayTarget, rows: list[MapRow]) -> datetime:
-    """Where this push's `image_date`s start: after every date already written to the TV.
-
-    The TV lists newest first; if it sorts by `image_date`, a quick second push must still date
-    its uploads after the first push's. Targets pushed before the clock existed (no
-    `image_clock`) wrote `push start + (count − position)` minutes, so their dates end at most
-    `len(rows)` minutes after their last upload.
-    """
-    now = utcnow()
-    if target.image_clock is not None:
-        return max(now, target.image_clock)
-    if rows:
-        return max(now, max(r.uploaded_at for r in rows) + timedelta(minutes=len(rows) + 1))
-    return now
-
-
 def _apply(
     ctx: AppContext,
     client: TvClient,
     target_id: str,
     *,
-    wanted: list[tuple[str, str]],
+    wanted: list[Wanted],
     files: dict[str, Path],
     file_type: Literal["jpg", "png"],
     minutes: int,
@@ -724,9 +751,7 @@ def _apply(
     static = is_static(minutes)
     on_tv = {item.content_id for item in client.items()}
     with ctx.db.session() as s:
-        target = get_target(s, target_id)
         rows = _map_rows(s, target_id)
-        base = _image_base(target, rows)
     plan_ = plan_push(wanted, rows, on_tv, static=static, keep_ours=keep_ours)
     result = PushResult(
         target_id=target_id,
@@ -739,11 +764,9 @@ def _apply(
         _forget(s, plan_.gone)
 
     content_at: dict[int, str] = {p: row.content_id for p, row in plan_.reuse.items()}
-    count = len(wanted)
     for done, position in enumerate(plan_.upload):
-        artwork_id, render_hash = wanted[position]
-        stamp = base + timedelta(minutes=count - position)
-        content_id = client.upload(files[artwork_id].read_bytes(), file_type, _date(stamp))
+        artwork_id, render_hash, image_date = wanted[position]
+        content_id = client.upload(files[artwork_id].read_bytes(), file_type, image_date)
         # Written at once, in its own transaction: whatever happens next, this upload is ours.
         with ctx.db.session() as s:
             s.add(
@@ -753,10 +776,9 @@ def _apply(
                     render_hash=render_hash,
                     content_id=content_id,
                     position=position,
+                    image_date=image_date,
                 )
             )
-            target = get_target(s, target_id)
-            target.image_clock = max(stamp, target.image_clock or stamp)
         content_at[position] = content_id
         result.uploaded += 1
         if report:
@@ -836,6 +858,7 @@ def push(
             if not members:
                 raise ProblemError(422, "empty_set", "That set has no artworks")
             wanted_ids = [a.id for a in members]
+            dates = artwork_dates(s, members)
             tv = _Tv.of(target)
             file_type: Literal["jpg", "png"] = "png" if target.render_format == "png" else "jpg"
             minutes, ordered = target.slideshow_minutes, target.slideshow_ordered
@@ -844,11 +867,11 @@ def push(
 
         # Rendering is slow and needs no TV, so it happens before the connection is opened.
         files: dict[str, Path] = {}
-        wanted: list[tuple[str, str]] = []
+        wanted: list[Wanted] = []
         for index, artwork_id in enumerate(wanted_ids):
             path, render_hash = render.derivative(ctx, artwork_id, file_type)
             files[artwork_id] = path
-            wanted.append((artwork_id, render_hash))
+            wanted.append((artwork_id, render_hash, dates[artwork_id]))
             if report:
                 report("rendering", index + 1, len(wanted_ids))
 

@@ -2,8 +2,8 @@
 
 The rules it encodes: in slideshow mode the TV's newest-first list must end up in set order, so
 only a tail of the set can be reused; "Don't change" reuses any upload of the right render and
-leaves everything else; an upload the TV no longer holds is forgotten; nothing that is not in the
-map is ever ours.
+leaves everything else; an upload serves only with the date the TV is to show; an upload the TV
+no longer holds is forgotten; nothing that is not in the map is ever ours.
 """
 
 from __future__ import annotations
@@ -15,8 +15,17 @@ from frame_it.services.display import MapRow, plan_push
 T0 = datetime(2026, 9, 30, 12, 0, tzinfo=UTC)
 
 
+DATE = "2024:08:15 16:42:00"
+
+
 def row(
-    artwork: str, content: str, minute: int, *, render: str = "h", position: int | None = 0
+    artwork: str,
+    content: str,
+    minute: int,
+    *,
+    render: str = "h",
+    position: int | None = 0,
+    date: str | None = DATE,
 ) -> MapRow:
     return MapRow(
         id=f"row-{content}",
@@ -25,11 +34,12 @@ def row(
         content_id=content,
         position=position,
         uploaded_at=T0 + timedelta(minutes=minute),
+        image_date=date,
     )
 
 
-def wanted(*artworks: str) -> list[tuple[str, str]]:
-    return [(a, "h") for a in artworks]
+def wanted(*artworks: str) -> list[tuple[str, str, str]]:
+    return [(a, "h", DATE) for a in artworks]
 
 
 def test_first_push_uploads_everything_last_position_first() -> None:
@@ -112,3 +122,22 @@ def test_one_upload_serves_one_position() -> None:
     plan = plan_push(wanted("a"), rows, {"A1", "A2"}, static=True)
     assert plan.reuse[0].content_id == "A2"
     assert [r.content_id for r in plan.leave_ours] == ["A1"]
+
+
+def test_another_date_is_sent_again_like_another_render() -> None:
+    # b's photo lost its date: the TV must show the new one, so b goes up again — and a with it,
+    # or b would jump ahead of a in the newest-first list.
+    rows = [row("c", "C", 0), row("b", "B", 1, date="2008:09:09 12:14:41"), row("a", "A", 2)]
+    plan = plan_push(wanted("a", "b", "c"), rows, {"A", "B", "C"}, static=False)
+    assert plan.upload == [1, 0]
+    assert {p: r.content_id for p, r in plan.reuse.items()} == {2: "C"}
+
+
+def test_uploads_from_before_dates_were_recorded_all_go_up_once() -> None:
+    rows = [row("b", "B", 0, date=None), row("a", "A", 1, date=None)]
+    plan = plan_push(wanted("a", "b"), rows, {"A", "B"}, static=False)
+    assert plan.upload == [1, 0] and plan.reuse == {}
+    assert sorted(r.content_id for r in plan.remove_ours) == ["A", "B"]
+    # "Don't change" too: it reuses only an upload that shows the right date
+    still = plan_push(wanted("a", "b"), rows, {"A", "B"}, static=True)
+    assert still.upload == [1, 0] and sorted(r.content_id for r in still.leave_ours) == ["A", "B"]

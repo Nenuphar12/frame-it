@@ -26,9 +26,10 @@ the dry run, progress, following a TV that moved) are folded in.
   ordered/shuffle, render format, state. Since migration `0010` it also caches what the TV last
   said — `ours_count`, `foreign_count`, `checked_at` — so the UI can name the number of foreign
   photos without a probe that takes seconds; keeps `last_result` (the last push's outcome, shown
-  after a reload) and `progress` (the running push); and an `image_clock` (§4.2).
+  after a reload) and `progress` (the running push).
 - **`display_target_items`** — `(artwork_id, render_hash) → content_id`, plus `position` in the
-  current set (**NULL** when the image is ours but no longer part of the set). This map is what makes
+  current set (**NULL** when the image is ours but no longer part of the set) and, since migration
+  `0012`, the `image_date` it was uploaded with (§4.2). This map is what makes
   a re-push upload nothing, what replaces exactly what one changed artwork requires, and what
   separates "ours" from "somebody else's" on the TV.
 
@@ -97,10 +98,15 @@ it** — a re-uploaded middle image would otherwise jump ahead of its predecesso
 re-pushing the same set uploads nothing; a changed *first* artwork costs one upload; a changed
 middle artwork costs itself plus everything before it.
 
-Dates: each upload carries an `image_date` of `base + (count − position)` minutes, where `base` is
-the later of now and the target's `image_clock` (the latest date ever written to it), so two quick
-pushes never interleave even if the TV sorts by date. In "Don't change" any upload of the right
-render serves, whatever its position — nothing rotates, so order is moot.
+Dates: One UI Tizen 10 shows each item's `image_date` in a corner at every slideshow transition,
+and nothing turns that off (`docs/research/tv-display.md` §2c; a blank date reads 01/01/0001). So
+each upload carries its **artwork's date** (`artwork_dates`): the capture time of its earliest
+dated photo, written as the camera wrote it, else the day the artwork was made here. The same test
+showed the TV plays the upload order, not the dates, so the date is free to say that. An upload is
+reused only with the same render **and** the same date: taking a photo's date away sends its
+artwork again (uploads from before migration `0012` have none recorded and went up once). In
+"Don't change" any upload of the right render and date serves, whatever its position — nothing
+rotates, so order is moot.
 
 ## 5. The dry run (`POST /display/targets/{id}/plan`)
 
