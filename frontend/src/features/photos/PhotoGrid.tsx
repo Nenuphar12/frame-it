@@ -14,6 +14,11 @@ const TILE = 220;
 const GAP = 8;
 /** Above the first row and below the last (the virtualizer's, not CSS: it scrolls rows into view). */
 const PAD_Y = 16;
+/**
+ * Warnings the tile's badge leaves out: a missing EXIF block (screenshots, exports, edited copies) is
+ * common and says nothing about the pixels. The details drawer and the viewer still list it.
+ */
+const NOT_ON_TILE = new Set(["metadata_missing"]);
 
 interface PhotoGridProps {
   photos: Photo[];
@@ -100,6 +105,7 @@ export function PhotoGrid({
               const index = row.index * columns + i;
               const isSelected = selected?.has(photo.id) ?? false;
               const draft = onOpenDraft ? photo.draft_artwork_ids?.[0] : undefined;
+              const warnings = photo.quality_warnings.filter((w) => !NOT_ON_TILE.has(w));
               return (
                 // The draft badge is a sibling of the tile, not inside it: a button in a button
                 // is invalid, and clicking the badge must not select the photo.
@@ -144,12 +150,10 @@ export function PhotoGrid({
                           {photo.width}×{photo.height}
                         </Badge>
                       )}
-                      {photo.quality_warnings.length > 0 && (
+                      {warnings.length > 0 && (
                         <Badge
                           tone="warning"
-                          title={photo.quality_warnings
-                            .map((w) => t(`photos.warnings.${w}`))
-                            .join("\n")}
+                          title={warnings.map((w) => t(`photos.warnings.${w}`)).join("\n")}
                         >
                           <AlertTriangle size={11} />
                         </Badge>
