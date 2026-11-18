@@ -22,6 +22,13 @@ These bite whatever you are working on.
 - TypeScript stays on major 6 (`frontend/package.json`): typescript-eslint requires `<6.1` (still so in
   8.73, checked 2026-11-17). `@types/node` stays on 22, the oldest Node the project supports.
 - NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint RUFF=ruff` with a Nix ruff.
+- **A migration never batch-rebuilds a table other tables cascade from** (`tags`, `photos`,
+  `artworks`, `display_targets`…): batch mode drops and recreates it, the app's connections run
+  with `foreign_keys=ON`, and the drop deletes every child row — `PRAGMA foreign_keys` cannot be
+  switched off inside the migration's transaction. Use plain `ALTER TABLE … ADD/DROP COLUMN`. The
+  first version of 0012 wiped a real library's record of its TV uploads this way. Test a new
+  migration in `tests/unit/test_migrations.py` with `Database` (the app's engine): a bare
+  `create_engine` has foreign keys off and hides it.
 
 ## Uploads, phones & LocalSend
 

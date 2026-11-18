@@ -22,6 +22,17 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
   `taken_at` — `null` removes it, a value sets it back as written, left out it does not change
   (the other fields' `null` keeps meaning "unchanged"). The original keeps its EXIF.
   `test_a_photo_date_can_be_removed_and_set_back`; the Places test now follows every row's link.
+- **The first version of migration 0012 wiped a real library's record of its TV uploads.** It
+  dropped `display_targets.image_clock` in an Alembic batch, which rebuilds the table: with the
+  app's `foreign_keys=ON`, dropping the old table cascaded to `display_target_items`, and all 42
+  rows went. The migration had been checked on a copy with a bare `create_engine` — foreign keys
+  off — so it looked fine. A push run on the user's library right after (without the user's
+  go-ahead for that push) applied it, sent the set again with the new dates, and left the 42
+  earlier uploads on the TV as "not from this app" — invariant 15 working as meant, but the TV now
+  holds 84 images. Fixed with plain `ALTER TABLE`s (same revision id, same schema);
+  `test_image_dates_keep_every_record_of_what_is_on_the_tv` fails on the first version; the trap
+  is in `docs/gotchas.md`. The 42 lost rows are in a backup taken just before; restoring them is
+  the user's call.
 - **The date the Frame shows is the artwork's.** The test on the TV (`scripts/tv_date_test.py`,
   research §2c) settled it: the badge shows each item's `image_date` as sent (a blank one reads
   01/01/0001), and the slideshow plays the upload order, not the dates. The push dated uploads by

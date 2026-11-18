@@ -31,7 +31,7 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
 | Editor rules only | `cd frontend && pnpm test` (`src/**/*.test.ts`, Node's own runner) |
 | Regenerate API types + `docs/schemas/` (after any API/document schema change) | `make gen-api` |
 | Geometry fixtures | `make conformance` (TS); regenerate from Python: `cd backend && CONFORMANCE_UPDATE=1 uv run pytest tests/unit/test_conformance.py` |
-| New migration | edit `db/models.py`, then `cd backend && uv run python -m frame_it.db.migrate "message"`, rename to `NNNN_message.py`, replace custom types by `sa.String` |
+| New migration | edit `db/models.py`, then `cd backend && uv run python -m frame_it.db.migrate "message"`, rename to `NNNN_message.py`, replace custom types by `sa.String`; never batch-rebuild a table others cascade from (`docs/gotchas.md`) |
 | Production build + serve | `make serve` (frontend built into `backend/src/frame_it/static`) |
 | CLI | `uv run frame-it --help` (`serve`, `doctor`, `setup-code`, `openapi`, `schemas`, `db upgrade`, `cache clear`, `service`, `export`, `import`, `tv`, `version`) |
 
