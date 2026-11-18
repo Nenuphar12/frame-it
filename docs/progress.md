@@ -22,6 +22,11 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
   `taken_at` — `null` removes it, a value sets it back as written, left out it does not change
   (the other fields' `null` keeps meaning "unchanged"). The original keeps its EXIF.
   `test_a_photo_date_can_be_removed_and_set_back`; the Places test now follows every row's link.
+- **A tag's photo count opens its photos** (Tags tab), as its artwork count opens its artworks:
+  `/photos?tag=<id>`. The Photos page's tag filter moved from component state into the URL, like
+  the period and the place — the select writes it, a reload keeps it. Driven in a browser:
+  *Famille* → 160 photos with the select on *Famille (160)*, the API count; the × and picking
+  another tag both rewrite the URL.
 - **Agent context, lighter**: `AGENTS.md` 26.0 → 12.1 kB, loaded into every session. It keeps
   what most tasks need (status, the main commands, a map by directory, the layers, the invariants
   word for word, conventions, the cross-cutting gotchas); each area's rules, the module-by-module

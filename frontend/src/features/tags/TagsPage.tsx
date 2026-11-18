@@ -744,7 +744,18 @@ function CategorySection({
                     </select>
                   </td>
                   <td className="py-1 pr-3 text-right tabular-nums" title={t("nav.photos")}>
-                    {tag.photo_count}
+                    {/* The photos carrying it, like the artwork count opens its artworks. */}
+                    {tag.photo_count > 0 ? (
+                      <Link
+                        to="/photos"
+                        search={{ tag: tag.id }}
+                        className="text-accent hover:underline"
+                      >
+                        {tag.photo_count}
+                      </Link>
+                    ) : (
+                      0
+                    )}
                   </td>
                   <td
                     className="py-1 pr-3 text-right tabular-nums"

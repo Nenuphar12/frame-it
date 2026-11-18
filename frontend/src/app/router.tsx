@@ -72,13 +72,16 @@ const routeTree = rootRoute.addChildren([
       getParentRoute: () => shellRoute,
       path: "/photos",
       component: PhotosPage,
-      // The Timeline's links (`taken`) and the Places view's (a row: `""` is its "Unknown").
+      // The tag filter (the Tags page links to it), the Timeline's links (`taken`) and the
+      // Places view's (a row: `""` is its "Unknown").
       validateSearch: (search: Record<string, unknown>): PhotosSearch => {
+        const tag = text(search.tag);
         const level = (key: "place_country" | "place_admin1" | "place_name") => {
           const value = text(search[key]);
           return value === undefined ? {} : { [key]: value };
         };
         return {
+          ...(tag ? { tag } : {}),
           ...takenFrom(search),
           ...level("place_country"),
           ...level("place_admin1"),

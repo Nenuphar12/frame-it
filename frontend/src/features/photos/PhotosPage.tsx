@@ -43,11 +43,13 @@ import { usePhotoViewer } from "./usePhotoViewer";
 import { useSelection } from "./useSelection";
 
 /**
- * Links into the grid: from the Timeline (`taken` = a year or a month, `shared/period.ts`) and
- * from the Places view (a row: country, then region and place — each matched exactly, `""` being
- * the view's "Unknown").
+ * The grid's filters that live in the URL, so a link can set them and a reload keeps them: the
+ * tag (the select, and the Tags page's photo counts), the Timeline's period (`taken` = a year or a
+ * month, `shared/period.ts`) and a Places row (country, then region and place — each matched
+ * exactly, `""` being the view's "Unknown").
  */
 export interface PhotosSearch {
+  tag?: string;
   taken?: string;
   place_country?: string;
   place_admin1?: string;
@@ -92,11 +94,13 @@ export function PhotosPage() {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query.trim());
-  const [tagId, setTagId] = useState<string>("");
   // The period and the place live in the URL, not in state: the Timeline and the Places view
   // link here, and a reload keeps them.
+  const navigate = useNavigate();
   const linked: PhotosSearch = useSearch({ strict: false });
-  const { taken, place_country, place_admin1, place_name } = linked;
+  const { tag: tagId, taken, place_country, place_admin1, place_name } = linked;
+  const setTagId = (tag: string) =>
+    void navigate({ to: "/photos", search: { ...linked, tag: tag || undefined } });
   const atPlace = place_country !== undefined;
   const filtered = Boolean(deferredQuery || tagId || taken || atPlace);
   const tags = useAllTags();
@@ -126,7 +130,6 @@ export function PhotosPage() {
   const [tagMenuOpen, setTagMenuOpen] = useState(false);
   const bulkTags = useBulkTags();
   const inbox = useInboxAction();
-  const navigate = useNavigate();
   const { openFiles } = useFilePickers();
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = photos;
   const loadMore = useCallback(() => {
@@ -277,7 +280,7 @@ export function PhotosPage() {
                   (user feedback). Every tag, grouped by category — not the autocomplete's 20. */}
               <div className="flex items-center gap-1.5">
                 <select
-                  value={tagId}
+                  value={tagId ?? ""}
                   onChange={(event) => setTagId(event.target.value)}
                   aria-label={t("photos.filterByTag")}
                   className="h-9 rounded-md border border-border bg-bg px-2 text-sm text-text outline-none"
