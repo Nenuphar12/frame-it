@@ -31,8 +31,9 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
   earlier uploads on the TV as "not from this app" — invariant 15 working as meant, but the TV now
   holds 84 images. Fixed with plain `ALTER TABLE`s (same revision id, same schema);
   `test_image_dates_keep_every_record_of_what_is_on_the_tv` fails on the first version; the trap
-  is in `docs/gotchas.md`. The 42 lost rows are in a backup taken just before; restoring them is
-  the user's call.
+  is in `docs/gotchas.md`. Cleaned up with the user's go-ahead: the 42 lost rows went back into
+  the map from a backup taken just before (out of the set, no date), and a push on the TV removed
+  them as our own — 42 reused, 42 deleted; the TV holds 42 again, all from the app.
 - **The date the Frame shows is the artwork's.** The test on the TV (`scripts/tv_date_test.py`,
   research §2c) settled it: the badge shows each item's `image_date` as sent (a blank one reads
   01/01/0001), and the slideshow plays the upload order, not the dates. The push dated uploads by

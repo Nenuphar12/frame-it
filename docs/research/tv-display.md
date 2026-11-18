@@ -123,7 +123,9 @@ set re-pushed):
 
 **Implemented** (user's choice, 2026-11-18): each upload carries its artwork's date — the
 earliest capture time of its photos, else the day it was made — and `image_clock` is gone
-(`docs/tv-display.md` §4.2, migration `0012`).
+(`docs/tv-display.md` §4.2, migration `0012`). On the TV the same day: the 42 items of the set
+were sent again, and each one's `image_date`, read back, is the date `artwork_dates` computes
+(19 from 2024, 23 from 2026).
 
 ### S5b — upload & selection, measured 2026-09-25 ✅
 
