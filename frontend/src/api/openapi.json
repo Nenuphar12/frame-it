@@ -6284,6 +6284,82 @@
         "title": "TextureRef",
         "type": "object"
       },
+      "TimelineMonthOut": {
+        "properties": {
+          "artwork_count": {
+            "title": "Artwork Count",
+            "type": "integer"
+          },
+          "month": {
+            "title": "Month",
+            "type": "integer"
+          },
+          "photo_count": {
+            "title": "Photo Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "month",
+          "photo_count",
+          "artwork_count"
+        ],
+        "title": "TimelineMonthOut",
+        "type": "object"
+      },
+      "TimelineOut": {
+        "properties": {
+          "undated_photos": {
+            "title": "Undated Photos",
+            "type": "integer"
+          },
+          "years": {
+            "items": {
+              "$ref": "#/components/schemas/TimelineYearOut"
+            },
+            "title": "Years",
+            "type": "array"
+          }
+        },
+        "required": [
+          "years",
+          "undated_photos"
+        ],
+        "title": "TimelineOut",
+        "type": "object"
+      },
+      "TimelineYearOut": {
+        "description": "One year of the Timeline view, its months the most recent first.",
+        "properties": {
+          "artwork_count": {
+            "title": "Artwork Count",
+            "type": "integer"
+          },
+          "months": {
+            "items": {
+              "$ref": "#/components/schemas/TimelineMonthOut"
+            },
+            "title": "Months",
+            "type": "array"
+          },
+          "photo_count": {
+            "title": "Photo Count",
+            "type": "integer"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "photo_count",
+          "artwork_count",
+          "months"
+        ],
+        "title": "TimelineYearOut",
+        "type": "object"
+      },
       "TrashArtworksIn": {
         "properties": {
           "artwork_ids": {
@@ -10764,7 +10840,7 @@
     },
     "/api/v1/photos": {
       "get": {
-        "description": "`around` is a photo id: only the photos taken in the same few days or at the same spot\n(what the editor offers first when replacing that photo). 404 when it does not exist.",
+        "description": "`around` is a photo id: only the photos taken in the same few days or at the same spot\n(what the editor offers first when replacing that photo). 404 when it does not exist.\n`taken` is a year (`2024`) or a month (`2024-03`) of capture time \u2014 the Timeline's links.",
         "operationId": "list_photos_api_v1_photos_get",
         "parameters": [
           {
@@ -10836,6 +10912,23 @@
                 }
               ],
               "title": "Around"
+            }
+          },
+          {
+            "in": "query",
+            "name": "taken",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[0-9]{4}(-(0[1-9]|1[0-2]))?$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Taken"
             }
           },
           {
@@ -12193,6 +12286,28 @@
         "summary": "Texture File",
         "tags": [
           "assets"
+        ]
+      }
+    },
+    "/api/v1/timeline": {
+      "get": {
+        "description": "When the photos were taken \u2014 year \u2192 month \u2014 from their capture time, never converted.",
+        "operationId": "get_timeline_api_v1_timeline_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimelineOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Timeline",
+        "tags": [
+          "library"
         ]
       }
     },

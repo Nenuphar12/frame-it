@@ -22,7 +22,7 @@ from frame_it.context import AppContext
 from frame_it.db.models import Photo, Tag
 from frame_it.errors import not_found
 from frame_it.events import Event
-from frame_it.services import photos, tags
+from frame_it.services import photos, tags, timeline
 from frame_it.services.ingest import ensure_derivatives
 
 router = APIRouter(tags=["photos"])
@@ -57,12 +57,16 @@ def list_photos(
     q: str | None = Query(default=None, max_length=200),
     tag_id: str | None = None,
     around: str | None = Query(default=None, max_length=64),
+    taken: str | None = Query(default=None, pattern=timeline.PERIOD_PATTERN),
     cursor: str | None = None,
     limit: int = Query(default=100, ge=1, le=500),
 ) -> PhotoPageOut:
     """`around` is a photo id: only the photos taken in the same few days or at the same spot
-    (what the editor offers first when replacing that photo). 404 when it does not exist."""
-    flt = photos.PhotoFilter(inbox_state=inbox_state, q=q, tag_id=tag_id, around=around)
+    (what the editor offers first when replacing that photo). 404 when it does not exist.
+    `taken` is a year (`2024`) or a month (`2024-03`) of capture time — the Timeline's links."""
+    flt = photos.PhotoFilter(
+        inbox_state=inbox_state, q=q, tag_id=tag_id, around=around, taken=taken
+    )
     page = photos.list_photos(session, flt, cursor, limit)
     return PhotoPageOut(
         items=[

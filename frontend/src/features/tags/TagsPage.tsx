@@ -1,5 +1,14 @@
 import { Link } from "@tanstack/react-router";
-import { FolderInput, MapPin, Merge, Plus, Tags as TagsIcon, Trash2, X } from "lucide-react";
+import {
+  CalendarDays,
+  FolderInput,
+  MapPin,
+  Merge,
+  Plus,
+  Tags as TagsIcon,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -22,6 +31,7 @@ import { EmptyState, PageHeader, Spinner } from "@/shared/ui/Misc";
 
 import { PlacesView } from "./PlacesView";
 import { TagDot } from "./TagDot";
+import { TimelineView } from "./TimelineView";
 import { useTagCategoryIndex } from "./useTagCategories";
 
 /** Six colours is enough to sort tags at a glance without becoming a palette editor. */
@@ -29,14 +39,20 @@ const COLORS = ["#ef4444", "#f59e0b", "#22c55e", "#3b82f6", "#a855f7", "#64748b"
 /** The `<select>` value meaning "no category". */
 const OTHER = "";
 
-type Tab = "tags" | "places";
+type Tab = "tags" | "places" | "timeline";
+
+const TABS: { value: Tab; label: string; subtitle?: string; Icon: typeof MapPin }[] = [
+  { value: "tags", label: "tags.tabTags", Icon: TagsIcon },
+  { value: "places", label: "places.title", subtitle: "places.subtitle", Icon: MapPin },
+  { value: "timeline", label: "timeline.title", subtitle: "timeline.subtitle", Icon: CalendarDays },
+];
 
 /**
  * The tag manager (docs/organization.md §1), grouped by **category** — People, Events, Themes and
  * whatever the user adds; a tag with none is "Other". Rename, recolour, re-categorise (one or
  * many), merge and delete, with the counts that say what a deletion would take away, plus the
- * clean-up of tags nothing uses. The **Places** tab is the derived view of where photos were
- * taken: places are metadata, never tags.
+ * clean-up of tags nothing uses. The **Places** and **Timeline** tabs are the derived views of
+ * where and when photos were taken: metadata, never tags.
  */
 export function TagsPage() {
   const { t } = useTranslation();
@@ -109,13 +125,17 @@ export function TagsPage() {
     <div className="flex h-full flex-col">
       <PageHeader
         title={t("nav.tags")}
-        subtitle={tab === "tags" ? t("tags.count", { count: all.length }) : t("places.subtitle")}
+        subtitle={
+          tab === "tags"
+            ? t("tags.count", { count: all.length })
+            : t(TABS.find((entry) => entry.value === tab)?.subtitle ?? "")
+        }
         actions={
           <div
             className="flex items-center gap-1 rounded-md border border-border p-0.5"
             role="tablist"
           >
-            {(["tags", "places"] as Tab[]).map((value) => (
+            {TABS.map(({ value, label, Icon }) => (
               <button
                 key={value}
                 type="button"
@@ -127,16 +147,16 @@ export function TagsPage() {
                   tab === value ? "bg-accent/15 text-accent" : "text-muted hover:text-text",
                 )}
               >
-                {value === "tags" ? <TagsIcon size={14} /> : <MapPin size={14} />}
-                {t(value === "tags" ? "tags.tabTags" : "places.title")}
+                <Icon size={14} />
+                {t(label)}
               </button>
             ))}
           </div>
         }
       />
-      {tab === "places" ? (
+      {tab !== "tags" ? (
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-          <PlacesView />
+          {tab === "places" ? <PlacesView /> : <TimelineView />}
         </div>
       ) : (
         <>

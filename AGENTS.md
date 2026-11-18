@@ -30,7 +30,8 @@ full quality over the LAN, pixel-perfect framing/compositions, collections, expo
   - **Organization** (`docs/organization.md`): one filter AST (`domain/filters.py` validates,
     `services/library.py` compiles) behind the filter bar, `POST /artworks/query` and smart collections;
     collections as a tree; FTS search; tags with categories, and an artwork **carries its photos' tags**
-    (read, never copied); `place near` on the photos' GPS; the trash acts, then offers Undo. A photo leaves
+    (read, never copied); `place near` on the photos' GPS; Places and Timeline (year → month) tabs
+    derived from photo metadata; the trash acts, then offers Undo. A photo leaves
     the inbox only when an artwork using it is marked **ready** (one-way).
   - **Export / import** (`docs/archive-format.md`): the `.tfarchive` is a ZIP of JSON + JSON Lines + the
     originals; staging → dry-run report → apply under `keep_mine | take_theirs | keep_both`; the CLI does
@@ -93,7 +94,7 @@ NixOS without nix-ld: the uv-installed `ruff` binary cannot run → `make lint R
 | `…/context.py` | `AppContext` service container (`app.state.ctx`) |
 | `…/api/` | Thin routers, one per area + `schemas.py` (Pydantic API models = the OpenAPI source) + `deps.py` (auth dependencies); `jobs.py` is the activity centre |
 | `…/auth/` | `principal.py` (cookie/localhost → role), `middleware.py` (Host/CSRF/headers), `ratelimit.py` |
-| `…/services/` | Use cases, one module per area (each docstring says what it owns): `uploads` → `ingest` → `photos`, `photo_copies` (merge copies), `localsend`, `devices`; `artworks` (create/save/snapshots, and the artwork-writing half of templates: apply, push update), `templates` (presets, CRUD, files, defaults), `recipes` (bundled catalogue, no DB), `render` (cache, jobs, region), `colors`; `library` (filter compiler + listing), `collections`, `tags`, `places`, `geocode`, `search` (FTS, `INDEX_VERSION`), `trash`; `archive_export`, `archive_import`, `archive_apply` (id maps); `display` (TV targets, the push); `jobs_admin` (failures, retry, pruning) |
+| `…/services/` | Use cases, one module per area (each docstring says what it owns): `uploads` → `ingest` → `photos`, `photo_copies` (merge copies), `localsend`, `devices`; `artworks` (create/save/snapshots, and the artwork-writing half of templates: apply, push update), `templates` (presets, CRUD, files, defaults), `recipes` (bundled catalogue, no DB), `render` (cache, jobs, region), `colors`; `library` (filter compiler + listing), `collections`, `tags`, `places`, `timeline`, `geocode`, `search` (FTS, `INDEX_VERSION`), `trash`; `archive_export`, `archive_import`, `archive_apply` (id maps); `display` (TV targets, the push); `jobs_admin` (failures, retry, pruning) |
 | `…/domain/` | PURE: `document` (document v1, the `composition` block, reference checks), `geometry`, `quality`, `placement`, `constraints` (editor solver), `alternatives`, `arrange`, `composition` (recipe trees, the solver, `apply`), `templates` (`restyle`/`relayout`, `build_composition_document`), `filters` (library filter AST), `geo`, `archive` (records, file layout, member-name safety) |
 | `…/imaging/` | `sniff` (magic bytes), `decode` (the only pixel access), `metadata` (EXIF/ICC), `fingerprint` (hash ignoring EXIF), `capabilities`, `render` (the renderer), `palette` (OKLab k-means), `assets` (fonts/textures catalog) |
 | `…/assets/` | `geonames/`, `fonts/` (OFL, `scripts/build_fonts.py`), `textures/` (CC0, `scripts/generate_textures.py`), `presets/` (built-in styles/layouts + `recipes.json`) |

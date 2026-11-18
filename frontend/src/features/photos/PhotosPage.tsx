@@ -1,8 +1,18 @@
-import { Images, Inbox, Info, Maximize2, Search, Trash2, Wand2, X } from "lucide-react";
+import {
+  CalendarDays,
+  Images,
+  Inbox,
+  Info,
+  Maximize2,
+  Search,
+  Trash2,
+  Wand2,
+  X,
+} from "lucide-react";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 
 import { useAllTags, useBulkTags, useInboxAction, usePhotos } from "@/api/queries";
 import { useRegisterCommands, type Command } from "@/app/commands";
@@ -12,6 +22,7 @@ import { TagOptions } from "@/features/tags/TagOptions";
 import { TrashPhotosDialog } from "@/features/trash/TrashPhotosDialog";
 import { useDeletePhotos } from "@/features/trash/useDeletePhotos";
 import { useFilePickers } from "@/features/upload/useFilePickers";
+import { formatPeriod } from "@/shared/format";
 import { toast } from "@/shared/toast";
 import { Button } from "@/shared/ui/Button";
 import { EmptyState, PageHeader, Spinner } from "@/shared/ui/Misc";
@@ -22,11 +33,19 @@ import { PhotoViewer } from "./PhotoViewer";
 import { usePhotoViewer } from "./usePhotoViewer";
 import { useSelection } from "./useSelection";
 
+/** The Timeline's link: only the photos taken in that year or month (`shared/period.ts`). */
+export interface PhotosSearch {
+  taken?: string;
+}
+
 export function PhotosPage() {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query.trim());
   const [tagId, setTagId] = useState<string>("");
+  // The period lives in the URL, not in state: the Timeline links here, and a reload keeps it.
+  const { taken }: PhotosSearch = useSearch({ strict: false });
+  const filtered = Boolean(deferredQuery || tagId || taken);
   const tags = useAllTags();
   const searchRef = useRef<HTMLInputElement>(null);
   const photos = usePhotos(
@@ -34,8 +53,9 @@ export function PhotosPage() {
       () => ({
         ...(deferredQuery ? { q: deferredQuery } : {}),
         ...(tagId ? { tag_id: tagId } : {}),
+        ...(taken ? { taken } : {}),
       }),
-      [deferredQuery, tagId],
+      [deferredQuery, tagId, taken],
     ),
   );
   const items = useMemo(() => photos.data?.pages.flatMap((p) => p.items) ?? [], [photos.data]);
@@ -220,6 +240,21 @@ export function PhotosPage() {
                   </button>
                 )}
               </div>
+              {taken && (
+                <span className="flex h-9 items-center gap-1.5 rounded-md border border-border bg-panel pr-1 pl-2.5 text-sm">
+                  <CalendarDays size={14} className="text-muted" />
+                  {t("photos.takenIn", { period: formatPeriod(taken) })}
+                  <button
+                    type="button"
+                    onClick={() => void navigate({ to: "/photos", search: {} })}
+                    aria-label={t("filters.clear")}
+                    title={t("filters.clear")}
+                    className="rounded p-1 text-muted hover:bg-panel-2 hover:text-text"
+                  >
+                    <X size={14} />
+                  </button>
+                </span>
+              )}
               <Button
                 variant="primary"
                 disabled={selected.size === 0}
@@ -283,11 +318,10 @@ export function PhotosPage() {
           ) : items.length === 0 ? (
             <EmptyState
               icon={<Images size={40} />}
-              title={deferredQuery || tagId ? t("photos.noResults") : t("photos.emptyTitle")}
-              description={deferredQuery || tagId ? undefined : t("photos.emptyDescription")}
+              title={filtered ? t("photos.noResults") : t("photos.emptyTitle")}
+              description={filtered ? undefined : t("photos.emptyDescription")}
               action={
-                !deferredQuery &&
-                !tagId && (
+                !filtered && (
                   <Button variant="primary" onClick={openFiles}>
                     {t("upload.addPhotos")}
                   </Button>

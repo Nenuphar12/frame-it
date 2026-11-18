@@ -3,6 +3,21 @@
 Newest first. Phases 0–12 and everything before the beta (2026-10-06):
 [`progress-before-beta.md`](progress-before-beta.md).
 
+## 2026-11-18 — Timeline
+
+- **A Timeline tab beside Places** (Tags page): year → month, the most recent first, with photo and
+  artwork counts per level and the number of undated photos. Years fold open on their months (the
+  latest starts open). `GET /timeline` (`services/timeline.py`) groups on the `taken_at` prefix —
+  floating time, never converted. Each row links to the **photos** taken then — a new
+  `GET /photos?taken=2024|2024-03` filter, shown on the Photos page as a "Taken in …" chip kept in
+  the URL — and to the **artworks** made of one (`/artworks?taken=` → a `taken_at` "between" chip).
+  `test_timeline_counts_per_year_and_month_and_links_to_both_grids` (boundaries: the last second
+  of a month, a bad period → 422), `shared/period.test.ts` (month lengths, leap years).
+- **Driven in a browser** (headless Chromium over CDP, production build, a copy of `.dev-data`):
+  the tab lists 2026 → 2008 with 17 undated photos; November 2026's links open 74 photos and 12
+  artworks, the counts the row shows; the chip's × goes back to `/photos`. Not driven: the French
+  labels.
+
 ## 2026-11-17 — Project review follow-ups
 
 - **A TV that failed a status check or a pairing forgot why.** `status()` and `pair()` set

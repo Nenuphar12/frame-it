@@ -198,6 +198,31 @@ class PlacesOut(ApiModel):
     """Live artworks none of whose photos has a GPS position: `place near` never matches them."""
 
 
+class TimelineMonthOut(ApiModel):
+    month: int
+    """1 = January."""
+    photo_count: int
+    artwork_count: int
+    """Live artworks using at least one photo taken that month."""
+
+
+class TimelineYearOut(ApiModel):
+    """One year of the Timeline view, its months the most recent first."""
+
+    year: int
+    photo_count: int
+    artwork_count: int
+    """Counted for the year itself: an artwork of photos from two of its months counts once."""
+    months: list[TimelineMonthOut]
+
+
+class TimelineOut(ApiModel):
+    years: list[TimelineYearOut]
+    """The most recent first."""
+    undated_photos: int
+    """Live photos without a capture time (no EXIF date): not on the timeline."""
+
+
 class PlaceMatchOut(ApiModel):
     """A place of the offline dataset, for the `place near` picker."""
 

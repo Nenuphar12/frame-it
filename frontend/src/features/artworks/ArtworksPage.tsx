@@ -19,6 +19,7 @@ import {
 import { useSelection } from "@/features/photos/useSelection";
 import { TagMenu } from "@/features/tags/TagMenu";
 import { useTrashWithUndo } from "@/features/trash/useTrashWithUndo";
+import { periodDays } from "@/shared/period";
 import { toast } from "@/shared/toast";
 import { Button } from "@/shared/ui/Button";
 import { EmptyState, PageHeader, Spinner } from "@/shared/ui/Misc";
@@ -35,14 +36,16 @@ interface ArtworksPageProps {
 }
 
 /**
- * A filter to open the grid with — from the Places view (`place`), the Tags page (`tag`) or a
- * photo's drawer (`near` = `lat,lon,km`, named by `label`).
+ * A filter to open the grid with — from the Places view (`place`), the Tags page (`tag`), a
+ * photo's drawer (`near` = `lat,lon,km`, named by `label`) or the Timeline (`taken` = a year or
+ * a month, `shared/period.ts`).
  */
 export interface ArtworksSearch {
   place?: string;
   tag?: string;
   near?: string;
   label?: string;
+  taken?: string;
 }
 
 function nearFrom(linked: ArtworksSearch): FilterClause[] {
@@ -59,6 +62,9 @@ function chipsFrom(linked: ArtworksSearch): ChipFilter {
       : []),
     ...(linked.tag ? [{ field: "tag" as const, op: "has_any" as const, value: [linked.tag] }] : []),
     ...nearFrom(linked),
+    ...(linked.taken
+      ? [{ field: "taken_at" as const, op: "between" as const, value: periodDays(linked.taken) }]
+      : []),
   ];
 }
 
@@ -68,7 +74,9 @@ export function ArtworksPage({ favoritesOnly = false }: ArtworksPageProps) {
   // `/artworks?place=Kyoto` (or `?tag=<id>`) opens the grid with that chip already in the bar;
   // following another such link while the page is open replaces the chips with the new one.
   const linked: ArtworksSearch = useSearch({ strict: false });
-  const linkKey = [linked.place, linked.tag, linked.near, linked.label].join("\u001f");
+  const linkKey = [linked.place, linked.tag, linked.near, linked.label, linked.taken].join(
+    "\u001f",
+  );
   const [chips, setChips] = useState<ChipFilter>(() => chipsFrom(linked));
   const [chipsFor, setChipsFor] = useState(linkKey);
   if (chipsFor !== linkKey) {

@@ -87,6 +87,8 @@ export interface PhotoFilter {
   tag_id?: string;
   /** A photo id: only the photos taken in the same few days, or at the same spot. */
   around?: string;
+  /** A year (`2024`) or a month (`2024-03`) of capture time (`shared/period.ts`). */
+  taken?: string;
 }
 
 export function useMe() {
@@ -484,6 +486,14 @@ export function usePlaces() {
   return useQuery({
     queryKey: ["photos", "places"] as const,
     queryFn: () => unwrap(api.GET("/api/v1/places")),
+  });
+}
+
+/** When the photos were taken — year → month — with photo and artwork counts (the Timeline tab). */
+export function useTimeline() {
+  return useQuery({
+    queryKey: ["photos", "timeline"] as const,
+    queryFn: () => unwrap(api.GET("/api/v1/timeline")),
   });
 }
 

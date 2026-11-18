@@ -200,7 +200,8 @@
       "fit": "Fit",
       "zoomHint": "The original's own pixels; the zoom stays on from one photo to the next (Z, or click the photo)",
       "toggleZoom": "Toggle 100% / fit to screen"
-    }
+    },
+    "takenIn": "Taken in {{period}}"
   },
   "tags": {
     "placeholder": "Add tags…",
@@ -1392,5 +1393,15 @@
     "artworkCount_other": "{{count}} artworks",
     "expand": "Show the places in {{name}}",
     "collapse": "Hide the places in {{name}}"
+  },
+  "timeline": {
+    "title": "Timeline",
+    "subtitle": "When your photos were taken, from their capture date",
+    "emptyTitle": "No dated photo yet",
+    "emptyDescription": "The timeline reads the date the camera writes into each photo. Screenshots and exported or edited copies often have none.",
+    "undated_one": "{{count}} photo has no capture date.",
+    "undated_other": "{{count}} photos have no capture date.",
+    "expand": "Show the months of {{year}}",
+    "collapse": "Hide the months of {{year}}"
   }
 }

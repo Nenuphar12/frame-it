@@ -200,7 +200,8 @@
       "fit": "Ajuster",
       "zoomHint": "Les pixels mêmes de l'original ; le zoom reste d'une photo à la suivante (Z, ou clic sur la photo)",
       "toggleZoom": "Basculer entre 100 % et l'ajustement à l'écran"
-    }
+    },
+    "takenIn": "Prises en {{period}}"
   },
   "tags": {
     "placeholder": "Ajouter des étiquettes…",
@@ -1392,5 +1393,15 @@
     "artworkCount_other": "{{count}} œuvres",
     "expand": "Afficher les lieux de {{name}}",
     "collapse": "Masquer les lieux de {{name}}"
+  },
+  "timeline": {
+    "title": "Chronologie",
+    "subtitle": "Quand vos photos ont été prises, d'après leur date de prise de vue",
+    "emptyTitle": "Pas encore de photo datée",
+    "emptyDescription": "La chronologie lit la date que l'appareil inscrit dans chaque photo. Les captures d'écran et les copies exportées ou retouchées n'en ont souvent pas.",
+    "undated_one": "{{count}} photo n'a pas de date de prise de vue.",
+    "undated_other": "{{count}} photos n'ont pas de date de prise de vue.",
+    "expand": "Afficher les mois de {{year}}",
+    "collapse": "Masquer les mois de {{year}}"
   }
 }

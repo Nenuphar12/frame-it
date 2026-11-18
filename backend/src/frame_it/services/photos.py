@@ -24,7 +24,7 @@ from frame_it.db.models import (
 from frame_it.db.session import DISTANCE_FUNCTION
 from frame_it.domain import geo
 from frame_it.errors import ProblemError, not_found
-from frame_it.services import search, tags
+from frame_it.services import search, tags, timeline
 
 INBOX_STATES = ("inbox", "processed", "dismissed")
 MAX_LIMIT = 500
@@ -40,6 +40,8 @@ class PhotoFilter:
     tag_id: str | None = None
     around: str | None = None
     """A photo id: only photos taken within `AROUND_DAYS` of it, or within `AROUND_KM` of it."""
+    taken: str | None = None
+    """A year or a month (`timeline.PERIOD_PATTERN`): only photos taken then (the Timeline's)."""
     trashed: bool = False
 
 
@@ -132,6 +134,8 @@ def _apply_filter(session: Session, stmt: Select[Photo], flt: PhotoFilter) -> Se
         )
     if flt.around:
         stmt = stmt.where(_around(session, flt.around))
+    if flt.taken:
+        stmt = stmt.where(timeline.taken_in(flt.taken))
     return stmt
 
 

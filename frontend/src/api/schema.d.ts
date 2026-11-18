@@ -1451,6 +1451,7 @@ export interface paths {
          * List Photos
          * @description `around` is a photo id: only the photos taken in the same few days or at the same spot
          *     (what the editor offers first when replacing that photo). 404 when it does not exist.
+         *     `taken` is a year (`2024`) or a month (`2024-03`) of capture time — the Timeline's links.
          */
         get: operations["list_photos_api_v1_photos_get"];
         put?: never;
@@ -1977,6 +1978,26 @@ export interface paths {
          * @description Grayscale tile for the editor preview (same formula as the renderer, §8.2).
          */
         get: operations["texture_file_api_v1_textures__texture_id__png_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Timeline
+         * @description When the photos were taken — year → month — from their capture time, never converted.
+         */
+        get: operations["get_timeline_api_v1_timeline_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4424,6 +4445,36 @@ export interface components {
             id: string;
             /** Strength */
             strength: number;
+        };
+        /** TimelineMonthOut */
+        TimelineMonthOut: {
+            /** Artwork Count */
+            artwork_count: number;
+            /** Month */
+            month: number;
+            /** Photo Count */
+            photo_count: number;
+        };
+        /** TimelineOut */
+        TimelineOut: {
+            /** Undated Photos */
+            undated_photos: number;
+            /** Years */
+            years: components["schemas"]["TimelineYearOut"][];
+        };
+        /**
+         * TimelineYearOut
+         * @description One year of the Timeline view, its months the most recent first.
+         */
+        TimelineYearOut: {
+            /** Artwork Count */
+            artwork_count: number;
+            /** Months */
+            months: components["schemas"]["TimelineMonthOut"][];
+            /** Photo Count */
+            photo_count: number;
+            /** Year */
+            year: number;
         };
         /** TrashArtworksIn */
         TrashArtworksIn: {
@@ -7484,6 +7535,7 @@ export interface operations {
                 q?: string | null;
                 tag_id?: string | null;
                 around?: string | null;
+                taken?: string | null;
                 cursor?: string | null;
                 limit?: number;
             };
@@ -8468,6 +8520,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_timeline_api_v1_timeline_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimelineOut"];
                 };
             };
         };

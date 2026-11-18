@@ -336,6 +336,54 @@ def test_places_count_photos_and_artworks_per_level(local: TestClient) -> None:
     assert sum(r["photo_count"] for r in japan["children"]) == 2
 
 
+# ---- timeline -----------------------------------------------------------------------------------
+def test_timeline_counts_per_year_and_month_and_links_to_both_grids(local: TestClient) -> None:
+    taken = {
+        "early_march": "2024:03:05 10:00:00",
+        "last_moment_of_march": "2024:03:31 23:59:59",
+        "july": "2024:07:01 00:00:00",
+        "new_years_eve": "2023:12:31 12:00:00",
+    }
+    for i, (name, stamp) in enumerate(taken.items()):
+        upload_bytes(local, make_jpeg(900 + i, 600, (i, 2 * i, 3 * i), taken=stamp), f"{name}.jpg")
+    upload_bytes(local, make_jpeg(800, 600, (9, 9, 9), make=None, taken=None), "undated.jpg")
+    by_name = {
+        p["original_filename"].removesuffix(".jpg"): p["id"]
+        for p in local.get(f"{API}/photos").json()["items"]
+    }
+    # one artwork across two months of 2024 counts once for the year
+    across = create(local, [by_name["early_march"], by_name["july"]])
+    end_of_march = create(local, [by_name["last_moment_of_march"]])
+
+    body = local.get(f"{API}/timeline").json()
+    assert body["undated_photos"] == 1
+    assert [(y["year"], y["photo_count"], y["artwork_count"]) for y in body["years"]] == [
+        (2024, 3, 2),
+        (2023, 1, 0),
+    ]
+    months = [
+        (m["month"], m["photo_count"], m["artwork_count"]) for m in body["years"][0]["months"]
+    ]
+    assert months == [(7, 1, 1), (3, 2, 2)]  # the most recent first
+
+    def photos_taken(period: str) -> set[str]:
+        res = local.get(f"{API}/photos", params={"taken": period})
+        assert res.status_code == 200, res.text
+        return {p["original_filename"].removesuffix(".jpg") for p in res.json()["items"]}
+
+    assert photos_taken("2024-03") == {"early_march", "last_moment_of_march"}
+    assert photos_taken("2024") == {"early_march", "last_moment_of_march", "july"}
+    assert photos_taken("2023-12") == {"new_years_eve"}
+    assert photos_taken("2024-02") == set()
+    for bad in ("2024-13", "24-03", "2024-3", "march"):
+        assert local.get(f"{API}/photos", params={"taken": bad}).status_code == 422
+
+    # what the artworks link opens: `taken_at` between the month's first and last day
+    march = {"field": "taken_at", "op": "between", "value": ["2024-03-01", "2024-03-31"]}
+    found = query(local, filter={"op": "and", "clauses": [march]})
+    assert ids(found) == {across["id"], end_of_march["id"]}
+
+
 # ---- the inbox rule -----------------------------------------------------------------------------
 def inbox_state(local: TestClient, photo_id: str) -> str:
     state: str = local.get(f"{API}/photos/{photo_id}").json()["inbox_state"]

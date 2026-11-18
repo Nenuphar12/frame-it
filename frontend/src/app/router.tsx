@@ -16,11 +16,12 @@ import { DisplayPage } from "@/features/display/DisplayPage";
 import { InboxPage } from "@/features/inbox/InboxPage";
 import { MobileBrowsePage } from "@/features/mobile/MobileBrowsePage";
 import { MobileUploadPage } from "@/features/mobile/MobileUploadPage";
-import { PhotosPage } from "@/features/photos/PhotosPage";
+import { PhotosPage, type PhotosSearch } from "@/features/photos/PhotosPage";
 import { SettingsPage } from "@/features/settings/SettingsPage";
 import { TagsPage } from "@/features/tags/TagsPage";
 import { TemplatesPage } from "@/features/templates/TemplatesPage";
 import { TrashPage } from "@/features/trash/TrashPage";
+import { isPeriod } from "@/shared/period";
 import { AuthGate } from "./AuthGate";
 import { Shell } from "./Shell";
 
@@ -51,7 +52,14 @@ const routeTree = rootRoute.addChildren([
       component: () => <Navigate to="/inbox" replace />,
     }),
     page("/inbox", InboxPage),
-    page("/photos", PhotosPage),
+    createRoute({
+      getParentRoute: () => shellRoute,
+      path: "/photos",
+      component: PhotosPage,
+      // `taken=2024` or `2024-03` (the Timeline's links); anything else is dropped, not an error.
+      validateSearch: (search: Record<string, unknown>): PhotosSearch =>
+        isPeriod(search.taken) ? { taken: search.taken } : {},
+    }),
     createRoute({
       getParentRoute: () => shellRoute,
       path: "/artworks",
@@ -64,6 +72,7 @@ const routeTree = rootRoute.addChildren([
           ? { near: search.near }
           : {}),
         ...(typeof search.label === "string" && search.label ? { label: search.label } : {}),
+        ...(isPeriod(search.taken) ? { taken: search.taken } : {}),
       }),
     }),
     createRoute({

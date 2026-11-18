@@ -31,6 +31,9 @@ from frame_it.api.schemas import (
     TagSort,
     TagUpdateIn,
     TagWithCount,
+    TimelineMonthOut,
+    TimelineOut,
+    TimelineYearOut,
 )
 from frame_it.context import AppContext
 from frame_it.db.models import Collection
@@ -38,6 +41,7 @@ from frame_it.domain import filters
 from frame_it.events import Event
 from frame_it.services import collections, library, tags
 from frame_it.services import places as places_service
+from frame_it.services import timeline as timeline_service
 
 router = APIRouter(tags=["library"])
 
@@ -215,6 +219,30 @@ def search_places(
     by region or country), the ones the library has photos at first — the `place near` picker."""
     found = places_service.search(session, ctx.geocoder, q, limit)
     return [PlaceMatchOut.model_validate(match, from_attributes=True) for match in found]
+
+
+# ---- timeline -----------------------------------------------------------------------------------
+@router.get("/timeline")
+def get_timeline(_: Uploader, session: DbSession) -> TimelineOut:
+    """When the photos were taken — year → month — from their capture time, never converted."""
+    found = timeline_service.timeline(session)
+    return TimelineOut(
+        years=[
+            TimelineYearOut(
+                year=year.year,
+                photo_count=year.photo_count,
+                artwork_count=year.artwork_count,
+                months=[
+                    TimelineMonthOut(
+                        month=m.month, photo_count=m.photo_count, artwork_count=m.artwork_count
+                    )
+                    for m in year.months
+                ],
+            )
+            for year in found.years
+        ],
+        undated_photos=found.undated_photos,
+    )
 
 
 # ---- collections --------------------------------------------------------------------------------
