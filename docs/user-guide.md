@@ -227,9 +227,11 @@ Templates travel as `.tfstyle.json` / `.tflayout.json` files.
 - **Categories** group tags (People, Events, Themes, and your own); a tag with none is "Other".
   The Tags page renames, recolours, merges and deletes tags and categories, moves tags between
   categories, and clears out tags nothing uses. Its **Places** tab lists where your photos were
-  taken (from their GPS position) and opens the artworks from each place; its **Timeline** tab
-  lists when, year by year and month by month (from the date the camera wrote into the photo),
-  and opens the photos or the artworks from each month.
+  taken (from their GPS position); its **Timeline** tab lists when, year by year and month by
+  month (from the date the camera wrote into the photo). Both open the photos or the artworks
+  from each row. A date that says nothing about the picture — a painting photographed in a
+  museum — can go: *Remove the date* in the photo's details takes it off the timeline (the file
+  itself keeps it).
 - **Collections** nest, and you order their contents by hand (drag a card, drag onto the tree).
 - **Smart collections** store a filter instead of a list — their contents are whatever matches, so
   there is nothing to reorder and nothing to add by hand. An artwork leaves one by ceasing to match.

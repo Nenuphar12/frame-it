@@ -335,6 +335,23 @@ def test_places_count_photos_and_artworks_per_level(local: TestClient) -> None:
     assert cities == {placed[n]["place_name"] for n in ("kyoto.jpg", "osaka.jpg")}
     assert sum(r["photo_count"] for r in japan["children"]) == 2
 
+    # each row's photo link opens exactly the photos it counts
+    def photos_at(**node: str) -> set[str]:
+        res = local.get(f"{API}/photos", params=node)
+        assert res.status_code == 200, res.text
+        return {p["original_filename"] for p in res.json()["items"]}
+
+    assert photos_at(place_country="Japan") == {"kyoto.jpg", "osaka.jpg"}
+    for region in japan["children"]:
+        at_region = photos_at(place_country="Japan", place_admin1=region["name"])
+        assert len(at_region) == region["photo_count"]
+        for city in region["children"]:
+            at_city = photos_at(
+                place_country="Japan", place_admin1=region["name"], place_name=city["name"]
+            )
+            assert len(at_city) == city["photo_count"] == 1
+    assert photos_at(place_country="Jap") == set()  # exact, not "contains"
+
 
 # ---- timeline -----------------------------------------------------------------------------------
 def test_timeline_counts_per_year_and_month_and_links_to_both_grids(local: TestClient) -> None:
@@ -382,6 +399,30 @@ def test_timeline_counts_per_year_and_month_and_links_to_both_grids(local: TestC
     march = {"field": "taken_at", "op": "between", "value": ["2024-03-01", "2024-03-31"]}
     found = query(local, filter={"op": "and", "clauses": [march]})
     assert ids(found) == {across["id"], end_of_march["id"]}
+
+
+def test_a_photo_date_can_be_removed_and_set_back(local: TestClient) -> None:
+    pid = photo(local)  # taken 2026-04-12 10:30 (make_jpeg's default)
+    stamp = local.get(f"{API}/photos/{pid}").json()["taken_at"]
+
+    def patch(**body: Any) -> dict[str, Any]:
+        res = local.patch(f"{API}/photos/{pid}", json=body)
+        assert res.status_code == 200, res.text
+        out: dict[str, Any] = res.json()
+        return out
+
+    # a change that does not name the date leaves it alone — `null` elsewhere included
+    assert patch(tag_ids=None, inbox_state=None)["taken_at"] == stamp
+    assert patch(taken_at=None)["taken_at"] is None
+    body = local.get(f"{API}/timeline").json()
+    assert (body["years"], body["undated_photos"]) == ([], 1)
+    assert local.get(f"{API}/photos", params={"taken": "2026"}).json()["items"] == []
+
+    # Undo sends the old value back, verbatim
+    assert patch(taken_at=stamp)["taken_at"] == stamp
+    assert [y["year"] for y in local.get(f"{API}/timeline").json()["years"]] == [2026]
+    # floating time: an offset is dropped, never applied
+    assert patch(taken_at="2008-09-01T10:00:00+02:00")["taken_at"].startswith("2008-09-01T10:00:00")
 
 
 # ---- the inbox rule -----------------------------------------------------------------------------

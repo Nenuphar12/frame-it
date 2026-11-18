@@ -3,13 +3,22 @@ import {
   Images,
   Inbox,
   Info,
+  MapPin,
   Maximize2,
   Search,
   Trash2,
   Wand2,
   X,
 } from "lucide-react";
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useTranslation } from "react-i18next";
 
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -33,9 +42,50 @@ import { PhotoViewer } from "./PhotoViewer";
 import { usePhotoViewer } from "./usePhotoViewer";
 import { useSelection } from "./useSelection";
 
-/** The Timeline's link: only the photos taken in that year or month (`shared/period.ts`). */
+/**
+ * Links into the grid: from the Timeline (`taken` = a year or a month, `shared/period.ts`) and
+ * from the Places view (a row: country, then region and place — each matched exactly, `""` being
+ * the view's "Unknown").
+ */
 export interface PhotosSearch {
   taken?: string;
+  place_country?: string;
+  place_admin1?: string;
+  place_name?: string;
+}
+
+/** A filter that came with the URL: what it keeps, and a × that drops it (and only it). */
+function LinkedChip({
+  icon,
+  children,
+  onClear,
+}: {
+  icon: ReactNode;
+  children: ReactNode;
+  onClear: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <span className="flex h-9 items-center gap-1.5 rounded-md border border-border bg-panel pr-1 pl-2.5 text-sm">
+      {icon}
+      {children}
+      <button
+        type="button"
+        onClick={onClear}
+        aria-label={t("filters.clear")}
+        title={t("filters.clear")}
+        className="rounded p-1 text-muted hover:bg-panel-2 hover:text-text"
+      >
+        <X size={14} />
+      </button>
+    </span>
+  );
+}
+
+/** "Kyoto, Japan": the row's own name (or "Unknown"), then its country when it is not one. */
+function placeLabel(path: string[], unknown: string): string {
+  const own = path[path.length - 1] || unknown;
+  return path.length > 1 ? `${own}, ${path[0] || unknown}` : own;
 }
 
 export function PhotosPage() {
@@ -43,9 +93,12 @@ export function PhotosPage() {
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query.trim());
   const [tagId, setTagId] = useState<string>("");
-  // The period lives in the URL, not in state: the Timeline links here, and a reload keeps it.
-  const { taken }: PhotosSearch = useSearch({ strict: false });
-  const filtered = Boolean(deferredQuery || tagId || taken);
+  // The period and the place live in the URL, not in state: the Timeline and the Places view
+  // link here, and a reload keeps them.
+  const linked: PhotosSearch = useSearch({ strict: false });
+  const { taken, place_country, place_admin1, place_name } = linked;
+  const atPlace = place_country !== undefined;
+  const filtered = Boolean(deferredQuery || tagId || taken || atPlace);
   const tags = useAllTags();
   const searchRef = useRef<HTMLInputElement>(null);
   const photos = usePhotos(
@@ -54,8 +107,11 @@ export function PhotosPage() {
         ...(deferredQuery ? { q: deferredQuery } : {}),
         ...(tagId ? { tag_id: tagId } : {}),
         ...(taken ? { taken } : {}),
+        ...(place_country !== undefined ? { place_country } : {}),
+        ...(place_admin1 !== undefined ? { place_admin1 } : {}),
+        ...(place_name !== undefined ? { place_name } : {}),
       }),
-      [deferredQuery, tagId, taken],
+      [deferredQuery, tagId, taken, place_country, place_admin1, place_name],
     ),
   );
   const items = useMemo(() => photos.data?.pages.flatMap((p) => p.items) ?? [], [photos.data]);
@@ -241,19 +297,25 @@ export function PhotosPage() {
                 )}
               </div>
               {taken && (
-                <span className="flex h-9 items-center gap-1.5 rounded-md border border-border bg-panel pr-1 pl-2.5 text-sm">
-                  <CalendarDays size={14} className="text-muted" />
+                <LinkedChip
+                  icon={<CalendarDays size={14} className="text-muted" />}
+                  onClear={() =>
+                    void navigate({ to: "/photos", search: { ...linked, taken: undefined } })
+                  }
+                >
                   {t("photos.takenIn", { period: formatPeriod(taken) })}
-                  <button
-                    type="button"
-                    onClick={() => void navigate({ to: "/photos", search: {} })}
-                    aria-label={t("filters.clear")}
-                    title={t("filters.clear")}
-                    className="rounded p-1 text-muted hover:bg-panel-2 hover:text-text"
-                  >
-                    <X size={14} />
-                  </button>
-                </span>
+                </LinkedChip>
+              )}
+              {atPlace && (
+                <LinkedChip
+                  icon={<MapPin size={14} className="text-muted" />}
+                  onClear={() => void navigate({ to: "/photos", search: taken ? { taken } : {} })}
+                >
+                  {placeLabel(
+                    [place_country, place_admin1, place_name].filter((v) => v !== undefined),
+                    t("places.unnamed"),
+                  )}
+                </LinkedChip>
               )}
               <Button
                 variant="primary"

@@ -5007,6 +5007,18 @@
               }
             ],
             "title": "Tag Ids"
+          },
+          "taken_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taken At"
           }
         },
         "title": "PhotoUpdateIn",
@@ -10840,7 +10852,7 @@
     },
     "/api/v1/photos": {
       "get": {
-        "description": "`around` is a photo id: only the photos taken in the same few days or at the same spot\n(what the editor offers first when replacing that photo). 404 when it does not exist.\n`taken` is a year (`2024`) or a month (`2024-03`) of capture time \u2014 the Timeline's links.",
+        "description": "`around` is a photo id: only the photos taken in the same few days or at the same spot\n(what the editor offers first when replacing that photo). 404 when it does not exist.\n`taken` is a year (`2024`) or a month (`2024-03`) of capture time \u2014 the Timeline's links.\n`place_country`, `place_admin1`, `place_name` are a row of the Places view, each level given\nmatched exactly (`\"\"` = none) \u2014 its links.",
         "operationId": "list_photos_api_v1_photos_get",
         "parameters": [
           {
@@ -10929,6 +10941,57 @@
                 }
               ],
               "title": "Taken"
+            }
+          },
+          {
+            "in": "query",
+            "name": "place_country",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Place Country"
+            }
+          },
+          {
+            "in": "query",
+            "name": "place_admin1",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Place Admin1"
+            }
+          },
+          {
+            "in": "query",
+            "name": "place_name",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Place Name"
             }
           },
           {

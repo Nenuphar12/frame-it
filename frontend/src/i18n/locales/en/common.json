@@ -18,7 +18,8 @@
     "loadMore": "Load more",
     "dismiss": "Dismiss",
     "refresh": "Refresh",
-    "add": "Add"
+    "add": "Add",
+    "undo": "Undo"
   },
   "nav": {
     "beta": "Beta",
@@ -201,7 +202,10 @@
       "zoomHint": "The original's own pixels; the zoom stays on from one photo to the next (Z, or click the photo)",
       "toggleZoom": "Toggle 100% / fit to screen"
     },
-    "takenIn": "Taken in {{period}}"
+    "takenIn": "Taken in {{period}}",
+    "removeDate": "Remove the date",
+    "removeDateHint": "Take this photo off the timeline: for a painting or a scan, the date is when the camera took it, not when the picture was made. The file itself keeps it.",
+    "dateRemovedToast": "Date removed: the photo has left the timeline."
   },
   "tags": {
     "placeholder": "Add tags…",

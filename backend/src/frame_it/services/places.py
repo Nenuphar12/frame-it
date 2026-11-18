@@ -9,6 +9,7 @@ of its photos is, the reading of the `place` filter clause).
 A photo without a position (Android's photo picker strips GPS) has no place: it is counted apart,
 and so are the artworks none of whose photos has one — the `place near` filter can never match them.
 
+`at_place` is a node of the view as a photo condition — the photo grid's links from each row.
 `search` is the `place near` picker: places of the offline dataset by name, the library's own first.
 """
 
@@ -17,7 +18,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from sqlalchemy import distinct, func, select
+from sqlalchemy import ColumnElement, and_, distinct, func, or_, select, true
 from sqlalchemy.orm import Session
 
 from frame_it.db.models import Artwork, ArtworkPhoto, Photo
@@ -119,6 +120,20 @@ def places(session: Session) -> Places:
         session.scalar(select(func.count(Photo.id)).where(live, Photo.place_country.is_(None))) or 0
     )
     return Places(countries, unplaced, unlocated_artworks(session))
+
+
+def at_place(country: str | None, admin1: str | None, name: str | None) -> ColumnElement[bool]:
+    """A photo at this node of the view: each level given matches **exactly**, so the grid it
+    opens holds the photos the row counts. `""` is the view's "Unknown" (no region, no name)."""
+    clauses: list[ColumnElement[bool]] = [true()]
+    for column, value in (
+        (Photo.place_country, country),
+        (Photo.place_admin1, admin1),
+        (Photo.place_name, name),
+    ):
+        if value is not None:
+            clauses.append(or_(column.is_(None), column == "") if value == "" else column == value)
+    return and_(*clauses)
 
 
 def unlocated_artworks(session: Session) -> int:

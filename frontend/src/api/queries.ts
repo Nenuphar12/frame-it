@@ -89,6 +89,10 @@ export interface PhotoFilter {
   around?: string;
   /** A year (`2024`) or a month (`2024-03`) of capture time (`shared/period.ts`). */
   taken?: string;
+  /** A row of the Places view: each level given matches exactly (`""` = none). */
+  place_country?: string;
+  place_admin1?: string;
+  place_name?: string;
 }
 
 export function useMe() {
@@ -144,11 +148,21 @@ export function usePhoto(id: string | null) {
 export function useUpdatePhoto() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (vars: { id: string; tag_ids?: string[]; inbox_state?: Photo["inbox_state"] }) =>
+    mutationFn: (vars: {
+      id: string;
+      tag_ids?: string[];
+      inbox_state?: Photo["inbox_state"];
+      /** Only when given: `null` removes the capture time, a value sets it back. */
+      taken_at?: string | null;
+    }) =>
       unwrap(
         api.PATCH("/api/v1/photos/{photo_id}", {
           params: { path: { photo_id: vars.id } },
-          body: { tag_ids: vars.tag_ids ?? null, inbox_state: vars.inbox_state ?? null },
+          body: {
+            tag_ids: vars.tag_ids ?? null,
+            inbox_state: vars.inbox_state ?? null,
+            ...("taken_at" in vars ? { taken_at: vars.taken_at } : {}),
+          },
         }),
       ),
     onSuccess: (photo) => {

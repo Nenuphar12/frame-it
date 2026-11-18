@@ -18,7 +18,8 @@
     "loadMore": "Afficher plus",
     "dismiss": "Ignorer",
     "refresh": "Actualiser",
-    "add": "Ajouter"
+    "add": "Ajouter",
+    "undo": "Annuler"
   },
   "nav": {
     "beta": "Bêta",
@@ -201,7 +202,10 @@
       "zoomHint": "Les pixels mêmes de l'original ; le zoom reste d'une photo à la suivante (Z, ou clic sur la photo)",
       "toggleZoom": "Basculer entre 100 % et l'ajustement à l'écran"
     },
-    "takenIn": "Prises en {{period}}"
+    "takenIn": "Prises en {{period}}",
+    "removeDate": "Retirer la date",
+    "removeDateHint": "Retirer cette photo de la chronologie : pour un tableau ou un scan, la date est celle de la prise de vue, pas celle de l'œuvre. Le fichier, lui, la garde.",
+    "dateRemovedToast": "Date retirée : la photo a quitté la chronologie."
   },
   "tags": {
     "placeholder": "Ajouter des étiquettes…",

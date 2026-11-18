@@ -39,6 +39,22 @@ interface CollectionsSearch {
 
 const NEAR_LINK = /^-?\d+(\.\d+)?,-?\d+(\.\d+)?,\d+(\.\d+)?$/;
 
+/**
+ * A search value as text. The router parses each value as JSON first, so a hand-typed
+ * `?taken=2024` arrives as a number (its own links quote such strings: `?taken=%222024%22`).
+ */
+function text(value: unknown): string | undefined {
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  return undefined;
+}
+
+/** `taken` = a year or a month (the Timeline's links); anything else is dropped, not an error. */
+function takenFrom(search: Record<string, unknown>): { taken?: string } {
+  const taken = text(search.taken);
+  return isPeriod(taken) ? { taken } : {};
+}
+
 const shellRoute = createRoute({ getParentRoute: () => rootRoute, id: "shell", component: Shell });
 
 const page = (path: string, component: () => React.ReactNode) =>
@@ -56,9 +72,19 @@ const routeTree = rootRoute.addChildren([
       getParentRoute: () => shellRoute,
       path: "/photos",
       component: PhotosPage,
-      // `taken=2024` or `2024-03` (the Timeline's links); anything else is dropped, not an error.
-      validateSearch: (search: Record<string, unknown>): PhotosSearch =>
-        isPeriod(search.taken) ? { taken: search.taken } : {},
+      // The Timeline's links (`taken`) and the Places view's (a row: `""` is its "Unknown").
+      validateSearch: (search: Record<string, unknown>): PhotosSearch => {
+        const level = (key: "place_country" | "place_admin1" | "place_name") => {
+          const value = text(search[key]);
+          return value === undefined ? {} : { [key]: value };
+        };
+        return {
+          ...takenFrom(search),
+          ...level("place_country"),
+          ...level("place_admin1"),
+          ...level("place_name"),
+        };
+      },
     }),
     createRoute({
       getParentRoute: () => shellRoute,
@@ -72,7 +98,7 @@ const routeTree = rootRoute.addChildren([
           ? { near: search.near }
           : {}),
         ...(typeof search.label === "string" && search.label ? { label: search.label } : {}),
-        ...(isPeriod(search.taken) ? { taken: search.taken } : {}),
+        ...takenFrom(search),
       }),
     }),
     createRoute({

@@ -10,8 +10,10 @@ import { EmptyState, Spinner } from "@/shared/ui/Misc";
 /**
  * Where the photos were taken — country → region → place — read from their metadata, never
  * typed (docs/organization.md §1). This is why there is no "Places" tag category: the offline
- * geocoder already knows, and a tag would only drift from it. Each row opens the artworks made
- * of a photo from there (the `place` filter, "contains", over name, region and country).
+ * geocoder already knows, and a tag would only drift from it. Each row opens the photos taken
+ * there (`/photos?place_country=…`, every level of the row matched exactly, so the grid holds
+ * what the row counts) and the artworks made of one (the `place` filter, "contains", over name,
+ * region and country).
  */
 export function PlacesView() {
   const { t } = useTranslation();
@@ -36,7 +38,7 @@ export function PlacesView() {
       ) : (
         <ul className="space-y-1" aria-label={t("places.title")}>
           {countries.map((country) => (
-            <PlaceRow key={country.name} place={country} depth={0} />
+            <PlaceRow key={country.name} place={country} path={[country.name]} />
           ))}
         </ul>
       )}
@@ -47,8 +49,20 @@ export function PlacesView() {
   );
 }
 
-function PlaceRow({ place, depth }: { place: PlaceNode; depth: number }) {
+/** The Photos page's search for a row: its country, then its region and its place, if any. */
+function photosAt(path: string[]) {
+  const [country, admin1, name] = path;
+  return {
+    place_country: country,
+    ...(admin1 !== undefined ? { place_admin1: admin1 } : {}),
+    ...(name !== undefined ? { place_name: name } : {}),
+  };
+}
+
+/** `path`: the names from the country down to this row (`""` = "Unknown"). */
+function PlaceRow({ place, path }: { place: PlaceNode; path: string[] }) {
   const { t } = useTranslation();
+  const depth = path.length - 1;
   const children = place.children ?? [];
   // Countries start open (there are few); regions start closed (there can be many).
   const [open, setOpen] = useState(depth === 0);
@@ -72,9 +86,13 @@ function PlaceRow({ place, depth }: { place: PlaceNode; depth: number }) {
           <span className="w-3.5" />
         )}
         <span className="min-w-0 flex-1 truncate">{place.name || t("places.unnamed")}</span>
-        <span className="text-xs text-muted tabular-nums">
+        <Link
+          to="/photos"
+          search={photosAt(path)}
+          className="text-right text-xs text-accent tabular-nums hover:underline"
+        >
           {t("places.photoCount", { count: place.photo_count })}
-        </span>
+        </Link>
         {place.artwork_count > 0 && place.name ? (
           <Link
             to="/artworks"
@@ -92,7 +110,7 @@ function PlaceRow({ place, depth }: { place: PlaceNode; depth: number }) {
       {open && children.length > 0 && (
         <ul>
           {children.map((child) => (
-            <PlaceRow key={child.name} place={child} depth={depth + 1} />
+            <PlaceRow key={child.name} place={child} path={[...path, child.name]} />
           ))}
         </ul>
       )}

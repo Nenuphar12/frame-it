@@ -390,6 +390,9 @@ class PhotoPageOut(ApiModel):
 class PhotoUpdateIn(BaseModel):
     tag_ids: list[str] | None = Field(default=None, max_length=200)
     inbox_state: InboxState | None = None
+    taken_at: datetime | None = None
+    """Only when present: `null` **removes** the capture time, a value sets it (floating time,
+    kept as written). Left out, the capture time does not change."""
 
 
 class PhotoIdsIn(BaseModel):

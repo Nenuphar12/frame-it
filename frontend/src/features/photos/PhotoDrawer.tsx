@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Download, MapPin, PencilLine, Undo2, Wand2, X } from "lucide-react";
+import { CalendarX, Download, MapPin, PencilLine, Undo2, Wand2, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -7,6 +7,7 @@ import { photoOriginalUrl, photoProxyUrl, type Photo } from "@/api/client";
 import { useInboxAction, usePhoto, useUpdatePhoto } from "@/api/queries";
 import { TagPicker } from "@/features/tags/TagPicker";
 import { formatBytes, formatCaptureTime, formatDateTime, megapixels } from "@/shared/format";
+import { toast } from "@/shared/toast";
 import { Button } from "@/shared/ui/Button";
 import { Badge, Spinner } from "@/shared/ui/Misc";
 
@@ -41,6 +42,21 @@ export function PhotoDrawer({ photoId, onClose, onCreateArtwork }: PhotoDrawerPr
   const { data: photo, isLoading } = usePhoto(photoId);
   const update = useUpdatePhoto();
   const inbox = useInboxAction();
+  /**
+   * A painting shot in a museum, a scan: the camera's date says when the picture was taken, not
+   * what it shows, and would file it in the Timeline under that year. Acts, then offers Undo.
+   */
+  const removeDate = (id: string, takenAt: string) =>
+    update.mutate(
+      { id, taken_at: null },
+      {
+        onSuccess: () =>
+          toast.success("photos.dateRemovedToast", {
+            label: "common.undo",
+            run: () => update.mutate({ id, taken_at: takenAt }),
+          }),
+      },
+    );
 
   return (
     <aside
@@ -105,7 +121,22 @@ export function PhotoDrawer({ photoId, onClose, onCreateArtwork }: PhotoDrawerPr
             <Row label={t("photos.fields.size")}>
               {formatBytes(photo.file_size)} · {photo.mime}
             </Row>
-            <Row label={t("photos.fields.taken")}>{formatCaptureTime(photo.taken_at)}</Row>
+            <Row label={t("photos.fields.taken")}>
+              {photo.taken_at && (
+                <span className="flex flex-wrap items-center gap-x-2">
+                  {formatCaptureTime(photo.taken_at)}
+                  <button
+                    type="button"
+                    disabled={update.isPending}
+                    onClick={() => removeDate(photo.id, photo.taken_at!)}
+                    title={t("photos.removeDateHint")}
+                    className="inline-flex items-center gap-1 text-xs text-accent hover:underline disabled:opacity-50"
+                  >
+                    <CalendarX size={12} /> {t("photos.removeDate")}
+                  </button>
+                </span>
+              )}
+            </Row>
             <Row label={t("photos.fields.place")}>
               {photo.gps_lat !== null && photo.gps_lon !== null ? (
                 <span className="flex flex-wrap items-center gap-x-2">

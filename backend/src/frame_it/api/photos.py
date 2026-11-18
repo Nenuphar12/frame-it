@@ -58,14 +58,26 @@ def list_photos(
     tag_id: str | None = None,
     around: str | None = Query(default=None, max_length=64),
     taken: str | None = Query(default=None, pattern=timeline.PERIOD_PATTERN),
+    place_country: str | None = Query(default=None, max_length=200),
+    place_admin1: str | None = Query(default=None, max_length=200),
+    place_name: str | None = Query(default=None, max_length=200),
     cursor: str | None = None,
     limit: int = Query(default=100, ge=1, le=500),
 ) -> PhotoPageOut:
     """`around` is a photo id: only the photos taken in the same few days or at the same spot
     (what the editor offers first when replacing that photo). 404 when it does not exist.
-    `taken` is a year (`2024`) or a month (`2024-03`) of capture time — the Timeline's links."""
+    `taken` is a year (`2024`) or a month (`2024-03`) of capture time — the Timeline's links.
+    `place_country`, `place_admin1`, `place_name` are a row of the Places view, each level given
+    matched exactly (`""` = none) — its links."""
     flt = photos.PhotoFilter(
-        inbox_state=inbox_state, q=q, tag_id=tag_id, around=around, taken=taken
+        inbox_state=inbox_state,
+        q=q,
+        tag_id=tag_id,
+        around=around,
+        taken=taken,
+        place_country=place_country,
+        place_admin1=place_admin1,
+        place_name=place_name,
     )
     page = photos.list_photos(session, flt, cursor, limit)
     return PhotoPageOut(
@@ -109,6 +121,8 @@ def update_photo(
     photo = photos.update_photo(
         session, photo_id, tag_ids=body.tag_ids, inbox_state=body.inbox_state
     )
+    if "taken_at" in body.model_fields_set:
+        photos.set_taken_at(session, photo_id, body.taken_at)
     session.flush()
     out = _one(session, photo)
     session.commit()

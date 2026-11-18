@@ -86,9 +86,11 @@ There is **no "Places" category**, on purpose: a place is photo *metadata* the o
 fills from the GPS position, so the Tags page has a read-only **Places** tab instead
 (`GET /places`, `services/places.py`): country → region → place, with photo and artwork counts per
 level (an artwork made of photos from two cities counts once for their country), and the number
-of photos without a position. A row opens the artworks filtered by that place
-(`/artworks?place=…`, the `place` clause, "contains"). No nested tags either: a category is the one
-level of grouping.
+of photos without a position. A row opens the **photos** taken there
+(`/photos?place_country=…&place_admin1=…&place_name=…`, `GET /photos` with the same parameters:
+each level of the row matched **exactly**, `""` being the view's "Unknown", so the grid holds what
+the row counts) and the **artworks** filtered by that place (`/artworks?place=…`, the `place`
+clause, "contains"). No nested tags either: a category is the one level of grouping.
 
 Its twin over the capture time is the **Timeline** tab (`GET /timeline`, `services/timeline.py`):
 year → month, the most recent first, with the same per-level counts (an artwork made of photos
@@ -98,6 +100,13 @@ sortable ISO string, so a period is a prefix of it — never timezone-converted.
 **photos** taken then (`/photos?taken=2024-03`, `GET /photos?taken=`: a year or a month) and the
 **artworks** made of one (`/artworks?taken=2024-03` → a `taken_at` "between" chip from the
 month's first day to its last).
+
+A camera date can say nothing about the picture: a painting shot in a museum would sit in the
+Timeline under the visit's year. The photo's details offer **Remove the date** (then Undo):
+`PATCH /photos/{id}` with `taken_at: null` — left out, the date does not change; a value sets it
+back, as written (floating time: an offset is dropped, never applied). Only the library's record
+changes — the original keeps its EXIF (invariant 1) — and receiving the file again does not bring
+the date back.
 
 ### 1.4 Later: keywords already in the files
 
@@ -323,7 +332,7 @@ rule were not changed retroactively: photos already `processed` stay so, drafts 
 | Artwork viewer | two rows — what it is and what you can do to it, then where it is filed: manual collections as plain badges, smart ones in accent with a sparkle (read-only), its own tags (editable in place — *Done* or `Esc` closes the editor, and moving to another artwork does too) and its photos' tags, dashed |
 | Tags page | grouped by category: rename / recolour / delete a category, add one; per tag rename, own colour, category, merge, delete, counts (the artwork count links to the filtered grid); select tags to move them to a category; *Delete N unused tags*; a **Places** tab and a **Timeline** tab (years fold open on their months; the latest starts open) |
 | Trash page | both lists, restore by item or by batch, purge expired, empty |
-| Photos page | a tag filter (every tag, grouped) next to the search box; `?taken=2024-03` (the Timeline's links) adds a "Taken in …" chip, its × clears it; the tag menu (`t`); *Back to inbox*; `Delete` trashes with Undo, or opens the cascade dialog when artworks use the photos |
+| Photos page | a tag filter (every tag, grouped) next to the search box; `?taken=2024-03` (the Timeline's links) adds a "Taken in …" chip and `?place_country=…` (the Places view's) a place chip, each × clearing its own; the tag menu (`t`); *Back to inbox*; `Delete` trashes with Undo, or opens the cascade dialog when artworks use the photos |
 | Inbox | Draft badges; *Dismiss* (`d`) and *Delete* (`Delete`) kept apart; the tag menu (`t`) |
 | Upload tray | *Tag these N photos…* for the batch that just landed, duplicates included |
 | Editor | `f` toggles the artwork's favourite |

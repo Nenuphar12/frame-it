@@ -3,7 +3,7 @@
 Newest first. Phases 0–12 and everything before the beta (2026-10-06):
 [`progress-before-beta.md`](progress-before-beta.md).
 
-## 2026-11-18 — Timeline
+## 2026-11-18 — Timeline, photos by place, removing a date
 
 - **A Timeline tab beside Places** (Tags page): year → month, the most recent first, with photo and
   artwork counts per level and the number of undated photos. Years fold open on their months (the
@@ -13,10 +13,22 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
   the URL — and to the **artworks** made of one (`/artworks?taken=` → a `taken_at` "between" chip).
   `test_timeline_counts_per_year_and_month_and_links_to_both_grids` (boundaries: the last second
   of a month, a bad period → 422), `shared/period.test.ts` (month lengths, leap years).
+- **The Places view opens photos too**: each row's photo count links to the photo grid
+  (`/photos?place_country=…&place_admin1=…&place_name=…`), every level of the row matched exactly
+  so the grid holds what the row counts — unlike the artworks link, which keeps the `place`
+  clause's "contains". The chip names the row ("Neuilly-sur-Seine, France").
+- **A photo's date can be removed** (*Remove the date* in its details, then Undo): a painting shot
+  in a museum no longer sits in the Timeline under the visit's year. `PATCH /photos/{id}` with
+  `taken_at` — `null` removes it, a value sets it back as written, left out it does not change
+  (the other fields' `null` keeps meaning "unchanged"). The original keeps its EXIF.
+  `test_a_photo_date_can_be_removed_and_set_back`; the Places test now follows every row's link.
 - **Driven in a browser** (headless Chromium over CDP, production build, a copy of `.dev-data`):
   the tab lists 2026 → 2008 with 17 undated photos; November 2026's links open 74 photos and 12
-  artworks, the counts the row shows; the chip's × goes back to `/photos`. Not driven: the French
-  labels.
+  artworks, the counts the row shows; the chip's × goes back to `/photos`. Places: France → 56
+  photos, Neuilly-sur-Seine → 20, as counted. A year link and a hand-typed `?taken=2008` both
+  filter (the router parses values as JSON, so `2008` arrives as a number: `router.tsx` takes it
+  as text). Removing the 2008 photo's date took it off the timeline; Undo put the same value back.
+  Not driven: the French labels.
 
 ## 2026-11-17 — Project review follow-ups
 

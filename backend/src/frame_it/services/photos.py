@@ -6,7 +6,7 @@ import base64
 from collections import defaultdict
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import ColumnElement, Select, and_, delete, false, func, or_, select
@@ -24,7 +24,7 @@ from frame_it.db.models import (
 from frame_it.db.session import DISTANCE_FUNCTION
 from frame_it.domain import geo
 from frame_it.errors import ProblemError, not_found
-from frame_it.services import search, tags, timeline
+from frame_it.services import places, search, tags, timeline
 
 INBOX_STATES = ("inbox", "processed", "dismissed")
 MAX_LIMIT = 500
@@ -42,6 +42,10 @@ class PhotoFilter:
     """A photo id: only photos taken within `AROUND_DAYS` of it, or within `AROUND_KM` of it."""
     taken: str | None = None
     """A year or a month (`timeline.PERIOD_PATTERN`): only photos taken then (the Timeline's)."""
+    place_country: str | None = None
+    place_admin1: str | None = None
+    place_name: str | None = None
+    """A node of the Places view (`places.at_place`): each level given matches exactly."""
     trashed: bool = False
 
 
@@ -136,6 +140,8 @@ def _apply_filter(session: Session, stmt: Select[Photo], flt: PhotoFilter) -> Se
         stmt = stmt.where(_around(session, flt.around))
     if flt.taken:
         stmt = stmt.where(timeline.taken_in(flt.taken))
+    if (flt.place_country, flt.place_admin1, flt.place_name) != (None, None, None):
+        stmt = stmt.where(places.at_place(flt.place_country, flt.place_admin1, flt.place_name))
     return stmt
 
 
@@ -205,6 +211,18 @@ def update_photo(
         search.index_photo(session, photo)
         # The artworks made of this photo carry its tags (docs/organization.md §1).
         search.index_artworks_using(session, [photo.id])
+    return photo
+
+
+def set_taken_at(session: Session, photo_id: str, value: datetime | None) -> Photo:
+    """Set or remove a photo's capture time — a painting shot in a museum belongs to no year.
+
+    Only the library's record changes: the original keeps its EXIF (invariant 1), and receiving
+    the file again does not bring the date back. The time is floating camera-local time
+    (invariant 9): an offset sent with it is dropped, never applied.
+    """
+    photo = get_photo(session, photo_id)
+    photo.taken_at = None if value is None else value.replace(tzinfo=UTC)
     return photo
 
 
