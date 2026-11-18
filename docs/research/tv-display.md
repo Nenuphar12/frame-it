@@ -119,7 +119,22 @@ set re-pushed):
 - **The app's items, uploaded before the update, show two dates**: `16/11/2026` and, smaller
   beneath, `11/16/2026` (US order); the three test images, uploaded after it, showed one. Our
   JPEGs carry no EXIF or XMP (only the ICC profile), so the second line comes from the TV: the
-  upload date, or something the update attached to the items it found. Unsettled.
+  upload date, or something the update attached to the items it found. It went away when those
+  items were uploaded again, and the art API reports the same fields for old and new items
+  (category, id, type, size, `image_date`, mattes, slideshow): whatever it was, nothing the API
+  can read or write.
+
+**Words instead of a date** (`tv_date_test.py --set text`, same day; all three uploads accepted):
+
+| Image | `image_date` sent | Badge |
+|---|---|---|
+| A | `Rome, août 2024` | **01/01/0001** |
+| B | `2024:08:15 16:42:00 Rome` | **15/08/2024** |
+| C | `2024` | **01/01/0001** |
+
+The TV reads a full `YYYY:MM:DD` date at the start of the field and drops everything after it;
+anything else is its minimum date. **The badge cannot carry text** — the field is the only one
+an upload sends that reaches the screen.
 
 **Implemented** (user's choice, 2026-11-18): each upload carries its artwork's date — the
 earliest capture time of its photos, else the day it was made — and `image_clock` is gone

@@ -22,6 +22,10 @@ Newest first. Phases 0–12 and everything before the beta (2026-10-06):
   `taken_at` — `null` removes it, a value sets it back as written, left out it does not change
   (the other fields' `null` keeps meaning "unchanged"). The original keeps its EXIF.
   `test_a_photo_date_can_be_removed_and_set_back`; the Places test now follows every row's link.
+- **The date badge cannot carry text** (`tv_date_test.py --set text`, watched by the user): free
+  text and a bare year read 01/01/0001, a date followed by words shows the date alone. And the
+  second, US-format date the pre-update items showed went away once they were uploaded again —
+  nothing the art API exposes. Research §2c.
 - **The first version of migration 0012 wiped a real library's record of its TV uploads.** It
   dropped `display_targets.image_clock` in an Alembic batch, which rebuilds the table: with the
   app's `foreign_keys=ON`, dropping the old table cascaded to `display_target_items`, and all 42
